@@ -10,7 +10,13 @@ import type { ActionResult } from '@/domain/action-result'
 import type { EndClientBrief } from '@/domain/client-brief'
 import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from '@/domain/job-application'
 import { generateBriefForEndClient, getEndClientBrief, updateEndClientNotes } from '@/server/actions/client-brief-actions'
-import { getContactDetails, searchEntities, setEndClientParent, updateContactDetails } from '@/server/actions/entity-actions'
+import {
+  getContactDetails,
+  searchEntities,
+  setEndClientParent,
+  updateContactDetails,
+  updateIntermediaryKind,
+} from '@/server/actions/entity-actions'
 import {
   createInterview,
   deleteInterview,
@@ -106,6 +112,7 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
           setEndClientParent={setEndClientParent}
           getContactDetails={getContactDetails}
           updateContactDetails={updateContactDetails}
+          updateIntermediaryKind={updateIntermediaryKind}
           searchEntities={searchEntities}
         />
         <div className="flex min-w-0 flex-col gap-8">

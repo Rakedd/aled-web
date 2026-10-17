@@ -27,6 +27,7 @@ const buildJobApplication = (overrides: Partial<JobApplicationListItem>): JobApp
   lastActivityAt: null,
   hasJobSpec: false,
   intermediaryName: null,
+  intermediaryKind: null,
   contactName: null,
   endClientName: null,
   endClientParentName: null,

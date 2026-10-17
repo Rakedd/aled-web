@@ -7,6 +7,7 @@ import { StackChipsEditor } from '@/components/stack-chips-editor'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { INTERMEDIARY_KIND_LABELS, INTERMEDIARY_KINDS } from '@/domain/entities'
 import { useController } from './controller'
 import type { ContactFormValueName, MissionInfoFormProps, MissionInfoTextValueName } from './interfaces'
 
@@ -23,6 +24,7 @@ export const MissionInfoForm = ({
   setEndClientParent,
   getContactDetails,
   updateContactDetails,
+  updateIntermediaryKind,
   searchEntities,
 }: MissionInfoFormProps) => {
   const router = useRouter()
@@ -41,12 +43,17 @@ export const MissionInfoForm = ({
     isSavingContact,
     contactErrorMessage,
     saveContact,
+    intermediaryKind,
+    isIntermediaryKindDisabled,
+    intermediaryKindErrorMessage,
+    changeIntermediaryKind,
   } = useController({
     jobApplication,
     updateJobApplication,
     setEndClientParent,
     getContactDetails,
     updateContactDetails,
+    updateIntermediaryKind,
     onDataChanged: router.refresh,
   })
 
@@ -130,6 +137,30 @@ export const MissionInfoForm = ({
             placeholder: 'https://',
           })}
           {renderEntityField('intermediaryName', 'intermediary', 'Intermédiaire')}
+          <FormField htmlFor="mission-info-intermediaryKind" label="Type d'intermédiaire">
+            <select
+              id="mission-info-intermediaryKind"
+              className="h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30"
+              value={intermediaryKind ?? ''}
+              disabled={isIntermediaryKindDisabled}
+              aria-describedby={intermediaryKindErrorMessage ? 'mission-info-intermediaryKind-error' : undefined}
+              onChange={(changeEvent) => void changeIntermediaryKind(changeEvent.target.value)}
+            >
+              <option value="" disabled>
+                Non précisé
+              </option>
+              {INTERMEDIARY_KINDS.map((intermediaryKindOption) => (
+                <option key={intermediaryKindOption} value={intermediaryKindOption}>
+                  {INTERMEDIARY_KIND_LABELS[intermediaryKindOption]}
+                </option>
+              ))}
+            </select>
+            {intermediaryKindErrorMessage && (
+              <p id="mission-info-intermediaryKind-error" role="alert" className="text-sm text-destructive">
+                {intermediaryKindErrorMessage}
+              </p>
+            )}
+          </FormField>
           {renderEntityField('contactName', 'contact', 'Contact')}
           {renderEntityField('endClientName', 'end_client', 'Client final')}
           {renderTextInput('endClientParentName', 'Groupe du client final', {

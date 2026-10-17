@@ -2,7 +2,7 @@ import type { ActionResult } from '@/domain/action-result'
 import type { SearchEntities } from '@/components/entity-autocomplete/interfaces'
 import type { ContactDetails, ContactDetailsInput } from '@/domain/entities'
 import type { JobApplicationInput, JobApplicationOverview } from '@/domain/job-application'
-import type { StackItem } from '@/domain/types'
+import type { IntermediaryKind, StackItem } from '@/domain/types'
 
 export type UpdateJobApplication = (
   jobApplicationId: string,
@@ -14,6 +14,8 @@ export type SetEndClientParent = (endClientId: string, parentEndClientId: string
 export type GetContactDetails = (contactId: string) => Promise<ActionResult<ContactDetails>>
 
 export type UpdateContactDetails = (contactId: string, input: ContactDetailsInput) => Promise<ActionResult<null>>
+
+export type UpdateIntermediaryKind = (intermediaryId: string, kind: IntermediaryKind) => Promise<ActionResult<null>>
 
 export type MissionInfoFormValues = {
   title: string
@@ -51,6 +53,7 @@ export type MissionInfoFormControllerParameters = {
   setEndClientParent: SetEndClientParent
   getContactDetails: GetContactDetails
   updateContactDetails: UpdateContactDetails
+  updateIntermediaryKind: UpdateIntermediaryKind
   onDataChanged: () => void
 }
 

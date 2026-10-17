@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
-import { validateContactDetailsInput } from '@/domain/entities'
+import { validateContactDetailsInput, validateIntermediaryKind } from '@/domain/entities'
 import { validateJobApplicationUpdateInput, type JobApplicationOverview } from '@/domain/job-application'
 import { formatParisCalendarDate, parseParisCalendarDate } from '@/domain/paris-time'
-import type { StackItem } from '@/domain/types'
+import type { IntermediaryKind, StackItem } from '@/domain/types'
 import type {
   ContactFormValueName,
   ContactFormValues,
@@ -143,6 +143,7 @@ export const useController = ({
   setEndClientParent,
   getContactDetails,
   updateContactDetails,
+  updateIntermediaryKind,
   onDataChanged,
 }: MissionInfoFormControllerParameters) => {
   const [baselineFormValues, setBaselineFormValues] = useState<MissionInfoFormValues>(() =>
@@ -155,6 +156,9 @@ export const useController = ({
   const [loadedContact, setLoadedContact] = useState<LoadedContact | null>(null)
   const [isSavingContact, setIsSavingContact] = useState(false)
   const [contactErrorMessage, setContactErrorMessage] = useState<string | null>(null)
+  const [chosenIntermediaryKind, setChosenIntermediaryKind] = useState<IntermediaryKind | null>(null)
+  const [isSavingIntermediaryKind, setIsSavingIntermediaryKind] = useState(false)
+  const [intermediaryKindErrorMessage, setIntermediaryKindErrorMessage] = useState<string | null>(null)
   const isSaveInFlightRef = useRef(false)
   const isContactSaveInFlightRef = useRef(false)
   const getContactDetailsRef = useRef(getContactDetails)
@@ -166,6 +170,7 @@ export const useController = ({
   if (syncedJobApplication !== jobApplication) {
     const nextBaselineFormValues = toFormValues(jobApplication)
     setSyncedJobApplication(jobApplication)
+    setChosenIntermediaryKind(null)
     setBaselineFormValues(nextBaselineFormValues)
     setFormValues(mergeServerChanges(baselineFormValues, nextBaselineFormValues, formValues))
   }
@@ -173,6 +178,10 @@ export const useController = ({
   const { contactId } = jobApplication
   const currentLoadedContact = loadedContact !== null && loadedContact.contactId === contactId ? loadedContact : null
   const changedEntries = findChangedEntries(baselineFormValues, formValues)
+  const isIntermediaryKindDisabled =
+    jobApplication.intermediaryId === null ||
+    formValues.intermediaryName !== baselineFormValues.intermediaryName ||
+    isSavingIntermediaryKind
 
   useEffect(() => {
     if (contactId === null) return
@@ -247,6 +256,24 @@ export const useController = ({
     onDataChanged()
   }
 
+  const changeIntermediaryKind = async (selectedIntermediaryKind: string) => {
+    const { intermediaryId } = jobApplication
+    const intermediaryKindValidation = validateIntermediaryKind(selectedIntermediaryKind)
+    if (intermediaryId === null || isIntermediaryKindDisabled || !intermediaryKindValidation.ok) return
+    const intermediaryKind = intermediaryKindValidation.data
+    setIntermediaryKindErrorMessage(null)
+    setChosenIntermediaryKind(intermediaryKind)
+    setIsSavingIntermediaryKind(true)
+    const saveResult = await guardServerCall(() => updateIntermediaryKind(intermediaryId, intermediaryKind))
+    setIsSavingIntermediaryKind(false)
+    if (!saveResult.ok) {
+      setChosenIntermediaryKind(null)
+      setIntermediaryKindErrorMessage(saveResult.errorMessage)
+      return
+    }
+    onDataChanged()
+  }
+
   const setContactFormValue = (valueName: ContactFormValueName, value: string) =>
     setLoadedContact((currentLoadedContact) =>
       currentLoadedContact === null
@@ -302,5 +329,10 @@ export const useController = ({
     isSavingContact,
     contactErrorMessage,
     saveContact,
+    intermediaryKind: chosenIntermediaryKind ?? jobApplication.intermediaryKind,
+    isIntermediaryKindDisabled,
+    isSavingIntermediaryKind,
+    intermediaryKindErrorMessage,
+    changeIntermediaryKind,
   }
 }

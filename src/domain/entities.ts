@@ -33,6 +33,14 @@ export type EntitySearchArguments = { entityKind: EntityKind; query: string }
 
 export const INTERMEDIARY_KINDS: readonly IntermediaryKind[] = ['agency', 'esn', 'platform', 'direct', 'other']
 
+export const INTERMEDIARY_KIND_LABELS: Record<IntermediaryKind, string> = {
+  agency: 'Agence',
+  esn: 'ESN',
+  platform: 'Plateforme',
+  direct: 'Direct',
+  other: 'Autre',
+}
+
 export const MAXIMUM_ENTITY_NAME_LENGTH = 200
 export const MAXIMUM_PHONE_LENGTH = 50
 

@@ -28,7 +28,7 @@ type JobApplicationColumns = Omit<
 >
 
 const JOB_APPLICATION_LIST_ITEM_COLUMNS =
-  'id, user_id, title, source, posting_url, status, intermediary_id, contact_id, end_client_id, posted_daily_rate, requested_daily_rate, location, remote_policy, desired_start, duration, applied_on, notes, actual_start_date, stack, created_at, updated_at, last_activity_at, has_job_spec, intermediary_name, contact_name, end_client_name, end_client_parent_name'
+  'id, user_id, title, source, posting_url, status, intermediary_id, contact_id, end_client_id, posted_daily_rate, requested_daily_rate, location, remote_policy, desired_start, duration, applied_on, notes, actual_start_date, stack, created_at, updated_at, last_activity_at, has_job_spec, intermediary_name, intermediary_kind, contact_name, end_client_name, end_client_parent_name'
 
 const CONCURRENT_STATUS_CHANGE_MESSAGE = 'Le statut a changé entre-temps. Recharge la page et réessaie.'
 
@@ -66,6 +66,7 @@ const toJobApplicationListItem = (overviewRow: JobApplicationListItemRow): JobAp
   lastActivityAt: toDateOrNull(overviewRow.last_activity_at),
   hasJobSpec: overviewRow.has_job_spec ?? false,
   intermediaryName: overviewRow.intermediary_name,
+  intermediaryKind: overviewRow.intermediary_kind,
   contactName: overviewRow.contact_name,
   endClientName: overviewRow.end_client_name,
   endClientParentName: overviewRow.end_client_parent_name,

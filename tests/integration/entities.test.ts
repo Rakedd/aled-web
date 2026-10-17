@@ -6,7 +6,11 @@ import {
   saveIntermediaryKind,
   searchEntitySuggestions,
 } from '@/server/repositories/entities-repository'
-import { findJobApplicationOverview, updateJobApplicationRow } from '@/server/repositories/job-applications-repository'
+import {
+  findJobApplicationOverview,
+  listJobApplicationItems,
+  updateJobApplicationRow,
+} from '@/server/repositories/job-applications-repository'
 import { createSignedInTestClient } from './create-test-user'
 import { createJobApplicationOrFail } from './job-application-fixtures'
 
@@ -232,6 +236,30 @@ describe('entities repository', () => {
 
     const { data: updatedIntermediary } = await user.client.from('intermediaries').select('kind').single()
     expect(updatedIntermediary).toEqual({ kind: 'esn' })
+  })
+
+  it('exposes the intermediary kind in the job application overview and list', async () => {
+    const user = await createTestUser()
+    const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId, { intermediaryName: 'Agence X' })
+    const jobApplicationWithoutIntermediaryId = await createJobApplicationOrFail(user.client, user.userId)
+    const { data: intermediary } = await user.client.from('intermediaries').select('id').single()
+
+    const overviewBeforeKindIsSet = await findJobApplicationOverview(user.client, user.userId, jobApplicationId)
+    expect(overviewBeforeKindIsSet.ok && overviewBeforeKindIsSet.data.intermediaryKind).toBeNull()
+
+    await saveIntermediaryKind(user.client, user.userId, intermediary!.id, 'platform')
+
+    const overviewAfterKindIsSet = await findJobApplicationOverview(user.client, user.userId, jobApplicationId)
+    expect(overviewAfterKindIsSet.ok && overviewAfterKindIsSet.data.intermediaryKind).toBe('platform')
+    const listItems = await listJobApplicationItems(user.client, user.userId)
+    expect(
+      listItems.map((listItem) => ({ id: listItem.id, intermediaryKind: listItem.intermediaryKind })),
+    ).toEqual(
+      expect.arrayContaining([
+        { id: jobApplicationId, intermediaryKind: 'platform' },
+        { id: jobApplicationWithoutIntermediaryId, intermediaryKind: null },
+      ]),
+    )
   })
 
   it("rejects every call made with another user's entity ids and modifies nothing", async () => {

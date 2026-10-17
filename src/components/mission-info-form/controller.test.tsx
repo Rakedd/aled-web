@@ -30,6 +30,7 @@ const JOB_APPLICATION: JobApplicationOverview = {
   lastActivityAt: null,
   hasJobSpec: false,
   intermediaryName: 'Free-Work',
+  intermediaryKind: 'platform',
   contactName: 'Jeanne Martin',
   endClientName: 'Société Générale',
   endClientParentName: 'Groupe SG',
@@ -49,9 +50,11 @@ const SUCCESS: ActionResult<null> = { ok: true, data: null }
 const renderMissionInfoController = ({
   jobApplication = JOB_APPLICATION,
   contactDetailsResult = { ok: true, data: CONTACT_DETAILS },
+  updateIntermediaryKind = jest.fn().mockResolvedValue(SUCCESS),
 }: {
   jobApplication?: JobApplicationOverview
   contactDetailsResult?: ActionResult<ContactDetails>
+  updateIntermediaryKind?: jest.Mock
 } = {}) => {
   const updateJobApplication = jest.fn().mockResolvedValue(SUCCESS)
   const setEndClientParent = jest.fn().mockResolvedValue(SUCCESS)
@@ -66,6 +69,7 @@ const renderMissionInfoController = ({
         setEndClientParent,
         getContactDetails,
         updateContactDetails,
+        updateIntermediaryKind,
         onDataChanged,
       }),
     { initialProps: jobApplication },
@@ -77,6 +81,7 @@ const renderMissionInfoController = ({
     setEndClientParent,
     getContactDetails,
     updateContactDetails,
+    updateIntermediaryKind,
     onDataChanged,
   }
 }
@@ -291,5 +296,68 @@ describe('mission-info-form useController', () => {
     rerender({ ...JOB_APPLICATION })
     expect(getContactDetails).toHaveBeenCalledTimes(1)
     expect(result.current.contactFormValues?.phone).toBe('0699999999')
+  })
+
+  it('shows the stored intermediary kind and lets the user change it', () => {
+    const { result } = renderMissionInfoController()
+    expect(result.current.intermediaryKind).toBe('platform')
+    expect(result.current.isIntermediaryKindDisabled).toBe(false)
+  })
+
+  it('disables the intermediary kind when the application has no intermediary', () => {
+    const { result } = renderMissionInfoController({
+      jobApplication: { ...JOB_APPLICATION, intermediaryId: null, intermediaryName: null, intermediaryKind: null },
+    })
+    expect(result.current.intermediaryKind).toBeNull()
+    expect(result.current.isIntermediaryKindDisabled).toBe(true)
+  })
+
+  it('disables the intermediary kind while the intermediary name has unsaved edits', () => {
+    const { result } = renderMissionInfoController()
+    act(() => result.current.setTextFormValue('intermediaryName', 'Malt'))
+    expect(result.current.isIntermediaryKindDisabled).toBe(true)
+  })
+
+  it('saves the chosen intermediary kind through updateIntermediaryKind and refreshes', async () => {
+    const { result, updateIntermediaryKind, onDataChanged, updateJobApplication } = renderMissionInfoController()
+    await act(() => result.current.changeIntermediaryKind('esn'))
+    expect(updateIntermediaryKind).toHaveBeenCalledWith('intermediary-1', 'esn')
+    expect(updateJobApplication).not.toHaveBeenCalled()
+    expect(result.current.intermediaryKind).toBe('esn')
+    expect(result.current.intermediaryKindErrorMessage).toBeNull()
+    expect(onDataChanged).toHaveBeenCalledTimes(1)
+  })
+
+  it('restores the stored intermediary kind and shows the refusal when the save fails', async () => {
+    const { result, onDataChanged } = renderMissionInfoController({
+      updateIntermediaryKind: jest.fn().mockResolvedValue({ ok: false, errorMessage: 'Intermédiaire introuvable' }),
+    })
+    await act(() => result.current.changeIntermediaryKind('esn'))
+    expect(result.current.intermediaryKind).toBe('platform')
+    expect(result.current.intermediaryKindErrorMessage).toBe('Intermédiaire introuvable')
+    expect(onDataChanged).not.toHaveBeenCalled()
+  })
+
+  it('shows the generic error when saving the intermediary kind throws', async () => {
+    const { result } = renderMissionInfoController({
+      updateIntermediaryKind: jest.fn().mockRejectedValue(new Error('Network down')),
+    })
+    await act(() => result.current.changeIntermediaryKind('agency'))
+    expect(result.current.intermediaryKind).toBe('platform')
+    expect(result.current.intermediaryKindErrorMessage).toBe('Une erreur est survenue, réessaie.')
+    expect(result.current.isSavingIntermediaryKind).toBe(false)
+  })
+
+  it('ignores a value that is not an intermediary kind', async () => {
+    const { result, updateIntermediaryKind } = renderMissionInfoController()
+    await act(() => result.current.changeIntermediaryKind('bank'))
+    expect(updateIntermediaryKind).not.toHaveBeenCalled()
+    expect(result.current.intermediaryKind).toBe('platform')
+  })
+
+  it('adopts the refreshed intermediary kind from the server', () => {
+    const { result, rerender } = renderMissionInfoController()
+    rerender({ ...JOB_APPLICATION, intermediaryKind: 'direct' })
+    expect(result.current.intermediaryKind).toBe('direct')
   })
 })

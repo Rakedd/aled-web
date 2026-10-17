@@ -13,7 +13,7 @@ import {
 } from './input-validation'
 import { isJobApplicationStatus, type JobApplicationStatus } from './job-application-status'
 import { MAX_PASTED_TEXT_LENGTH } from './job-posting-extraction'
-import { STACK_CATEGORIES, type StackItem, type StackItemOrigin } from './types'
+import { type IntermediaryKind, STACK_CATEGORIES, type StackItem, type StackItemOrigin } from './types'
 
 export type JobApplicationOverview = {
   id: string
@@ -41,6 +41,7 @@ export type JobApplicationOverview = {
   lastActivityAt: Date | null
   hasJobSpec: boolean
   intermediaryName: string | null
+  intermediaryKind: IntermediaryKind | null
   contactName: string | null
   endClientName: string | null
   endClientParentName: string | null
