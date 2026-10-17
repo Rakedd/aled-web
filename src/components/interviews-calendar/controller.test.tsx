@@ -49,6 +49,12 @@ describe('toCalendarEvents', () => {
 })
 
 describe('useController', () => {
+  const originalInnerWidth = window.innerWidth
+
+  afterEach(() => {
+    window.innerWidth = originalInnerWidth
+  })
+
   it('reloads the interviews of the newly visible range', async () => {
     const listUpcomingInterviews = jest.fn().mockResolvedValue({ ok: true, data: [buildInterview()] })
     const { result } = renderHook(() => useController({ listUpcomingInterviews }))
@@ -121,6 +127,35 @@ describe('useController', () => {
     act(() => result.current.closePanel())
 
     expect(result.current.revisionPanelContent).toBeNull()
+  })
+
+  it('keeps calendar events identity across panel interactions', async () => {
+    const listUpcomingInterviews = jest.fn().mockResolvedValue({ ok: true, data: [buildInterview()] })
+    const { result } = renderHook(() => useController({ listUpcomingInterviews }))
+    await act(() => result.current.onDatesSet(RANGE_START, RANGE_END))
+    const eventsBeforeInteraction = result.current.calendarEvents
+
+    act(() => result.current.selectInterview('interview-1'))
+    expect(result.current.calendarEvents).toBe(eventsBeforeInteraction)
+
+    act(() => result.current.closePanel())
+    expect(result.current.calendarEvents).toBe(eventsBeforeInteraction)
+  })
+
+  it('removes case-insensitive duplicate stack names within a category', async () => {
+    const stack = [
+      { name: 'React', category: 'framework' as const, origin: 'posting' as const },
+      { name: 'react', category: 'framework' as const, origin: 'job_spec' as const },
+    ]
+    const listUpcomingInterviews = jest.fn().mockResolvedValue({ ok: true, data: [buildInterview({ stack })] })
+    const { result } = renderHook(() => useController({ listUpcomingInterviews }))
+    await act(() => result.current.onDatesSet(RANGE_START, RANGE_END))
+
+    act(() => result.current.selectInterview('interview-1'))
+
+    expect(result.current.revisionPanelContent?.stackGroups).toEqual([
+      { categoryLabel: 'Framework', stackItemNames: ['React'] },
+    ])
   })
 
   it('picks the list view on narrow screens and the month view otherwise', async () => {

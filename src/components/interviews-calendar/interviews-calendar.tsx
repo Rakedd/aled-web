@@ -7,8 +7,9 @@ import frenchLocale from '@fullcalendar/react/locales/fr'
 import themePlugin from '@fullcalendar/react/themes/classic'
 import timeGridPlugin from '@fullcalendar/react/timegrid'
 import { InterviewRevisionPanel } from '@/components/interview-revision-panel'
+import { INTERVIEW_KIND_LABELS, INTERVIEW_KINDS } from '@/domain/interviews'
 import { PARIS_TIME_ZONE } from '@/domain/paris-time'
-import { useController } from './controller'
+import { EVENT_STYLES_BY_KIND, useController } from './controller'
 import type { InterviewsCalendarProps } from './interfaces'
 import '@fullcalendar/react/skeleton.css'
 import '@fullcalendar/react/themes/classic/theme.css'
@@ -28,18 +29,16 @@ export const InterviewsCalendar = ({ listUpcomingInterviews }: InterviewsCalenda
         </p>
       )}
       <ul aria-label="Légende" className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <li className="flex items-center gap-1.5">
-          <span aria-hidden className="size-2.5 rounded-sm bg-[#1d4ed8]" />
-          Entretien client
-        </li>
-        <li className="flex items-center gap-1.5">
-          <span aria-hidden className="size-2.5 rounded-sm bg-[#7e22ce]" />
-          Entretien blanc
-        </li>
-        <li className="flex items-center gap-1.5">
-          <span aria-hidden className="size-2.5 rounded-sm bg-[#475569]" />
-          Autre
-        </li>
+        {INTERVIEW_KINDS.map((interviewKind) => (
+          <li key={interviewKind} className="flex items-center gap-1.5">
+            <span
+              aria-hidden
+              className="size-2.5 rounded-sm"
+              style={{ backgroundColor: EVENT_STYLES_BY_KIND[interviewKind].color }}
+            />
+            {INTERVIEW_KIND_LABELS[interviewKind]}
+          </li>
+        ))}
       </ul>
       {initialView !== null && (
         <FullCalendar

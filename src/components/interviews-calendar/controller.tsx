@@ -1,4 +1,4 @@
-import { useRef, useState, useSyncExternalStore } from 'react'
+import { useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
 import {
   INTERVIEW_FORMAT_LABELS,
@@ -12,7 +12,7 @@ import type { InterviewCalendarEvent, InterviewsCalendarProps, InterviewsCalenda
 
 const NARROW_SCREEN_MAXIMUM_WIDTH_IN_PIXELS = 640
 
-const EVENT_STYLES_BY_KIND: Record<InterviewKind, { className: string; color: string; contrastColor: string }> = {
+export const EVENT_STYLES_BY_KIND: Record<InterviewKind, { className: string; color: string; contrastColor: string }> = {
   client: { className: 'interview-client', color: '#1d4ed8', contrastColor: '#ffffff' },
   mock: { className: 'interview-mock', color: '#7e22ce', contrastColor: '#ffffff' },
   other: { className: 'interview-other', color: '#475569', contrastColor: '#ffffff' },
@@ -29,6 +29,16 @@ export const toCalendarEvents = (interviews: InterviewWithJobApplication[]): Int
     ...EVENT_STYLES_BY_KIND[interview.kind],
   }))
 
+const removeCaseInsensitiveDuplicates = (names: string[]): string[] => {
+  const alreadySeenNames = new Set<string>()
+  return names.filter((name) => {
+    const normalizedName = name.toLowerCase()
+    if (alreadySeenNames.has(normalizedName)) return false
+    alreadySeenNames.add(normalizedName)
+    return true
+  })
+}
+
 const toRevisionPanelContent = (interview: InterviewWithJobApplication): InterviewRevisionPanelContent => ({
   jobApplicationTitle: interview.jobApplicationTitle,
   endClientLabel: interview.endClientLabel,
@@ -37,7 +47,9 @@ const toRevisionPanelContent = (interview: InterviewWithJobApplication): Intervi
   formatLabel: INTERVIEW_FORMAT_LABELS[interview.format],
   stackGroups: STACK_CATEGORIES.map((category) => ({
     categoryLabel: STACK_CATEGORY_LABELS[category],
-    stackItemNames: interview.stack.filter((stackItem) => stackItem.category === category).map(({ name }) => name),
+    stackItemNames: removeCaseInsensitiveDuplicates(
+      interview.stack.filter((stackItem) => stackItem.category === category).map(({ name }) => name),
+    ),
   })).filter((stackGroup) => stackGroup.stackItemNames.length > 0),
   jobApplicationHref: `/candidatures/${interview.jobApplicationId}`,
 })
@@ -54,6 +66,7 @@ export const useController = ({ listUpcomingInterviews }: Pick<InterviewsCalenda
   const [selectedInterview, setSelectedInterview] = useState<InterviewWithJobApplication | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const initialView = useSyncExternalStore(subscribeToNothing, readInitialViewForScreenWidth, readInitialViewOnServer)
+  const calendarEvents = useMemo(() => toCalendarEvents(interviews), [interviews])
   const latestRangeRequestIdRef = useRef(0)
 
   const onDatesSet = async (rangeStart: Date, rangeEnd: Date) => {
@@ -80,7 +93,7 @@ export const useController = ({ listUpcomingInterviews }: Pick<InterviewsCalenda
   const closePanel = () => setSelectedInterview(null)
 
   return {
-    calendarEvents: toCalendarEvents(interviews),
+    calendarEvents,
     revisionPanelContent: selectedInterview === null ? null : toRevisionPanelContent(selectedInterview),
     errorMessage,
     initialView,
