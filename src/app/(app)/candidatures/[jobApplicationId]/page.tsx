@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ActivityLog } from '@/components/activity-log'
 import { JobApplicationHeader } from '@/components/job-application-header'
+import { JobSpecSection } from '@/components/job-spec-section'
 import { MissionInfoForm } from '@/components/mission-info-form'
 import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from '@/domain/job-application'
 import { getContactDetails, searchEntities, setEndClientParent, updateContactDetails } from '@/server/actions/entity-actions'
@@ -12,22 +13,32 @@ import {
   listActivityLogEntries,
   updateJobApplication,
 } from '@/server/actions/job-application-actions'
+import {
+  confirmJobSpecStack,
+  discardPendingJobSpecStack,
+  getJobSpec,
+  getJobSpecDownloadUrl,
+  saveJobSpecText,
+  uploadJobSpecPdf,
+} from '@/server/actions/job-spec-actions'
 
 export const metadata: Metadata = { title: 'Candidature · Freeclutch' }
+
+export const maxDuration = 120
 
 const SectionPlaceholder = ({ name }: { name: string }) => (
   <section aria-label={name} data-slot={name} className="hidden" />
 )
 
-const JobSpecSection = () => <SectionPlaceholder name="JobSpecSection" />
 const ClientBriefSection = () => <SectionPlaceholder name="ClientBriefSection" />
 const InterviewsSection = () => <SectionPlaceholder name="InterviewsSection" />
 
 const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobApplicationId: string }> }) => {
   const { jobApplicationId } = await params
-  const [jobApplicationResult, activityLogEntriesResult] = await Promise.all([
+  const [jobApplicationResult, activityLogEntriesResult, jobSpecResult] = await Promise.all([
     getJobApplication(jobApplicationId),
     listActivityLogEntries(jobApplicationId),
+    getJobSpec(jobApplicationId),
   ])
 
   if (!jobApplicationResult.ok) {
@@ -43,6 +54,14 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
     return (
       <p role="alert" className="text-sm text-destructive">
         {activityLogEntriesResult.errorMessage}
+      </p>
+    )
+  }
+
+  if (!jobSpecResult.ok) {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {jobSpecResult.errorMessage}
       </p>
     )
   }
@@ -66,7 +85,16 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
           searchEntities={searchEntities}
         />
         <div className="flex min-w-0 flex-col gap-8">
-          <JobSpecSection />
+          <JobSpecSection
+            key={jobApplication.id}
+            jobApplicationId={jobApplication.id}
+            jobSpec={jobSpecResult.data}
+            uploadJobSpecPdf={uploadJobSpecPdf}
+            saveJobSpecText={saveJobSpecText}
+            confirmJobSpecStack={confirmJobSpecStack}
+            discardPendingJobSpecStack={discardPendingJobSpecStack}
+            getJobSpecDownloadUrl={getJobSpecDownloadUrl}
+          />
           <ClientBriefSection />
           <InterviewsSection />
         </div>

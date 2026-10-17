@@ -39,3 +39,11 @@ export const toAiErrorKind = (error: unknown): AiErrorKind => {
   if (error.status === REQUEST_TOO_LARGE_STATUS) return 'input_too_long'
   return 'unknown'
 }
+
+export type AiErrorLogContext = { aiErrorKind: AiErrorKind; httpStatus: number | null; errorName: string }
+
+export const describeAiErrorForLogs = (error: unknown): AiErrorLogContext => ({
+  aiErrorKind: toAiErrorKind(error),
+  httpStatus: error instanceof Anthropic.APIError && error.status !== undefined ? error.status : null,
+  errorName: error instanceof Error ? error.constructor.name : typeof error,
+})

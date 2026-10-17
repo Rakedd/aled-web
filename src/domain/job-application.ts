@@ -155,7 +155,7 @@ const toTrimmedStackItem = (stackItem: StackItem): StackItem => ({
 const isAcceptableStackItemName = (stackItem: StackItem): boolean =>
   stackItem.name.length > 0 && stackItem.name.length <= MAXIMUM_STACK_ITEM_NAME_LENGTH
 
-const validateStack = (candidate: unknown): ActionResult<StackItem[]> => {
+export const validateStack = (candidate: unknown): ActionResult<StackItem[]> => {
   const isWellFormedStack =
     Array.isArray(candidate) && candidate.length <= MAXIMUM_STACK_ITEM_COUNT && candidate.every(isStackItem)
   if (!isWellFormedStack) return rejectWith(JOB_APPLICATION_VALIDATION_MESSAGES.invalidStack)

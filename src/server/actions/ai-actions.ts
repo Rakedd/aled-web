@@ -1,11 +1,10 @@
 'use server'
 
 import 'server-only'
-import Anthropic from '@anthropic-ai/sdk'
 import type { ActionResult } from '@/domain/action-result'
 import { AI_ERROR_MESSAGES, type AiErrorKind } from '@/domain/ai-errors'
 import { type JobPostingExtraction, MAX_PASTED_TEXT_LENGTH } from '@/domain/job-posting-extraction'
-import { toAiErrorKind } from '@/server/ai/ai-error'
+import { describeAiErrorForLogs } from '@/server/ai/ai-error'
 import { createAnthropicClient } from '@/server/ai/create-anthropic-client'
 import { extractJobPosting } from '@/server/ai/extract-job-posting'
 import { getDecryptedAnthropicApiKeyForUser } from '@/server/repositories/profile-repository'
@@ -15,11 +14,6 @@ const failWithAiErrorKind = (aiErrorKind: AiErrorKind): ActionResult<never> => (
   ok: false,
   errorMessage: AI_ERROR_MESSAGES[aiErrorKind],
 })
-
-const readHttpStatus = (error: unknown): number | null =>
-  error instanceof Anthropic.APIError && error.status !== undefined ? error.status : null
-
-const readErrorName = (error: unknown): string => (error instanceof Error ? error.constructor.name : typeof error)
 
 export const extractJobPostingForCurrentUser = async (
   rawText: string,
@@ -33,12 +27,8 @@ export const extractJobPostingForCurrentUser = async (
     if (decryptedApiKey === null) return failWithAiErrorKind('missing_api_key')
     return { ok: true, data: await extractJobPosting(createAnthropicClient(decryptedApiKey), pastedText) }
   } catch (extractionError) {
-    const aiErrorKind = toAiErrorKind(extractionError)
-    console.error('Job posting extraction failed', {
-      aiErrorKind,
-      httpStatus: readHttpStatus(extractionError),
-      errorName: readErrorName(extractionError),
-    })
-    return failWithAiErrorKind(aiErrorKind)
+    const aiErrorLogContext = describeAiErrorForLogs(extractionError)
+    console.error('Job posting extraction failed', aiErrorLogContext)
+    return failWithAiErrorKind(aiErrorLogContext.aiErrorKind)
   }
 }
