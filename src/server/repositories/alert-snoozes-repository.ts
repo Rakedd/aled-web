@@ -4,6 +4,7 @@ import { ALERT_SNOOZE_MESSAGES, isSnoozableAlertKind, type SnoozeAlertArguments 
 import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from '@/domain/job-application'
 import { addParisCalendarDays } from '@/domain/paris-time'
 import type { AlertSnooze } from '@/domain/todo-alerts'
+import type { AlertKind } from '@/domain/types'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 import { POSTGRES_FOREIGN_KEY_VIOLATION_CODE, toRepositoryError } from './repository-error'
 
@@ -54,11 +55,13 @@ export const deleteAlertSnoozesForJobApplication = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   jobApplicationId: string,
+  alertKinds: readonly AlertKind[],
 ): Promise<void> => {
   const { error } = await supabase
     .from('alert_snoozes')
     .delete()
     .eq('user_id', userId)
     .eq('job_application_id', jobApplicationId)
+    .in('alert_kind', [...alertKinds])
   if (error) throw toRepositoryError('deleteAlertSnoozesForJobApplication', error)
 }

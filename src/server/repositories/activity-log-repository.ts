@@ -1,6 +1,7 @@
 import 'server-only'
 import type { ActionResult } from '@/domain/action-result'
 import type { ActivityLogEntry, ActivityLogEntryInput } from '@/domain/activity-log'
+import { findAlertKindsClearedByActivity } from '@/domain/alert-snoozes'
 import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from '@/domain/job-application'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 import { deleteAlertSnoozesForJobApplication } from './alert-snoozes-repository'
@@ -24,7 +25,7 @@ export const recordActivityLogEntry = async (
     return { ok: false, errorMessage: JOB_APPLICATION_NOT_FOUND_MESSAGE }
   }
   if (error) throw toRepositoryError('recordActivityLogEntry', error)
-  await deleteAlertSnoozesForJobApplication(supabase, userId, jobApplicationId)
+  await deleteAlertSnoozesForJobApplication(supabase, userId, jobApplicationId, findAlertKindsClearedByActivity(kind))
   return { ok: true, data: null }
 }
 

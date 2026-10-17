@@ -1,7 +1,7 @@
 import type { ActionResult } from './action-result'
 import { rejectWith } from './input-validation'
 import { validateJobApplicationId } from './job-application'
-import type { AlertKind } from './types'
+import type { ActivityKind, AlertKind } from './types'
 
 export const SNOOZE_DURATIONS_IN_DAYS = [3, 7] as const
 
@@ -28,6 +28,11 @@ export const ALERT_SNOOZE_MESSAGES = {
 } as const
 
 export const isSnoozableAlertKind = (alertKind: AlertKind): boolean => alertKind !== 'upcoming_interview'
+
+const ALERT_KINDS_CLEARED_BY_MANUAL_EXCHANGE: readonly AlertKind[] = ['follow_up_due', 'no_news_suggestion']
+
+export const findAlertKindsClearedByActivity = (activityKind: ActivityKind): readonly AlertKind[] =>
+  activityKind === 'status_change' ? ALERT_KINDS : ALERT_KINDS_CLEARED_BY_MANUAL_EXCHANGE
 
 export const validateSnoozeAlertArguments = (
   jobApplicationIdCandidate: unknown,

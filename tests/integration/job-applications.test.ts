@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import type { AlertKind } from '@/domain/types'
 import {
   listActivityLogEntriesForJobApplication,
   recordActivityLogEntry,
@@ -16,6 +17,16 @@ import { createJobApplicationOrFail } from './job-application-fixtures'
 jest.mock('server-only', () => ({}))
 
 const createTestUser = () => createSignedInTestClient(`job-applications-${randomUUID()}@test.local`)
+
+const snoozeAlertKinds = async (
+  user: Awaited<ReturnType<typeof createTestUser>>,
+  jobApplicationId: string,
+  alertKinds: AlertKind[],
+) => {
+  for (const alertKind of alertKinds) {
+    await snoozeJobApplicationAlert(user.client, user.userId, { jobApplicationId, alertKind, snoozeDays: 7 }, new Date())
+  }
+}
 
 describe('job applications repository', () => {
   it('creates a job application and reads it back with every field mapped', async () => {
@@ -141,15 +152,10 @@ describe('job applications repository', () => {
     })
   })
 
-  it('changes the status with exactly one status_change entry and clears the snoozes', async () => {
+  it('changes the status with exactly one status_change entry and clears every snooze', async () => {
     const user = await createTestUser()
     const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId, { status: 'intermediary_contact' })
-    await snoozeJobApplicationAlert(
-      user.client,
-      user.userId,
-      { jobApplicationId, alertKind: 'follow_up_due', snoozeDays: 3 },
-      new Date(),
-    )
+    await snoozeAlertKinds(user, jobApplicationId, ['follow_up_due', 'job_spec_missing', 'end_client_unknown'])
 
     await expect(changeJobApplicationStatusRow(user.client, user.userId, jobApplicationId, 'cv_submitted')).resolves.toEqual({
       ok: true,
@@ -180,15 +186,15 @@ describe('job applications repository', () => {
     })
   })
 
-  it('updates lastActivityAt and clears the snoozes when an activity is logged', async () => {
+  it('updates lastActivityAt and clears only the follow-up and no-news snoozes when an exchange is logged', async () => {
     const user = await createTestUser()
     const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
-    await snoozeJobApplicationAlert(
-      user.client,
-      user.userId,
-      { jobApplicationId, alertKind: 'no_news_suggestion', snoozeDays: 7 },
-      new Date(),
-    )
+    await snoozeAlertKinds(user, jobApplicationId, [
+      'follow_up_due',
+      'no_news_suggestion',
+      'job_spec_missing',
+      'end_client_unknown',
+    ])
     const occurredAt = new Date('2026-10-15T09:30:00Z')
 
     await expect(
@@ -197,7 +203,11 @@ describe('job applications repository', () => {
 
     const overviews = await listJobApplicationItems(user.client, user.userId)
     expect(overviews.find((overview) => overview.id === jobApplicationId)?.lastActivityAt).toEqual(occurredAt)
-    await expect(listActiveAlertSnoozes(user.client, user.userId, new Date())).resolves.toEqual([])
+    const remainingSnoozes = await listActiveAlertSnoozes(user.client, user.userId, new Date())
+    expect(remainingSnoozes.map((alertSnooze) => alertSnooze.alertKind).sort()).toEqual([
+      'end_client_unknown',
+      'job_spec_missing',
+    ])
   })
 
   it('lists activity log entries from the most recent to the oldest', async () => {

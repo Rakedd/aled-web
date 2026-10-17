@@ -1,4 +1,4 @@
-import { isSnoozableAlertKind, validateSnoozeAlertArguments } from './alert-snoozes'
+import { findAlertKindsClearedByActivity, isSnoozableAlertKind, validateSnoozeAlertArguments } from './alert-snoozes'
 
 const jobApplicationId = '6f1c2d3e-4b5a-4c6d-8e7f-9a0b1c2d3e4f'
 
@@ -11,6 +11,25 @@ describe('isSnoozableAlertKind', () => {
     expect(isSnoozableAlertKind('follow_up_due')).toBe(true)
     expect(isSnoozableAlertKind('no_news_suggestion')).toBe(true)
   })
+})
+
+describe('findAlertKindsClearedByActivity', () => {
+  it('clears every alert kind when the status changes', () => {
+    expect(findAlertKindsClearedByActivity('status_change')).toEqual([
+      'follow_up_due',
+      'job_spec_missing',
+      'end_client_unknown',
+      'upcoming_interview',
+      'no_news_suggestion',
+    ])
+  })
+
+  it.each(['call', 'message', 'email', 'other'] as const)(
+    'clears only the follow-up and no-news alerts after a manual %s exchange',
+    (activityKind) => {
+      expect(findAlertKindsClearedByActivity(activityKind)).toEqual(['follow_up_due', 'no_news_suggestion'])
+    },
+  )
 })
 
 describe('validateSnoozeAlertArguments', () => {
