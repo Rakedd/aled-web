@@ -92,4 +92,31 @@ describe('anthropic-api-key-form useController', () => {
     expect(result.current.maskedApiKey).toBe('sk-ant-…9b1c')
     expect(result.current.errorMessage).toBe('Impossible de supprimer la clé')
   })
+
+  it('leaves the saving state and shows the generic error when saving throws', async () => {
+    const saveAnthropicApiKey = jest.fn().mockRejectedValue(new Error('Network down'))
+    const deleteAnthropicApiKey = jest.fn()
+    const { result } = renderHook(() =>
+      useController({ initialApiKeyLastFour: null, saveAnthropicApiKey, deleteAnthropicApiKey }),
+    )
+    act(() => result.current.setApiKeyInput('sk-ant-api03-abcd4f2a'))
+    await act(() => result.current.submitApiKey())
+    expect(result.current.status).toBe('idle')
+    expect(result.current.errorMessage).toBe('Une erreur est survenue, réessaie.')
+    expect(result.current.maskedApiKey).toBeNull()
+  })
+
+  it('leaves the deleting state and keeps the key when the deletion throws', async () => {
+    const saveAnthropicApiKey = jest.fn()
+    const deleteAnthropicApiKey = jest.fn().mockRejectedValue(new Error('Network down'))
+    const { result } = renderHook(() =>
+      useController({ initialApiKeyLastFour: '9b1c', saveAnthropicApiKey, deleteAnthropicApiKey }),
+    )
+    act(() => result.current.requestApiKeyDeletion())
+    await act(() => result.current.confirmApiKeyDeletion())
+    expect(result.current.status).toBe('idle')
+    expect(result.current.isConfirmingDeletion).toBe(false)
+    expect(result.current.errorMessage).toBe('Une erreur est survenue, réessaie.')
+    expect(result.current.maskedApiKey).toBe('sk-ant-…9b1c')
+  })
 })

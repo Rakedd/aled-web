@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
 import { INVALID_EMAIL_ADDRESS_MESSAGE, isValidEmailAddress } from '@/domain/email-address'
 import type { LoginFormControllerParameters, LoginFormStatus } from './interfaces'
 
@@ -21,13 +22,16 @@ export const useController = ({ requestMagicLink }: LoginFormControllerParameter
 
     setStatus('sending')
     setErrorMessage(null)
-    const requestMagicLinkResult = await requestMagicLink(trimmedEmail)
-    if (!requestMagicLinkResult.ok) {
-      showError(requestMagicLinkResult.errorMessage)
-      return
+    try {
+      const requestMagicLinkResult = await requestMagicLink(trimmedEmail)
+      if (!requestMagicLinkResult.ok) {
+        showError(requestMagicLinkResult.errorMessage)
+        return
+      }
+      setStatus('sent')
+    } catch {
+      showError(GENERIC_ACTION_ERROR_MESSAGE)
     }
-
-    setStatus('sent')
   }
 
   return { email, setEmail, submit, status, errorMessage }

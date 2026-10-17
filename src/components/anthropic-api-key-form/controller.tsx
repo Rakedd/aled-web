@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
 import {
   formatMaskedAnthropicApiKey,
   hasAnthropicApiKeyFormat,
@@ -50,16 +51,21 @@ export const useController = ({
       return
     }
     setStatus('saving')
-    const saveResult = await saveAnthropicApiKey(trimmedApiKey)
-    setStatus('idle')
-    if (!saveResult.ok) {
-      setErrorMessage(saveResult.errorMessage)
-      return
+    try {
+      const saveResult = await saveAnthropicApiKey(trimmedApiKey)
+      if (!saveResult.ok) {
+        setErrorMessage(saveResult.errorMessage)
+        return
+      }
+      setApiKeyInput('')
+      setApiKeyLastFour(saveResult.data.lastFour)
+      setIsReplacingApiKey(false)
+      setSuccessMessage(API_KEY_SAVED_MESSAGE)
+    } catch {
+      setErrorMessage(GENERIC_ACTION_ERROR_MESSAGE)
+    } finally {
+      setStatus('idle')
     }
-    setApiKeyInput('')
-    setApiKeyLastFour(saveResult.data.lastFour)
-    setIsReplacingApiKey(false)
-    setSuccessMessage(API_KEY_SAVED_MESSAGE)
   }
 
   const requestApiKeyDeletion = () => {
@@ -72,15 +78,20 @@ export const useController = ({
   const confirmApiKeyDeletion = async () => {
     clearMessages()
     setStatus('deleting')
-    const deletionResult = await deleteAnthropicApiKey()
-    setStatus('idle')
-    setIsConfirmingDeletion(false)
-    if (!deletionResult.ok) {
-      setErrorMessage(deletionResult.errorMessage)
-      return
+    try {
+      const deletionResult = await deleteAnthropicApiKey()
+      if (!deletionResult.ok) {
+        setErrorMessage(deletionResult.errorMessage)
+        return
+      }
+      setApiKeyLastFour(null)
+      setSuccessMessage(API_KEY_DELETED_MESSAGE)
+    } catch {
+      setErrorMessage(GENERIC_ACTION_ERROR_MESSAGE)
+    } finally {
+      setStatus('idle')
+      setIsConfirmingDeletion(false)
     }
-    setApiKeyLastFour(null)
-    setSuccessMessage(API_KEY_DELETED_MESSAGE)
   }
 
   return {

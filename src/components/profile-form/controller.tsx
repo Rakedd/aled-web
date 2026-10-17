@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
 import { type ProfileLink, type ProfileSettings, validateProfileSettingsInput } from '@/domain/profile-settings'
 import type { EditableProfileLinkField, ProfileFormControllerParameters, ProfileFormStatus } from './interfaces'
 
@@ -47,14 +48,19 @@ export const useController = ({ initialProfileSettings, updateProfileSettings }:
       return
     }
     setStatus('saving')
-    const updateResult = await updateProfileSettings(validationResult.data)
-    setStatus('idle')
-    if (!updateResult.ok) {
-      setErrorMessage(updateResult.errorMessage)
-      return
+    try {
+      const updateResult = await updateProfileSettings(validationResult.data)
+      if (!updateResult.ok) {
+        setErrorMessage(updateResult.errorMessage)
+        return
+      }
+      applySavedProfileSettings(updateResult.data)
+      setSuccessMessage(PROFILE_SETTINGS_SAVED_MESSAGE)
+    } catch {
+      setErrorMessage(GENERIC_ACTION_ERROR_MESSAGE)
+    } finally {
+      setStatus('idle')
     }
-    applySavedProfileSettings(updateResult.data)
-    setSuccessMessage(PROFILE_SETTINGS_SAVED_MESSAGE)
   }
 
   return {

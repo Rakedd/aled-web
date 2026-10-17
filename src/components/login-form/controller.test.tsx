@@ -49,6 +49,17 @@ describe('login-form useController', () => {
     expect(result.current.errorMessage).toBe('Service indisponible')
   })
 
+  it('leaves the sending state and shows the generic error when the action throws', async () => {
+    const requestMagicLink = jest.fn().mockRejectedValue(new Error('Network down'))
+    const { result } = renderHook(() => useController({ requestMagicLink }))
+
+    act(() => result.current.setEmail('freelance@example.com'))
+    await act(() => result.current.submit())
+
+    expect(result.current.status).toBe('error')
+    expect(result.current.errorMessage).toBe('Une erreur est survenue, réessaie.')
+  })
+
   it('is sending while the action is pending', async () => {
     let resolveRequestMagicLink: (actionResult: ActionResult<null>) => void = () => undefined
     const requestMagicLink = jest.fn(

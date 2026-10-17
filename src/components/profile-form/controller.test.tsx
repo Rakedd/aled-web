@@ -78,6 +78,15 @@ describe('profile-form useController', () => {
     expect(result.current.links).toEqual([{ label: 'Second', url: '' }])
   })
 
+  it('leaves the saving state and shows the generic error when the action throws', async () => {
+    const updateProfileSettings = jest.fn().mockRejectedValue(new Error('Network down'))
+    const { result } = renderHook(() => useController({ initialProfileSettings, updateProfileSettings }))
+    await act(() => result.current.submit())
+    expect(result.current.status).toBe('idle')
+    expect(result.current.errorMessage).toBe('Une erreur est survenue, réessaie.')
+    expect(result.current.successMessage).toBeNull()
+  })
+
   it('relays the server error message', async () => {
     const { result } = renderProfileFormController({ ok: false, errorMessage: 'Service indisponible' })
     await act(() => result.current.submit())
