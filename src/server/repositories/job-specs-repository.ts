@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import type { ActionResult } from '@/domain/action-result'
 import { rejectWith } from '@/domain/input-validation'
 import { isStackItem, JOB_APPLICATION_NOT_FOUND_MESSAGE } from '@/domain/job-application'
-import { JOB_SPEC_MESSAGES, JOB_SPEC_PDF_MIME_TYPE, type JobSpec } from '@/domain/job-spec'
+import { JOB_SPEC_MESSAGES, JOB_SPEC_PDF_MIME_TYPE, JOB_SPECS_BUCKET, type JobSpec } from '@/domain/job-spec'
 import type { StackItem } from '@/domain/types'
 import type { Json } from '@/server/supabase/database-types'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
@@ -13,7 +13,6 @@ export type JobSpecContent = { sourceKind: 'pdf'; storagePath: string } | { sour
 
 type StorageFailure = { status?: number }
 
-const JOB_SPECS_BUCKET = 'job-specs'
 const SIGNED_URL_VALIDITY_IN_SECONDS = 5 * 60
 
 const toStorageRepositoryError = (operationName: string, storageFailure: StorageFailure): Error =>

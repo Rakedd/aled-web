@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { JOB_SPECS_BUCKET } from '@/domain/job-spec'
 import { buildUserDataSnapshot, type UserDataSnapshot } from '@/server/data-snapshot/build-user-data-snapshot'
 import type { Database } from '@/server/supabase/database-types'
 import { restoreUserDataSnapshot } from '../../scripts/restore-user-data-snapshot'
 import { createServiceRoleTestClient, createSignedInTestClient } from './create-test-user'
 import {
-  JOB_SPECS_BUCKET,
   seedEveryUserTable,
   STORED_API_KEY_LAST_FOUR,
   STORED_ENCRYPTED_API_KEY,

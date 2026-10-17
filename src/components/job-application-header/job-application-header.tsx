@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
+  ALL_JOB_APPLICATION_STATUSES,
   JOB_APPLICATION_STATUS_LABELS,
   PIPELINE_STATUSES,
   isJobApplicationStatus,
@@ -14,7 +15,6 @@ import { StatusBadge } from '@/components/status-badge'
 import { useController } from './controller'
 import type { JobApplicationHeaderProps } from './interfaces'
 
-const ALL_STATUSES = Object.keys(JOB_APPLICATION_STATUS_LABELS).filter(isJobApplicationStatus)
 const STATUS_SELECT_ID = 'job-application-header-status'
 
 const getStepState = (step: JobApplicationStatus, currentStatus: JobApplicationStatus) => {
@@ -116,7 +116,7 @@ export const JobApplicationHeader = ({
               if (isJobApplicationStatus(changeEvent.target.value)) void changeStatus(changeEvent.target.value)
             }}
           >
-            {ALL_STATUSES.map((status) => (
+            {ALL_JOB_APPLICATION_STATUSES.map((status) => (
               <option key={status} value={status}>
                 {JOB_APPLICATION_STATUS_LABELS[status]}
               </option>

@@ -1,4 +1,4 @@
-import { JOB_APPLICATION_STATUS_LABELS, isTerminalStatus, type JobApplicationStatus } from './job-application-status'
+import { ALL_JOB_APPLICATION_STATUSES, isTerminalStatus, type JobApplicationStatus } from './job-application-status'
 import type { JobApplicationListItem } from './job-application'
 import { normalizeEntityName } from './entity-names'
 
@@ -25,8 +25,6 @@ export type JobApplicationsSort = {
 }
 
 type SortableValue = string | number | null
-
-const STATUS_DISPLAY_ORDER = Object.keys(JOB_APPLICATION_STATUS_LABELS)
 
 const getSearchableTexts = (jobApplication: JobApplicationListItem): (string | null)[] => [
   jobApplication.title,
@@ -62,7 +60,7 @@ const getSortableValue = (jobApplication: JobApplicationListItem, sortKey: JobAp
     case 'lastActivityAt':
       return jobApplication.lastActivityAt?.getTime() ?? null
     case 'status':
-      return STATUS_DISPLAY_ORDER.indexOf(jobApplication.status)
+      return ALL_JOB_APPLICATION_STATUSES.indexOf(jobApplication.status)
     default:
       return jobApplication[sortKey]
   }

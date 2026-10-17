@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
 import { MAX_PASTED_TEXT_LENGTH, type JobPostingExtraction } from '@/domain/job-posting-extraction'
 import { AI_ERROR_MESSAGES } from '@/domain/ai-errors'
 import { type JobApplicationInput, validateJobApplicationInput } from '@/domain/job-application'
@@ -12,7 +13,6 @@ import type {
   TextFormValueName,
 } from './interfaces'
 
-export const NEW_JOB_APPLICATION_GENERIC_ERROR_MESSAGE = 'Une erreur est survenue, réessaie.'
 export const EMPTY_PASTED_TEXT_MESSAGE = "Colle le texte de l'annonce ou passe en saisie manuelle"
 
 const createEmptyFormValues = (): JobApplicationFormValues => ({
@@ -112,7 +112,7 @@ export const useController = ({
         ? { formValues: toFormValues(baseFormValues, extractionResult.data), errorMessage: null }
         : { formValues: baseFormValues, errorMessage: extractionResult.errorMessage }
     } catch {
-      return { formValues: baseFormValues, errorMessage: NEW_JOB_APPLICATION_GENERIC_ERROR_MESSAGE }
+      return { formValues: baseFormValues, errorMessage: GENERIC_ACTION_ERROR_MESSAGE }
     }
   }
 
@@ -155,7 +155,7 @@ export const useController = ({
     try {
       return await createJobApplication(validatedInput)
     } catch {
-      return { ok: false, errorMessage: NEW_JOB_APPLICATION_GENERIC_ERROR_MESSAGE } as const
+      return { ok: false, errorMessage: GENERIC_ACTION_ERROR_MESSAGE } as const
     }
   }
 

@@ -1,4 +1,5 @@
 import {
+  ALL_JOB_APPLICATION_STATUSES,
   JOB_APPLICATION_STATUS_LABELS,
   getNextPipelineStatus,
   getSuggestedKoStatuses,
@@ -20,6 +21,22 @@ describe('job application status', () => {
     expect(JOB_APPLICATION_STATUS_LABELS.ko_cv).toBe('KO CV')
     expect(JOB_APPLICATION_STATUS_LABELS.ko_interview).toBe('KO entretien')
     expect(JOB_APPLICATION_STATUS_LABELS.no_news_abandoned).toBe('Sans nouvelles / abandonnée')
+  })
+  it('lists every status once, the pipeline in order then the other terminal statuses', () => {
+    expect(ALL_JOB_APPLICATION_STATUSES).toEqual([
+      'applied',
+      'intermediary_contact',
+      'cv_submitted',
+      'interview_scheduled',
+      'interview_done',
+      'contract_received',
+      'signed',
+      'ko_after_contact',
+      'ko_cv',
+      'ko_interview',
+      'no_news_abandoned',
+    ])
+    expect([...ALL_JOB_APPLICATION_STATUSES].sort()).toEqual(Object.keys(JOB_APPLICATION_STATUS_LABELS).sort())
   })
   it('walks the pipeline in order and stops at signed', () => {
     expect(getNextPipelineStatus('applied')).toBe('intermediary_contact')

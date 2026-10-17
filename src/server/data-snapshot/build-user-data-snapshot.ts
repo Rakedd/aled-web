@@ -1,4 +1,5 @@
 import 'server-only'
+import { JOB_SPECS_BUCKET } from '@/domain/job-spec'
 import { toRepositoryError } from '@/server/repositories/repository-error'
 import type { Tables } from '@/server/supabase/database-types'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
@@ -26,7 +27,6 @@ export type UserDataSnapshot = {
   alertSnoozes: Tables<'alert_snoozes'>[]
 }
 
-const JOB_SPECS_BUCKET = 'job-specs'
 const SNAPSHOT_PROFILE_COLUMNS = 'id, first_name, last_name, email, links, follow_up_delay_days, created_at, updated_at'
 
 const fetchSnapshotProfile = async (

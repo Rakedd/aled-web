@@ -12,7 +12,7 @@ import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from '@/domain/job-application'
 import type { Tables } from '@/server/supabase/database-types'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 import { isJobApplicationOwnedByUser } from './job-application-ownership'
-import { toStackItems } from './job-applications-repository'
+import { parseStoredStackItems } from './job-applications-repository'
 import { POSTGRES_FOREIGN_KEY_VIOLATION_CODE, toRepositoryError } from './repository-error'
 
 type InterviewRow = Pick<
@@ -158,7 +158,7 @@ const toInterviewWithJobApplication = (
         jobApplicationRow.end_client_name === null
           ? null
           : formatEndClientLabel(jobApplicationRow.end_client_name, jobApplicationRow.end_client_parent_name),
-      stack: toStackItems(jobApplicationRow.stack),
+      stack: parseStoredStackItems(jobApplicationRow.stack),
       location: jobApplicationRow.location,
       remotePolicy: jobApplicationRow.remote_policy,
       postedDailyRate: jobApplicationRow.posted_daily_rate,

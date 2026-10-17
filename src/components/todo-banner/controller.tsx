@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import type { ActionResult } from '@/domain/action-result'
+import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
 import type { SnoozeDurationInDays } from '@/domain/alert-snoozes'
 import type { TodoAlert } from '@/domain/todo-alerts'
 import { getTodoAlertKey } from './format-todo-alert'
 import type { TodoBannerControllerParameters } from './interfaces'
-
-export const TODO_BANNER_GENERIC_ERROR_MESSAGE = 'Une erreur est survenue, réessaie.'
 
 export const useController = ({
   initialAlerts,
@@ -34,7 +32,7 @@ export const useController = ({
       const actionResult = await serverAction()
       return actionResult.ok ? null : actionResult.errorMessage
     } catch {
-      return TODO_BANNER_GENERIC_ERROR_MESSAGE
+      return GENERIC_ACTION_ERROR_MESSAGE
     } finally {
       setPendingAlertKeys((currentKeys) => currentKeys.filter((currentKey) => currentKey !== alertKey))
     }

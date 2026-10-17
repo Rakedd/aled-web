@@ -39,7 +39,7 @@ const requireOverviewValue = <OverviewValue>(overviewValue: OverviewValue | null
 
 const toDateOrNull = (isoDate: string | null): Date | null => (isoDate === null ? null : new Date(isoDate))
 
-export const toStackItems = (stackJson: Json | null): StackItem[] => (Array.isArray(stackJson) ? stackJson.filter(isStackItem) : [])
+export const parseStoredStackItems = (stackJson: Json | null): StackItem[] => (Array.isArray(stackJson) ? stackJson.filter(isStackItem) : [])
 
 const toJobApplicationListItem = (overviewRow: JobApplicationListItemRow): JobApplicationListItem => ({
   id: requireOverviewValue(overviewRow.id, 'id'),
@@ -60,7 +60,7 @@ const toJobApplicationListItem = (overviewRow: JobApplicationListItemRow): JobAp
   appliedOn: parseParisCalendarDate(requireOverviewValue(overviewRow.applied_on, 'applied_on')),
   notes: overviewRow.notes,
   actualStartDate: overviewRow.actual_start_date === null ? null : parseParisCalendarDate(overviewRow.actual_start_date),
-  stack: toStackItems(overviewRow.stack),
+  stack: parseStoredStackItems(overviewRow.stack),
   createdAt: new Date(requireOverviewValue(overviewRow.created_at, 'created_at')),
   updatedAt: new Date(requireOverviewValue(overviewRow.updated_at, 'updated_at')),
   lastActivityAt: toDateOrNull(overviewRow.last_activity_at),

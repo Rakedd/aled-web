@@ -43,6 +43,11 @@ const TERMINAL_STATUSES: readonly JobApplicationStatus[] = [
   'no_news_abandoned',
 ]
 
+export const ALL_JOB_APPLICATION_STATUSES: readonly JobApplicationStatus[] = [
+  ...PIPELINE_STATUSES,
+  ...TERMINAL_STATUSES.filter((terminalStatus) => !PIPELINE_STATUSES.includes(terminalStatus)),
+]
+
 const SUGGESTED_KO_STATUSES_BY_STATUS: Partial<Record<JobApplicationStatus, JobApplicationStatus[]>> = {
   applied: ['ko_after_contact', 'no_news_abandoned'],
   intermediary_contact: ['ko_after_contact', 'no_news_abandoned'],

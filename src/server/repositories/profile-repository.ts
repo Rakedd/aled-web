@@ -1,11 +1,10 @@
 import 'server-only'
-import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js'
+import type { PostgrestError } from '@supabase/supabase-js'
 import { isProfileLink, type ProfileLink, type ProfileSettings, type ProfileSettingsInput } from '@/domain/profile-settings'
 import { decryptApiKey, readApiKeyEncryptionSecret } from '@/server/crypto/api-key-encryption'
 import { createServerSupabaseClient } from '@/server/supabase/create-server-supabase-client'
-import type { Database, Json, Tables } from '@/server/supabase/database-types'
-
-type FreeclutchSupabaseClient = SupabaseClient<Database>
+import type { Json, Tables } from '@/server/supabase/database-types'
+import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 
 type ProfileSettingsRow = Pick<
   Tables<'profiles'>,

@@ -1,12 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js'
+import { JOB_SPECS_BUCKET } from '@/domain/job-spec'
 import type { Database } from '@/server/supabase/database-types'
 
 export type TestUser = { client: SupabaseClient<Database>; userId: string }
 
 export type SeededUserData = { jobApplicationId: string; pdfStoragePath: string }
-
-export const JOB_SPECS_BUCKET = 'job-specs'
 
 export const STORED_ENCRYPTED_API_KEY = 'chiffre-ne-doit-jamais-sortir'
 

@@ -28,11 +28,10 @@ import {
   listJobApplicationItems,
   updateJobApplicationRow,
 } from '@/server/repositories/job-applications-repository'
-import { runAuthenticatedOperation } from './run-authenticated-operation'
+import { NO_ARGUMENTS, runAuthenticatedOperation } from './run-authenticated-operation'
 
 const LOAD_FAILURE_MESSAGE = 'Impossible de charger les candidatures pour le moment. Réessaie dans quelques minutes.'
 const SAVE_FAILURE_MESSAGE = "Impossible d'enregistrer la candidature pour le moment. Réessaie dans quelques minutes."
-const NO_ARGUMENTS: ActionResult<null> = { ok: true, data: null }
 
 export const listJobApplications = async (): Promise<ActionResult<JobApplicationListItem[]>> =>
   runAuthenticatedOperation({

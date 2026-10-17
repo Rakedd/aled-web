@@ -8,18 +8,18 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MAX_PASTED_TEXT_LENGTH } from '@/domain/job-posting-extraction'
-import { JOB_APPLICATION_STATUS_LABELS, type JobApplicationStatus } from '@/domain/job-application-status'
+import {
+  ALL_JOB_APPLICATION_STATUSES,
+  JOB_APPLICATION_STATUS_LABELS,
+  isJobApplicationStatus,
+} from '@/domain/job-application-status'
 import { useController } from './controller'
 import type { NewJobApplicationFormProps, TextFormValueName } from './interfaces'
 
 const SOURCE_SUGGESTIONS = ['Free-Work', 'Collective', 'LeHibou', 'Malt', 'LinkedIn', 'Bouche-à-oreille', 'Autre']
 const SOURCE_SUGGESTIONS_LIST_ID = 'new-job-application-source-suggestions'
-const ALL_STATUSES = Object.keys(JOB_APPLICATION_STATUS_LABELS) as JobApplicationStatus[]
 const CONTROL_CLASS_NAME =
   'rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30'
-
-const isJobApplicationStatus = (candidate: string): candidate is JobApplicationStatus =>
-  ALL_STATUSES.some((status) => status === candidate)
 
 const FormField = ({ htmlFor, label, children }: { htmlFor: string; label: string; children: ReactNode }) => (
   <div className="flex min-w-0 flex-col gap-2">
@@ -165,7 +165,7 @@ export const NewJobApplicationForm = ({
               if (isJobApplicationStatus(changeEvent.target.value)) setStatus(changeEvent.target.value)
             }}
           >
-            {ALL_STATUSES.map((status) => (
+            {ALL_JOB_APPLICATION_STATUSES.map((status) => (
               <option key={status} value={status}>
                 {JOB_APPLICATION_STATUS_LABELS[status]}
               </option>

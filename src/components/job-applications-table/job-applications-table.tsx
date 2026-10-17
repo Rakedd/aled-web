@@ -8,9 +8,9 @@ import { StatusBadge } from '@/components/status-badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
+  ALL_JOB_APPLICATION_STATUSES,
   JOB_APPLICATION_STATUS_LABELS,
   isTerminalStatus,
-  type JobApplicationStatus,
 } from '@/domain/job-application-status'
 import type { JobApplicationsSortKey } from '@/domain/job-applications-filters'
 import { PARIS_TIME_ZONE, formatRelativeDaysAgo } from '@/domain/paris-time'
@@ -28,7 +28,6 @@ const COLUMNS: { sortKey: JobApplicationsSortKey; label: string }[] = [
   { sortKey: 'lastActivityAt', label: 'Dernier échange' },
 ]
 
-const ALL_STATUSES = Object.keys(JOB_APPLICATION_STATUS_LABELS) as JobApplicationStatus[]
 const EMPTY_CELL = '—'
 
 export const JobApplicationsTable = ({ jobApplications, now }: JobApplicationsTableProps) => {
@@ -45,7 +44,7 @@ export const JobApplicationsTable = ({ jobApplications, now }: JobApplicationsTa
     toggleSort,
   } = useController({ jobApplications })
 
-  const selectableStatuses = ALL_STATUSES.filter((status) => filters.showTerminal || !isTerminalStatus(status))
+  const selectableStatuses = ALL_JOB_APPLICATION_STATUSES.filter((status) => filters.showTerminal || !isTerminalStatus(status))
 
   const openJobApplicationFromRow = (clickEvent: MouseEvent<HTMLTableRowElement>, jobApplicationId: string) => {
     if (clickEvent.target instanceof Element && clickEvent.target.closest('a')) return

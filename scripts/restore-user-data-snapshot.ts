@@ -3,13 +3,11 @@ import type {
   UserDataSnapshot,
   UserDataSnapshotJobSpec,
 } from '../src/server/data-snapshot/build-user-data-snapshot'
-import { MAX_JOB_SPEC_PDF_BYTES } from '../src/domain/job-spec'
+import { JOB_SPEC_PDF_MIME_TYPE, JOB_SPECS_BUCKET, MAX_JOB_SPEC_PDF_BYTES } from '../src/domain/job-spec'
 import type { Database, Tables } from '../src/server/supabase/database-types'
 
 type RestoreSupabaseClient = SupabaseClient<Database>
 
-const JOB_SPECS_BUCKET = 'job-specs'
-const JOB_SPEC_PDF_MIME_TYPE = 'application/pdf'
 const SNAPSHOT_TABLE_NAMES = {
   intermediaries: 'intermediaries',
   contacts: 'contacts',

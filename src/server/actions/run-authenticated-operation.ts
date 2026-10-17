@@ -4,6 +4,8 @@ import { createServerSupabaseClient } from '@/server/supabase/create-server-supa
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 import { getAuthenticatedUser } from '@/server/supabase/get-authenticated-user'
 
+export const NO_ARGUMENTS: ActionResult<null> = { ok: true, data: null }
+
 type AuthenticatedOperationOptions<ValidatedArguments, OperationData> = {
   operationName: string
   failureMessage: string

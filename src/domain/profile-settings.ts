@@ -1,4 +1,5 @@
 import type { ActionResult } from './action-result'
+import { isRecord, rejectWith } from './input-validation'
 
 export type ProfileLink = { label: string; url: string }
 
@@ -31,12 +32,7 @@ export const PROFILE_SETTINGS_VALIDATION_MESSAGES = {
   invalidLinkUrl: `Un lien doit commencer par ${REQUIRED_PROFILE_LINK_URL_PREFIX}`,
 } as const
 
-type UnvalidatedRecord = Record<string, unknown>
-
 type ProfileSettingsInputShape = Omit<ProfileSettingsInput, 'followUpDelayDays'> & { followUpDelayDays: unknown }
-
-const isRecord = (candidate: unknown): candidate is UnvalidatedRecord =>
-  typeof candidate === 'object' && candidate !== null && !Array.isArray(candidate)
 
 export const isProfileLink = (candidate: unknown): candidate is ProfileLink =>
   isRecord(candidate) && typeof candidate.label === 'string' && typeof candidate.url === 'string'
@@ -65,8 +61,6 @@ const trimProfileLink = (profileLink: ProfileLink): ProfileLink => ({
   label: profileLink.label.trim(),
   url: profileLink.url.trim(),
 })
-
-const rejectWith = (errorMessage: string): ActionResult<ProfileSettingsInput> => ({ ok: false, errorMessage })
 
 export const validateProfileSettingsInput = (candidate: unknown): ActionResult<ProfileSettingsInput> => {
   if (!isProfileSettingsInputShape(candidate)) return rejectWith(PROFILE_SETTINGS_VALIDATION_MESSAGES.malformedPayload)
