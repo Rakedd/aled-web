@@ -1,5 +1,7 @@
 import type { ActionResult } from './action-result'
+import { normalizeEntityName } from './entity-names'
 import {
+  type TextFieldRule,
   isRecord,
   rejectWith,
   validateOptionalEmailAddress,
@@ -52,6 +54,8 @@ export const ENTITY_NOT_FOUND_MESSAGES = {
   endClient: 'Client final introuvable',
 } as const
 
+const CONTACT_FULL_NAME_TEXT_FIELD_RULE = { label: 'Nom du contact', maximumLength: MAXIMUM_ENTITY_NAME_LENGTH }
+
 const LINKEDIN_URL_ALLOWED_PROTOCOLS = ['https:']
 const MAXIMUM_SEARCH_QUERY_LENGTH = MAXIMUM_ENTITY_NAME_LENGTH
 
@@ -73,14 +77,33 @@ export const wouldCreateEndClientParentCycle = (
   return false
 }
 
+const hasNonEmptyNormalizedName = (entityName: string): boolean => normalizeEntityName(entityName).length > 0
+
+const formatInvalidEntityNameMessage = ({ label }: TextFieldRule): string => `${label} : nom invalide`
+
+export const validateOptionalEntityName = (
+  candidate: unknown,
+  textFieldRule: TextFieldRule,
+  malformedMessage: string,
+): ActionResult<string | null> => {
+  const textValidation = validateOptionalText(candidate, textFieldRule, malformedMessage)
+  if (!textValidation.ok || textValidation.data === null) return textValidation
+  return hasNonEmptyNormalizedName(textValidation.data)
+    ? textValidation
+    : rejectWith(formatInvalidEntityNameMessage(textFieldRule))
+}
+
 export const validateContactDetailsInput = (candidate: unknown): ActionResult<ContactDetailsInput> => {
   if (!isRecord(candidate)) return rejectWith(ENTITY_VALIDATION_MESSAGES.malformedContact)
   const fullNameValidation = validateRequiredText(
     candidate.fullName,
-    { label: 'Nom du contact', maximumLength: MAXIMUM_ENTITY_NAME_LENGTH },
+    CONTACT_FULL_NAME_TEXT_FIELD_RULE,
     ENTITY_VALIDATION_MESSAGES.missingContactName,
   )
   if (!fullNameValidation.ok) return fullNameValidation
+  if (!hasNonEmptyNormalizedName(fullNameValidation.data)) {
+    return rejectWith(formatInvalidEntityNameMessage(CONTACT_FULL_NAME_TEXT_FIELD_RULE))
+  }
   const phoneValidation = validateOptionalText(
     candidate.phone,
     { label: 'Téléphone', maximumLength: MAXIMUM_PHONE_LENGTH },

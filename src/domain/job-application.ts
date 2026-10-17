@@ -1,5 +1,5 @@
 import type { ActionResult } from './action-result'
-import { MAXIMUM_ENTITY_NAME_LENGTH, MAXIMUM_PHONE_LENGTH } from './entities'
+import { MAXIMUM_ENTITY_NAME_LENGTH, MAXIMUM_PHONE_LENGTH, validateOptionalEntityName } from './entities'
 import {
   type TextFieldRule,
   isRecord,
@@ -46,6 +46,8 @@ export type JobApplicationOverview = {
   endClientParentName: string | null
   endClientLabel: string | null
 }
+
+export type JobApplicationListItem = Omit<JobApplicationOverview, 'postingRawText'>
 
 export type JobApplicationInput = {
   title: string
@@ -115,6 +117,9 @@ const TEXT_FIELD_RULES = {
 const validateOptionalTextField = (textFieldRule: TextFieldRule) => (candidate: unknown) =>
   validateOptionalText(candidate, textFieldRule, JOB_APPLICATION_VALIDATION_MESSAGES.invalidText)
 
+const validateOptionalEntityNameField = (textFieldRule: TextFieldRule) => (candidate: unknown) =>
+  validateOptionalEntityName(candidate, textFieldRule, JOB_APPLICATION_VALIDATION_MESSAGES.invalidText)
+
 const validateDailyRate = (candidate: unknown): ActionResult<number | null> => {
   if (candidate === null) return { ok: true, data: null }
   const isValidDailyRate =
@@ -178,13 +183,13 @@ const JOB_APPLICATION_FIELD_VALIDATORS: JobApplicationFieldValidators = {
   notes: validateOptionalTextField(TEXT_FIELD_RULES.notes),
   actualStartDate: validateActualStartDate,
   stack: validateStack,
-  intermediaryName: validateOptionalTextField(TEXT_FIELD_RULES.intermediaryName),
-  contactName: validateOptionalTextField(TEXT_FIELD_RULES.contactName),
+  intermediaryName: validateOptionalEntityNameField(TEXT_FIELD_RULES.intermediaryName),
+  contactName: validateOptionalEntityNameField(TEXT_FIELD_RULES.contactName),
   contactEmail: (candidate) =>
     validateOptionalEmailAddress(candidate, JOB_APPLICATION_VALIDATION_MESSAGES.invalidContactEmail),
   contactPhone: validateOptionalTextField(TEXT_FIELD_RULES.contactPhone),
-  endClientName: validateOptionalTextField(TEXT_FIELD_RULES.endClientName),
-  endClientParentName: validateOptionalTextField(TEXT_FIELD_RULES.endClientParentName),
+  endClientName: validateOptionalEntityNameField(TEXT_FIELD_RULES.endClientName),
+  endClientParentName: validateOptionalEntityNameField(TEXT_FIELD_RULES.endClientParentName),
 }
 
 const JOB_APPLICATION_FIELD_NAMES = Object.keys(JOB_APPLICATION_FIELD_VALIDATORS) as (keyof JobApplicationInput)[]

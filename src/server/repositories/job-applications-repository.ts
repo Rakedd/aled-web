@@ -6,6 +6,7 @@ import {
   isStackItem,
   JOB_APPLICATION_NOT_FOUND_MESSAGE,
   type JobApplicationInput,
+  type JobApplicationListItem,
   type JobApplicationOverview,
 } from '@/domain/job-application'
 import type { JobApplicationStatus } from '@/domain/job-application-status'
@@ -19,10 +20,15 @@ import { toRepositoryError } from './repository-error'
 
 type JobApplicationOverviewRow = Tables<'job_applications_overview'>
 
+type JobApplicationListItemRow = Omit<JobApplicationOverviewRow, 'posting_raw_text'>
+
 type JobApplicationColumns = Omit<
   TablesUpdate<'job_applications'>,
   'id' | 'user_id' | 'status' | 'intermediary_id' | 'contact_id' | 'end_client_id' | 'created_at' | 'updated_at'
 >
+
+const JOB_APPLICATION_LIST_ITEM_COLUMNS =
+  'id, user_id, title, source, posting_url, status, intermediary_id, contact_id, end_client_id, posted_daily_rate, requested_daily_rate, location, remote_policy, desired_start, duration, applied_on, notes, actual_start_date, stack, created_at, updated_at, last_activity_at, has_job_spec, intermediary_name, contact_name, end_client_name, end_client_parent_name'
 
 const CONCURRENT_STATUS_CHANGE_MESSAGE = 'Le statut a changé entre-temps. Recharge la page et réessaie.'
 
@@ -35,13 +41,12 @@ const toDateOrNull = (isoDate: string | null): Date | null => (isoDate === null 
 
 const toStackItems = (stackJson: Json | null): StackItem[] => (Array.isArray(stackJson) ? stackJson.filter(isStackItem) : [])
 
-const toJobApplicationOverview = (overviewRow: JobApplicationOverviewRow): JobApplicationOverview => ({
+const toJobApplicationListItem = (overviewRow: JobApplicationListItemRow): JobApplicationListItem => ({
   id: requireOverviewValue(overviewRow.id, 'id'),
   userId: requireOverviewValue(overviewRow.user_id, 'user_id'),
   title: requireOverviewValue(overviewRow.title, 'title'),
   source: overviewRow.source,
   postingUrl: overviewRow.posting_url,
-  postingRawText: overviewRow.posting_raw_text,
   status: requireOverviewValue(overviewRow.status, 'status'),
   intermediaryId: overviewRow.intermediary_id,
   contactId: overviewRow.contact_id,
@@ -70,6 +75,11 @@ const toJobApplicationOverview = (overviewRow: JobApplicationOverviewRow): JobAp
       : formatEndClientLabel(overviewRow.end_client_name, overviewRow.end_client_parent_name),
 })
 
+const toJobApplicationOverview = (overviewRow: JobApplicationOverviewRow): JobApplicationOverview => ({
+  ...toJobApplicationListItem(overviewRow),
+  postingRawText: overviewRow.posting_raw_text,
+})
+
 const toJobApplicationColumns = (input: Partial<JobApplicationInput>): JobApplicationColumns => ({
   title: input.title,
   source: input.source,
@@ -93,18 +103,18 @@ const toJobApplicationColumns = (input: Partial<JobApplicationInput>): JobApplic
 const hasAnyDefinedValue = (columns: Record<string, unknown>): boolean =>
   Object.values(columns).some((columnValue) => columnValue !== undefined)
 
-export const listJobApplicationOverviews = async (
+export const listJobApplicationItems = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
-): Promise<JobApplicationOverview[]> => {
+): Promise<JobApplicationListItem[]> => {
   const { data, error } = await supabase
     .from('job_applications_overview')
-    .select('*')
+    .select(JOB_APPLICATION_LIST_ITEM_COLUMNS)
     .eq('user_id', userId)
     .order('applied_on', { ascending: false })
     .order('created_at', { ascending: false })
-  if (error) throw toRepositoryError('listJobApplicationOverviews', error)
-  return data.map(toJobApplicationOverview)
+  if (error) throw toRepositoryError('listJobApplicationItems', error)
+  return data.map(toJobApplicationListItem)
 }
 
 export const findJobApplicationOverview = async (
@@ -202,6 +212,10 @@ export const updateJobApplicationRow = async (
 ): Promise<ActionResult<null>> => {
   const currentOverviewResult = await findJobApplicationOverview(supabase, userId, jobApplicationId)
   if (!currentOverviewResult.ok) return currentOverviewResult
+  if (input.status !== undefined) {
+    const statusChangeResult = await changeJobApplicationStatusRow(supabase, userId, jobApplicationId, input.status)
+    if (!statusChangeResult.ok) return statusChangeResult
+  }
   const entityColumnsResolution = await resolveJobApplicationEntityColumns(
     supabase,
     userId,
@@ -209,14 +223,12 @@ export const updateJobApplicationRow = async (
   )
   if (!entityColumnsResolution.ok) return entityColumnsResolution
   const columnsToUpdate = { ...toJobApplicationColumns(input), ...entityColumnsResolution.data }
-  if (hasAnyDefinedValue(columnsToUpdate)) {
-    const { error } = await supabase
-      .from('job_applications')
-      .update(columnsToUpdate)
-      .eq('id', jobApplicationId)
-      .eq('user_id', userId)
-    if (error) throw toRepositoryError('updateJobApplicationRow', error)
-  }
-  if (input.status === undefined) return { ok: true, data: null }
-  return changeJobApplicationStatusRow(supabase, userId, jobApplicationId, input.status)
+  if (!hasAnyDefinedValue(columnsToUpdate)) return { ok: true, data: null }
+  const { error } = await supabase
+    .from('job_applications')
+    .update(columnsToUpdate)
+    .eq('id', jobApplicationId)
+    .eq('user_id', userId)
+  if (error) throw toRepositoryError('updateJobApplicationRow', error)
+  return { ok: true, data: null }
 }

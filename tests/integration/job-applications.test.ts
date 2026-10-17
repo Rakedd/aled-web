@@ -7,7 +7,7 @@ import { listActiveAlertSnoozes, snoozeJobApplicationAlert } from '@/server/repo
 import {
   changeJobApplicationStatusRow,
   findJobApplicationOverview,
-  listJobApplicationOverviews,
+  listJobApplicationItems,
   updateJobApplicationRow,
 } from '@/server/repositories/job-applications-repository'
 import { createSignedInTestClient } from './create-test-user'
@@ -56,6 +56,23 @@ describe('job applications repository', () => {
     expect(overviewResult.ok && overviewResult.data.createdAt).toBeInstanceOf(Date)
   })
 
+  it('lists job applications without their posting raw text', async () => {
+    const user = await createTestUser()
+    const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId, {
+      postingRawText: 'Mission React de 6 mois, texte complet',
+    })
+
+    const listItems = await listJobApplicationItems(user.client, user.userId)
+
+    expect(listItems).toHaveLength(1)
+    expect(listItems[0]).toMatchObject({ id: jobApplicationId, title: 'Développeur React' })
+    expect(listItems[0]).not.toHaveProperty('postingRawText')
+    await expect(findJobApplicationOverview(user.client, user.userId, jobApplicationId)).resolves.toMatchObject({
+      ok: true,
+      data: { postingRawText: 'Mission React de 6 mois, texte complet' },
+    })
+  })
+
   it('reuses the same intermediary whatever the case and spacing of its name', async () => {
     const user = await createTestUser()
     const firstJobApplicationId = await createJobApplicationOrFail(user.client, user.userId, {
@@ -69,7 +86,7 @@ describe('job applications repository', () => {
     expect(intermediaries).toHaveLength(1)
     expect(intermediaries?.[0].name).toBe('Agence X')
 
-    const overviews = await listJobApplicationOverviews(user.client, user.userId)
+    const overviews = await listJobApplicationItems(user.client, user.userId)
     const intermediaryIds = overviews
       .filter((overview) => [firstJobApplicationId, secondJobApplicationId].includes(overview.id))
       .map((overview) => overview.intermediaryId)
@@ -178,7 +195,7 @@ describe('job applications repository', () => {
       recordActivityLogEntry(user.client, user.userId, jobApplicationId, { kind: 'call', summary: 'Appel avec Jean', occurredAt }),
     ).resolves.toEqual({ ok: true, data: null })
 
-    const overviews = await listJobApplicationOverviews(user.client, user.userId)
+    const overviews = await listJobApplicationItems(user.client, user.userId)
     expect(overviews.find((overview) => overview.id === jobApplicationId)?.lastActivityAt).toEqual(occurredAt)
     await expect(listActiveAlertSnoozes(user.client, user.userId, new Date())).resolves.toEqual([])
   })
@@ -288,7 +305,7 @@ describe('job applications repository', () => {
     await expect(listActiveAlertSnoozes(owner.client, owner.userId, new Date())).resolves.toEqual([])
     const { data: intruderIntermediaries } = await intruder.client.from('intermediaries').select('id')
     expect(intruderIntermediaries).toEqual([])
-    await expect(listJobApplicationOverviews(intruder.client, intruder.userId)).resolves.toEqual([])
+    await expect(listJobApplicationItems(intruder.client, intruder.userId)).resolves.toEqual([])
   })
 
   it("never lists another user's job applications even when queried with that user's id", async () => {
@@ -296,6 +313,6 @@ describe('job applications repository', () => {
     const intruder = await createTestUser()
     await createJobApplicationOrFail(owner.client, owner.userId)
 
-    await expect(listJobApplicationOverviews(intruder.client, owner.userId)).resolves.toEqual([])
+    await expect(listJobApplicationItems(intruder.client, owner.userId)).resolves.toEqual([])
   })
 })

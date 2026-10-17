@@ -79,6 +79,13 @@ describe('validateContactDetailsInput', () => {
     })
   })
 
+  it('rejects a name whose normalized form is empty', () => {
+    expect(validateContactDetailsInput({ ...validContactDetailsInput, fullName: '\u0301' })).toEqual({
+      ok: false,
+      errorMessage: 'Nom du contact : nom invalide',
+    })
+  })
+
   it('rejects a malformed e-mail', () => {
     expect(validateContactDetailsInput({ ...validContactDetailsInput, email: 'jean@' })).toEqual({
       ok: false,

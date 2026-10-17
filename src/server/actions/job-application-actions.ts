@@ -7,6 +7,7 @@ import { type SnoozeDurationInDays, validateSnoozeAlertArguments } from '@/domai
 import {
   JOB_APPLICATION_VALIDATION_MESSAGES,
   type JobApplicationInput,
+  type JobApplicationListItem,
   type JobApplicationOverview,
   validateJobApplicationId,
   validateJobApplicationInput,
@@ -24,7 +25,7 @@ import {
   changeJobApplicationStatusRow,
   findJobApplicationOverview,
   insertJobApplication,
-  listJobApplicationOverviews,
+  listJobApplicationItems,
   updateJobApplicationRow,
 } from '@/server/repositories/job-applications-repository'
 import { runAuthenticatedOperation } from './run-authenticated-operation'
@@ -33,12 +34,12 @@ const LOAD_FAILURE_MESSAGE = 'Impossible de charger les candidatures pour le mom
 const SAVE_FAILURE_MESSAGE = "Impossible d'enregistrer la candidature pour le moment. Réessaie dans quelques minutes."
 const NO_ARGUMENTS: ActionResult<null> = { ok: true, data: null }
 
-export const listJobApplications = async (): Promise<ActionResult<JobApplicationOverview[]>> =>
+export const listJobApplications = async (): Promise<ActionResult<JobApplicationListItem[]>> =>
   runAuthenticatedOperation({
     operationName: 'listJobApplications',
     failureMessage: LOAD_FAILURE_MESSAGE,
     validateArguments: () => NO_ARGUMENTS,
-    operation: async (supabase, userId) => ({ ok: true, data: await listJobApplicationOverviews(supabase, userId) }),
+    operation: async (supabase, userId) => ({ ok: true, data: await listJobApplicationItems(supabase, userId) }),
   })
 
 export const getJobApplication = async (jobApplicationId: string): Promise<ActionResult<JobApplicationOverview>> =>

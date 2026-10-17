@@ -15,6 +15,10 @@ export type ActivityLogEntryInput = { kind: ActivityKind; summary: string; occur
 
 export const ACTIVITY_KINDS: readonly ActivityKind[] = ['call', 'message', 'email', 'status_change', 'other']
 
+const USER_LOGGABLE_ACTIVITY_KINDS: readonly ActivityKind[] = ACTIVITY_KINDS.filter(
+  (activityKind) => activityKind !== 'status_change',
+)
+
 export const ACTIVITY_LOG_VALIDATION_MESSAGES = {
   malformedPayload: 'Échange invalide',
   invalidKind: "Type d'échange invalide",
@@ -31,7 +35,7 @@ export const formatStatusChangeSummary = (
 
 export const validateActivityLogEntryInput = (candidate: unknown): ActionResult<ActivityLogEntryInput> => {
   if (!isRecord(candidate)) return rejectWith(ACTIVITY_LOG_VALIDATION_MESSAGES.malformedPayload)
-  const kind = ACTIVITY_KINDS.find((activityKind) => activityKind === candidate.kind)
+  const kind = USER_LOGGABLE_ACTIVITY_KINDS.find((activityKind) => activityKind === candidate.kind)
   if (!kind) return rejectWith(ACTIVITY_LOG_VALIDATION_MESSAGES.invalidKind)
   const summaryValidation = validateRequiredText(
     candidate.summary,

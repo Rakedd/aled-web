@@ -43,6 +43,13 @@ describe('validateActivityLogEntryInput', () => {
     })
   })
 
+  it('reserves the status_change kind for status changes', () => {
+    expect(validateActivityLogEntryInput({ kind: 'status_change', summary: 'Statut : Postulé → Signé' })).toEqual({
+      ok: false,
+      errorMessage: "Type d'échange invalide",
+    })
+  })
+
   it('rejects an invalid occurrence date', () => {
     expect(validateActivityLogEntryInput({ kind: 'call', summary: 'Appel', occurredAt: '2026-10-15' })).toEqual({
       ok: false,

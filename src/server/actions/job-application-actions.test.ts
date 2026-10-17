@@ -11,7 +11,7 @@ import {
   changeJobApplicationStatusRow,
   findJobApplicationOverview,
   insertJobApplication,
-  listJobApplicationOverviews,
+  listJobApplicationItems,
   updateJobApplicationRow,
 } from '@/server/repositories/job-applications-repository'
 import { createServerSupabaseClient } from '@/server/supabase/create-server-supabase-client'
@@ -32,7 +32,7 @@ jest.mock('server-only', () => ({}))
 jest.mock('@/server/supabase/get-authenticated-user', () => ({ getAuthenticatedUser: jest.fn() }))
 jest.mock('@/server/supabase/create-server-supabase-client', () => ({ createServerSupabaseClient: jest.fn() }))
 jest.mock('@/server/repositories/job-applications-repository', () => ({
-  listJobApplicationOverviews: jest.fn(),
+  listJobApplicationItems: jest.fn(),
   findJobApplicationOverview: jest.fn(),
   insertJobApplication: jest.fn(),
   updateJobApplicationRow: jest.fn(),
@@ -83,14 +83,14 @@ beforeEach(() => {
 
 describe('listJobApplications', () => {
   it('lists the job applications of the authenticated user', async () => {
-    jest.mocked(listJobApplicationOverviews).mockResolvedValue([])
+    jest.mocked(listJobApplicationItems).mockResolvedValue([])
     await expect(listJobApplications()).resolves.toEqual({ ok: true, data: [] })
-    expect(listJobApplicationOverviews).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1')
+    expect(listJobApplicationItems).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1')
   })
 
   it('returns a generic message when the job applications cannot be loaded', async () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
-    jest.mocked(listJobApplicationOverviews).mockRejectedValue(new Error('Repository failure'))
+    jest.mocked(listJobApplicationItems).mockRejectedValue(new Error('Repository failure'))
     await expect(listJobApplications()).resolves.toEqual({
       ok: false,
       errorMessage: 'Impossible de charger les candidatures pour le moment. Réessaie dans quelques minutes.',

@@ -117,6 +117,18 @@ describe('validateJobApplicationInput', () => {
     })
   })
 
+  it.each([
+    ['intermediaryName', 'Intermédiaire : nom invalide'],
+    ['contactName', 'Contact : nom invalide'],
+    ['endClientName', 'Client final : nom invalide'],
+    ['endClientParentName', 'Groupe : nom invalide'],
+  ])('rejects a %s whose normalized form is empty', (entityNameField, expectedErrorMessage) => {
+    expect(validateJobApplicationInput({ ...validJobApplicationInput, [entityNameField]: '\u0301\u0308' })).toEqual({
+      ok: false,
+      errorMessage: expectedErrorMessage,
+    })
+  })
+
   it('rejects a payload that is not an object', () => {
     expect(validateJobApplicationInput(null)).toEqual({ ok: false, errorMessage: 'Candidature invalide' })
   })
@@ -133,6 +145,13 @@ describe('validateJobApplicationUpdateInput', () => {
     expect(validateJobApplicationUpdateInput({ intermediaryName: null })).toEqual({
       ok: true,
       data: { intermediaryName: null },
+    })
+  })
+
+  it('rejects an entity name whose normalized form is empty', () => {
+    expect(validateJobApplicationUpdateInput({ endClientName: ' \u0301 ' })).toEqual({
+      ok: false,
+      errorMessage: 'Client final : nom invalide',
     })
   })
 
