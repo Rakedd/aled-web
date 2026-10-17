@@ -7,7 +7,10 @@ import {
 } from '@/domain/interviews'
 import { formatParisInterviewDateTime } from '@/domain/paris-time'
 import { STACK_CATEGORIES, STACK_CATEGORY_LABELS, type InterviewKind } from '@/domain/types'
-import type { InterviewRevisionPanelContent } from '@/components/interview-revision-panel/interfaces'
+import type {
+  InterviewRevisionMissionDetail,
+  InterviewRevisionPanelContent,
+} from '@/components/interview-revision-panel/interfaces'
 import type { InterviewCalendarEvent, InterviewsCalendarProps, InterviewsCalendarView } from './interfaces'
 
 const NARROW_SCREEN_MAXIMUM_WIDTH_IN_PIXELS = 640
@@ -39,6 +42,25 @@ const removeCaseInsensitiveDuplicates = (names: string[]): string[] => {
   })
 }
 
+const DAILY_RATE_NUMBER_FORMAT = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 })
+
+const formatDailyRate = (dailyRate: number | null): string | null =>
+  dailyRate === null ? null : `${DAILY_RATE_NUMBER_FORMAT.format(dailyRate)}\u00a0€`
+
+const toMissionDetails = (interview: InterviewWithJobApplication): InterviewRevisionMissionDetail[] => {
+  const candidateMissionDetails: { label: string; value: string | null }[] = [
+    { label: 'Lieu', value: interview.location },
+    { label: 'Télétravail', value: interview.remotePolicy },
+    { label: 'TJM annoncé', value: formatDailyRate(interview.postedDailyRate) },
+    { label: 'TJM demandé', value: formatDailyRate(interview.requestedDailyRate) },
+    { label: 'Démarrage souhaité', value: interview.desiredStart },
+    { label: 'Durée', value: interview.duration },
+  ]
+  return candidateMissionDetails.flatMap(({ label, value }) =>
+    value === null || value.trim().length === 0 ? [] : [{ label, value }],
+  )
+}
+
 const toRevisionPanelContent = (interview: InterviewWithJobApplication): InterviewRevisionPanelContent => ({
   jobApplicationTitle: interview.jobApplicationTitle,
   endClientLabel: interview.endClientLabel,
@@ -51,6 +73,8 @@ const toRevisionPanelContent = (interview: InterviewWithJobApplication): Intervi
       interview.stack.filter((stackItem) => stackItem.category === category).map(({ name }) => name),
     ),
   })).filter((stackGroup) => stackGroup.stackItemNames.length > 0),
+  missionDetails: toMissionDetails(interview),
+  postingRawText: interview.postingRawText,
   jobApplicationHref: `/candidatures/${interview.jobApplicationId}`,
 })
 

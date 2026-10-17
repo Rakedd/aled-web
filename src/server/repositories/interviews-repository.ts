@@ -22,10 +22,24 @@ type InterviewRow = Pick<
 
 type InterviewJobApplicationRow = Pick<
   Tables<'job_applications_overview'>,
-  'id' | 'title' | 'stack' | 'end_client_name' | 'end_client_parent_name'
+  | 'id'
+  | 'title'
+  | 'stack'
+  | 'end_client_name'
+  | 'end_client_parent_name'
+  | 'location'
+  | 'remote_policy'
+  | 'posted_daily_rate'
+  | 'requested_daily_rate'
+  | 'desired_start'
+  | 'duration'
+  | 'posting_raw_text'
 >
 
 const INTERVIEW_COLUMNS = 'id, job_application_id, starts_at, kind, format, participants, notes'
+
+const INTERVIEW_JOB_APPLICATION_COLUMNS =
+  'id, title, stack, end_client_name, end_client_parent_name, location, remote_policy, posted_daily_rate, requested_daily_rate, desired_start, duration, posting_raw_text'
 
 const toInterview = (interviewRow: InterviewRow): Interview => ({
   id: interviewRow.id,
@@ -120,7 +134,7 @@ const findInterviewJobApplicationsByIds = async (
   if (jobApplicationIds.length === 0) return new Map()
   const { data, error } = await supabase
     .from('job_applications_overview')
-    .select('id, title, stack, end_client_name, end_client_parent_name')
+    .select(INTERVIEW_JOB_APPLICATION_COLUMNS)
     .eq('user_id', userId)
     .in('id', jobApplicationIds)
   if (error) throw toRepositoryError('findInterviewJobApplicationsByIds', error)
@@ -145,6 +159,13 @@ const toInterviewWithJobApplication = (
           ? null
           : formatEndClientLabel(jobApplicationRow.end_client_name, jobApplicationRow.end_client_parent_name),
       stack: toStackItems(jobApplicationRow.stack),
+      location: jobApplicationRow.location,
+      remotePolicy: jobApplicationRow.remote_policy,
+      postedDailyRate: jobApplicationRow.posted_daily_rate,
+      requestedDailyRate: jobApplicationRow.requested_daily_rate,
+      desiredStart: jobApplicationRow.desired_start,
+      duration: jobApplicationRow.duration,
+      postingRawText: jobApplicationRow.posting_raw_text,
     },
   ]
 }

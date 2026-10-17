@@ -10,6 +10,11 @@ const content: InterviewRevisionPanelContent = {
   kindLabel: 'Entretien client',
   formatLabel: 'Visio',
   stackGroups: [{ categoryLabel: 'Framework', stackItemNames: ['React'] }],
+  missionDetails: [
+    { label: 'Lieu', value: 'Paris' },
+    { label: 'TJM annoncé', value: '650\u00a0€' },
+  ],
+  postingRawText: 'Mission React pour une foncière',
   jobApplicationHref: '/candidatures/abc',
 }
 
@@ -27,6 +32,31 @@ describe('InterviewRevisionPanel', () => {
     expect(screen.getByText('Acme')).toBeInTheDocument()
     expect(screen.getByText('React')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Ouvrir la candidature' })).toHaveAttribute('href', '/candidatures/abc')
+  })
+
+  it('describes the mission with its details and the original posting in a collapsible block', async () => {
+    render(<InterviewRevisionPanel content={content} onClose={jest.fn()} />)
+
+    const missionSection = screen.getByRole('region', { name: 'Mission' })
+    expect(missionSection).toHaveTextContent('Lieu')
+    expect(missionSection).toHaveTextContent('Paris')
+    expect(missionSection).toHaveTextContent('TJM annoncé')
+    expect(missionSection).toHaveTextContent('650 €')
+    const postingText = screen.getByText('Mission React pour une foncière')
+    expect(postingText).not.toBeVisible()
+
+    await userEvent.click(screen.getByText("Texte original de l'annonce"))
+
+    expect(postingText).toBeVisible()
+  })
+
+  it('says when the mission has no details and hides the posting block without original text', () => {
+    render(
+      <InterviewRevisionPanel content={{ ...content, missionDetails: [], postingRawText: null }} onClose={jest.fn()} />,
+    )
+
+    expect(screen.getByText('Aucun détail renseigné pour cette mission.')).toBeInTheDocument()
+    expect(screen.queryByText("Texte original de l'annonce")).not.toBeInTheDocument()
   })
 
   it('closes on Escape', async () => {

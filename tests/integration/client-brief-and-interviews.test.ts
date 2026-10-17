@@ -182,7 +182,7 @@ describe('interview actions', () => {
     expect(listAfterDeletion.ok && listAfterDeletion.data.map(({ id }) => id)).toEqual([laterInterviewId])
   })
 
-  it('lists the interviews of the period with their job application title, end client and stack', async () => {
+  it('lists the interviews of the period with their job application title, end client, mission description and stack', async () => {
     const user = await createTestUser()
     actAs(user)
     const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId, {
@@ -190,6 +190,13 @@ describe('interview actions', () => {
       endClientName: 'BNP Paribas Real Estate',
       endClientParentName: 'BNP Paribas',
       stack: jobApplicationStack,
+      location: 'Paris',
+      remotePolicy: '2 jours sur site',
+      postedDailyRate: 650,
+      requestedDailyRate: 700,
+      desiredStart: 'ASAP',
+      duration: '6 mois',
+      postingRawText: 'Mission React pour une foncière',
     })
     const insideInterviewId = await createInterviewOrFail(jobApplicationId, buildInterviewInput())
     await createInterviewOrFail(jobApplicationId, buildInterviewInput({ parisLocalDateTime: '2026-11-20T10:00' }))
@@ -210,6 +217,13 @@ describe('interview actions', () => {
           jobApplicationTitle: 'Développeur React senior',
           endClientLabel: 'BNP Paribas Real Estate (BNP Paribas)',
           stack: jobApplicationStack,
+          location: 'Paris',
+          remotePolicy: '2 jours sur site',
+          postedDailyRate: 650,
+          requestedDailyRate: 700,
+          desiredStart: 'ASAP',
+          duration: '6 mois',
+          postingRawText: 'Mission React pour une foncière',
         },
       ],
     })

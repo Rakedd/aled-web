@@ -17,6 +17,13 @@ export type InterviewWithJobApplication = Interview & {
   jobApplicationTitle: string
   endClientLabel: string | null
   stack: StackItem[]
+  location: string | null
+  remotePolicy: string | null
+  postedDailyRate: number | null
+  requestedDailyRate: number | null
+  desiredStart: string | null
+  duration: string | null
+  postingRawText: string | null
 }
 
 export type InterviewInput = {

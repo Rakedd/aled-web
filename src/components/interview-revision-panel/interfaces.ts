@@ -3,6 +3,11 @@ export type InterviewRevisionStackGroup = {
   stackItemNames: string[]
 }
 
+export type InterviewRevisionMissionDetail = {
+  label: string
+  value: string
+}
+
 export type InterviewRevisionPanelContent = {
   jobApplicationTitle: string
   endClientLabel: string | null
@@ -10,6 +15,8 @@ export type InterviewRevisionPanelContent = {
   kindLabel: string
   formatLabel: string
   stackGroups: InterviewRevisionStackGroup[]
+  missionDetails: InterviewRevisionMissionDetail[]
+  postingRawText: string | null
   jobApplicationHref: string
 }
 

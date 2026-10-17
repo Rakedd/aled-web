@@ -28,6 +28,29 @@ export const InterviewRevisionPanel = ({ content, onClose }: InterviewRevisionPa
               <span className="font-medium">Client final : </span>
               {content.endClientLabel ?? 'Non renseigné'}
             </p>
+            <section aria-labelledby="interview-revision-mission-title" className="flex flex-col gap-3">
+              <h3 id="interview-revision-mission-title" className="text-sm font-semibold">
+                Mission
+              </h3>
+              {content.missionDetails.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Aucun détail renseigné pour cette mission.</p>
+              ) : (
+                <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
+                  {content.missionDetails.map((missionDetail) => (
+                    <div key={missionDetail.label} className="contents">
+                      <dt className="font-medium">{missionDetail.label}</dt>
+                      <dd className="break-words">{missionDetail.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {content.postingRawText !== null && (
+                <details className="rounded-lg border border-border p-3">
+                  <summary className="cursor-pointer text-sm font-medium">Texte original de l&apos;annonce</summary>
+                  <p className="mt-3 text-sm break-words whitespace-pre-wrap">{content.postingRawText}</p>
+                </details>
+              )}
+            </section>
             <section aria-labelledby="interview-revision-stack-title" className="flex flex-col gap-3">
               <h3 id="interview-revision-stack-title" className="text-sm font-semibold">
                 Stack à réviser

@@ -20,6 +20,13 @@ const buildInterview = (overrides: Partial<InterviewWithJobApplication> = {}): I
     { name: 'React', category: 'framework', origin: 'posting' },
     { name: 'Next.js', category: 'framework', origin: 'job_spec' },
   ],
+  location: 'Paris',
+  remotePolicy: '2 jours sur site',
+  postedDailyRate: 650,
+  requestedDailyRate: null,
+  desiredStart: 'ASAP',
+  duration: '6 mois',
+  postingRawText: 'Mission React pour une foncière',
   ...overrides,
 })
 
@@ -121,6 +128,14 @@ describe('useController', () => {
         { categoryLabel: 'Langage', stackItemNames: ['TypeScript'] },
         { categoryLabel: 'Framework', stackItemNames: ['React', 'Next.js'] },
       ],
+      missionDetails: [
+        { label: 'Lieu', value: 'Paris' },
+        { label: 'Télétravail', value: '2 jours sur site' },
+        { label: 'TJM annoncé', value: '650\u00a0€' },
+        { label: 'Démarrage souhaité', value: 'ASAP' },
+        { label: 'Durée', value: '6 mois' },
+      ],
+      postingRawText: 'Mission React pour une foncière',
       jobApplicationHref: `/candidatures/${JOB_APPLICATION_ID}`,
     })
 
@@ -140,6 +155,33 @@ describe('useController', () => {
 
     act(() => result.current.closePanel())
     expect(result.current.calendarEvents).toBe(eventsBeforeInteraction)
+  })
+
+  it('lists every filled mission detail, including both daily rates, and nothing for empty ones', async () => {
+    const listUpcomingInterviews = jest.fn().mockResolvedValue({
+      ok: true,
+      data: [
+        buildInterview({
+          location: null,
+          remotePolicy: '  ',
+          postedDailyRate: 0,
+          requestedDailyRate: 1200,
+          desiredStart: null,
+          duration: null,
+          postingRawText: null,
+        }),
+      ],
+    })
+    const { result } = renderHook(() => useController({ listUpcomingInterviews }))
+    await act(() => result.current.onDatesSet(RANGE_START, RANGE_END))
+
+    act(() => result.current.selectInterview('interview-1'))
+
+    expect(result.current.revisionPanelContent?.missionDetails).toEqual([
+      { label: 'TJM annoncé', value: '0\u00a0€' },
+      { label: 'TJM demandé', value: '1\u202f200\u00a0€' },
+    ])
+    expect(result.current.revisionPanelContent?.postingRawText).toBeNull()
   })
 
   it('removes case-insensitive duplicate stack names within a category', async () => {
