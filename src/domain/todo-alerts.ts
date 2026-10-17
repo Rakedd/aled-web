@@ -1,4 +1,3 @@
-import { addDays } from 'date-fns'
 import { isActiveStatus, type JobApplicationStatus } from './job-application-status'
 import { countParisCalendarDaysBetween } from './paris-time'
 import type { AlertKind, InterviewKind } from './types'
@@ -112,11 +111,11 @@ export const computeTodoAlerts = ({
   const activeJobApplicationsById = new Map(
     activeJobApplications.map((jobApplication) => [jobApplication.id, jobApplication]),
   )
-  const upcomingInterviewWindowEnd = addDays(now, UPCOMING_INTERVIEW_WINDOW_DAYS)
-
   const upcomingInterviewAlerts = interviews.flatMap((interview): TodoAlert[] => {
     const jobApplication = activeJobApplicationsById.get(interview.jobApplicationId)
-    const isWithinWindow = interview.startsAt >= now && interview.startsAt <= upcomingInterviewWindowEnd
+    const isWithinWindow =
+      interview.startsAt >= now &&
+      countParisCalendarDaysBetween(now, interview.startsAt) <= UPCOMING_INTERVIEW_WINDOW_DAYS
     if (!jobApplication || !isWithinWindow) return []
     return [
       {

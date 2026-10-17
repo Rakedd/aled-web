@@ -43,6 +43,22 @@ describe('computeTodoAlerts', () => {
     })
     expect(alerts.map((alert) => alert.interviewId ?? alert.kind)).toEqual(['i1', 'i2', 'job_spec_missing'])
   })
+  it('includes an interview on Paris day +7 even later in the day than now', () => {
+    const alerts = computeTodoAlerts({
+      jobApplications: [{ ...baseApplication, status: 'interview_scheduled', lastActivityAt: now }],
+      interviews: [{ id: 'i1', jobApplicationId: 'a1', startsAt: new Date('2026-10-24T14:00:00Z'), kind: 'client' }],
+      snoozes: [], now, followUpDelayDays: 7,
+    })
+    expect(alerts.map((alert) => alert.interviewId)).toEqual(['i1'])
+  })
+  it('excludes an interview on Paris day +8', () => {
+    const alerts = computeTodoAlerts({
+      jobApplications: [{ ...baseApplication, status: 'interview_scheduled', lastActivityAt: now }],
+      interviews: [{ id: 'i1', jobApplicationId: 'a1', startsAt: new Date('2026-10-25T08:00:00Z'), kind: 'client' }],
+      snoozes: [], now, followUpDelayDays: 7,
+    })
+    expect(alerts).toEqual([])
+  })
   it('excludes interviews already past', () => {
     const alerts = computeTodoAlerts({
       jobApplications: [{ ...baseApplication, status: 'interview_scheduled', lastActivityAt: now }],
