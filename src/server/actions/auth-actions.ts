@@ -32,6 +32,10 @@ export const requestMagicLink = async (email: string): Promise<ActionResult<null
     options: { shouldCreateUser: false },
   })
 
+  if (signInError?.code === 'over_email_send_rate_limit') {
+    console.warn('Magic link email throttled', { code: signInError.code })
+  }
+
   if (signInError && !isAccountRevealingError(signInError)) {
     console.error('Magic link request failed', { code: signInError.code, status: signInError.status })
     return { ok: false, errorMessage: MAGIC_LINK_FAILURE_MESSAGE }

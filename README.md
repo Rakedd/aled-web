@@ -130,7 +130,13 @@ Le déploiement se fait à la main, dans cet ordre : Supabase, Google Cloud Stor
    - **Invite user** : `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite`
 
    Le plus simple est de copier le contenu de `supabase/templates/magic-link.html` et `supabase/templates/invite.html` dans les deux modèles, avec les mêmes objets.
-6. Relever dans **Project Settings > API** : l'URL du projet (`SUPABASE_URL`), la clé `anon` (`SUPABASE_ANON_KEY`) et la clé `service_role` (`SUPABASE_SERVICE_ROLE_KEY`, secrète).
+6. Configurer un serveur SMTP personnalisé, **avant d'inviter qui que ce soit**. Le service d'e-mail intégré de Supabase n'envoie qu'aux adresses des membres de l'équipe du projet Supabase, avec une limite de quelques e-mails par heure : sans SMTP personnalisé, les invitations et les liens de connexion envoyés aux amis n'arrivent jamais, sans aucune erreur visible.
+   - Créer un compte chez un fournisseur gratuit, par exemple [Resend](https://resend.com) (3 000 e-mails par mois) ou [Brevo](https://www.brevo.com) (300 e-mails par jour).
+   - Chez ce fournisseur, vérifier le domaine d'envoi (enregistrements DNS SPF et DKIM) ou, à défaut, l'adresse d'expéditeur.
+   - Dans **Authentication > Emails > SMTP Settings**, activer **Enable custom SMTP** et renseigner l'hôte, le port, l'identifiant, le mot de passe (clé SMTP du fournisseur), l'adresse et le nom d'expéditeur.
+   - Dans **Authentication > Rate Limits**, relever la limite d'envoi d'e-mails (« Rate limit for sending emails »), par exemple à 30 par heure : la valeur par défaut reste très basse même avec un SMTP personnalisé.
+   - Vérifier en s'envoyant un lien de connexion à une adresse qui n'est pas membre de l'équipe Supabase. Si l'application affiche un succès sans qu'aucun e-mail n'arrive, les journaux Vercel contiennent l'avertissement `Magic link email throttled` quand la limite d'envoi est atteinte.
+7. Relever dans **Project Settings > API** : l'URL du projet (`SUPABASE_URL`), la clé `anon` (`SUPABASE_ANON_KEY`) et la clé `service_role` (`SUPABASE_SERVICE_ROLE_KEY`, secrète).
 
 ### 2. Sauvegardes sur Google Cloud Storage
 

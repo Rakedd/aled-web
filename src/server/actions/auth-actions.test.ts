@@ -40,12 +40,42 @@ describe('requestMagicLink', () => {
   })
 
   it('reports success when the existing account is throttled, so the throttle cannot reveal the account', async () => {
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
     signInWithOtp.mockResolvedValue({
       data: {},
       error: new AuthApiError('Email rate limit exceeded', 429, 'over_email_send_rate_limit'),
     })
 
     await expect(requestMagicLink('freelance@example.com')).resolves.toEqual({ ok: true, data: null })
+    consoleWarnSpy.mockRestore()
+  })
+
+  it('warns the operator about the email throttle with the error code only, never the email address', async () => {
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    signInWithOtp.mockResolvedValue({
+      data: {},
+      error: new AuthApiError('Email rate limit exceeded', 429, 'over_email_send_rate_limit'),
+    })
+
+    await requestMagicLink('freelance@example.com')
+
+    expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Magic link email throttled', { code: 'over_email_send_rate_limit' })
+    expect(JSON.stringify(consoleWarnSpy.mock.calls)).not.toContain('freelance@example.com')
+    consoleWarnSpy.mockRestore()
+  })
+
+  it('does not warn when an uninvited email is silently accepted', async () => {
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    signInWithOtp.mockResolvedValue({
+      data: {},
+      error: new AuthApiError('Signups not allowed for otp', 422, 'otp_disabled'),
+    })
+
+    await requestMagicLink('stranger@example.com')
+
+    expect(consoleWarnSpy).not.toHaveBeenCalled()
+    consoleWarnSpy.mockRestore()
   })
 
   it.each([undefined, null, 42, { email: 'freelance@example.com' }])(
