@@ -105,3 +105,66 @@ Ce que fait le script :
 - les lignes absentes de la sauvegarde ne sont pas supprimées : pour revenir exactement à l'état sauvegardé, supprimer d'abord les données actuelles de l'utilisateur.
 
 La clé API Claude n'étant jamais sauvegardée, l'utilisateur doit la ressaisir dans les réglages si son profil a été recréé.
+
+## Déploiement
+
+Le déploiement se fait à la main, dans cet ordre : Supabase, Google Cloud Storage, Vercel, puis le premier utilisateur. Vercel n'est configuré qu'à la fin car il a besoin des valeurs des deux premières étapes.
+
+### 1. Projet Supabase hébergé (formule gratuite)
+
+1. Sur [supabase.com/dashboard](https://supabase.com/dashboard), créer un projet (formule gratuite) et noter le mot de passe de la base.
+2. Appliquer les migrations depuis ce dépôt :
+
+   ```bash
+   npx supabase login
+   npx supabase link --project-ref <référence-du-projet>
+   npx supabase db push
+   ```
+
+3. Dans **Authentication > Sign In / Providers** (ou **Settings**), désactiver les inscriptions (« Allow new users to sign up »). C'est l'équivalent de `enable_signup = false` dans `supabase/config.toml` : seules les invitations créent des comptes.
+4. Dans **Authentication > URL Configuration** :
+   - **Site URL** : le domaine Vercel, par exemple `https://<domaine>` ;
+   - **Redirect URLs** : ajouter `https://<domaine>/auth/confirm`.
+5. Dans **Authentication > Email Templates**, reproduire ce que `supabase/config.toml` fait en local (les fichiers sont dans `supabase/templates/`). Le lien de chaque modèle doit être :
+   - **Magic link** : `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`
+   - **Invite user** : `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite`
+
+   Le plus simple est de copier le contenu de `supabase/templates/magic-link.html` et `supabase/templates/invite.html` dans les deux modèles, avec les mêmes objets.
+6. Relever dans **Project Settings > API** : l'URL du projet (`SUPABASE_URL`), la clé `anon` (`SUPABASE_ANON_KEY`) et la clé `service_role` (`SUPABASE_SERVICE_ROLE_KEY`, secrète).
+
+### 2. Sauvegardes sur Google Cloud Storage
+
+1. Créer un bucket dans la région `europe-west9` (Paris).
+2. Ajouter une règle de cycle de vie : action **Supprimer l'objet**, condition **Âge : 90 jours**.
+3. Créer un compte de service et lui donner uniquement le rôle `roles/storage.objectCreator`, au niveau de ce bucket (onglet **Autorisations** du bucket), pas du projet.
+4. Créer une clé JSON pour ce compte de service, la télécharger **hors du dépôt**, l'encoder en base64 puis la supprimer :
+
+   ```bash
+   base64 -i ~/Downloads/cle.json | tr -d '\n' | pbcopy
+   rm ~/Downloads/cle.json
+   ```
+
+   La valeur copiée est `GCP_BACKUP_SERVICE_ACCOUNT_KEY_BASE64`. Le nom du bucket est `GCS_BACKUP_BUCKET`.
+
+### 3. Projet Vercel
+
+1. Sur Vercel, **Add New > Project**, puis importer le dépôt GitHub.
+2. Dans **Settings > Environment Variables**, renseigner chaque variable de `.env.example` :
+
+   | Variable | Valeur |
+   | --- | --- |
+   | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | relevées à l'étape 1 |
+   | `API_KEY_ENCRYPTION_SECRET` | `openssl rand -base64 32` |
+   | `CRON_SECRET` | une valeur aléatoire, par exemple `openssl rand -hex 32` |
+   | `GCS_BACKUP_BUCKET`, `GCP_BACKUP_SERVICE_ACCOUNT_KEY_BASE64` | relevées à l'étape 2 |
+
+3. Les pages qui appellent l'IA déclarent un `maxDuration` jusqu'à 300 s, ce qui exige **Fluid compute** : il est activé par défaut sur les nouveaux projets, mais vérifier dans **Settings > Functions**.
+4. `vercel.json` planifie la sauvegarde (`/api/cron/backup`, le lundi et le jeudi à 03:00 UTC). Vercel envoie `Authorization: Bearer <CRON_SECRET>` lui-même. Après le premier déploiement, vérifier dans **Settings > Cron Jobs** que la tâche est présente.
+5. Déployer, puis reporter le domaine obtenu dans la **Site URL** et la **Redirect URL** de Supabase (étape 1.4) s'il a changé.
+
+### 4. Premier utilisateur
+
+1. Dans le tableau de bord Supabase, **Authentication > Users > Invite user** : s'inviter avec sa propre adresse.
+2. Ouvrir le lien reçu par e-mail pour se connecter.
+3. Dans **Réglages**, enregistrer sa clé API Claude.
+4. Dans la console Anthropic, définir une limite de dépense mensuelle pour cette clé.
