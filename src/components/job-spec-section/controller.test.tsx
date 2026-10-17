@@ -34,11 +34,12 @@ const createActions = (saveOutcome: JobSpecSaveOutcome = { pendingStack: extract
 const renderJobSpecSectionController = ({
   jobSpec = null,
   saveOutcome,
-}: { jobSpec?: JobSpec | null; saveOutcome?: JobSpecSaveOutcome } = {}) => {
+  hasAnthropicApiKey = true,
+}: { jobSpec?: JobSpec | null; saveOutcome?: JobSpecSaveOutcome; hasAnthropicApiKey?: boolean } = {}) => {
   const actions = createActions(saveOutcome)
   const onDataChanged = jest.fn()
   const { result } = renderHook(() =>
-    useController({ jobApplicationId: JOB_APPLICATION_ID, jobSpec, ...actions, onDataChanged }),
+    useController({ jobApplicationId: JOB_APPLICATION_ID, jobSpec, ...actions, hasAnthropicApiKey, onDataChanged }),
   )
   return { result, onDataChanged, ...actions }
 }
@@ -112,6 +113,22 @@ describe('job-spec-section useController', () => {
     expect(onDataChanged).toHaveBeenCalledTimes(1)
   })
 
+  it('still saves the job spec without a Claude key and leaves the missing key to the up-front notice', async () => {
+    const { result, saveJobSpecText, onDataChanged } = renderJobSpecSectionController({
+      hasAnthropicApiKey: false,
+      saveOutcome: {
+        pendingStack: null,
+        aiErrorMessage:
+          'Ajoute ta clé Claude dans les réglages pour activer le pré-remplissage. Tu peux saisir à la main en attendant.',
+      },
+    })
+    act(() => result.current.setPastedText('Stack : React, Kafka'))
+    await act(() => result.current.saveText())
+    expect(saveJobSpecText).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'Stack : React, Kafka')
+    expect(result.current.aiErrorMessage).toBeNull()
+    expect(onDataChanged).toHaveBeenCalledTimes(1)
+  })
+
   it('saves the pasted text, then clears the text area', async () => {
     const { result, saveJobSpecText } = renderJobSpecSectionController()
     act(() => result.current.setPastedText('  Stack : React, Kafka  '))
@@ -180,6 +197,7 @@ describe('JobSpecSection', () => {
       <JobSpecSection
         jobApplicationId={JOB_APPLICATION_ID}
         jobSpec={{ sourceKind: 'pdf', rawText: null, pendingStack: null, updatedAt: new Date() }}
+        hasAnthropicApiKey
         {...createActions()}
       />,
     )
@@ -189,8 +207,30 @@ describe('JobSpecSection', () => {
     expect(pdfLink).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
+  it('tells up front that the stack extraction needs a Claude key while keeping the job spec inputs available', () => {
+    render(
+      <JobSpecSection
+        jobApplicationId={JOB_APPLICATION_ID}
+        jobSpec={null}
+        hasAnthropicApiKey={false}
+        {...createActions()}
+      />,
+    )
+    expect(screen.getByRole('note')).toHaveTextContent(
+      "Ajoute ta clé Claude dans les réglages pour activer l'extraction de la stack.",
+    )
+    expect(screen.getByRole('link', { name: 'réglages' })).toHaveAttribute('href', '/settings')
+    expect(screen.getByLabelText('Ou coller le texte de la fiche')).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Enregistrer le texte' })).toBeEnabled()
+  })
+
+  it('shows no key notice when a Claude key is configured', () => {
+    render(<JobSpecSection jobApplicationId={JOB_APPLICATION_ID} jobSpec={null} hasAnthropicApiKey {...createActions()} />)
+    expect(screen.queryByRole('note')).not.toBeInTheDocument()
+  })
+
   it('lets the user type more than 50 000 characters so the validation can report it', () => {
-    render(<JobSpecSection jobApplicationId={JOB_APPLICATION_ID} jobSpec={null} {...createActions()} />)
+    render(<JobSpecSection jobApplicationId={JOB_APPLICATION_ID} jobSpec={null} hasAnthropicApiKey {...createActions()} />)
     expect(screen.getByLabelText('Ou coller le texte de la fiche')).not.toHaveAttribute('maxLength')
   })
 
@@ -199,6 +239,7 @@ describe('JobSpecSection', () => {
       <JobSpecSection
         jobApplicationId={JOB_APPLICATION_ID}
         jobSpec={{ sourceKind: 'pdf', rawText: null, pendingStack: extractedStack, updatedAt: new Date() }}
+        hasAnthropicApiKey
         {...createActions()}
       />,
     )

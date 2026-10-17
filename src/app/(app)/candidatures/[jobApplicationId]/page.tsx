@@ -37,6 +37,7 @@ import {
   saveJobSpecText,
   uploadJobSpecPdf,
 } from '@/server/actions/job-spec-actions'
+import { hasAnthropicApiKeyConfigured } from '@/server/actions/settings-actions'
 
 export const metadata: Metadata = { title: 'Candidature · Freeclutch' }
 
@@ -47,12 +48,14 @@ const loadEndClientBrief = (endClientId: string | null): Promise<ActionResult<En
 
 const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobApplicationId: string }> }) => {
   const { jobApplicationId } = await params
-  const [jobApplicationResult, activityLogEntriesResult, jobSpecResult, interviewsResult] = await Promise.all([
-    getJobApplication(jobApplicationId),
-    listActivityLogEntries(jobApplicationId),
-    getJobSpec(jobApplicationId),
-    listInterviewsForJobApplication(jobApplicationId),
-  ])
+  const [jobApplicationResult, activityLogEntriesResult, jobSpecResult, interviewsResult, hasAnthropicApiKey] =
+    await Promise.all([
+      getJobApplication(jobApplicationId),
+      listActivityLogEntries(jobApplicationId),
+      getJobSpec(jobApplicationId),
+      listInterviewsForJobApplication(jobApplicationId),
+      hasAnthropicApiKeyConfigured(),
+    ])
 
   if (!jobApplicationResult.ok) {
     if (jobApplicationResult.errorMessage === JOB_APPLICATION_NOT_FOUND_MESSAGE) notFound()
@@ -124,6 +127,7 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
             saveJobSpecText={saveJobSpecText}
             confirmJobSpecStack={confirmJobSpecStack}
             discardPendingJobSpecStack={discardPendingJobSpecStack}
+            hasAnthropicApiKey={hasAnthropicApiKey}
           />
           <ClientBriefSection
             key={jobApplication.endClientId ?? 'unknown-end-client'}
@@ -131,6 +135,7 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
             endClientLabel={jobApplication.endClientLabel}
             generateBriefForEndClient={generateBriefForEndClient}
             updateEndClientNotes={updateEndClientNotes}
+            hasAnthropicApiKey={hasAnthropicApiKey}
           />
           <InterviewsSection
             key={jobApplication.id}

@@ -52,26 +52,29 @@ const createDeferred = <Value,>() => {
 const renderClientBriefController = ({
   endClientBrief = buildEndClientBrief(),
   generateResult = { ok: true, data: freshBrief },
+  hasAnthropicApiKey = true,
 }: {
   endClientBrief?: EndClientBrief | null
   generateResult?: ActionResult<GeneratedClientBrief>
+  hasAnthropicApiKey?: boolean
 } = {}) => {
   const generateBriefForEndClient = jest.fn().mockResolvedValue(generateResult)
   const updateEndClientNotes = jest.fn().mockResolvedValue({ ok: true, data: null })
   const onDataChanged = jest.fn()
   const renderedHook = renderHook(() =>
-    useController({ endClientBrief, generateBriefForEndClient, updateEndClientNotes, onDataChanged }),
+    useController({ endClientBrief, generateBriefForEndClient, updateEndClientNotes, hasAnthropicApiKey, onDataChanged }),
   )
   return { ...renderedHook, generateBriefForEndClient, updateEndClientNotes, onDataChanged }
 }
 
-const renderClientBriefSection = (endClientBrief: EndClientBrief | null) =>
+const renderClientBriefSection = (endClientBrief: EndClientBrief | null, hasAnthropicApiKey = true) =>
   render(
     <ClientBriefSection
       endClientBrief={endClientBrief}
       endClientLabel={endClientBrief === null ? null : 'BNP Paribas Real Estate (BNP Paribas)'}
       generateBriefForEndClient={jest.fn()}
       updateEndClientNotes={jest.fn()}
+      hasAnthropicApiKey={hasAnthropicApiKey}
     />,
   )
 
@@ -89,6 +92,13 @@ describe('client-brief-section useController', () => {
     expect(result.current.state).toBe('unknown_client')
     await act(() => result.current.generate())
     expect(generateBriefForEndClient).not.toHaveBeenCalled()
+  })
+
+  it('never generates a brief without a Claude key', async () => {
+    const { result, generateBriefForEndClient } = renderClientBriefController({ hasAnthropicApiKey: false })
+    await act(() => result.current.generate())
+    expect(generateBriefForEndClient).not.toHaveBeenCalled()
+    expect(result.current.isGenerating).toBe(false)
   })
 
   it('calls the generation only once when generate is clicked twice during the slow generation', async () => {
@@ -268,6 +278,22 @@ describe('ClientBriefSection', () => {
     renderClientBriefSection(null)
     expect(screen.getByText("Client inconnu, demande-le à l'intermédiaire")).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /brief/i })).not.toBeInTheDocument()
+  })
+
+  it('disables the generation without a Claude key, points to the settings and keeps the notes editable', () => {
+    renderClientBriefSection(buildEndClientBrief({ brief: previousBrief }), false)
+    expect(screen.getByRole('button', { name: 'Régénérer le brief' })).toBeDisabled()
+    expect(screen.getByRole('note')).toHaveTextContent(
+      'Ajoute ta clé Claude dans les réglages pour activer la génération du brief client.',
+    )
+    expect(screen.getByRole('link', { name: 'réglages' })).toHaveAttribute('href', '/settings')
+    expect(screen.getByTestId('brief-markdown')).toHaveTextContent('Ancien brief')
+    expect(screen.getByLabelText('Mes notes sur ce client')).toBeEnabled()
+  })
+
+  it('shows no key notice for an unknown client', () => {
+    renderClientBriefSection(null, false)
+    expect(screen.queryByRole('note')).not.toBeInTheDocument()
   })
 
   it('renders the brief as markdown without raw html, with its sources and generation date', () => {

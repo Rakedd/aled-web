@@ -88,6 +88,7 @@ export const useController = ({
   extractJobPosting,
   createJobApplication,
   navigateTo,
+  hasAnthropicApiKey,
 }: NewJobApplicationFormControllerParameters) => {
   const [step, setStep] = useState<NewJobApplicationStep>('paste')
   const [pastedText, setPastedText] = useState('')
@@ -117,7 +118,7 @@ export const useController = ({
   }
 
   const extract = async () => {
-    if (isExtractionInFlightRef.current) return
+    if (!hasAnthropicApiKey || isExtractionInFlightRef.current) return
     const baseFormValues = step === 'paste' ? { ...formValues, postingRawText: pastedText } : formValues
     const trimmedPastedText = baseFormValues.postingRawText.trim()
     if (trimmedPastedText.length === 0) {

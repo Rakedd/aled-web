@@ -18,6 +18,7 @@ export const useController = ({
   saveJobSpecText,
   confirmJobSpecStack,
   discardPendingJobSpecStack,
+  hasAnthropicApiKey,
   onDataChanged,
 }: JobSpecSectionControllerParameters) => {
   const [pastedText, setPastedText] = useState('')
@@ -126,7 +127,7 @@ export const useController = ({
     draftStack,
     setDraftStack,
     noTechnologyFoundMessage,
-    aiErrorMessage,
+    aiErrorMessage: hasAnthropicApiKey ? aiErrorMessage : null,
     errorMessage,
     isSubmitting,
     isAnalyzingJobSpec,

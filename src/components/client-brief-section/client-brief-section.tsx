@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import type { ComponentProps } from 'react'
 import Markdown, { type Components, type ExtraProps } from 'react-markdown'
+import { MissingAnthropicApiKeyNotice } from '@/components/missing-anthropic-api-key-notice'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { CLIENT_BRIEF_MESSAGES, type ClientBriefSource, isExternalLinkUrl } from '@/domain/client-brief'
@@ -56,6 +57,7 @@ export const ClientBriefSection = ({
   endClientLabel,
   generateBriefForEndClient,
   updateEndClientNotes,
+  hasAnthropicApiKey,
 }: ClientBriefSectionProps) => {
   const router = useRouter()
   const {
@@ -69,7 +71,13 @@ export const ClientBriefSection = ({
     notesSaveStatus,
     notesErrorMessage,
     retryNotesSave,
-  } = useController({ endClientBrief, generateBriefForEndClient, updateEndClientNotes, onDataChanged: router.refresh })
+  } = useController({
+    endClientBrief,
+    generateBriefForEndClient,
+    updateEndClientNotes,
+    hasAnthropicApiKey,
+    onDataChanged: router.refresh,
+  })
 
   return (
     <section aria-labelledby="client-brief-section-title" className="flex min-w-0 flex-col gap-4">
@@ -80,9 +88,12 @@ export const ClientBriefSection = ({
         <p className="text-sm text-muted-foreground">{CLIENT_BRIEF_MESSAGES.unknownClient}</p>
       ) : (
         <>
+          {!hasAnthropicApiKey && (
+            <MissingAnthropicApiKeyNotice featureDescription="la génération du brief client" />
+          )}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="min-w-0 text-sm font-medium break-words">{endClientLabel}</p>
-            <Button type="button" onClick={() => void generate()} disabled={isGenerating}>
+            <Button type="button" onClick={() => void generate()} disabled={isGenerating || !hasAnthropicApiKey}>
               {brief === null ? 'Générer le brief' : 'Régénérer le brief'}
             </Button>
           </div>

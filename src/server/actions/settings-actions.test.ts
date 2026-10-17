@@ -7,7 +7,13 @@ import { clearAnthropicApiKey, findProfileSettings, updateProfileSettingsRow } f
 import { saveAnthropicApiKeyWithVerifier } from '@/server/settings/save-anthropic-api-key-with-verifier'
 import { createServerSupabaseClient } from '@/server/supabase/create-server-supabase-client'
 import { getAuthenticatedUser } from '@/server/supabase/get-authenticated-user'
-import { deleteAnthropicApiKey, getProfileSettings, saveAnthropicApiKey, updateProfileSettings } from './settings-actions'
+import {
+  deleteAnthropicApiKey,
+  getProfileSettings,
+  hasAnthropicApiKeyConfigured,
+  saveAnthropicApiKey,
+  updateProfileSettings,
+} from './settings-actions'
 
 jest.mock('server-only', () => ({}))
 jest.mock('@/server/supabase/get-authenticated-user', () => ({ getAuthenticatedUser: jest.fn() }))
@@ -52,6 +58,26 @@ describe('getProfileSettings', () => {
       errorMessage: 'Impossible de charger tes réglages pour le moment. Réessaie dans quelques minutes.',
     })
     expect(consoleErrorSpy).toHaveBeenCalled()
+    consoleErrorSpy.mockRestore()
+  })
+})
+
+describe('hasAnthropicApiKeyConfigured', () => {
+  it('is true when the authenticated user has stored a key', async () => {
+    jest.mocked(findProfileSettings).mockResolvedValue(storedProfileSettings)
+    await expect(hasAnthropicApiKeyConfigured()).resolves.toBe(true)
+    expect(findProfileSettings).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1')
+  })
+
+  it('is false when the authenticated user has no key', async () => {
+    jest.mocked(findProfileSettings).mockResolvedValue({ ...storedProfileSettings, anthropicApiKeyLastFour: null })
+    await expect(hasAnthropicApiKeyConfigured()).resolves.toBe(false)
+  })
+
+  it('stays true when the settings cannot be read, so the AI actions report the real problem themselves', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    jest.mocked(findProfileSettings).mockRejectedValue(new Error('Profile repository failed'))
+    await expect(hasAnthropicApiKeyConfigured()).resolves.toBe(true)
     consoleErrorSpy.mockRestore()
   })
 })

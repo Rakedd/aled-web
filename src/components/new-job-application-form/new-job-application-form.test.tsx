@@ -4,7 +4,7 @@ import { NewJobApplicationForm } from './new-job-application-form'
 
 jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }) }))
 
-const renderNewJobApplicationForm = () => {
+const renderNewJobApplicationForm = ({ hasAnthropicApiKey = true }: { hasAnthropicApiKey?: boolean } = {}) => {
   const extractJobPosting = jest.fn()
   const createJobApplication = jest.fn().mockResolvedValue({ ok: true, data: { id: 'application-1' } })
   const searchEntities = jest.fn().mockResolvedValue({ ok: true, data: [] })
@@ -13,12 +13,30 @@ const renderNewJobApplicationForm = () => {
       extractJobPosting={extractJobPosting}
       createJobApplication={createJobApplication}
       searchEntities={searchEntities}
+      hasAnthropicApiKey={hasAnthropicApiKey}
     />,
   )
   return { extractJobPosting, createJobApplication }
 }
 
 describe('NewJobApplicationForm', () => {
+  it('disables the prefill without a Claude key, points to the settings and keeps manual entry', async () => {
+    renderNewJobApplicationForm({ hasAnthropicApiKey: false })
+
+    expect(screen.getByRole('button', { name: 'Pré-remplir' })).toBeDisabled()
+    expect(screen.getByRole('note')).toHaveTextContent('Ajoute ta clé Claude dans les réglages pour activer')
+    expect(screen.getByRole('link', { name: 'réglages' })).toHaveAttribute('href', '/settings')
+    await userEvent.click(screen.getByRole('button', { name: 'Saisie manuelle' }))
+    expect(screen.getByLabelText('Titre de la mission *')).toBeInTheDocument()
+  })
+
+  it('offers the prefill without any notice when a Claude key is configured', () => {
+    renderNewJobApplicationForm()
+
+    expect(screen.getByRole('button', { name: 'Pré-remplir' })).toBeEnabled()
+    expect(screen.queryByRole('note')).not.toBeInTheDocument()
+  })
+
   it('keeps a malformed daily rate as typed and refuses it with TJM invalide', async () => {
     const { createJobApplication } = renderNewJobApplicationForm()
     await userEvent.click(screen.getByRole('button', { name: 'Saisie manuelle' }))

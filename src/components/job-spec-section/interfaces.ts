@@ -20,6 +20,7 @@ export type JobSpecSectionControllerParameters = {
   saveJobSpecText: SaveJobSpecText
   confirmJobSpecStack: ConfirmJobSpecStack
   discardPendingJobSpecStack: DiscardPendingJobSpecStack
+  hasAnthropicApiKey: boolean
   onDataChanged: () => void
 }
 

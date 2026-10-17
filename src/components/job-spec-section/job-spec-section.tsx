@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import type { DragEvent, FormEvent } from 'react'
+import { MissingAnthropicApiKeyNotice } from '@/components/missing-anthropic-api-key-notice'
 import { StackChipsEditor } from '@/components/stack-chips-editor'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -20,6 +21,7 @@ export const JobSpecSection = ({
   saveJobSpecText,
   confirmJobSpecStack,
   discardPendingJobSpecStack,
+  hasAnthropicApiKey,
 }: JobSpecSectionProps) => {
   const router = useRouter()
   const {
@@ -43,6 +45,7 @@ export const JobSpecSection = ({
     saveJobSpecText,
     confirmJobSpecStack,
     discardPendingJobSpecStack,
+    hasAnthropicApiKey,
     onDataChanged: router.refresh,
   })
 
@@ -61,6 +64,7 @@ export const JobSpecSection = ({
       <h2 id="job-spec-section-title" className="text-lg font-semibold">
         Fiche métier
       </h2>
+      {!hasAnthropicApiKey && <MissingAnthropicApiKeyNotice featureDescription="l'extraction de la stack" />}
       {jobSpec === null ? (
         <p className="text-sm text-muted-foreground">Aucune fiche métier pour l&apos;instant.</p>
       ) : jobSpec.sourceKind === 'pdf' ? (
@@ -123,7 +127,7 @@ export const JobSpecSection = ({
       )}
       {isAnalyzingJobSpec && (
         <p role="status" className="text-sm text-muted-foreground">
-          Enregistrement et analyse de la fiche en cours…
+          {hasAnthropicApiKey ? 'Enregistrement et analyse de la fiche en cours…' : 'Enregistrement de la fiche en cours…'}
         </p>
       )}
       <div

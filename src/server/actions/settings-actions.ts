@@ -27,6 +27,11 @@ export const getProfileSettings = async (): Promise<ActionResult<ProfileSettings
     operation: async (supabase, userId) => ({ ok: true, data: await findProfileSettings(supabase, userId) }),
   })
 
+export const hasAnthropicApiKeyConfigured = async (): Promise<boolean> => {
+  const profileSettingsResult = await getProfileSettings()
+  return !profileSettingsResult.ok || profileSettingsResult.data.anthropicApiKeyLastFour !== null
+}
+
 export const updateProfileSettings = async (
   profileSettingsInput: ProfileSettingsInput,
 ): Promise<ActionResult<ProfileSettings>> =>

@@ -21,14 +21,16 @@ const EXTRACTION: JobPostingExtraction = {
 const renderNewJobApplicationFormController = ({
   extractionResult = { ok: true, data: EXTRACTION },
   creationResult = { ok: true, data: { id: 'application-1' } },
+  hasAnthropicApiKey = true,
 }: {
   extractionResult?: ActionResult<JobPostingExtraction>
   creationResult?: ActionResult<{ id: string }>
+  hasAnthropicApiKey?: boolean
 } = {}) => {
   const extractJobPosting = jest.fn().mockResolvedValue(extractionResult)
   const createJobApplication = jest.fn().mockResolvedValue(creationResult)
   const navigateTo = jest.fn()
-  const { result } = renderHook(() => useController({ extractJobPosting, createJobApplication, navigateTo }))
+  const { result } = renderHook(() => useController({ extractJobPosting, createJobApplication, navigateTo, hasAnthropicApiKey }))
   return { result, extractJobPosting, createJobApplication, navigateTo }
 }
 
@@ -41,6 +43,15 @@ describe('new-job-application-form useController', () => {
   it('starts on the paste step', () => {
     const { result } = renderNewJobApplicationFormController()
     expect(result.current.step).toBe('paste')
+  })
+
+  it('never calls the AI without a Claude key', async () => {
+    const { result, extractJobPosting } = renderNewJobApplicationFormController({ hasAnthropicApiKey: false })
+    act(() => result.current.setPastedText('Mission React à Paris'))
+    await act(() => result.current.extract())
+    expect(extractJobPosting).not.toHaveBeenCalled()
+    expect(result.current.step).toBe('paste')
+    expect(result.current.isExtracting).toBe(false)
   })
 
   it('refuses an empty pasted text without calling the server', async () => {

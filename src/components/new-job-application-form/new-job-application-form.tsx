@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import type { ComponentProps, FormEvent, ReactNode } from 'react'
 import { EntityAutocomplete } from '@/components/entity-autocomplete'
+import { MissingAnthropicApiKeyNotice } from '@/components/missing-anthropic-api-key-notice'
 import { StackChipsEditor } from '@/components/stack-chips-editor'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,6 +33,7 @@ export const NewJobApplicationForm = ({
   extractJobPosting,
   createJobApplication,
   searchEntities,
+  hasAnthropicApiKey,
 }: NewJobApplicationFormProps) => {
   const router = useRouter()
   const {
@@ -49,7 +51,12 @@ export const NewJobApplicationForm = ({
     setStatus,
     setStack,
     submit,
-  } = useController({ extractJobPosting, createJobApplication, navigateTo: router.push })
+  } = useController({
+    extractJobPosting,
+    createJobApplication,
+    navigateTo: router.push,
+    hasAnthropicApiKey,
+  })
 
   const errorAlert = errorMessage && (
     <p role="alert" className="text-sm text-destructive">
@@ -96,6 +103,7 @@ export const NewJobApplicationForm = ({
   if (step === 'paste') {
     return (
       <div className="flex flex-col gap-4">
+        {!hasAnthropicApiKey && <MissingAnthropicApiKeyNotice featureDescription="le pré-remplissage de l'annonce" />}
         <div className="flex flex-col gap-2">
           <Label htmlFor="new-job-application-pasted-text">Texte de l&apos;annonce</Label>
           <textarea
@@ -111,7 +119,7 @@ export const NewJobApplicationForm = ({
         </div>
         {errorAlert}
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => void extract()} disabled={isExtracting}>
+          <Button type="button" onClick={() => void extract()} disabled={isExtracting || !hasAnthropicApiKey}>
             {isExtracting ? 'Analyse en cours…' : 'Pré-remplir'}
           </Button>
           <Button type="button" variant="outline" onClick={switchToManualEntry} disabled={isExtracting}>

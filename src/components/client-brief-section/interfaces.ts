@@ -13,6 +13,7 @@ export type ClientBriefSectionControllerParameters = {
   endClientBrief: EndClientBrief | null
   generateBriefForEndClient: GenerateBriefForEndClient
   updateEndClientNotes: UpdateEndClientNotes
+  hasAnthropicApiKey: boolean
   onDataChanged: () => void
 }
 

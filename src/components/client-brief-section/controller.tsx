@@ -19,6 +19,7 @@ export const useController = ({
   endClientBrief,
   generateBriefForEndClient,
   updateEndClientNotes,
+  hasAnthropicApiKey,
   onDataChanged,
 }: ClientBriefSectionControllerParameters) => {
   const [generatedBrief, setGeneratedBrief] = useState<GeneratedClientBrief | null>(null)
@@ -49,7 +50,7 @@ export const useController = ({
   }
 
   const generate = async () => {
-    if (endClientBrief === null || isGenerationInFlightRef.current) return
+    if (endClientBrief === null || !hasAnthropicApiKey || isGenerationInFlightRef.current) return
     isGenerationInFlightRef.current = true
     setIsGenerating(true)
     setErrorMessage(null)

@@ -38,6 +38,7 @@ export type NewJobApplicationFormControllerParameters = {
   extractJobPosting: ExtractJobPosting
   createJobApplication: CreateJobApplication
   navigateTo: (path: string) => void
+  hasAnthropicApiKey: boolean
 }
 
 export type NewJobApplicationFormProps = Omit<NewJobApplicationFormControllerParameters, 'navigateTo'> & {
