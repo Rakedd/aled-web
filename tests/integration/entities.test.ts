@@ -122,12 +122,12 @@ describe('entities repository', () => {
 
     await expect(assignEndClientParent(user.client, user.userId, bankId, groupId)).resolves.toEqual({ ok: true, data: null })
     await expect(searchEntitySuggestions(user.client, user.userId, { entityKind: 'end_client', query: 'banque' })).resolves.toEqual([
-      { id: bankId, label: 'Banque Z (Groupe Z)' },
+      { id: bankId, name: 'Banque Z', label: 'Banque Z (Groupe Z)', parentName: 'Groupe Z' },
     ])
 
     await expect(assignEndClientParent(user.client, user.userId, bankId, null)).resolves.toEqual({ ok: true, data: null })
     await expect(searchEntitySuggestions(user.client, user.userId, { entityKind: 'end_client', query: 'banque' })).resolves.toEqual([
-      { id: bankId, label: 'Banque Z' },
+      { id: bankId, name: 'Banque Z', label: 'Banque Z', parentName: null },
     ])
   })
 
@@ -142,6 +142,10 @@ describe('entities repository', () => {
     const suggestions = await searchEntitySuggestions(user.client, user.userId, { entityKind: 'end_client', query: 'bnp' })
 
     expect(suggestions.map((suggestion) => suggestion.label)).toEqual(['BNP Paribas', 'BNP Paribas AM (BNP Paribas)'])
+    expect(suggestions.map(({ name, parentName }) => ({ name, parentName }))).toEqual([
+      { name: 'BNP Paribas', parentName: null },
+      { name: 'BNP Paribas AM', parentName: 'BNP Paribas' },
+    ])
   })
 
   it('finds intermediaries and contacts without caring about case or accents', async () => {
@@ -153,10 +157,14 @@ describe('entities repository', () => {
 
     await expect(
       searchEntitySuggestions(user.client, user.userId, { entityKind: 'intermediary', query: 'SOCIETE' }),
-    ).resolves.toEqual([{ id: expect.any(String), label: 'Société Conseil' }])
+    ).resolves.toEqual([
+      { id: expect.any(String), name: 'Société Conseil', label: 'Société Conseil', parentName: null },
+    ])
     await expect(
       searchEntitySuggestions(user.client, user.userId, { entityKind: 'contact', query: 'helene' }),
-    ).resolves.toEqual([{ id: expect.any(String), label: 'Hélène Martin' }])
+    ).resolves.toEqual([
+      { id: expect.any(String), name: 'Hélène Martin', label: 'Hélène Martin', parentName: null },
+    ])
     await expect(
       searchEntitySuggestions(user.client, user.userId, { entityKind: 'contact', query: '%' }),
     ).resolves.toEqual([])
@@ -191,7 +199,9 @@ describe('entities repository', () => {
     })
     await expect(
       searchEntitySuggestions(user.client, user.userId, { entityKind: 'contact', query: 'jean-pierre' }),
-    ).resolves.toEqual([{ id: contactId, label: 'Jean-Pierre Dupont' }])
+    ).resolves.toEqual([
+      { id: contactId, name: 'Jean-Pierre Dupont', label: 'Jean-Pierre Dupont', parentName: null },
+    ])
   })
 
   it('refuses to rename a contact to the name of another contact', async () => {

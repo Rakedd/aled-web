@@ -15,7 +15,7 @@ export const ENTITY_KINDS = ['intermediary', 'contact', 'end_client'] as const
 
 export type EntityKind = (typeof ENTITY_KINDS)[number]
 
-export type EntitySuggestion = { id: string; label: string }
+export type EntitySuggestion = { id: string; name: string; label: string; parentName: string | null }
 
 export type ContactDetails = {
   id: string

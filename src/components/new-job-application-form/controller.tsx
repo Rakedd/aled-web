@@ -37,10 +37,10 @@ const createEmptyFormValues = (): JobApplicationFormValues => ({
 })
 
 const toFormValues = (
+  baseFormValues: JobApplicationFormValues,
   jobPostingExtraction: JobPostingExtraction,
-  pastedText: string,
 ): JobApplicationFormValues => ({
-  ...createEmptyFormValues(),
+  ...baseFormValues,
   title: jobPostingExtraction.title ?? '',
   intermediaryName: jobPostingExtraction.intermediaryName ?? '',
   contactName: jobPostingExtraction.contactName ?? '',
@@ -53,7 +53,6 @@ const toFormValues = (
   desiredStart: jobPostingExtraction.desiredStart ?? '',
   duration: jobPostingExtraction.duration ?? '',
   stack: jobPostingExtraction.stack,
-  postingRawText: pastedText,
 })
 
 const toNullableText = (text: string): string | null => (text.trim().length === 0 ? null : text)
@@ -95,6 +94,7 @@ export const useController = ({
   const [formValues, setFormValues] = useState<JobApplicationFormValues>(createEmptyFormValues)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isExtracting, setIsExtracting] = useState(false)
+  const [hasExtractionFailed, setHasExtractionFailed] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isExtractionInFlightRef = useRef(false)
   const isSubmissionInFlightRef = useRef(false)
@@ -105,23 +105,21 @@ export const useController = ({
     setStep('form')
   }
 
-  const readExtractionOutcome = async (trimmedPastedText: string) => {
+  const readExtractionOutcome = async (baseFormValues: JobApplicationFormValues) => {
     try {
-      const extractionResult = await extractJobPosting(trimmedPastedText)
+      const extractionResult = await extractJobPosting(baseFormValues.postingRawText.trim())
       return extractionResult.ok
-        ? { formValues: toFormValues(extractionResult.data, pastedText), errorMessage: null }
-        : { formValues: { ...createEmptyFormValues(), postingRawText: pastedText }, errorMessage: extractionResult.errorMessage }
+        ? { formValues: toFormValues(baseFormValues, extractionResult.data), errorMessage: null }
+        : { formValues: baseFormValues, errorMessage: extractionResult.errorMessage }
     } catch {
-      return {
-        formValues: { ...createEmptyFormValues(), postingRawText: pastedText },
-        errorMessage: NEW_JOB_APPLICATION_GENERIC_ERROR_MESSAGE,
-      }
+      return { formValues: baseFormValues, errorMessage: NEW_JOB_APPLICATION_GENERIC_ERROR_MESSAGE }
     }
   }
 
   const extract = async () => {
     if (isExtractionInFlightRef.current) return
-    const trimmedPastedText = pastedText.trim()
+    const baseFormValues = step === 'paste' ? { ...formValues, postingRawText: pastedText } : formValues
+    const trimmedPastedText = baseFormValues.postingRawText.trim()
     if (trimmedPastedText.length === 0) {
       setErrorMessage(EMPTY_PASTED_TEXT_MESSAGE)
       return
@@ -133,13 +131,17 @@ export const useController = ({
     isExtractionInFlightRef.current = true
     setErrorMessage(null)
     setIsExtracting(true)
-    const extractionOutcome = await readExtractionOutcome(trimmedPastedText)
+    const extractionOutcome = await readExtractionOutcome(baseFormValues)
     isExtractionInFlightRef.current = false
     setIsExtracting(false)
+    setHasExtractionFailed(extractionOutcome.errorMessage !== null)
     showForm(extractionOutcome.formValues, extractionOutcome.errorMessage)
   }
 
-  const switchToManualEntry = () => showForm(createEmptyFormValues(), null)
+  const switchToManualEntry = () => {
+    setHasExtractionFailed(false)
+    showForm({ ...createEmptyFormValues(), postingRawText: pastedText.trim().length === 0 ? '' : pastedText }, null)
+  }
 
   const setTextFormValue = (valueName: TextFormValueName, value: string) =>
     setFormValues((currentFormValues) => ({ ...currentFormValues, [valueName]: value }))
@@ -184,6 +186,7 @@ export const useController = ({
     formValues,
     errorMessage,
     isExtracting,
+    hasExtractionFailed,
     isSubmitting,
     extract,
     switchToManualEntry,

@@ -1,13 +1,13 @@
 import { act, renderHook } from '@testing-library/react'
-import type { StackItem } from '@/domain/types'
+import type { StackItem, StackItemOrigin } from '@/domain/types'
 import { useController } from './controller'
 
 const reactStackItem: StackItem = { name: 'React', category: 'framework', origin: 'posting' }
 const typescriptStackItem: StackItem = { name: 'TypeScript', category: 'language', origin: 'posting' }
 
-const renderStackChipsEditorController = (stack: StackItem[] = []) => {
+const renderStackChipsEditorController = (stack: StackItem[] = [], origin: StackItemOrigin = 'posting') => {
   const onChange = jest.fn()
-  const { result } = renderHook(() => useController({ stack, onChange }))
+  const { result } = renderHook(() => useController({ stack, origin, onChange }))
   return { result, onChange }
 }
 
@@ -19,6 +19,13 @@ describe('stack-chips-editor useController', () => {
     act(() => result.current.addDraftItem())
     expect(onChange).toHaveBeenCalledWith([reactStackItem, { name: 'Docker', category: 'tool', origin: 'posting' }])
     expect(result.current.draftName).toBe('')
+  })
+
+  it('gives new items the origin received as a prop', () => {
+    const { result, onChange } = renderStackChipsEditorController([], 'job_spec')
+    act(() => result.current.setDraftName('Docker'))
+    act(() => result.current.addDraftItem())
+    expect(onChange).toHaveBeenCalledWith([{ name: 'Docker', category: 'tool', origin: 'job_spec' }])
   })
 
   it('does not create a duplicate when the name is already present, whatever the case', () => {

@@ -1,20 +1,12 @@
 'use client'
 
-import type { KeyboardEvent } from 'react'
+import { useId, type KeyboardEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { STACK_CATEGORIES, type StackCategory } from '@/domain/types'
+import { STACK_CATEGORIES, STACK_CATEGORY_LABELS, type StackCategory } from '@/domain/types'
 import { useController } from './controller'
 import type { StackChipsEditorProps } from './interfaces'
-
-const STACK_CATEGORY_LABELS: Record<StackCategory, string> = {
-  language: 'Langage',
-  framework: 'Framework',
-  tool: 'Outil',
-  method: 'Méthode',
-  other: 'Autre',
-}
 
 const SELECT_CLASS_NAME =
   'h-8 rounded-lg border border-input bg-transparent px-2 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30'
@@ -22,9 +14,11 @@ const SELECT_CLASS_NAME =
 const isStackCategory = (candidate: string): candidate is StackCategory =>
   STACK_CATEGORIES.some((stackCategory) => stackCategory === candidate)
 
-export const StackChipsEditor = ({ stack, onChange }: StackChipsEditorProps) => {
+export const StackChipsEditor = ({ stack, origin, onChange }: StackChipsEditorProps) => {
   const { draftName, setDraftName, draftCategory, setDraftCategory, addDraftItem, removeItem, changeItemCategory } =
-    useController({ stack, onChange })
+    useController({ stack, origin, onChange })
+  const draftNameInputId = useId()
+  const draftCategorySelectId = useId()
 
   const handleDraftKeyDown = (keyboardEvent: KeyboardEvent<HTMLInputElement>) => {
     if (keyboardEvent.key !== 'Enter') return
@@ -73,18 +67,18 @@ export const StackChipsEditor = ({ stack, onChange }: StackChipsEditorProps) => 
       )}
       <div className="flex flex-wrap items-end gap-2">
         <div className="flex min-w-40 flex-1 flex-col gap-2">
-          <Label htmlFor="stack-chips-editor-draft-name">Ajouter une technologie</Label>
+          <Label htmlFor={draftNameInputId}>Ajouter une technologie</Label>
           <Input
-            id="stack-chips-editor-draft-name"
+            id={draftNameInputId}
             value={draftName}
             onChange={(changeEvent) => setDraftName(changeEvent.target.value)}
             onKeyDown={handleDraftKeyDown}
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="stack-chips-editor-draft-category">Catégorie</Label>
+          <Label htmlFor={draftCategorySelectId}>Catégorie</Label>
           <select
-            id="stack-chips-editor-draft-category"
+            id={draftCategorySelectId}
             className={SELECT_CLASS_NAME}
             value={draftCategory}
             onChange={(changeEvent) => {

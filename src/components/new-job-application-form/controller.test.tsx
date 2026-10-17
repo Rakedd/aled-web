@@ -121,6 +121,46 @@ describe('new-job-application-form useController', () => {
     expect(extractJobPosting).not.toHaveBeenCalled()
   })
 
+  it('keeps the pasted text in the manual form', () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.setPastedText('Annonce React'))
+    act(() => result.current.switchToManualEntry())
+    expect(result.current.formValues.postingRawText).toBe('Annonce React')
+  })
+
+  it('offers to retry a failed extraction on the editable posting text and prefills on success', async () => {
+    const { result, extractJobPosting } = renderNewJobApplicationFormController({
+      extractionResult: { ok: false, errorMessage: 'Claude est saturé, réessaie dans une minute.' },
+    })
+    act(() => result.current.setPastedText('Annonce React'))
+    await act(() => result.current.extract())
+    expect(result.current.hasExtractionFailed).toBe(true)
+    act(() => result.current.setTextFormValue('source', 'Malt'))
+    act(() => result.current.setTextFormValue('postingRawText', 'Annonce React corrigée'))
+    extractJobPosting.mockResolvedValue({ ok: true, data: EXTRACTION })
+    await act(() => result.current.extract())
+    expect(extractJobPosting).toHaveBeenLastCalledWith('Annonce React corrigée')
+    expect(result.current.hasExtractionFailed).toBe(false)
+    expect(result.current.errorMessage).toBeNull()
+    expect(result.current.formValues).toMatchObject({
+      title: 'Développeur React senior',
+      source: 'Malt',
+      postingRawText: 'Annonce React corrigée',
+    })
+  })
+
+  it('applies the same guards when retrying with a blank posting text', async () => {
+    const { result, extractJobPosting } = renderNewJobApplicationFormController({
+      extractionResult: { ok: false, errorMessage: 'Claude est saturé, réessaie dans une minute.' },
+    })
+    act(() => result.current.setPastedText('Annonce'))
+    await act(() => result.current.extract())
+    act(() => result.current.setTextFormValue('postingRawText', '  '))
+    await act(() => result.current.extract())
+    expect(extractJobPosting).toHaveBeenCalledTimes(1)
+    expect(result.current.errorMessage).toBe("Colle le texte de l'annonce ou passe en saisie manuelle")
+  })
+
   it('refuses to submit without a title', async () => {
     const { result, createJobApplication } = renderNewJobApplicationFormController()
     act(() => result.current.switchToManualEntry())

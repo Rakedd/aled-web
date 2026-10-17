@@ -5,9 +5,16 @@ import { Input } from '@/components/ui/input'
 import { useController } from './controller'
 import type { EntityAutocompleteProps } from './interfaces'
 
-export const EntityAutocomplete = ({ entityKind, value, onChange, searchEntities, id }: EntityAutocompleteProps) => {
+export const EntityAutocomplete = ({
+  entityKind,
+  value,
+  onChange,
+  onSelectSuggestion,
+  searchEntities,
+  id,
+}: EntityAutocompleteProps) => {
   const { suggestions, highlightedIndex, isOpen, changeValue, selectSuggestion, closeSuggestions, handleKeyDown } =
-    useController({ entityKind, onChange, searchEntities })
+    useController({ entityKind, onChange, onSelectSuggestion, searchEntities })
   const listboxId = useId()
 
   const handleInputKeyDown = (keyboardEvent: KeyboardEvent<HTMLInputElement>) => {

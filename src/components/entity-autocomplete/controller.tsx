@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import type { EntityKind, EntitySuggestion } from '@/domain/entities'
+import type { EntitySuggestion } from '@/domain/entities'
 import type { EntityAutocompleteControllerParameters } from './interfaces'
 
 export const ENTITY_SEARCH_DEBOUNCE_MILLISECONDS = 250
 
 const NO_HIGHLIGHT_INDEX = -1
-const TRAILING_PARENTHESIZED_PARENT_PATTERN = /\s+\([^()]*\)$/
 
-const toEntityName = (entityKind: EntityKind, suggestionLabel: string): string =>
-  entityKind === 'end_client' ? suggestionLabel.replace(TRAILING_PARENTHESIZED_PARENT_PATTERN, '') : suggestionLabel
-
-export const useController = ({ entityKind, onChange, searchEntities }: EntityAutocompleteControllerParameters) => {
+export const useController = ({
+  entityKind,
+  onChange,
+  onSelectSuggestion,
+  searchEntities,
+}: EntityAutocompleteControllerParameters) => {
   const [suggestions, setSuggestions] = useState<EntitySuggestion[]>([])
   const [highlightedIndex, setHighlightedIndex] = useState(NO_HIGHLIGHT_INDEX)
   const [isOpen, setIsOpen] = useState(false)
@@ -26,6 +27,7 @@ export const useController = ({ entityKind, onChange, searchEntities }: EntityAu
   useEffect(() => cancelPendingSearch, [])
 
   const closeSuggestions = () => {
+    cancelPendingSearch()
     setSuggestions([])
     setHighlightedIndex(NO_HIGHLIGHT_INDEX)
     setIsOpen(false)
@@ -55,15 +57,15 @@ export const useController = ({ entityKind, onChange, searchEntities }: EntityAu
   }
 
   const selectSuggestion = (suggestion: EntitySuggestion) => {
-    cancelPendingSearch()
-    onChange(toEntityName(entityKind, suggestion.label))
+    onChange(suggestion.name)
+    onSelectSuggestion?.(suggestion)
     closeSuggestions()
   }
 
   const handleKeyDown = (key: string): boolean => {
-    if (key === 'Escape' && isOpen) {
+    if (key === 'Escape') {
       closeSuggestions()
-      return true
+      return isOpen
     }
     if (!isOpen) return false
     if (key === 'ArrowDown') {

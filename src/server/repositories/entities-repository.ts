@@ -226,7 +226,12 @@ const searchIntermediarySuggestions = async (
     .order('name')
     .limit(ENTITY_SUGGESTION_LIMIT)
   if (error) throw toRepositoryError('searchIntermediarySuggestions', error)
-  return data.map((intermediaryRow) => ({ id: intermediaryRow.id, label: intermediaryRow.name }))
+  return data.map((intermediaryRow) => ({
+    id: intermediaryRow.id,
+    name: intermediaryRow.name,
+    label: intermediaryRow.name,
+    parentName: null,
+  }))
 }
 
 const searchContactSuggestions = async (
@@ -242,7 +247,12 @@ const searchContactSuggestions = async (
     .order('full_name')
     .limit(ENTITY_SUGGESTION_LIMIT)
   if (error) throw toRepositoryError('searchContactSuggestions', error)
-  return data.map((contactRow) => ({ id: contactRow.id, label: contactRow.full_name }))
+  return data.map((contactRow) => ({
+    id: contactRow.id,
+    name: contactRow.full_name,
+    label: contactRow.full_name,
+    parentName: null,
+  }))
 }
 
 const findEndClientNamesByIds = async (
@@ -277,13 +287,16 @@ const searchEndClientSuggestions = async (
     .map((endClientRow) => endClientRow.parent_end_client_id)
     .filter((parentEndClientId) => parentEndClientId !== null)
   const parentNamesById = await findEndClientNamesByIds(supabase, userId, parentEndClientIds)
-  return data.map((endClientRow) => ({
-    id: endClientRow.id,
-    label: formatEndClientLabel(
-      endClientRow.name,
-      endClientRow.parent_end_client_id === null ? null : (parentNamesById.get(endClientRow.parent_end_client_id) ?? null),
-    ),
-  }))
+  return data.map((endClientRow) => {
+    const parentName =
+      endClientRow.parent_end_client_id === null ? null : (parentNamesById.get(endClientRow.parent_end_client_id) ?? null)
+    return {
+      id: endClientRow.id,
+      name: endClientRow.name,
+      label: formatEndClientLabel(endClientRow.name, parentName),
+      parentName,
+    }
+  })
 }
 
 const ENTITY_SUGGESTION_SEARCHERS = {

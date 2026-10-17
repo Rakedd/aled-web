@@ -8,9 +8,10 @@ const renderEntityAutocompleteController = ({
   searchResult = { ok: true, data: [] },
 }: { entityKind?: EntityKind; searchResult?: ActionResult<EntitySuggestion[]> } = {}) => {
   const onChange = jest.fn()
+  const onSelectSuggestion = jest.fn()
   const searchEntities = jest.fn().mockResolvedValue(searchResult)
-  const { result } = renderHook(() => useController({ entityKind, onChange, searchEntities }))
-  return { result, onChange, searchEntities }
+  const { result } = renderHook(() => useController({ entityKind, onChange, onSelectSuggestion, searchEntities }))
+  return { result, onChange, onSelectSuggestion, searchEntities }
 }
 
 const advanceDebounce = (milliseconds: number) => act(() => jest.advanceTimersByTimeAsync(milliseconds))
@@ -33,11 +34,11 @@ describe('entity-autocomplete useController', () => {
 
   it('shows the suggestions returned by the search', async () => {
     const { result } = renderEntityAutocompleteController({
-      searchResult: { ok: true, data: [{ id: 'one', label: 'Free-Work' }] },
+      searchResult: { ok: true, data: [{ id: 'one', name: 'Free-Work', label: 'Free-Work', parentName: null }] },
     })
     act(() => result.current.changeValue('Free'))
     await advanceDebounce(ENTITY_SEARCH_DEBOUNCE_MILLISECONDS)
-    expect(result.current.suggestions).toEqual([{ id: 'one', label: 'Free-Work' }])
+    expect(result.current.suggestions).toEqual([{ id: 'one', name: 'Free-Work', label: 'Free-Work', parentName: null }])
     expect(result.current.isOpen).toBe(true)
   })
 
@@ -72,19 +73,29 @@ describe('entity-autocomplete useController', () => {
 
   it('fills the value with the chosen suggestion and closes the list', async () => {
     const { result, onChange } = renderEntityAutocompleteController({
-      searchResult: { ok: true, data: [{ id: 'one', label: 'Free-Work' }] },
+      searchResult: { ok: true, data: [{ id: 'one', name: 'Free-Work', label: 'Free-Work', parentName: null }] },
     })
     act(() => result.current.changeValue('Free'))
     await advanceDebounce(ENTITY_SEARCH_DEBOUNCE_MILLISECONDS)
-    act(() => result.current.selectSuggestion({ id: 'one', label: 'Free-Work' }))
+    act(() => result.current.selectSuggestion({ id: 'one', name: 'Free-Work', label: 'Free-Work', parentName: null }))
     expect(onChange).toHaveBeenLastCalledWith('Free-Work')
     expect(result.current.isOpen).toBe(false)
   })
 
-  it('fills an end client with its own name, without the parent group', () => {
+  it('fills an end client with its structured name and reports the suggestion with its parent', () => {
+    const { result, onChange, onSelectSuggestion } = renderEntityAutocompleteController({ entityKind: 'end_client' })
+    const suggestion = { id: 'one', name: 'Thales', label: 'Thales (Défense)', parentName: 'Défense' }
+    act(() => result.current.selectSuggestion(suggestion))
+    expect(onChange).toHaveBeenLastCalledWith('Thales')
+    expect(onSelectSuggestion).toHaveBeenCalledWith(suggestion)
+  })
+
+  it('keeps a name containing parentheses when it has no parent', () => {
     const { result, onChange } = renderEntityAutocompleteController({ entityKind: 'end_client' })
-    act(() => result.current.selectSuggestion({ id: 'one', label: 'Société Générale (Groupe SG)' }))
-    expect(onChange).toHaveBeenLastCalledWith('Société Générale')
+    act(() =>
+      result.current.selectSuggestion({ id: 'one', name: 'Thales (Défense)', label: 'Thales (Défense)', parentName: null }),
+    )
+    expect(onChange).toHaveBeenLastCalledWith('Thales (Défense)')
   })
 
   it('navigates the suggestions with the keyboard', async () => {
@@ -92,8 +103,8 @@ describe('entity-autocomplete useController', () => {
       searchResult: {
         ok: true,
         data: [
-          { id: 'one', label: 'Alpha' },
-          { id: 'two', label: 'Beta' },
+          { id: 'one', name: 'Alpha', label: 'Alpha', parentName: null },
+          { id: 'two', name: 'Beta', label: 'Beta', parentName: null },
         ],
       },
     })
@@ -113,7 +124,38 @@ describe('entity-autocomplete useController', () => {
     act(() => result.current.changeValue('Old'))
     await advanceDebounce(ENTITY_SEARCH_DEBOUNCE_MILLISECONDS)
     act(() => result.current.changeValue(''))
-    await act(async () => resolveFirstSearch({ ok: true, data: [{ id: 'one', label: 'Old Corp' }] }))
+    await act(async () => resolveFirstSearch({ ok: true, data: [{ id: 'one', name: 'Old Corp', label: 'Old Corp', parentName: null }] }))
     expect(result.current.suggestions).toEqual([])
+  })
+
+  it('cancels the pending search when the list is closed by a blur or Escape', async () => {
+    const { result, searchEntities } = renderEntityAutocompleteController()
+    act(() => result.current.changeValue('Abc'))
+    act(() => result.current.closeSuggestions())
+    await advanceDebounce(ENTITY_SEARCH_DEBOUNCE_MILLISECONDS)
+    expect(searchEntities).not.toHaveBeenCalled()
+  })
+
+  it('keeps the list closed when a search resolves after a blur', async () => {
+    const { result, searchEntities } = renderEntityAutocompleteController()
+    let resolveSearch: (searchResult: ActionResult<EntitySuggestion[]>) => void = () => undefined
+    searchEntities.mockReturnValueOnce(new Promise((resolve) => (resolveSearch = resolve)))
+    act(() => result.current.changeValue('Abc'))
+    await advanceDebounce(ENTITY_SEARCH_DEBOUNCE_MILLISECONDS)
+    act(() => result.current.closeSuggestions())
+    await act(async () =>
+      resolveSearch({ ok: true, data: [{ id: 'one', name: 'Abc Corp', label: 'Abc Corp', parentName: null }] }),
+    )
+    expect(result.current.isOpen).toBe(false)
+    expect(result.current.suggestions).toEqual([])
+  })
+
+  it('cancels the pending search on Escape', async () => {
+    const { result, searchEntities } = renderEntityAutocompleteController()
+    act(() => result.current.changeValue('Abc'))
+    act(() => void result.current.handleKeyDown('Escape'))
+    await advanceDebounce(ENTITY_SEARCH_DEBOUNCE_MILLISECONDS)
+    expect(searchEntities).not.toHaveBeenCalled()
+    expect(result.current.isOpen).toBe(false)
   })
 })

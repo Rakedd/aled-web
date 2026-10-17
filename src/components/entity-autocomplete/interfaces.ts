@@ -6,6 +6,7 @@ export type SearchEntities = (entityKind: EntityKind, query: string) => Promise<
 export type EntityAutocompleteControllerParameters = {
   entityKind: EntityKind
   onChange: (value: string) => void
+  onSelectSuggestion?: (suggestion: EntitySuggestion) => void
   searchEntities: SearchEntities
 }
 

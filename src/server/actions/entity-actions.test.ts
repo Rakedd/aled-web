@@ -42,10 +42,10 @@ beforeEach(() => {
 
 describe('searchEntities', () => {
   it('searches the entities of the authenticated user', async () => {
-    jest.mocked(searchEntitySuggestions).mockResolvedValue([{ id: subsidiaryId, label: 'BNP Paribas AM (BNP Paribas)' }])
+    jest.mocked(searchEntitySuggestions).mockResolvedValue([{ id: subsidiaryId, name: 'BNP Paribas AM', label: 'BNP Paribas AM (BNP Paribas)', parentName: 'BNP Paribas' }])
     await expect(searchEntities('end_client', 'bnp')).resolves.toEqual({
       ok: true,
-      data: [{ id: subsidiaryId, label: 'BNP Paribas AM (BNP Paribas)' }],
+      data: [{ id: subsidiaryId, name: 'BNP Paribas AM', label: 'BNP Paribas AM (BNP Paribas)', parentName: 'BNP Paribas' }],
     })
     expect(searchEntitySuggestions).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', {
       entityKind: 'end_client',

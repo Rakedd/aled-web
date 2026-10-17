@@ -4,7 +4,7 @@ import type { StackChipsEditorControllerParameters } from './interfaces'
 
 const INITIAL_DRAFT_CATEGORY: StackCategory = 'tool'
 
-export const useController = ({ stack, onChange }: StackChipsEditorControllerParameters) => {
+export const useController = ({ stack, origin, onChange }: StackChipsEditorControllerParameters) => {
   const [draftName, setDraftName] = useState('')
   const [draftCategory, setDraftCategory] = useState<StackCategory>(INITIAL_DRAFT_CATEGORY)
 
@@ -14,7 +14,7 @@ export const useController = ({ stack, onChange }: StackChipsEditorControllerPar
     const normalizedDraftName = trimmedDraftName.toLowerCase()
     const isAlreadyPresent = stack.some((stackItem) => stackItem.name.trim().toLowerCase() === normalizedDraftName)
     if (!isAlreadyPresent) {
-      onChange([...stack, { name: trimmedDraftName, category: draftCategory, origin: 'posting' }])
+      onChange([...stack, { name: trimmedDraftName, category: draftCategory, origin }])
     }
     setDraftName('')
   }

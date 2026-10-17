@@ -2,6 +2,14 @@ export const STACK_CATEGORIES = ['language', 'framework', 'tool', 'method', 'oth
 
 export type StackCategory = (typeof STACK_CATEGORIES)[number]
 
+export const STACK_CATEGORY_LABELS: Record<StackCategory, string> = {
+  language: 'Langage',
+  framework: 'Framework',
+  tool: 'Outil',
+  method: 'Méthode',
+  other: 'Autre',
+}
+
 export type StackItemOrigin = 'posting' | 'job_spec'
 
 export type StackItem = {

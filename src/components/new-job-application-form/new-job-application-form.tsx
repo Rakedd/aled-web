@@ -41,6 +41,7 @@ export const NewJobApplicationForm = ({
     formValues,
     errorMessage,
     isExtracting,
+    hasExtractionFailed,
     isSubmitting,
     extract,
     switchToManualEntry,
@@ -82,6 +83,11 @@ export const NewJobApplicationForm = ({
         entityKind={entityKind}
         value={formValues[valueName]}
         onChange={(value) => setTextFormValue(valueName, value)}
+        onSelectSuggestion={
+          entityKind === 'end_client'
+            ? (suggestion) => setTextFormValue('endClientParentName', suggestion.parentName ?? '')
+            : undefined
+        }
         searchEntities={searchEntities}
       />
     </FormField>
@@ -169,7 +175,31 @@ export const NewJobApplicationForm = ({
       </div>
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-2 text-sm font-medium">Technologies</legend>
-        <StackChipsEditor stack={formValues.stack} onChange={setStack} />
+        <StackChipsEditor stack={formValues.stack} origin="posting" onChange={setStack} />
+      </fieldset>
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-2 text-sm font-medium">Texte de l&apos;annonce</legend>
+        <textarea
+          id="new-job-application-postingRawText"
+          aria-label="Texte de l'annonce"
+          rows={8}
+          maxLength={MAX_PASTED_TEXT_LENGTH + 1}
+          className={`${CONTROL_CLASS_NAME} min-h-32 w-full resize-y`}
+          value={formValues.postingRawText}
+          onChange={(changeEvent) => setTextFormValue('postingRawText', changeEvent.target.value)}
+          disabled={isExtracting}
+        />
+        {hasExtractionFailed && (
+          <Button
+            type="button"
+            variant="outline"
+            className="self-start"
+            onClick={() => void extract()}
+            disabled={isExtracting || isSubmitting}
+          >
+            {isExtracting ? 'Analyse en cours…' : 'Réessayer le pré-remplissage'}
+          </Button>
+        )}
       </fieldset>
       <Button type="submit" className="self-start" disabled={isSubmitting}>
         {isSubmitting ? 'Enregistrement…' : 'Créer la candidature'}
