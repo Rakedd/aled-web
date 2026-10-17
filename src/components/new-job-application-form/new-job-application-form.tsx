@@ -150,7 +150,7 @@ export const NewJobApplicationForm = ({
         {renderTextInput('contactPhone', 'Téléphone du contact', { type: 'tel', inputMode: 'tel' })}
         {renderEntityField('endClientName', 'end_client', 'Client final')}
         {renderTextInput('endClientParentName', 'Groupe du client final')}
-        {renderTextInput('postedDailyRate', 'TJM annoncé (€)', { type: 'number', inputMode: 'numeric', min: 0 })}
+        {renderTextInput('postedDailyRate', 'TJM annoncé (€)', { inputMode: 'numeric' })}
         {renderTextInput('location', 'Lieu')}
         {renderTextInput('remotePolicy', 'Télétravail')}
         {renderTextInput('desiredStart', 'Démarrage')}
