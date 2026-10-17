@@ -30,3 +30,16 @@ if (!isEveryVariableAlreadyDefined) {
     process.env[projectVariableName] ??= localSupabaseStatus[statusVariableName]
   })
 }
+
+const LOCAL_SUPABASE_HOSTNAMES = ['localhost', '127.0.0.1']
+
+const isLocalSupabaseUrl = (supabaseUrl: string | undefined): boolean => {
+  if (!supabaseUrl || !URL.canParse(supabaseUrl)) return false
+  return LOCAL_SUPABASE_HOSTNAMES.includes(new URL(supabaseUrl).hostname)
+}
+
+if (!isLocalSupabaseUrl(process.env.SUPABASE_URL)) {
+  throw new Error(
+    `Integration tests only run against a local Supabase (localhost or 127.0.0.1), got SUPABASE_URL="${process.env.SUPABASE_URL ?? ''}"`,
+  )
+}

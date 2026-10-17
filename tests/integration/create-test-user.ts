@@ -17,6 +17,13 @@ export const createServiceRoleTestClient = (): SupabaseClient<Database> =>
     TEST_CLIENT_OPTIONS,
   )
 
+export const createAnonymousTestClient = (): SupabaseClient<Database> =>
+  createClient<Database>(
+    readRequiredEnvironmentVariable('SUPABASE_URL'),
+    readRequiredEnvironmentVariable('SUPABASE_ANON_KEY'),
+    TEST_CLIENT_OPTIONS,
+  )
+
 export const createSignedInTestClient = async (
   email: string,
 ): Promise<{ client: SupabaseClient<Database>; userId: string }> => {
@@ -28,11 +35,7 @@ export const createSignedInTestClient = async (
   })
   if (userCreationError) throw userCreationError
 
-  const client = createClient<Database>(
-    readRequiredEnvironmentVariable('SUPABASE_URL'),
-    readRequiredEnvironmentVariable('SUPABASE_ANON_KEY'),
-    TEST_CLIENT_OPTIONS,
-  )
+  const client = createAnonymousTestClient()
   const { error: signInError } = await client.auth.signInWithPassword({ email, password })
   if (signInError) throw signInError
 

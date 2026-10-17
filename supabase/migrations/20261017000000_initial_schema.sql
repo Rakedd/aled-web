@@ -77,7 +77,7 @@ create table public.contacts (
   intermediary_id uuid,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique nulls not distinct (user_id, normalized_name, intermediary_id),
+  unique (user_id, normalized_name),
   unique (user_id, id),
   foreign key (user_id, intermediary_id) references public.intermediaries (user_id, id) on delete set null (intermediary_id)
 );
@@ -117,7 +117,7 @@ create table public.job_applications (
   remote_policy text,
   desired_start text,
   duration text,
-  applied_on date not null default current_date,
+  applied_on date not null default ((now() at time zone 'Europe/Paris')::date),
   notes text,
   actual_start_date date,
   stack jsonb not null default '[]',
@@ -158,13 +158,14 @@ create table public.interviews (
 create table public.job_specs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users on delete cascade,
-  job_application_id uuid not null unique,
+  job_application_id uuid not null,
   source_kind public.job_spec_source_kind not null,
   storage_path text,
   raw_text text,
   pending_stack jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  unique (user_id, job_application_id),
   foreign key (user_id, job_application_id) references public.job_applications (user_id, id) on delete cascade
 );
 
@@ -176,7 +177,7 @@ create table public.alert_snoozes (
   snoozed_until timestamptz not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (job_application_id, alert_kind),
+  unique (user_id, job_application_id, alert_kind),
   foreign key (user_id, job_application_id) references public.job_applications (user_id, id) on delete cascade
 );
 
@@ -189,8 +190,6 @@ create index activity_log_entries_job_application_id_index on public.activity_lo
 create index activity_log_entries_user_id_index on public.activity_log_entries (user_id);
 create index interviews_job_application_id_index on public.interviews (job_application_id);
 create index interviews_user_id_starts_at_index on public.interviews (user_id, starts_at);
-create index job_specs_user_id_index on public.job_specs (user_id);
-create index alert_snoozes_user_id_index on public.alert_snoozes (user_id);
 
 create trigger profiles_set_updated_at before update on public.profiles
   for each row execute function public.set_updated_at();

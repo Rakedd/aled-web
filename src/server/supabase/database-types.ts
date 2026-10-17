@@ -184,13 +184,13 @@ isOneToOne: false
                     {
       foreignKeyName: "job_specs_user_id_job_application_id_fkey"
       columns: ["user_id","job_application_id"]
-isOneToOne: false
+isOneToOne: true
       referencedRelation: "job_applications"
       referencedColumns: ["user_id","id"]
     },{
       foreignKeyName: "job_specs_user_id_job_application_id_fkey"
       columns: ["user_id","job_application_id"]
-isOneToOne: false
+isOneToOne: true
       referencedRelation: "job_applications_overview"
       referencedColumns: ["user_id","id"]
     }

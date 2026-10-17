@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { createSignedInTestClient } from './create-test-user'
+import { createAnonymousTestClient, createSignedInTestClient } from './create-test-user'
 
 describe('data isolation between users', () => {
   it('prevents user B from reading or modifying user A data', async () => {
@@ -51,5 +51,22 @@ describe('data isolation between users', () => {
     const user = await createSignedInTestClient(`c-${randomUUID()}@test.local`)
     const { data } = await user.client.from('profiles').select('follow_up_delay_days').single()
     expect(data?.follow_up_delay_days).toBe(7)
+  })
+
+  it('keeps a contact and clears its intermediary when the intermediary is deleted', async () => {
+    const user = await createSignedInTestClient(`d-${randomUUID()}@test.local`)
+    const { data: intermediary } = await user.client.from('intermediaries').insert({ user_id: user.userId, name: 'Agence X', normalized_name: 'agence x' }).select().single()
+    const { data: contact } = await user.client.from('contacts').insert({ user_id: user.userId, full_name: 'Jean Dupont', normalized_name: 'jean dupont', intermediary_id: intermediary!.id }).select().single()
+
+    const { error: deletionError } = await user.client.from('intermediaries').delete().eq('id', intermediary!.id)
+    expect(deletionError).toBeNull()
+
+    const { data: contactAfterDeletion } = await user.client.from('contacts').select('intermediary_id').eq('id', contact!.id).single()
+    expect(contactAfterDeletion).toEqual({ intermediary_id: null })
+  })
+
+  it('rejects a sign-up from an anonymous client because access is invite-only', async () => {
+    const { error: signUpError } = await createAnonymousTestClient().auth.signUp({ email: `e-${randomUUID()}@test.local`, password: randomUUID() })
+    expect(signUpError?.code).toBe('signup_disabled')
   })
 })
