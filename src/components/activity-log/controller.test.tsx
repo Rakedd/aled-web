@@ -19,6 +19,8 @@ const NEWER_ENTRY: ActivityLogEntry = {
   summary: 'Appel de qualification',
 }
 
+const NOW = new Date('2026-10-17T10:00:00Z')
+
 const renderActivityLogController = ({
   addResult = { ok: true, data: null },
   listResult = { ok: true, data: [NEWER_ENTRY, OLDER_ENTRY] },
@@ -36,6 +38,7 @@ const renderActivityLogController = ({
         initialEntries,
         addActivityLogEntry,
         listActivityLogEntries,
+        now: NOW,
         onDataChanged,
       }),
     { initialProps: [OLDER_ENTRY] },
@@ -60,6 +63,51 @@ describe('activity-log useController', () => {
     expect(result.current.summary).toBe('')
     expect(result.current.kind).toBe('message')
     expect(onDataChanged).toHaveBeenCalledTimes(1)
+  })
+
+  it('defaults the exchange date to the current Paris time', () => {
+    const { result } = renderActivityLogController()
+    expect(result.current.occurredAtLocalDateTime).toBe('2026-10-17T12:00')
+  })
+
+  it('dates the exchange at the chosen Paris time', async () => {
+    const { result, addActivityLogEntry } = renderActivityLogController()
+    act(() => result.current.setOccurredAtLocalDateTime('2026-10-16T18:30'))
+    act(() => result.current.setSummary('Appel de la veille'))
+    await act(() => result.current.addEntry())
+    expect(addActivityLogEntry).toHaveBeenCalledWith('application-1', {
+      kind: 'call',
+      summary: 'Appel de la veille',
+      occurredAt: new Date('2026-10-16T16:30:00Z'),
+    })
+  })
+
+  it('lets the server date an exchange whose date was left untouched, even after a previous dated one', async () => {
+    const { result, addActivityLogEntry } = renderActivityLogController()
+    act(() => result.current.setOccurredAtLocalDateTime('2026-10-16T18:30'))
+    act(() => result.current.setSummary('Appel de la veille'))
+    await act(() => result.current.addEntry())
+    act(() => result.current.setSummary('Mail de relance'))
+    await act(() => result.current.addEntry())
+    expect(addActivityLogEntry).toHaveBeenLastCalledWith('application-1', { kind: 'call', summary: 'Mail de relance' })
+  })
+
+  it('refuses an exchange dated in the future without calling the server', async () => {
+    const { result, addActivityLogEntry } = renderActivityLogController()
+    act(() => result.current.setOccurredAtLocalDateTime('2099-01-01T09:00'))
+    act(() => result.current.setSummary('Appel'))
+    await act(() => result.current.addEntry())
+    expect(addActivityLogEntry).not.toHaveBeenCalled()
+    expect(result.current.errorMessage).toBe("La date de l'échange ne peut pas être dans le futur")
+  })
+
+  it('refuses an emptied exchange date without calling the server', async () => {
+    const { result, addActivityLogEntry } = renderActivityLogController()
+    act(() => result.current.setOccurredAtLocalDateTime(''))
+    act(() => result.current.setSummary('Appel'))
+    await act(() => result.current.addEntry())
+    expect(addActivityLogEntry).not.toHaveBeenCalled()
+    expect(result.current.errorMessage).toBe("Date de l'échange invalide")
   })
 
   it('refuses an empty summary without calling the server', async () => {

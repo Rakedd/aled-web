@@ -13,19 +13,34 @@ import type { ActivityLogProps } from './interfaces'
 
 const KIND_SELECT_ID = 'activity-log-kind'
 const SUMMARY_INPUT_ID = 'activity-log-summary'
+const OCCURRED_AT_INPUT_ID = 'activity-log-occurred-at'
 
 export const ActivityLog = ({
   jobApplicationId,
   initialEntries,
   addActivityLogEntry,
   listActivityLogEntries,
+  now,
 }: ActivityLogProps) => {
   const router = useRouter()
-  const { kind, setKind, kindOptions, summary, setSummary, entries, isAdding, errorMessage, addEntry } = useController({
+  const {
+    kind,
+    setKind,
+    kindOptions,
+    summary,
+    setSummary,
+    occurredAtLocalDateTime,
+    setOccurredAtLocalDateTime,
+    entries,
+    isAdding,
+    errorMessage,
+    addEntry,
+  } = useController({
     jobApplicationId,
     initialEntries,
     addActivityLogEntry,
     listActivityLogEntries,
+    now,
     onDataChanged: router.refresh,
   })
 
@@ -60,6 +75,17 @@ export const ActivityLog = ({
               </option>
             ))}
           </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor={OCCURRED_AT_INPUT_ID}>Date et heure</Label>
+          <Input
+            id={OCCURRED_AT_INPUT_ID}
+            type="datetime-local"
+            className="w-auto"
+            value={occurredAtLocalDateTime}
+            onChange={(changeEvent) => setOccurredAtLocalDateTime(changeEvent.target.value)}
+            disabled={isAdding}
+          />
         </div>
         <div className="flex min-w-48 flex-1 flex-col gap-1">
           <Label htmlFor={SUMMARY_INPUT_ID}>Résumé</Label>

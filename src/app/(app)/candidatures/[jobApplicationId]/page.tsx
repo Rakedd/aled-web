@@ -91,6 +91,7 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
   }
 
   const jobApplication = jobApplicationResult.data
+  const now = new Date()
   const endClientBriefResult = await loadEndClientBrief(jobApplication.endClientId)
 
   if (!endClientBriefResult.ok) {
@@ -106,7 +107,7 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
       <JobApplicationHeader
         jobApplication={jobApplication}
         changeJobApplicationStatus={changeJobApplicationStatus}
-        now={new Date()}
+        now={now}
       />
       <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <MissionInfoForm
@@ -153,6 +154,7 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
         initialEntries={activityLogEntriesResult.data}
         addActivityLogEntry={addActivityLogEntry}
         listActivityLogEntries={listActivityLogEntries}
+        now={now}
       />
     </div>
   )

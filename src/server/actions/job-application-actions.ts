@@ -105,7 +105,7 @@ export const addActivityLogEntry = async (
     validateArguments: (): ActionResult<{ jobApplicationId: string; input: ActivityLogEntryInput }> => {
       const jobApplicationIdValidation = validateJobApplicationId(jobApplicationId)
       if (!jobApplicationIdValidation.ok) return jobApplicationIdValidation
-      const inputValidation = validateActivityLogEntryInput(input)
+      const inputValidation = validateActivityLogEntryInput(input, new Date())
       if (!inputValidation.ok) return inputValidation
       return { ok: true, data: { jobApplicationId: jobApplicationIdValidation.data, input: inputValidation.data } }
     },

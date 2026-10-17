@@ -177,6 +177,28 @@ describe('addActivityLogEntry', () => {
     })
   })
 
+  it('records an exchange dated in the past', async () => {
+    jest.mocked(recordActivityLogEntry).mockResolvedValue(succeeded)
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    await expect(addActivityLogEntry(jobApplicationId, { kind: 'call', summary: 'Appel', occurredAt: yesterday })).resolves.toEqual(
+      succeeded,
+    )
+    expect(recordActivityLogEntry).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', jobApplicationId, {
+      kind: 'call',
+      summary: 'Appel',
+      occurredAt: yesterday,
+    })
+  })
+
+  it('refuses an exchange dated in the future', async () => {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    await expect(addActivityLogEntry(jobApplicationId, { kind: 'call', summary: 'Appel', occurredAt: tomorrow })).resolves.toEqual({
+      ok: false,
+      errorMessage: "La date de l'échange ne peut pas être dans le futur",
+    })
+    expect(recordActivityLogEntry).not.toHaveBeenCalled()
+  })
+
   it('rejects an empty summary', async () => {
     await expect(addActivityLogEntry(jobApplicationId, { kind: 'call', summary: '' })).resolves.toEqual({
       ok: false,

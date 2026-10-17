@@ -13,6 +13,7 @@ export type ActivityLogControllerParameters = {
   initialEntries: ActivityLogEntry[]
   addActivityLogEntry: AddActivityLogEntry
   listActivityLogEntries: ListActivityLogEntries
+  now: Date
   onDataChanged: () => void
 }
 
