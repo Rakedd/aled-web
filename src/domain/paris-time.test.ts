@@ -3,6 +3,7 @@ import {
   addParisCalendarDays,
   countParisCalendarDaysBetween,
   formatParisCalendarDate,
+  formatParisDate,
   formatParisDateTime,
   formatRelativeDaysAgo,
   parseParisCalendarDate,
@@ -66,5 +67,11 @@ describe('formatParisDateTime', () => {
   it('formats in Paris time across the daylight saving change', () => {
     expect(formatParisDateTime(new Date('2026-10-17T22:30:00Z'))).toBe('18/10/2026 00:30')
     expect(formatParisDateTime(new Date('2026-12-01T22:30:00Z'))).toBe('01/12/2026 23:30')
+  })
+})
+
+describe('formatParisDate', () => {
+  it('formats the Paris calendar date', () => {
+    expect(formatParisDate(new Date('2026-10-17T22:30:00Z'))).toBe('18/10/2026')
   })
 })

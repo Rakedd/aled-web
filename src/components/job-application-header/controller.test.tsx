@@ -9,10 +9,12 @@ const renderHeaderController = ({
   status = 'cv_submitted',
   endClientLabel = 'Société Générale',
   actionResult = { ok: true, data: null },
+  lastActivityAt = null,
 }: {
   status?: JobApplicationStatus
   endClientLabel?: string | null
   actionResult?: ActionResult<null>
+  lastActivityAt?: Date | null
 } = {}) => {
   const jobApplication: JobApplicationHeaderSummary = {
     id: 'application-1',
@@ -21,10 +23,20 @@ const renderHeaderController = ({
     intermediaryName: 'Free-Work',
     contactName: 'Jeanne Martin',
     endClientLabel,
+    source: 'Free-Work',
+    appliedOn: new Date('2026-10-16T22:30:00Z'),
+    lastActivityAt,
   }
   const changeJobApplicationStatus = jest.fn().mockResolvedValue(actionResult)
   const onDataChanged = jest.fn()
-  const { result } = renderHook(() => useController({ jobApplication, changeJobApplicationStatus, onDataChanged }))
+  const { result } = renderHook(() =>
+    useController({
+      jobApplication,
+      changeJobApplicationStatus,
+      now: new Date('2026-10-17T10:00:00Z'),
+      onDataChanged,
+    }),
+  )
   return { result, changeJobApplicationStatus, onDataChanged }
 }
 
@@ -32,17 +44,16 @@ describe('job-application-header useController', () => {
   it('advances to the next pipeline status and refreshes the data', async () => {
     const { result, changeJobApplicationStatus, onDataChanged } = renderHeaderController()
     await act(() => result.current.advance())
-    expect(changeJobApplicationStatus).toHaveBeenCalledWith(
-      'application-1',
-      getNextPipelineStatus('cv_submitted'),
-    )
+    expect(changeJobApplicationStatus).toHaveBeenCalledWith('application-1', getNextPipelineStatus('cv_submitted'))
     expect(onDataChanged).toHaveBeenCalledTimes(1)
   })
 
   it.each<JobApplicationStatus>(['signed', 'ko_cv', 'no_news_abandoned'])(
     'hides the advance button for the terminal status %s',
     async (status) => {
-      const { result, changeJobApplicationStatus } = renderHeaderController({ status })
+      const { result, changeJobApplicationStatus } = renderHeaderController({
+        status,
+      })
       expect(result.current.nextStatus).toBeNull()
       await act(() => result.current.advance())
       expect(changeJobApplicationStatus).not.toHaveBeenCalled()
@@ -55,7 +66,9 @@ describe('job-application-header useController', () => {
   })
 
   it('lets any status be picked to correct a mistake', async () => {
-    const { result, changeJobApplicationStatus } = renderHeaderController({ status: 'signed' })
+    const { result, changeJobApplicationStatus } = renderHeaderController({
+      status: 'signed',
+    })
     await act(() => result.current.changeStatus('applied'))
     expect(changeJobApplicationStatus).toHaveBeenCalledWith('application-1', 'applied')
   })
@@ -100,5 +113,18 @@ describe('job-application-header useController', () => {
       await firstChange
     })
     expect(result.current.isChangingStatus).toBe(false)
+  })
+
+  it('formats the source, the Paris application date and the relative last exchange', () => {
+    const { result } = renderHeaderController({
+      lastActivityAt: new Date('2026-10-14T10:00:00Z'),
+    })
+    expect(result.current.sourceDisplay).toBe('Free-Work')
+    expect(result.current.appliedOnDisplay).toBe('17/10/2026')
+    expect(result.current.lastActivityDisplay).toBe('il y a 3 j')
+  })
+
+  it('shows a dash when there is no last exchange', () => {
+    expect(renderHeaderController().result.current.lastActivityDisplay).toBe('—')
   })
 })

@@ -25,7 +25,8 @@ const toFormValues = (jobApplication: JobApplicationOverview): MissionInfoFormVa
   desiredStart: toText(jobApplication.desiredStart),
   duration: toText(jobApplication.duration),
   appliedOn: formatParisCalendarDate(jobApplication.appliedOn),
-  actualStartDate: jobApplication.actualStartDate === null ? '' : formatParisCalendarDate(jobApplication.actualStartDate),
+  actualStartDate:
+    jobApplication.actualStartDate === null ? '' : formatParisCalendarDate(jobApplication.actualStartDate),
   notes: toText(jobApplication.notes),
   intermediaryName: toText(jobApplication.intermediaryName),
   contactName: toText(jobApplication.contactName),
@@ -33,6 +34,41 @@ const toFormValues = (jobApplication: JobApplicationOverview): MissionInfoFormVa
   endClientParentName: toText(jobApplication.endClientParentName),
   stack: jobApplication.stack,
 })
+
+const TEXT_VALUE_NAMES: readonly MissionInfoTextValueName[] = [
+  'title',
+  'source',
+  'postingUrl',
+  'postedDailyRate',
+  'requestedDailyRate',
+  'location',
+  'remotePolicy',
+  'desiredStart',
+  'duration',
+  'appliedOn',
+  'actualStartDate',
+  'notes',
+  'intermediaryName',
+  'contactName',
+  'endClientName',
+  'endClientParentName',
+]
+
+const mergeServerChanges = (
+  previousBaseline: MissionInfoFormValues,
+  nextBaseline: MissionInfoFormValues,
+  currentFormValues: MissionInfoFormValues,
+): MissionInfoFormValues => {
+  const mergedFormValues: MissionInfoFormValues = { ...currentFormValues }
+  for (const valueName of TEXT_VALUE_NAMES) {
+    if (currentFormValues[valueName] === previousBaseline[valueName])
+      mergedFormValues[valueName] = nextBaseline[valueName]
+  }
+  if (JSON.stringify(currentFormValues.stack) === JSON.stringify(previousBaseline.stack)) {
+    mergedFormValues.stack = nextBaseline.stack
+  }
+  return mergedFormValues
+}
 
 const toNullableText = (text: string): string | null => (text.trim().length === 0 ? null : text)
 
@@ -77,7 +113,11 @@ const findChangedEntries = (
   )
 }
 
-const toContactFormValues = (contactDetails: { phone: string | null; email: string | null; linkedinUrl: string | null }): ContactFormValues => ({
+const toContactFormValues = (contactDetails: {
+  phone: string | null
+  email: string | null
+  linkedinUrl: string | null
+}): ContactFormValues => ({
   phone: toText(contactDetails.phone),
   email: toText(contactDetails.email),
   linkedinUrl: toText(contactDetails.linkedinUrl),
@@ -91,7 +131,11 @@ const guardServerCall = async (serverCall: () => Promise<ActionResult<null>>): P
   }
 }
 
-type LoadedContact = { contactId: string; fullName: string; formValues: ContactFormValues }
+type LoadedContact = {
+  contactId: string
+  fullName: string
+  formValues: ContactFormValues
+}
 
 export const useController = ({
   jobApplication,
@@ -101,8 +145,11 @@ export const useController = ({
   updateContactDetails,
   onDataChanged,
 }: MissionInfoFormControllerParameters) => {
-  const initialFormValues = toFormValues(jobApplication)
-  const [formValues, setFormValues] = useState<MissionInfoFormValues>(initialFormValues)
+  const [baselineFormValues, setBaselineFormValues] = useState<MissionInfoFormValues>(() =>
+    toFormValues(jobApplication),
+  )
+  const [formValues, setFormValues] = useState<MissionInfoFormValues>(baselineFormValues)
+  const [syncedJobApplication, setSyncedJobApplication] = useState(jobApplication)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [loadedContact, setLoadedContact] = useState<LoadedContact | null>(null)
@@ -110,17 +157,29 @@ export const useController = ({
   const [contactErrorMessage, setContactErrorMessage] = useState<string | null>(null)
   const isSaveInFlightRef = useRef(false)
   const isContactSaveInFlightRef = useRef(false)
+  const getContactDetailsRef = useRef(getContactDetails)
+
+  useEffect(() => {
+    getContactDetailsRef.current = getContactDetails
+  }, [getContactDetails])
+
+  if (syncedJobApplication !== jobApplication) {
+    const nextBaselineFormValues = toFormValues(jobApplication)
+    setSyncedJobApplication(jobApplication)
+    setBaselineFormValues(nextBaselineFormValues)
+    setFormValues(mergeServerChanges(baselineFormValues, nextBaselineFormValues, formValues))
+  }
 
   const { contactId } = jobApplication
   const currentLoadedContact = loadedContact !== null && loadedContact.contactId === contactId ? loadedContact : null
-  const changedEntries = findChangedEntries(initialFormValues, formValues)
+  const changedEntries = findChangedEntries(baselineFormValues, formValues)
 
   useEffect(() => {
     if (contactId === null) return
     let isCancelled = false
     const loadContact = async () => {
       try {
-        const contactResult = await getContactDetails(contactId)
+        const contactResult = await getContactDetailsRef.current(contactId)
         if (isCancelled) return
         if (!contactResult.ok) {
           setContactErrorMessage(contactResult.errorMessage)
@@ -140,10 +199,14 @@ export const useController = ({
     return () => {
       isCancelled = true
     }
-  }, [contactId, getContactDetails])
+  }, [contactId])
 
   const setTextFormValue = (valueName: MissionInfoTextValueName, value: string) =>
-    setFormValues((currentFormValues) => ({ ...currentFormValues, [valueName]: value }))
+    setFormValues((currentFormValues) => ({
+      ...currentFormValues,
+      [valueName]: value,
+      ...(valueName === 'endClientName' && value.trim().length === 0 ? { endClientParentName: '' } : {}),
+    }))
 
   const setStack = (stack: StackItem[]) => setFormValues((currentFormValues) => ({ ...currentFormValues, stack }))
 
@@ -190,7 +253,10 @@ export const useController = ({
         ? null
         : {
             ...currentLoadedContact,
-            formValues: { ...currentLoadedContact.formValues, [valueName]: value },
+            formValues: {
+              ...currentLoadedContact.formValues,
+              [valueName]: value,
+            },
           },
     )
 
@@ -209,7 +275,9 @@ export const useController = ({
     }
     isContactSaveInFlightRef.current = true
     setIsSavingContact(true)
-    const saveResult = await guardServerCall(() => updateContactDetails(currentLoadedContact.contactId, validation.data))
+    const saveResult = await guardServerCall(() =>
+      updateContactDetails(currentLoadedContact.contactId, validation.data),
+    )
     isContactSaveInFlightRef.current = false
     setIsSavingContact(false)
     if (!saveResult.ok) {
@@ -224,6 +292,7 @@ export const useController = ({
     setTextFormValue,
     setStack,
     hasChanges: changedEntries.length > 0,
+    isEndClientParentDisabled: formValues.endClientName.trim().length === 0,
     isSaving,
     errorMessage,
     save,

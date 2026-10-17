@@ -58,17 +58,27 @@ const renderMissionInfoController = ({
   const getContactDetails = jest.fn().mockResolvedValue(contactDetailsResult)
   const updateContactDetails = jest.fn().mockResolvedValue(SUCCESS)
   const onDataChanged = jest.fn()
-  const { result } = renderHook(() =>
-    useController({
-      jobApplication,
-      updateJobApplication,
-      setEndClientParent,
-      getContactDetails,
-      updateContactDetails,
-      onDataChanged,
-    }),
+  const { result, rerender } = renderHook(
+    (currentJobApplication: JobApplicationOverview) =>
+      useController({
+        jobApplication: currentJobApplication,
+        updateJobApplication,
+        setEndClientParent,
+        getContactDetails,
+        updateContactDetails,
+        onDataChanged,
+      }),
+    { initialProps: jobApplication },
   )
-  return { result, updateJobApplication, setEndClientParent, getContactDetails, updateContactDetails, onDataChanged }
+  return {
+    result,
+    rerender,
+    updateJobApplication,
+    setEndClientParent,
+    getContactDetails,
+    updateContactDetails,
+    onDataChanged,
+  }
 }
 
 describe('mission-info-form useController', () => {
@@ -85,7 +95,10 @@ describe('mission-info-form useController', () => {
     act(() => result.current.setTextFormValue('requestedDailyRate', '700'))
     expect(result.current.hasChanges).toBe(true)
     await act(() => result.current.save())
-    expect(updateJobApplication).toHaveBeenCalledWith('application-1', { location: 'Lyon', requestedDailyRate: 700 })
+    expect(updateJobApplication).toHaveBeenCalledWith('application-1', {
+      location: 'Lyon',
+      requestedDailyRate: 700,
+    })
     expect(onDataChanged).toHaveBeenCalledTimes(1)
   })
 
@@ -94,15 +107,27 @@ describe('mission-info-form useController', () => {
     act(() => result.current.setTextFormValue('duration', ''))
     act(() => result.current.setTextFormValue('intermediaryName', ''))
     await act(() => result.current.save())
-    expect(updateJobApplication).toHaveBeenCalledWith('application-1', { duration: null, intermediaryName: null })
+    expect(updateJobApplication).toHaveBeenCalledWith('application-1', {
+      duration: null,
+      intermediaryName: null,
+    })
   })
 
   it('sends the stack when it changes', async () => {
     const { result, updateJobApplication } = renderMissionInfoController()
-    const newStack = [...JOB_APPLICATION.stack, { name: 'Node', category: 'language' as const, origin: 'posting' as const }]
+    const newStack = [
+      ...JOB_APPLICATION.stack,
+      {
+        name: 'Node',
+        category: 'language' as const,
+        origin: 'posting' as const,
+      },
+    ]
     act(() => result.current.setStack(newStack))
     await act(() => result.current.save())
-    expect(updateJobApplication).toHaveBeenCalledWith('application-1', { stack: newStack })
+    expect(updateJobApplication).toHaveBeenCalledWith('application-1', {
+      stack: newStack,
+    })
   })
 
   it.each(['-50', 'abc', '12.5'])('refuses the invalid daily rate %s with TJM invalide', async (dailyRateText) => {
@@ -125,13 +150,18 @@ describe('mission-info-form useController', () => {
     const { result, updateJobApplication, setEndClientParent } = renderMissionInfoController()
     act(() => result.current.setTextFormValue('endClientParentName', 'Groupe BNP'))
     await act(() => result.current.save())
-    expect(updateJobApplication).toHaveBeenCalledWith('application-1', { endClientParentName: 'Groupe BNP' })
+    expect(updateJobApplication).toHaveBeenCalledWith('application-1', {
+      endClientParentName: 'Groupe BNP',
+    })
     expect(setEndClientParent).not.toHaveBeenCalled()
   })
 
   it('shows the server message and does not refresh when the update is refused', async () => {
     const { result, updateJobApplication, onDataChanged } = renderMissionInfoController()
-    updateJobApplication.mockResolvedValue({ ok: false, errorMessage: 'Candidature introuvable' })
+    updateJobApplication.mockResolvedValue({
+      ok: false,
+      errorMessage: 'Candidature introuvable',
+    })
     act(() => result.current.setTextFormValue('location', 'Lyon'))
     await act(() => result.current.save())
     expect(result.current.errorMessage).toBe('Candidature introuvable')
@@ -161,7 +191,11 @@ describe('mission-info-form useController', () => {
 
   it('does not load a contact when the application has none', () => {
     const { getContactDetails, result } = renderMissionInfoController({
-      jobApplication: { ...JOB_APPLICATION, contactId: null, contactName: null },
+      jobApplication: {
+        ...JOB_APPLICATION,
+        contactId: null,
+        contactName: null,
+      },
     })
     expect(getContactDetails).not.toHaveBeenCalled()
     expect(result.current.isContactLoaded).toBe(false)
@@ -206,5 +240,56 @@ describe('mission-info-form useController', () => {
     await act(() => result.current.saveContact())
     expect(result.current.contactErrorMessage).toBe('Une erreur est survenue, réessaie.')
     expect(result.current.isSavingContact).toBe(false)
+  })
+
+  it('adopts server-side changes for untouched fields without marking the form dirty', async () => {
+    const { result, rerender, updateJobApplication } = renderMissionInfoController()
+    const refreshedStack = [
+      ...JOB_APPLICATION.stack,
+      { name: 'Node', category: 'tool' as const, origin: 'job_spec' as const },
+    ]
+    rerender({
+      ...JOB_APPLICATION,
+      stack: refreshedStack,
+      endClientName: 'SG',
+    })
+    expect(result.current.formValues.stack).toEqual(refreshedStack)
+    expect(result.current.formValues.endClientName).toBe('SG')
+    expect(result.current.hasChanges).toBe(false)
+    act(() => result.current.setTextFormValue('location', 'Lyon'))
+    await act(() => result.current.save())
+    expect(updateJobApplication).toHaveBeenCalledWith('application-1', {
+      location: 'Lyon',
+    })
+  })
+
+  it('keeps the field being edited across a refresh', () => {
+    const { result, rerender } = renderMissionInfoController()
+    act(() => result.current.setTextFormValue('location', 'Lyon'))
+    rerender({
+      ...JOB_APPLICATION,
+      location: 'Marseille',
+      duration: '12 mois',
+    })
+    expect(result.current.formValues.location).toBe('Lyon')
+    expect(result.current.formValues.duration).toBe('12 mois')
+    expect(result.current.hasChanges).toBe(true)
+  })
+
+  it('disables the group field and clears it when there is no end client name', () => {
+    const { result } = renderMissionInfoController()
+    expect(result.current.isEndClientParentDisabled).toBe(false)
+    act(() => result.current.setTextFormValue('endClientName', ''))
+    expect(result.current.isEndClientParentDisabled).toBe(true)
+    expect(result.current.formValues.endClientParentName).toBe('')
+  })
+
+  it('does not reload the contact on refresh, preserving unsaved contact edits', async () => {
+    const { result, rerender, getContactDetails } = renderMissionInfoController()
+    await waitFor(() => expect(result.current.isContactLoaded).toBe(true))
+    act(() => result.current.setContactFormValue('phone', '0699999999'))
+    rerender({ ...JOB_APPLICATION })
+    expect(getContactDetails).toHaveBeenCalledTimes(1)
+    expect(result.current.contactFormValues?.phone).toBe('0699999999')
   })
 })

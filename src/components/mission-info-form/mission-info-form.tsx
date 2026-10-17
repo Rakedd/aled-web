@@ -31,6 +31,7 @@ export const MissionInfoForm = ({
     setTextFormValue,
     setStack,
     hasChanges,
+    isEndClientParentDisabled,
     isSaving,
     errorMessage,
     save,
@@ -117,21 +118,39 @@ export const MissionInfoForm = ({
       </h2>
       <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">{renderTextInput('title', 'Titre de la mission *', { required: true })}</div>
+          <div className="sm:col-span-2">
+            {renderTextInput('title', 'Titre de la mission *', {
+              required: true,
+            })}
+          </div>
           {renderTextInput('source', 'Source')}
-          {renderTextInput('postingUrl', "Lien de l'annonce", { type: 'url', inputMode: 'url', placeholder: 'https://' })}
+          {renderTextInput('postingUrl', "Lien de l'annonce", {
+            type: 'url',
+            inputMode: 'url',
+            placeholder: 'https://',
+          })}
           {renderEntityField('intermediaryName', 'intermediary', 'Intermédiaire')}
           {renderEntityField('contactName', 'contact', 'Contact')}
           {renderEntityField('endClientName', 'end_client', 'Client final')}
-          {renderTextInput('endClientParentName', 'Groupe du client final')}
-          {renderTextInput('postedDailyRate', 'TJM annoncé (€)', { type: 'number', inputMode: 'numeric', min: 0 })}
-          {renderTextInput('requestedDailyRate', 'TJM demandé (€)', { type: 'number', inputMode: 'numeric', min: 0 })}
+          {renderTextInput('endClientParentName', 'Groupe du client final', {
+            disabled: isEndClientParentDisabled,
+          })}
+          {renderTextInput('postedDailyRate', 'TJM annoncé (€)', {
+            inputMode: 'numeric',
+          })}
+          {renderTextInput('requestedDailyRate', 'TJM demandé (€)', {
+            inputMode: 'numeric',
+          })}
           {renderTextInput('location', 'Lieu')}
           {renderTextInput('remotePolicy', 'Télétravail')}
           {renderTextInput('desiredStart', 'Démarrage souhaité')}
           {renderTextInput('duration', 'Durée')}
-          {renderTextInput('appliedOn', 'Date de candidature', { type: 'date' })}
-          {renderTextInput('actualStartDate', 'Date de démarrage réelle', { type: 'date' })}
+          {renderTextInput('appliedOn', 'Date de candidature', {
+            type: 'date',
+          })}
+          {renderTextInput('actualStartDate', 'Date de démarrage réelle', {
+            type: 'date',
+          })}
         </div>
         <fieldset className="flex flex-col gap-3">
           <legend className="mb-2 text-sm font-medium">Technologies</legend>
@@ -162,9 +181,19 @@ export const MissionInfoForm = ({
           <h3 className="text-base font-semibold">Coordonnées de {jobApplication.contactName ?? 'ce contact'}</h3>
           {isContactLoaded && (
             <div className="grid gap-4 sm:grid-cols-3">
-              {renderContactInput('phone', 'Téléphone', { type: 'tel', inputMode: 'tel' })}
-              {renderContactInput('email', 'E-mail', { type: 'email', inputMode: 'email' })}
-              {renderContactInput('linkedinUrl', 'LinkedIn', { type: 'url', inputMode: 'url', placeholder: 'https://' })}
+              {renderContactInput('phone', 'Téléphone', {
+                type: 'tel',
+                inputMode: 'tel',
+              })}
+              {renderContactInput('email', 'E-mail', {
+                type: 'email',
+                inputMode: 'email',
+              })}
+              {renderContactInput('linkedinUrl', 'LinkedIn', {
+                type: 'url',
+                inputMode: 'url',
+                placeholder: 'https://',
+              })}
             </div>
           )}
           {contactErrorMessage && (

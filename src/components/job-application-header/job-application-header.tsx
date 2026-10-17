@@ -24,10 +24,29 @@ const getStepState = (step: JobApplicationStatus, currentStatus: JobApplicationS
   return currentIndex !== -1 && stepIndex < currentIndex ? 'done' : 'upcoming'
 }
 
-export const JobApplicationHeader = ({ jobApplication, changeJobApplicationStatus }: JobApplicationHeaderProps) => {
+export const JobApplicationHeader = ({
+  jobApplication,
+  changeJobApplicationStatus,
+  now,
+}: JobApplicationHeaderProps) => {
   const router = useRouter()
-  const { nextStatus, koOptions, endClientDisplayName, isChangingStatus, errorMessage, advance, changeStatus } =
-    useController({ jobApplication, changeJobApplicationStatus, onDataChanged: router.refresh })
+  const {
+    nextStatus,
+    koOptions,
+    endClientDisplayName,
+    sourceDisplay,
+    appliedOnDisplay,
+    lastActivityDisplay,
+    isChangingStatus,
+    errorMessage,
+    advance,
+    changeStatus,
+  } = useController({
+    jobApplication,
+    changeJobApplicationStatus,
+    now,
+    onDataChanged: router.refresh,
+  })
 
   const contextParts = [jobApplication.intermediaryName, jobApplication.contactName].filter(
     (contextPart) => contextPart !== null,
@@ -43,6 +62,9 @@ export const JobApplicationHeader = ({ jobApplication, changeJobApplicationStatu
         <p className="text-sm text-muted-foreground">
           {endClientDisplayName}
           {contextParts.length > 0 && ` · via ${contextParts.join(' · ')}`}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Source : {sourceDisplay} · Candidature du {appliedOnDisplay} · Dernier échange : {lastActivityDisplay}
         </p>
       </div>
       <ol className="flex gap-1 overflow-x-auto pb-1" aria-label="Avancement de la candidature">

@@ -54,6 +54,7 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
       <JobApplicationHeader
         jobApplication={jobApplication}
         changeJobApplicationStatus={changeJobApplicationStatus}
+        now={new Date()}
       />
       <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <MissionInfoForm

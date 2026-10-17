@@ -6,13 +6,16 @@ import {
   isTerminalStatus,
   type JobApplicationStatus,
 } from '@/domain/job-application-status'
+import { formatParisDate, formatRelativeDaysAgo } from '@/domain/paris-time'
 import type { JobApplicationHeaderControllerParameters } from './interfaces'
 
 export const UNKNOWN_END_CLIENT_LABEL = 'Client inconnu'
+export const MISSING_VALUE_LABEL = '—'
 
 export const useController = ({
   jobApplication,
   changeJobApplicationStatus,
+  now,
   onDataChanged,
 }: JobApplicationHeaderControllerParameters) => {
   const [isChangingStatus, setIsChangingStatus] = useState(false)
@@ -53,6 +56,12 @@ export const useController = ({
     nextStatus,
     koOptions: getSuggestedKoStatuses(jobApplication.status),
     endClientDisplayName: jobApplication.endClientLabel ?? UNKNOWN_END_CLIENT_LABEL,
+    sourceDisplay: jobApplication.source ?? MISSING_VALUE_LABEL,
+    appliedOnDisplay: formatParisDate(jobApplication.appliedOn),
+    lastActivityDisplay:
+      jobApplication.lastActivityAt === null
+        ? MISSING_VALUE_LABEL
+        : formatRelativeDaysAgo(jobApplication.lastActivityAt, now),
     isChangingStatus,
     errorMessage,
     advance,

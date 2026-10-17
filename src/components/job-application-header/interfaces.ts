@@ -9,12 +9,21 @@ export type ChangeJobApplicationStatus = (
 
 export type JobApplicationHeaderSummary = Pick<
   JobApplicationOverview,
-  'id' | 'title' | 'status' | 'intermediaryName' | 'contactName' | 'endClientLabel'
+  | 'id'
+  | 'title'
+  | 'status'
+  | 'intermediaryName'
+  | 'contactName'
+  | 'endClientLabel'
+  | 'source'
+  | 'appliedOn'
+  | 'lastActivityAt'
 >
 
 export type JobApplicationHeaderControllerParameters = {
   jobApplication: JobApplicationHeaderSummary
   changeJobApplicationStatus: ChangeJobApplicationStatus
+  now: Date
   onDataChanged: () => void
 }
 
