@@ -1,0 +1,195 @@
+import { useRef, useState } from 'react'
+import { MAX_PASTED_TEXT_LENGTH, type JobPostingExtraction } from '@/domain/job-posting-extraction'
+import { AI_ERROR_MESSAGES } from '@/domain/ai-errors'
+import { type JobApplicationInput, validateJobApplicationInput } from '@/domain/job-application'
+import type { JobApplicationStatus } from '@/domain/job-application-status'
+import { formatParisCalendarDate, parseParisCalendarDate } from '@/domain/paris-time'
+import type { StackItem } from '@/domain/types'
+import type {
+  JobApplicationFormValues,
+  NewJobApplicationFormControllerParameters,
+  NewJobApplicationStep,
+  TextFormValueName,
+} from './interfaces'
+
+export const NEW_JOB_APPLICATION_GENERIC_ERROR_MESSAGE = 'Une erreur est survenue, réessaie.'
+export const EMPTY_PASTED_TEXT_MESSAGE = "Colle le texte de l'annonce ou passe en saisie manuelle"
+
+const createEmptyFormValues = (): JobApplicationFormValues => ({
+  title: '',
+  source: '',
+  postingUrl: '',
+  postingRawText: '',
+  status: 'applied',
+  intermediaryName: '',
+  contactName: '',
+  contactEmail: '',
+  contactPhone: '',
+  endClientName: '',
+  endClientParentName: '',
+  postedDailyRate: '',
+  location: '',
+  remotePolicy: '',
+  desiredStart: '',
+  duration: '',
+  appliedOn: formatParisCalendarDate(new Date()),
+  stack: [],
+})
+
+const toFormValues = (
+  jobPostingExtraction: JobPostingExtraction,
+  pastedText: string,
+): JobApplicationFormValues => ({
+  ...createEmptyFormValues(),
+  title: jobPostingExtraction.title ?? '',
+  intermediaryName: jobPostingExtraction.intermediaryName ?? '',
+  contactName: jobPostingExtraction.contactName ?? '',
+  contactEmail: jobPostingExtraction.contactEmail ?? '',
+  contactPhone: jobPostingExtraction.contactPhone ?? '',
+  endClientName: jobPostingExtraction.endClientName ?? '',
+  postedDailyRate: jobPostingExtraction.postedDailyRate === null ? '' : String(jobPostingExtraction.postedDailyRate),
+  location: jobPostingExtraction.location ?? '',
+  remotePolicy: jobPostingExtraction.remotePolicy ?? '',
+  desiredStart: jobPostingExtraction.desiredStart ?? '',
+  duration: jobPostingExtraction.duration ?? '',
+  stack: jobPostingExtraction.stack,
+  postingRawText: pastedText,
+})
+
+const toNullableText = (text: string): string | null => (text.trim().length === 0 ? null : text)
+
+const toNullableDailyRate = (dailyRateText: string): number | null =>
+  dailyRateText.trim().length === 0 ? null : Number(dailyRateText)
+
+const toJobApplicationCandidate = (formValues: JobApplicationFormValues) => ({
+  title: formValues.title,
+  source: toNullableText(formValues.source),
+  postingUrl: toNullableText(formValues.postingUrl),
+  postingRawText: toNullableText(formValues.postingRawText),
+  status: formValues.status,
+  postedDailyRate: toNullableDailyRate(formValues.postedDailyRate),
+  requestedDailyRate: null,
+  location: toNullableText(formValues.location),
+  remotePolicy: toNullableText(formValues.remotePolicy),
+  desiredStart: toNullableText(formValues.desiredStart),
+  duration: toNullableText(formValues.duration),
+  appliedOn: parseParisCalendarDate(formValues.appliedOn),
+  notes: null,
+  actualStartDate: null,
+  stack: formValues.stack,
+  intermediaryName: toNullableText(formValues.intermediaryName),
+  contactName: toNullableText(formValues.contactName),
+  contactEmail: toNullableText(formValues.contactEmail),
+  contactPhone: toNullableText(formValues.contactPhone),
+  endClientName: toNullableText(formValues.endClientName),
+  endClientParentName: toNullableText(formValues.endClientParentName),
+})
+
+export const useController = ({
+  extractJobPosting,
+  createJobApplication,
+  navigateTo,
+}: NewJobApplicationFormControllerParameters) => {
+  const [step, setStep] = useState<NewJobApplicationStep>('paste')
+  const [pastedText, setPastedText] = useState('')
+  const [formValues, setFormValues] = useState<JobApplicationFormValues>(createEmptyFormValues)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isExtracting, setIsExtracting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const isExtractionInFlightRef = useRef(false)
+  const isSubmissionInFlightRef = useRef(false)
+
+  const showForm = (initialFormValues: JobApplicationFormValues, initialErrorMessage: string | null) => {
+    setFormValues(initialFormValues)
+    setErrorMessage(initialErrorMessage)
+    setStep('form')
+  }
+
+  const readExtractionOutcome = async (trimmedPastedText: string) => {
+    try {
+      const extractionResult = await extractJobPosting(trimmedPastedText)
+      return extractionResult.ok
+        ? { formValues: toFormValues(extractionResult.data, pastedText), errorMessage: null }
+        : { formValues: { ...createEmptyFormValues(), postingRawText: pastedText }, errorMessage: extractionResult.errorMessage }
+    } catch {
+      return {
+        formValues: { ...createEmptyFormValues(), postingRawText: pastedText },
+        errorMessage: NEW_JOB_APPLICATION_GENERIC_ERROR_MESSAGE,
+      }
+    }
+  }
+
+  const extract = async () => {
+    if (isExtractionInFlightRef.current) return
+    const trimmedPastedText = pastedText.trim()
+    if (trimmedPastedText.length === 0) {
+      setErrorMessage(EMPTY_PASTED_TEXT_MESSAGE)
+      return
+    }
+    if (trimmedPastedText.length > MAX_PASTED_TEXT_LENGTH) {
+      setErrorMessage(AI_ERROR_MESSAGES.input_too_long)
+      return
+    }
+    isExtractionInFlightRef.current = true
+    setErrorMessage(null)
+    setIsExtracting(true)
+    const extractionOutcome = await readExtractionOutcome(trimmedPastedText)
+    isExtractionInFlightRef.current = false
+    setIsExtracting(false)
+    showForm(extractionOutcome.formValues, extractionOutcome.errorMessage)
+  }
+
+  const switchToManualEntry = () => showForm(createEmptyFormValues(), null)
+
+  const setTextFormValue = (valueName: TextFormValueName, value: string) =>
+    setFormValues((currentFormValues) => ({ ...currentFormValues, [valueName]: value }))
+
+  const setStatus = (status: JobApplicationStatus) =>
+    setFormValues((currentFormValues) => ({ ...currentFormValues, status }))
+
+  const setStack = (stack: StackItem[]) => setFormValues((currentFormValues) => ({ ...currentFormValues, stack }))
+
+  const createFromValidatedInput = async (validatedInput: JobApplicationInput) => {
+    try {
+      return await createJobApplication(validatedInput)
+    } catch {
+      return { ok: false, errorMessage: NEW_JOB_APPLICATION_GENERIC_ERROR_MESSAGE } as const
+    }
+  }
+
+  const submit = async () => {
+    if (isSubmissionInFlightRef.current) return
+    setErrorMessage(null)
+    const validationResult = validateJobApplicationInput(toJobApplicationCandidate(formValues))
+    if (!validationResult.ok) {
+      setErrorMessage(validationResult.errorMessage)
+      return
+    }
+    isSubmissionInFlightRef.current = true
+    setIsSubmitting(true)
+    const creationResult = await createFromValidatedInput(validationResult.data)
+    if (!creationResult.ok) {
+      setErrorMessage(creationResult.errorMessage)
+      setIsSubmitting(false)
+      isSubmissionInFlightRef.current = false
+      return
+    }
+    navigateTo(`/candidatures/${creationResult.data.id}`)
+  }
+
+  return {
+    step,
+    pastedText,
+    setPastedText,
+    formValues,
+    errorMessage,
+    isExtracting,
+    isSubmitting,
+    extract,
+    switchToManualEntry,
+    setTextFormValue,
+    setStatus,
+    setStack,
+    submit,
+  }
+}
