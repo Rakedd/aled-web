@@ -37,6 +37,7 @@ export const JobApplicationHeader = ({
     sourceDisplay,
     appliedOnDisplay,
     lastActivityDisplay,
+    externalPostingUrl,
     isChangingStatus,
     errorMessage,
     advance,
@@ -65,6 +66,19 @@ export const JobApplicationHeader = ({
         </p>
         <p className="text-sm text-muted-foreground">
           Source : {sourceDisplay} · Candidature du {appliedOnDisplay} · Dernier échange : {lastActivityDisplay}
+          {externalPostingUrl !== null && (
+            <>
+              {' · '}
+              <a
+                href={externalPostingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline underline-offset-2"
+              >
+                Voir l&apos;annonce
+              </a>
+            </>
+          )}
         </p>
       </div>
       <ol className="flex gap-1 overflow-x-auto pb-1" aria-label="Avancement de la candidature">

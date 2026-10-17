@@ -18,6 +18,7 @@ export type JobApplicationHeaderSummary = Pick<
   | 'source'
   | 'appliedOn'
   | 'lastActivityAt'
+  | 'postingUrl'
 >
 
 export type JobApplicationHeaderControllerParameters = {

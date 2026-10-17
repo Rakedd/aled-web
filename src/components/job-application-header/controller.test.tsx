@@ -1,20 +1,25 @@
-import { act, renderHook } from '@testing-library/react'
+import { act, render, renderHook, screen } from '@testing-library/react'
 import type { ActionResult } from '@/domain/action-result'
 import { getNextPipelineStatus, getSuggestedKoStatuses } from '@/domain/job-application-status'
 import type { JobApplicationStatus } from '@/domain/job-application-status'
 import { useController } from './controller'
 import type { JobApplicationHeaderSummary } from './interfaces'
+import { JobApplicationHeader } from './job-application-header'
+
+jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
 
 const renderHeaderController = ({
   status = 'cv_submitted',
   endClientLabel = 'Société Générale',
   actionResult = { ok: true, data: null },
   lastActivityAt = null,
+  postingUrl = null,
 }: {
   status?: JobApplicationStatus
   endClientLabel?: string | null
   actionResult?: ActionResult<null>
   lastActivityAt?: Date | null
+  postingUrl?: string | null
 } = {}) => {
   const jobApplication: JobApplicationHeaderSummary = {
     id: 'application-1',
@@ -26,6 +31,7 @@ const renderHeaderController = ({
     source: 'Free-Work',
     appliedOn: new Date('2026-10-16T22:30:00Z'),
     lastActivityAt,
+    postingUrl,
   }
   const changeJobApplicationStatus = jest.fn().mockResolvedValue(actionResult)
   const onDataChanged = jest.fn()
@@ -126,5 +132,48 @@ describe('job-application-header useController', () => {
 
   it('shows a dash when there is no last exchange', () => {
     expect(renderHeaderController().result.current.lastActivityDisplay).toBe('—')
+  })
+})
+
+describe('job-application-header posting link', () => {
+  it.each(['https://www.free-work.com/fr/job/123', 'http://example.com/annonce'])(
+    'exposes the web address %s of the posting',
+    (postingUrl) => {
+      const { result } = renderHeaderController({ postingUrl })
+      expect(result.current.externalPostingUrl).toBe(postingUrl)
+    },
+  )
+
+  it.each([null, 'javascript:alert(1)', 'ftp://example.com/annonce', 'pas une adresse'])(
+    'exposes no link for the posting address %p',
+    (postingUrl) => {
+      const { result } = renderHeaderController({ postingUrl })
+      expect(result.current.externalPostingUrl).toBeNull()
+    },
+  )
+
+  it('opens the posting in a new tab without giving it access to the page', () => {
+    render(
+      <JobApplicationHeader
+        jobApplication={{
+          id: 'application-1',
+          title: 'Développeur React',
+          status: 'applied',
+          intermediaryName: null,
+          contactName: null,
+          endClientLabel: null,
+          source: 'Free-Work',
+          appliedOn: new Date('2026-10-16T22:30:00Z'),
+          lastActivityAt: null,
+          postingUrl: 'https://www.free-work.com/fr/job/123',
+        }}
+        changeJobApplicationStatus={jest.fn()}
+        now={new Date('2026-10-17T10:00:00Z')}
+      />,
+    )
+    const postingLink = screen.getByRole('link', { name: "Voir l'annonce" })
+    expect(postingLink).toHaveAttribute('href', 'https://www.free-work.com/fr/job/123')
+    expect(postingLink).toHaveAttribute('target', '_blank')
+    expect(postingLink).toHaveAttribute('rel', 'noopener noreferrer')
   })
 })

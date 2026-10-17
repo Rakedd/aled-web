@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
+import { isExternalLinkUrl } from '@/domain/client-brief'
 import {
   getNextPipelineStatus,
   getSuggestedKoStatuses,
@@ -62,6 +63,8 @@ export const useController = ({
       jobApplication.lastActivityAt === null
         ? MISSING_VALUE_LABEL
         : formatRelativeDaysAgo(jobApplication.lastActivityAt, now),
+    externalPostingUrl:
+      jobApplication.postingUrl !== null && isExternalLinkUrl(jobApplication.postingUrl) ? jobApplication.postingUrl : null,
     isChangingStatus,
     errorMessage,
     advance,
