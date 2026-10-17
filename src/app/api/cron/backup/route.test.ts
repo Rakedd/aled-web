@@ -46,7 +46,14 @@ const buildFakeSnapshot = (userId: string): UserDataSnapshot => ({
 const mockProfileIds = (profileIds: string[]): void => {
   const fakeServiceRoleClient = {
     from: () => ({
-      select: () => ({ order: async () => ({ data: profileIds.map((id) => ({ id })), error: null }) }),
+      select: () => ({
+        order: () => ({
+          range: async (firstRowIndex: number, lastRowIndex: number) => ({
+            data: profileIds.slice(firstRowIndex, lastRowIndex + 1).map((id) => ({ id })),
+            error: null,
+          }),
+        }),
+      }),
     }),
   }
   jest
@@ -115,6 +122,18 @@ describe('GET /api/cron/backup', () => {
       `backups/2026-10-19/${THIRD_USER_ID}.json`,
     ])
     expect(JSON.parse(jest.mocked(uploadBackupToGcs).mock.calls[1][1])).toEqual(buildFakeSnapshot(SECOND_USER_ID))
+  })
+
+  it('backs up every user even when the profiles span several pages', async () => {
+    const manyUserIds = Array.from({ length: 1501 }, (_unused, userIndex) => `user-${String(userIndex).padStart(4, '0')}`)
+    mockProfileIds(manyUserIds)
+
+    const backupResponse = await requestBackup(`Bearer ${CRON_SECRET}`)
+
+    expect(await backupResponse.json()).toEqual({ backedUpUserCount: 1501, failedUserCount: 0 })
+    expect(jest.mocked(uploadBackupToGcs).mock.calls.map(([objectKey]) => objectKey)).toEqual(
+      manyUserIds.map((userId) => `backups/2026-10-19/${userId}.json`),
+    )
   })
 
   it('keeps backing up the other users when one fails and logs only the user id and error message', async () => {

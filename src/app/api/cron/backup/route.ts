@@ -2,8 +2,8 @@ import { createHash, timingSafeEqual } from 'node:crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 import { formatParisCalendarDate } from '@/domain/paris-time'
 import { buildUserDataSnapshot } from '@/server/data-snapshot/build-user-data-snapshot'
+import { fetchEveryRow } from '@/server/data-snapshot/fetch-every-row'
 import { uploadBackupToGcs } from '@/server/data-snapshot/upload-backup-to-gcs'
-import { toRepositoryError } from '@/server/repositories/repository-error'
 import { createServiceRoleSupabaseClient } from '@/server/supabase/create-service-role-supabase-client'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 
@@ -31,9 +31,10 @@ const isAuthorizedCronRequest = (request: NextRequest): boolean => {
 }
 
 const listEveryUserId = async (supabase: FreeclutchSupabaseClient): Promise<string[]> => {
-  const { data, error } = await supabase.from('profiles').select('id').order('id')
-  if (error) throw toRepositoryError('listEveryUserId', error)
-  return data.map((profileRow) => profileRow.id)
+  const profileRows = await fetchEveryRow('listEveryUserId', (firstRowIndex, lastRowIndex) =>
+    supabase.from('profiles').select('id').order('id').range(firstRowIndex, lastRowIndex),
+  )
+  return profileRows.map((profileRow) => profileRow.id)
 }
 
 const backUpUserData = async (

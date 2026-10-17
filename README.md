@@ -45,11 +45,18 @@ Toutes sont lues côté serveur uniquement (aucune n'a le préfixe `NEXT_PUBLIC_
 | `API_KEY_ENCRYPTION_SECRET` | secret AES-256-GCM qui chiffre les clés API Claude des utilisateurs : 32 octets encodés en base64 | `openssl rand -base64 32` |
 | `CRON_SECRET` | secret attendu par `/api/cron/backup` dans l'en-tête `Authorization: Bearer <CRON_SECRET>` ; Vercel l'envoie lui-même pour ses crons | `openssl rand -hex 32` |
 | `GCS_BACKUP_BUCKET` | nom du bucket Google Cloud Storage qui reçoit les sauvegardes | facultatif en local |
-| `GCP_BACKUP_SERVICE_ACCOUNT_KEY_BASE64` | clé JSON du compte de service GCP, encodée en base64 (`base64 -i cle.json`) | facultatif en local |
+| `GCP_BACKUP_SERVICE_ACCOUNT_KEY_BASE64` | clé JSON du compte de service GCP, encodée en base64 (voir ci-dessous) | facultatif en local |
 
 Changer `API_KEY_ENCRYPTION_SECRET` rend illisibles les clés API Claude déjà enregistrées : chaque utilisateur devra ressaisir la sienne.
 
 Le compte de service des sauvegardes n'a que le rôle `roles/storage.objectCreator` sur le bucket : il peut créer des objets, pas les lire, les lister, les remplacer ni les supprimer.
+
+Sa clé JSON est un secret : la télécharger **hors du dépôt** (par exemple `~/Downloads/cle.json`, jamais dans le dossier du projet), l'encoder, copier la valeur dans la variable d'environnement, puis supprimer le fichier :
+
+```bash
+base64 -i ~/Downloads/cle.json | tr -d '\n' | pbcopy
+rm ~/Downloads/cle.json
+```
 
 ## Inviter un utilisateur
 
@@ -79,17 +86,20 @@ Un objet déjà présent n'est jamais écrasé : relancer la sauvegarde le même
 
    Un export manuel (`freeclutch-export-<date>.json`) se restaure de la même façon.
 
-2. Lancer la restauration avec l'URL et la clé service role du projet **cible** :
+2. Lancer la restauration avec l'URL et la clé service role du projet **cible**. Ne jamais coller la clé service role dans la commande, car elle resterait dans l'historique du shell : la saisir sans écho :
 
    ```bash
-   SUPABASE_URL=https://<projet>.supabase.co \
-   SUPABASE_SERVICE_ROLE_KEY=<clé service role> \
+   export SUPABASE_URL=https://<projet>.supabase.co
+   read -rs SUPABASE_SERVICE_ROLE_KEY && export SUPABASE_SERVICE_ROLE_KEY
    npx tsx scripts/restore-backup.ts ./sauvegarde.json
+   unset SUPABASE_SERVICE_ROLE_KEY
    ```
+
+   Autre possibilité : un fichier d'environnement non suivi par git (tout `.env*` est ignoré, par exemple `.env.restore`), chargé avec `set -a; source .env.restore; set +a`, puis supprimé après usage. Garder aussi le fichier de sauvegarde hors du dépôt et le supprimer une fois la restauration faite : il contient toutes les données de l'utilisateur.
 
 Ce que fait le script :
 
-- il refuse un fichier qui n'est pas un export Freeclutch (`formatVersion: 1`) ou qui contient une ligne appartenant à un autre utilisateur ;
+- il refuse, sans rien écrire, un fichier qui n'est pas un export Freeclutch (`formatVersion: 1`), qui contient une ligne d'un autre utilisateur, dont un identifiant de ligne appartient déjà à un autre utilisateur en base, ou dont un PDF sort du dossier de l'utilisateur ou dépasse 4 Mo ;
 - si le compte n'existe plus (projet recréé, utilisateur supprimé), il le recrée avec le même identifiant et l'adresse e-mail du profil ; l'utilisateur se reconnecte ensuite par lien magique ;
 - il fait un upsert (insertion, ou mise à jour par identifiant) du profil, des intermédiaires, contacts, clients finaux, candidatures, journal d'activité, entretiens, fiches métier et reports d'alerte, dans l'ordre des dépendances, puis remet chaque PDF à son chemin de stockage ;
 - les lignes absentes de la sauvegarde ne sont pas supprimées : pour revenir exactement à l'état sauvegardé, supprimer d'abord les données actuelles de l'utilisateur.

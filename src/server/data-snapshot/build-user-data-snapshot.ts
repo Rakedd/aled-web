@@ -1,8 +1,8 @@
 import 'server-only'
-import type { PostgrestError } from '@supabase/supabase-js'
 import { toRepositoryError } from '@/server/repositories/repository-error'
 import type { Tables } from '@/server/supabase/database-types'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
+import { fetchEveryRow } from './fetch-every-row'
 
 export type UserDataSnapshotProfile = Omit<
   Tables<'profiles'>,
@@ -26,25 +26,8 @@ export type UserDataSnapshot = {
   alertSnoozes: Tables<'alert_snoozes'>[]
 }
 
-type RowPageResult<Row> = { data: Row[] | null; error: PostgrestError | null }
-
-type RowPageFetcher<Row> = (firstRowIndex: number, lastRowIndex: number) => PromiseLike<RowPageResult<Row>>
-
 const JOB_SPECS_BUCKET = 'job-specs'
-const ROW_PAGE_SIZE = 1000
 const SNAPSHOT_PROFILE_COLUMNS = 'id, first_name, last_name, email, links, follow_up_delay_days, created_at, updated_at'
-
-const fetchEveryRow = async <Row>(
-  operationName: string,
-  fetchRowPage: RowPageFetcher<Row>,
-  alreadyFetchedRows: Row[] = [],
-): Promise<Row[]> => {
-  const firstRowIndex = alreadyFetchedRows.length
-  const { data, error } = await fetchRowPage(firstRowIndex, firstRowIndex + ROW_PAGE_SIZE - 1)
-  if (error) throw toRepositoryError(operationName, error)
-  if (data === null || data.length === 0) return alreadyFetchedRows
-  return fetchEveryRow(operationName, fetchRowPage, [...alreadyFetchedRows, ...data])
-}
 
 const fetchSnapshotProfile = async (
   supabase: FreeclutchSupabaseClient,

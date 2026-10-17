@@ -208,4 +208,77 @@ describe('user data snapshot', () => {
       .single()
     expect(profileAfterRefusal).toEqual({ first_name: 'Camille' })
   })
+
+  const PDF_LIMIT_PLUS_ONE_BYTE_BASE64 = Buffer.alloc(4 * 1024 * 1024 + 1).toString('base64')
+
+  it.each([
+    ['overwrites another user pdf', (_ownerId: string, victimPdfPath: string) => ({ storage_path: victimPdfPath })],
+    [
+      'escapes the owner folder with a .. segment',
+      (ownerId: string, victimPdfPath: string) => ({ storage_path: `${ownerId}/../${victimPdfPath}` }),
+    ],
+    ['carries a pdf over 4 mb', () => ({ pdfBase64: PDF_LIMIT_PLUS_ONE_BYTE_BASE64 })],
+    ['carries a pdf that is not a base64 string', () => ({ pdfBase64: 42 as unknown as string })],
+  ])('refuses a snapshot whose job spec %s and writes nothing', async (_caseName, buildJobSpecTampering) => {
+    const owner = await createSeededTestUser()
+    const victim = await createSeededTestUser()
+    const serviceRoleClient = createServiceRoleTestClient()
+    const originalSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    const tamperedSnapshot: UserDataSnapshot = {
+      ...originalSnapshot,
+      profile: { ...originalSnapshot.profile, first_name: 'Modifié' },
+      jobSpecs: originalSnapshot.jobSpecs.map((jobSpec) => ({
+        ...jobSpec,
+        pdfBase64: Buffer.from('%PDF-1.4 contenu falsifié').toString('base64'),
+        ...buildJobSpecTampering(owner.userId, victim.pdfStoragePath),
+      })),
+    }
+
+    await expect(restoreUserDataSnapshot(serviceRoleClient, tamperedSnapshot)).rejects.toThrow(
+      'Snapshot job spec files must stay in the snapshot user folder and weigh at most 4 MB',
+    )
+
+    expect(await downloadStoredPdfBytes(serviceRoleClient, victim.pdfStoragePath)).toEqual(STORED_PDF_BYTES)
+    expect(await downloadStoredPdfBytes(serviceRoleClient, owner.pdfStoragePath)).toEqual(STORED_PDF_BYTES)
+    const { data: profileAfterRefusal } = await serviceRoleClient
+      .from('profiles')
+      .select('first_name')
+      .eq('id', owner.userId)
+      .single()
+    expect(profileAfterRefusal).toEqual({ first_name: 'Camille' })
+  })
+
+  it("refuses a snapshot reusing ids of another user's rows and leaves the victim rows untouched", async () => {
+    const owner = await createSeededTestUser()
+    const victim = await createSeededTestUser()
+    const serviceRoleClient = createServiceRoleTestClient()
+    const originalSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    const victimSnapshot = await buildUserDataSnapshot(serviceRoleClient, victim.userId)
+    const tamperedSnapshot: UserDataSnapshot = {
+      ...originalSnapshot,
+      profile: { ...originalSnapshot.profile, first_name: 'Modifié' },
+      interviews: originalSnapshot.interviews.map((interview) => ({
+        ...interview,
+        id: victimSnapshot.interviews[0].id,
+        participants: 'Volé',
+      })),
+      alertSnoozes: originalSnapshot.alertSnoozes.map((alertSnooze) => ({
+        ...alertSnooze,
+        id: victimSnapshot.alertSnoozes[0].id,
+      })),
+    }
+
+    await expect(restoreUserDataSnapshot(serviceRoleClient, tamperedSnapshot)).rejects.toThrow(
+      'Snapshot row ids must not belong to another user',
+    )
+
+    const victimSnapshotAfterRefusal = await buildUserDataSnapshot(serviceRoleClient, victim.userId)
+    expect({ ...victimSnapshotAfterRefusal, exportedAt: victimSnapshot.exportedAt }).toEqual(victimSnapshot)
+    const { data: profileAfterRefusal } = await serviceRoleClient
+      .from('profiles')
+      .select('first_name')
+      .eq('id', owner.userId)
+      .single()
+    expect(profileAfterRefusal).toEqual({ first_name: 'Camille' })
+  })
 })

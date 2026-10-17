@@ -3,22 +3,27 @@ import type {
   UserDataSnapshot,
   UserDataSnapshotJobSpec,
 } from '../src/server/data-snapshot/build-user-data-snapshot'
+import { MAX_JOB_SPEC_PDF_BYTES } from '../src/domain/job-spec'
 import type { Database, Tables } from '../src/server/supabase/database-types'
 
 type RestoreSupabaseClient = SupabaseClient<Database>
 
 const JOB_SPECS_BUCKET = 'job-specs'
 const JOB_SPEC_PDF_MIME_TYPE = 'application/pdf'
-const SNAPSHOT_ARRAY_KEYS = [
-  'intermediaries',
-  'contacts',
-  'endClients',
-  'jobApplications',
-  'activityLogEntries',
-  'interviews',
-  'jobSpecs',
-  'alertSnoozes',
-] as const
+const SNAPSHOT_TABLE_NAMES = {
+  intermediaries: 'intermediaries',
+  contacts: 'contacts',
+  endClients: 'end_clients',
+  jobApplications: 'job_applications',
+  activityLogEntries: 'activity_log_entries',
+  interviews: 'interviews',
+  jobSpecs: 'job_specs',
+  alertSnoozes: 'alert_snoozes',
+} as const satisfies Record<string, keyof Database['public']['Tables']>
+const SNAPSHOT_ARRAY_KEYS = Object.keys(SNAPSHOT_TABLE_NAMES) as (keyof typeof SNAPSHOT_TABLE_NAMES)[]
+const ROW_ID_LOOKUP_CHUNK_SIZE = 100
+const PARENT_DIRECTORY_SEGMENT = '..'
+const USER_NOT_FOUND_ERROR_CODE = 'user_not_found'
 
 const isRecord = (candidate: unknown): candidate is Record<string, unknown> =>
   typeof candidate === 'object' && candidate !== null && !Array.isArray(candidate)
@@ -46,12 +51,73 @@ const assertEveryRowBelongsToSnapshotUser = (snapshot: UserDataSnapshot): void =
   }
 }
 
+const isJobSpecFileConfinedToSnapshotUser = (jobSpec: UserDataSnapshotJobSpec, userId: string): boolean => {
+  const { storage_path: storagePath, pdfBase64 } = jobSpec
+  const isPdfWithinLimit =
+    pdfBase64 === null ||
+    (typeof pdfBase64 === 'string' && Buffer.from(pdfBase64, 'base64').byteLength <= MAX_JOB_SPEC_PDF_BYTES)
+  const isStoragePathInUserFolder =
+    storagePath === null ||
+    (typeof storagePath === 'string' &&
+      storagePath.startsWith(`${userId}/`) &&
+      !storagePath.split('/').includes(PARENT_DIRECTORY_SEGMENT))
+  return isPdfWithinLimit && isStoragePathInUserFolder
+}
+
+const assertEveryJobSpecFileStaysInUserFolder = (snapshot: UserDataSnapshot): void => {
+  if (!snapshot.jobSpecs.every((jobSpec) => isJobSpecFileConfinedToSnapshotUser(jobSpec, snapshot.userId))) {
+    throw new Error('Snapshot job spec files must stay in the snapshot user folder and weigh at most 4 MB')
+  }
+}
+
+const splitIntoChunks = <Item>(items: Item[], chunkSize: number): Item[][] =>
+  Array.from({ length: Math.ceil(items.length / chunkSize) }, (_unused, chunkIndex) =>
+    items.slice(chunkIndex * chunkSize, (chunkIndex + 1) * chunkSize),
+  )
+
+const countRowsOwnedByAnotherUser = async (
+  supabase: RestoreSupabaseClient,
+  tableName: (typeof SNAPSHOT_TABLE_NAMES)[keyof typeof SNAPSHOT_TABLE_NAMES],
+  rowIds: string[],
+  userId: string,
+): Promise<number> => {
+  const { count, error } = await supabase
+    .from(tableName)
+    .select('id', { count: 'exact', head: true })
+    .in('id', rowIds)
+    .neq('user_id', userId)
+  if (error) throw new Error(`Restore operation findForeignRowIds failed with code ${error.code}: ${error.message}`)
+  return count ?? 0
+}
+
+const assertNoRowIdBelongsToAnotherUser = async (
+  supabase: RestoreSupabaseClient,
+  snapshot: UserDataSnapshot,
+): Promise<void> => {
+  const foreignRowCounts = await Promise.all(
+    SNAPSHOT_ARRAY_KEYS.flatMap((snapshotArrayKey) =>
+      splitIntoChunks(
+        snapshot[snapshotArrayKey].map((snapshotRow) => snapshotRow.id),
+        ROW_ID_LOOKUP_CHUNK_SIZE,
+      ).map((rowIdChunk) =>
+        countRowsOwnedByAnotherUser(supabase, SNAPSHOT_TABLE_NAMES[snapshotArrayKey], rowIdChunk, snapshot.userId),
+      ),
+    ),
+  )
+  if (foreignRowCounts.some((foreignRowCount) => foreignRowCount > 0)) {
+    throw new Error('Snapshot row ids must not belong to another user')
+  }
+}
+
 const failOnWriteError = (operationName: string, { error }: { error: PostgrestError | null }): void => {
   if (error) throw new Error(`Restore operation ${operationName} failed with code ${error.code}: ${error.message}`)
 }
 
 const ensureSnapshotUserExists = async (supabase: RestoreSupabaseClient, snapshot: UserDataSnapshot): Promise<void> => {
-  const { data: existingUserData } = await supabase.auth.admin.getUserById(snapshot.userId)
+  const { data: existingUserData, error: userLookupError } = await supabase.auth.admin.getUserById(snapshot.userId)
+  if (userLookupError && userLookupError.code !== USER_NOT_FOUND_ERROR_CODE) {
+    throw new Error(`Restore operation findUser failed: ${userLookupError.message}`)
+  }
   if (existingUserData.user !== null) return
   if (snapshot.profile.email === null) throw new Error('Cannot recreate the snapshot user without a profile email')
   const { error } = await supabase.auth.admin.createUser({
@@ -89,6 +155,8 @@ export const restoreUserDataSnapshot = async (
   snapshot: UserDataSnapshot,
 ): Promise<void> => {
   assertEveryRowBelongsToSnapshotUser(snapshot)
+  assertEveryJobSpecFileStaysInUserFolder(snapshot)
+  await assertNoRowIdBelongsToAnotherUser(supabase, snapshot)
   await ensureSnapshotUserExists(supabase, snapshot)
   failOnWriteError('upsertProfile', await supabase.from('profiles').upsert(snapshot.profile))
   failOnWriteError('upsertIntermediaries', await supabase.from('intermediaries').upsert(snapshot.intermediaries))
