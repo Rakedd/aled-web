@@ -23,6 +23,12 @@ describe('verifyAnthropicApiKey', () => {
     expect(retrieveModel.mock.calls[0][0]).toBe('claude-haiku-5-5')
   })
 
+  it('bounds the verification to one retry with a 15 second timeout per attempt', async () => {
+    retrieveModel.mockResolvedValue({ id: 'claude-haiku-5-5' })
+    await verifyAnthropicApiKey('sk-ant-valid')
+    expect(retrieveModel).toHaveBeenCalledWith('claude-haiku-5-5', undefined, { timeout: 15_000, maxRetries: 1 })
+  })
+
   it('rejects a key that Claude does not authenticate', async () => {
     retrieveModel.mockRejectedValue(new Anthropic.AuthenticationError(401, {}, 'invalid x-api-key', new Headers()))
     await expect(verifyAnthropicApiKey('sk-ant-invalid')).resolves.toBe(false)
