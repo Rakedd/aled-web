@@ -39,7 +39,7 @@ const requireOverviewValue = <OverviewValue>(overviewValue: OverviewValue | null
 
 const toDateOrNull = (isoDate: string | null): Date | null => (isoDate === null ? null : new Date(isoDate))
 
-const toStackItems = (stackJson: Json | null): StackItem[] => (Array.isArray(stackJson) ? stackJson.filter(isStackItem) : [])
+export const toStackItems = (stackJson: Json | null): StackItem[] => (Array.isArray(stackJson) ? stackJson.filter(isStackItem) : [])
 
 const toJobApplicationListItem = (overviewRow: JobApplicationListItemRow): JobApplicationListItem => ({
   id: requireOverviewValue(overviewRow.id, 'id'),

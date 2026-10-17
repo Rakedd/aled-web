@@ -1,4 +1,5 @@
 import { addDays, differenceInCalendarDays } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import { formatInTimeZone, fromZonedTime, toZonedTime } from 'date-fns-tz'
 
 export const PARIS_TIME_ZONE = 'Europe/Paris'
@@ -24,3 +25,12 @@ export const addParisCalendarDays = (date: Date, days: number): Date =>
 export const formatParisDateTime = (date: Date): string => formatInTimeZone(date, PARIS_TIME_ZONE, 'dd/MM/yyyy HH:mm')
 
 export const formatParisDate = (date: Date): string => formatInTimeZone(date, PARIS_TIME_ZONE, 'dd/MM/yyyy')
+
+export const parisLocalDateTimeToUtc = (parisLocalDateTime: string): Date =>
+  fromZonedTime(`${parisLocalDateTime}:00`, PARIS_TIME_ZONE)
+
+export const formatParisLocalDateTime = (date: Date): string =>
+  formatInTimeZone(date, PARIS_TIME_ZONE, "yyyy-MM-dd'T'HH:mm")
+
+export const formatParisInterviewDateTime = (date: Date): string =>
+  formatInTimeZone(date, PARIS_TIME_ZONE, "EEE dd/MM '·' HH'h'mm", { locale: fr })

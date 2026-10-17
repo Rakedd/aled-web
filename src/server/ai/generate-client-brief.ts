@@ -1,12 +1,12 @@
 import 'server-only'
 import type Anthropic from '@anthropic-ai/sdk'
-import type { ClientBrief, ClientBriefSource } from '@/domain/client-brief'
+import { type ClientBrief, type ClientBriefSource, removeAngleBrackets } from '@/domain/client-brief'
 import { AiError } from './ai-error'
 import { CLAUDE_MODELS } from './claude-models'
 
 type BriefContentBlock = Anthropic.Beta.BetaContentBlock
 
-type ClientBriefInput = { endClientName: string; parentGroupName: string | null }
+export type ClientBriefInput = { endClientName: string; parentGroupName: string | null }
 
 const BRIEF_MAX_OUTPUT_TOKENS = 16_000
 const BRIEF_TIMEOUT_IN_MILLISECONDS = 120_000
@@ -32,10 +32,6 @@ Rules:
 
 const BASE_BRIEF_SECTIONS = ['Enjeux', "Chiffre d'affaires et croissance", 'Marché', 'Actualités récentes']
 const GROUP_CONTEXT_SECTION = 'Contexte du groupe'
-
-const ANGLE_BRACKETS_PATTERN = /[<>]/g
-
-const removeAngleBrackets = (companyName: string): string => companyName.replace(ANGLE_BRACKETS_PATTERN, '').trim()
 
 const sanitizeClientBriefInput = ({ endClientName, parentGroupName }: ClientBriefInput): ClientBriefInput => {
   const sanitizedParentGroupName = parentGroupName === null ? '' : removeAngleBrackets(parentGroupName)

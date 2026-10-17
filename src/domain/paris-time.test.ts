@@ -5,7 +5,10 @@ import {
   formatParisCalendarDate,
   formatParisDate,
   formatParisDateTime,
+  formatParisInterviewDateTime,
+  formatParisLocalDateTime,
   formatRelativeDaysAgo,
+  parisLocalDateTimeToUtc,
   parseParisCalendarDate,
 } from './paris-time'
 
@@ -73,5 +76,32 @@ describe('formatParisDateTime', () => {
 describe('formatParisDate', () => {
   it('formats the Paris calendar date', () => {
     expect(formatParisDate(new Date('2026-10-17T22:30:00Z'))).toBe('18/10/2026')
+  })
+})
+
+describe('parisLocalDateTimeToUtc', () => {
+  it('stores 14:00 Paris as 13:00 UTC in winter and 12:00 UTC in summer', () => {
+    expect(parisLocalDateTimeToUtc('2026-10-28T14:00').toISOString()).toBe('2026-10-28T13:00:00.000Z')
+    expect(parisLocalDateTimeToUtc('2026-07-01T14:00').toISOString()).toBe('2026-07-01T12:00:00.000Z')
+  })
+
+  it('returns an invalid date for an impossible calendar date', () => {
+    expect(Number.isNaN(parisLocalDateTimeToUtc('2026-02-30T10:00').getTime())).toBe(true)
+  })
+})
+
+describe('formatParisInterviewDateTime', () => {
+  it('formats back to Paris time regardless of process timezone', () => {
+    expect(formatParisInterviewDateTime(new Date('2026-10-28T13:00:00Z'))).toBe('mer. 28/10 · 14h00')
+  })
+})
+
+describe('formatParisLocalDateTime', () => {
+  it('writes the Paris wall-clock time of an instant for a datetime-local field', () => {
+    expect(formatParisLocalDateTime(new Date('2026-10-28T13:00:00Z'))).toBe('2026-10-28T14:00')
+  })
+
+  it('round-trips with parisLocalDateTimeToUtc', () => {
+    expect(formatParisLocalDateTime(parisLocalDateTimeToUtc('2026-07-01T09:30'))).toBe('2026-07-01T09:30')
   })
 })

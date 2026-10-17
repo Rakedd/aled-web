@@ -1,11 +1,22 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ActivityLog } from '@/components/activity-log'
+import { ClientBriefSection } from '@/components/client-brief-section'
+import { InterviewsSection } from '@/components/interviews-section'
 import { JobApplicationHeader } from '@/components/job-application-header'
 import { JobSpecSection } from '@/components/job-spec-section'
 import { MissionInfoForm } from '@/components/mission-info-form'
+import type { ActionResult } from '@/domain/action-result'
+import type { EndClientBrief } from '@/domain/client-brief'
 import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from '@/domain/job-application'
+import { generateBriefForEndClient, getEndClientBrief, updateEndClientNotes } from '@/server/actions/client-brief-actions'
 import { getContactDetails, searchEntities, setEndClientParent, updateContactDetails } from '@/server/actions/entity-actions'
+import {
+  createInterview,
+  deleteInterview,
+  listInterviewsForJobApplication,
+  updateInterview,
+} from '@/server/actions/interview-actions'
 import {
   addActivityLogEntry,
   changeJobApplicationStatus,
@@ -25,19 +36,16 @@ export const metadata: Metadata = { title: 'Candidature · Freeclutch' }
 
 export const maxDuration = 120
 
-const SectionPlaceholder = ({ name }: { name: string }) => (
-  <section aria-label={name} data-slot={name} className="hidden" />
-)
-
-const ClientBriefSection = () => <SectionPlaceholder name="ClientBriefSection" />
-const InterviewsSection = () => <SectionPlaceholder name="InterviewsSection" />
+const loadEndClientBrief = (endClientId: string | null): Promise<ActionResult<EndClientBrief | null>> =>
+  endClientId === null ? Promise.resolve({ ok: true, data: null }) : getEndClientBrief(endClientId)
 
 const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobApplicationId: string }> }) => {
   const { jobApplicationId } = await params
-  const [jobApplicationResult, activityLogEntriesResult, jobSpecResult] = await Promise.all([
+  const [jobApplicationResult, activityLogEntriesResult, jobSpecResult, interviewsResult] = await Promise.all([
     getJobApplication(jobApplicationId),
     listActivityLogEntries(jobApplicationId),
     getJobSpec(jobApplicationId),
+    listInterviewsForJobApplication(jobApplicationId),
   ])
 
   if (!jobApplicationResult.ok) {
@@ -65,7 +73,24 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
     )
   }
 
+  if (!interviewsResult.ok) {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {interviewsResult.errorMessage}
+      </p>
+    )
+  }
+
   const jobApplication = jobApplicationResult.data
+  const endClientBriefResult = await loadEndClientBrief(jobApplication.endClientId)
+
+  if (!endClientBriefResult.ok) {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {endClientBriefResult.errorMessage}
+      </p>
+    )
+  }
 
   return (
     <div className="flex min-w-0 flex-col gap-8">
@@ -93,8 +118,22 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
             confirmJobSpecStack={confirmJobSpecStack}
             discardPendingJobSpecStack={discardPendingJobSpecStack}
           />
-          <ClientBriefSection />
-          <InterviewsSection />
+          <ClientBriefSection
+            key={jobApplication.endClientId ?? 'unknown-end-client'}
+            endClientBrief={endClientBriefResult.data}
+            endClientLabel={jobApplication.endClientLabel}
+            generateBriefForEndClient={generateBriefForEndClient}
+            updateEndClientNotes={updateEndClientNotes}
+          />
+          <InterviewsSection
+            key={jobApplication.id}
+            jobApplicationId={jobApplication.id}
+            initialInterviews={interviewsResult.data}
+            createInterview={createInterview}
+            updateInterview={updateInterview}
+            deleteInterview={deleteInterview}
+            listInterviewsForJobApplication={listInterviewsForJobApplication}
+          />
         </div>
       </div>
       <ActivityLog
