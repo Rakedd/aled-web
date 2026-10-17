@@ -13,8 +13,6 @@ export type ConfirmJobSpecStack = (jobApplicationId: string, stack: StackItem[])
 
 export type DiscardPendingJobSpecStack = (jobApplicationId: string) => Promise<ActionResult<null>>
 
-export type GetJobSpecDownloadUrl = (jobApplicationId: string) => Promise<ActionResult<string>>
-
 export type JobSpecSectionControllerParameters = {
   jobApplicationId: string
   jobSpec: JobSpec | null
@@ -22,7 +20,6 @@ export type JobSpecSectionControllerParameters = {
   saveJobSpecText: SaveJobSpecText
   confirmJobSpecStack: ConfirmJobSpecStack
   discardPendingJobSpecStack: DiscardPendingJobSpecStack
-  getJobSpecDownloadUrl: GetJobSpecDownloadUrl
   onDataChanged: () => void
 }
 

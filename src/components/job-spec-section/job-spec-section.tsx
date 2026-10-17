@@ -3,10 +3,9 @@
 import { useRouter } from 'next/navigation'
 import type { DragEvent, FormEvent } from 'react'
 import { StackChipsEditor } from '@/components/stack-chips-editor'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { JOB_SPEC_PDF_MIME_TYPE } from '@/domain/job-spec'
-import { MAX_PASTED_TEXT_LENGTH } from '@/domain/job-posting-extraction'
+import { buildJobSpecPdfPath, JOB_SPEC_PDF_MIME_TYPE, MAX_JOB_SPEC_PDF_MEGABYTES } from '@/domain/job-spec'
 import { formatParisDate } from '@/domain/paris-time'
 import { useController } from './controller'
 import type { JobSpecSectionProps } from './interfaces'
@@ -21,7 +20,6 @@ export const JobSpecSection = ({
   saveJobSpecText,
   confirmJobSpecStack,
   discardPendingJobSpecStack,
-  getJobSpecDownloadUrl,
 }: JobSpecSectionProps) => {
   const router = useRouter()
   const {
@@ -38,7 +36,6 @@ export const JobSpecSection = ({
     saveText,
     confirmDraftStack,
     discardDraftStack,
-    openPdf,
   } = useController({
     jobApplicationId,
     jobSpec,
@@ -46,7 +43,6 @@ export const JobSpecSection = ({
     saveJobSpecText,
     confirmJobSpecStack,
     discardPendingJobSpecStack,
-    getJobSpecDownloadUrl,
     onDataChanged: router.refresh,
   })
 
@@ -70,9 +66,14 @@ export const JobSpecSection = ({
       ) : jobSpec.sourceKind === 'pdf' ? (
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm">PDF ajouté le {formatParisDate(jobSpec.updatedAt)}</p>
-          <Button type="button" variant="outline" size="sm" onClick={() => void openPdf()} disabled={isSubmitting}>
+          <a
+            href={buildJobSpecPdfPath(jobApplicationId)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+          >
             Voir le PDF
-          </Button>
+          </a>
         </div>
       ) : (
         <details className="text-sm">
@@ -142,7 +143,7 @@ export const JobSpecSection = ({
             changeEvent.target.value = ''
           }}
         />
-        <p className="text-xs text-muted-foreground">PDF uniquement, 10 Mo maximum.</p>
+        <p className="text-xs text-muted-foreground">PDF uniquement, {MAX_JOB_SPEC_PDF_MEGABYTES} Mo maximum.</p>
       </div>
       <form noValidate onSubmit={handleTextSubmit} className="flex flex-col gap-2">
         <Label htmlFor={PASTED_TEXT_ID}>
@@ -151,7 +152,6 @@ export const JobSpecSection = ({
         <textarea
           id={PASTED_TEXT_ID}
           rows={6}
-          maxLength={MAX_PASTED_TEXT_LENGTH + 1}
           className="min-h-32 w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
           placeholder="Colle ici la fiche métier ou le mail reçu"
           value={pastedText}

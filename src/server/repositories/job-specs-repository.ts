@@ -22,7 +22,7 @@ const toStorageRepositoryError = (operationName: string, storageFailure: Storage
 const toPendingStack = (pendingStackJson: Json | null): StackItem[] | null =>
   Array.isArray(pendingStackJson) ? pendingStackJson.filter(isStackItem) : null
 
-const findJobSpecStoragePath = async (
+export const findJobSpecStoragePath = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   jobApplicationId: string,
@@ -99,8 +99,8 @@ export const saveJobSpecContent = async (
   userId: string,
   jobApplicationId: string,
   jobSpecContent: JobSpecContent,
+  previousStoragePath: string | null,
 ): Promise<ActionResult<null>> => {
-  const previousStoragePath = await findJobSpecStoragePath(supabase, userId, jobApplicationId)
   const { error } = await supabase.from('job_specs').upsert(
     {
       user_id: userId,

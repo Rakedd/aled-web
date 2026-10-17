@@ -4,7 +4,9 @@ import { rejectWith } from './input-validation'
 import { MAX_PASTED_TEXT_LENGTH } from './job-posting-extraction'
 import type { StackItem } from './types'
 
-export const MAX_JOB_SPEC_PDF_BYTES = 10 * 1024 * 1024
+export const MAX_JOB_SPEC_PDF_MEGABYTES = 4
+
+export const MAX_JOB_SPEC_PDF_BYTES = MAX_JOB_SPEC_PDF_MEGABYTES * 1024 * 1024
 
 export const JOB_SPEC_PDF_MIME_TYPE = 'application/pdf'
 
@@ -27,7 +29,7 @@ export type JobSpecSaveOutcome = {
 }
 
 export const JOB_SPEC_MESSAGES = {
-  pdfTooLarge: 'PDF trop lourd (10 Mo maximum)',
+  pdfTooLarge: `PDF trop lourd (${MAX_JOB_SPEC_PDF_MEGABYTES} Mo maximum)`,
   pdfOnly: 'Seuls les PDF sont acceptés',
   missingPdf: 'Choisis un fichier PDF',
   emptyText: 'Colle le texte de la fiche métier',
@@ -39,6 +41,8 @@ export const NO_TECHNOLOGY_FOUND_MESSAGES: Record<JobSpecSourceKind, string> = {
   pdf: 'Aucune technologie trouvée dans ce document (PDF scanné ?). Ajoute la stack à la main.',
   text: 'Aucune technologie trouvée dans ce texte. Ajoute la stack à la main.',
 }
+
+export const buildJobSpecPdfPath = (jobApplicationId: string): string => `/api/job-specs/${jobApplicationId}/pdf`
 
 export const validateJobSpecPdfFile = (candidate: unknown): ActionResult<Blob> => {
   if (!(candidate instanceof Blob) || candidate.size === 0) return rejectWith(JOB_SPEC_MESSAGES.missingPdf)

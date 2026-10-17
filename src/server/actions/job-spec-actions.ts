@@ -22,8 +22,8 @@ import { isJobApplicationOwnedByUser } from '@/server/repositories/job-applicati
 import {
   clearPendingJobSpecStack,
   confirmPendingJobSpecStack,
-  createJobSpecDownloadUrl,
   findJobSpec,
+  findJobSpecStoragePath,
   type JobSpecContent,
   saveJobSpecContent,
   storePendingJobSpecStack,
@@ -37,7 +37,6 @@ const JOB_SPEC_LOAD_FAILURE_MESSAGE = 'Impossible de charger la fiche métier po
 const JOB_SPEC_SAVE_FAILURE_MESSAGE =
   "Impossible d'enregistrer la fiche métier pour le moment. Réessaie dans quelques minutes."
 const STACK_UPDATE_FAILURE_MESSAGE = 'Impossible de mettre à jour la stack pour le moment. Réessaie dans quelques minutes.'
-const PDF_DOWNLOAD_FAILURE_MESSAGE = "Impossible d'ouvrir le PDF pour le moment. Réessaie dans quelques minutes."
 
 const extractPendingStack = async (userId: string, jobSpecInput: JobSpecInput): Promise<JobSpecSaveOutcome> => {
   try {
@@ -52,18 +51,39 @@ const extractPendingStack = async (userId: string, jobSpecInput: JobSpecInput): 
   }
 }
 
+const storePendingStackWithoutFailingTheSave = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  jobApplicationId: string,
+  pendingStack: StackItem[],
+): Promise<void> => {
+  try {
+    await storePendingJobSpecStack(supabase, userId, jobApplicationId, pendingStack)
+  } catch (storageError) {
+    console.error('Job spec pending stack storage failed', {
+      errorMessage: storageError instanceof Error ? storageError.message : typeof storageError,
+    })
+  }
+}
+
 const saveJobSpecThenExtractStack = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   jobApplicationId: string,
-  jobSpecContent: JobSpecContent,
+  savedJobSpec: { content: JobSpecContent; previousStoragePath: string | null },
   jobSpecInput: JobSpecInput,
 ): Promise<ActionResult<JobSpecSaveOutcome>> => {
-  const saveResult = await saveJobSpecContent(supabase, userId, jobApplicationId, jobSpecContent)
+  const saveResult = await saveJobSpecContent(
+    supabase,
+    userId,
+    jobApplicationId,
+    savedJobSpec.content,
+    savedJobSpec.previousStoragePath,
+  )
   if (!saveResult.ok) return saveResult
   const saveOutcome = await extractPendingStack(userId, jobSpecInput)
   if (saveOutcome.pendingStack !== null && saveOutcome.pendingStack.length > 0) {
-    await storePendingJobSpecStack(supabase, userId, jobApplicationId, saveOutcome.pendingStack)
+    await storePendingStackWithoutFailingTheSave(supabase, userId, jobApplicationId, saveOutcome.pendingStack)
   }
   return { ok: true, data: saveOutcome }
 }
@@ -126,12 +146,13 @@ export const uploadJobSpecPdf = async (
       if (!hasPdfSignature(pdfBytes)) return rejectWith(JOB_SPEC_MESSAGES.pdfOnly)
       const isOwnedByUser = await isJobApplicationOwnedByUser(supabase, userId, validatedArguments.jobApplicationId)
       if (!isOwnedByUser) return rejectWith(JOB_APPLICATION_NOT_FOUND_MESSAGE)
+      const previousStoragePath = await findJobSpecStoragePath(supabase, userId, validatedArguments.jobApplicationId)
       const storagePath = await uploadJobSpecPdfFile(supabase, userId, validatedArguments.jobApplicationId, pdfBytes)
       return saveJobSpecThenExtractStack(
         supabase,
         userId,
         validatedArguments.jobApplicationId,
-        { sourceKind: 'pdf', storagePath },
+        { content: { sourceKind: 'pdf', storagePath }, previousStoragePath },
         { kind: 'pdf', base64Pdf: Buffer.from(pdfBytes).toString('base64') },
       )
     },
@@ -145,14 +166,16 @@ export const saveJobSpecText = async (
     operationName: 'saveJobSpecText',
     failureMessage: JOB_SPEC_SAVE_FAILURE_MESSAGE,
     validateArguments: () => validateTextArguments(jobApplicationId, text),
-    operation: (supabase, userId, validatedArguments) =>
-      saveJobSpecThenExtractStack(
+    operation: async (supabase, userId, validatedArguments) => {
+      const previousStoragePath = await findJobSpecStoragePath(supabase, userId, validatedArguments.jobApplicationId)
+      return saveJobSpecThenExtractStack(
         supabase,
         userId,
         validatedArguments.jobApplicationId,
-        { sourceKind: 'text', rawText: validatedArguments.text },
+        { content: { sourceKind: 'text', rawText: validatedArguments.text }, previousStoragePath },
         { kind: 'text', text: validatedArguments.text },
-      ),
+      )
+    },
   })
 
 export const confirmJobSpecStack = async (jobApplicationId: string, stack: StackItem[]): Promise<ActionResult<null>> =>
@@ -171,13 +194,4 @@ export const discardPendingJobSpecStack = async (jobApplicationId: string): Prom
     validateArguments: () => validateJobApplicationId(jobApplicationId),
     operation: (supabase, userId, validatedJobApplicationId) =>
       clearPendingJobSpecStack(supabase, userId, validatedJobApplicationId),
-  })
-
-export const getJobSpecDownloadUrl = async (jobApplicationId: string): Promise<ActionResult<string>> =>
-  runAuthenticatedOperation({
-    operationName: 'getJobSpecDownloadUrl',
-    failureMessage: PDF_DOWNLOAD_FAILURE_MESSAGE,
-    validateArguments: () => validateJobApplicationId(jobApplicationId),
-    operation: (supabase, userId, validatedJobApplicationId) =>
-      createJobSpecDownloadUrl(supabase, userId, validatedJobApplicationId),
   })

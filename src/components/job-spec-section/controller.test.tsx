@@ -4,10 +4,8 @@ import type { JobSpec, JobSpecSaveOutcome } from '@/domain/job-spec'
 import type { StackItem } from '@/domain/types'
 import { useController } from './controller'
 import { JobSpecSection } from './job-spec-section'
-import { openUrlInNewTab } from './open-url-in-new-tab'
 
 jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
-jest.mock('./open-url-in-new-tab', () => ({ openUrlInNewTab: jest.fn() }))
 
 const JOB_APPLICATION_ID = '6f1c2a9e-1b2d-4c3e-8f4a-5b6c7d8e9f00'
 const SCANNED_PDF_MESSAGE = 'Aucune technologie trouvée dans ce document (PDF scanné ?). Ajoute la stack à la main.'
@@ -30,7 +28,6 @@ const createActions = (saveOutcome: JobSpecSaveOutcome = { pendingStack: extract
     saveJobSpecText: jest.fn().mockResolvedValue(saveResult),
     confirmJobSpecStack: jest.fn().mockResolvedValue({ ok: true, data: null }),
     discardPendingJobSpecStack: jest.fn().mockResolvedValue({ ok: true, data: null }),
-    getJobSpecDownloadUrl: jest.fn().mockResolvedValue({ ok: true, data: 'https://storage.test/signed/fiche.pdf' }),
   }
 }
 
@@ -54,7 +51,7 @@ describe('job-spec-section useController', () => {
   it('refuses a 25 MB file on the client without uploading it', async () => {
     const { result, uploadJobSpecPdf } = renderJobSpecSectionController()
     await act(() => result.current.selectPdfFile(createPdfFile(25 * 1024 * 1024)))
-    expect(result.current.errorMessage).toBe('PDF trop lourd (10 Mo maximum)')
+    expect(result.current.errorMessage).toBe('PDF trop lourd (4 Mo maximum)')
     expect(uploadJobSpecPdf).not.toHaveBeenCalled()
   })
 
@@ -151,17 +148,52 @@ describe('job-spec-section useController', () => {
     expect(result.current.isSubmitting).toBe(false)
   })
 
-  it('opens the signed url of the pdf in a new tab', async () => {
-    const { result, getJobSpecDownloadUrl } = renderJobSpecSectionController({
-      jobSpec: { sourceKind: 'pdf', rawText: null, pendingStack: null, updatedAt: new Date() },
+  it('clears the previous ai error and no technology message when a new action starts', async () => {
+    const { result, uploadJobSpecPdf } = renderJobSpecSectionController({
+      saveOutcome: { pendingStack: [], aiErrorMessage: "Claude n'a pas répondu à temps, réessaie." },
     })
-    await act(() => result.current.openPdf())
-    expect(getJobSpecDownloadUrl).toHaveBeenCalledWith(JOB_APPLICATION_ID)
-    expect(openUrlInNewTab).toHaveBeenCalledWith('https://storage.test/signed/fiche.pdf')
+    await act(() => result.current.selectPdfFile(createPdfFile()))
+    expect(result.current.aiErrorMessage).not.toBeNull()
+    expect(result.current.noTechnologyFoundMessage).not.toBeNull()
+    uploadJobSpecPdf.mockResolvedValue({ ok: false, errorMessage: 'Candidature introuvable' })
+    await act(() => result.current.selectPdfFile(createPdfFile()))
+    expect(result.current.aiErrorMessage).toBeNull()
+    expect(result.current.noTechnologyFoundMessage).toBeNull()
+    expect(result.current.errorMessage).toBe('Candidature introuvable')
+  })
+
+  it('clears the previous ai error when the pasted text is refused on the client', async () => {
+    const { result } = renderJobSpecSectionController({
+      saveOutcome: { pendingStack: null, aiErrorMessage: "Claude n'a pas répondu à temps, réessaie." },
+    })
+    await act(() => result.current.selectPdfFile(createPdfFile()))
+    act(() => result.current.setPastedText('   '))
+    await act(() => result.current.saveText())
+    expect(result.current.aiErrorMessage).toBeNull()
+    expect(result.current.errorMessage).toBe('Colle le texte de la fiche métier')
   })
 })
 
 describe('JobSpecSection', () => {
+  it('links « Voir le PDF » to the authenticated pdf route in a new tab', () => {
+    render(
+      <JobSpecSection
+        jobApplicationId={JOB_APPLICATION_ID}
+        jobSpec={{ sourceKind: 'pdf', rawText: null, pendingStack: null, updatedAt: new Date() }}
+        {...createActions()}
+      />,
+    )
+    const pdfLink = screen.getByRole('link', { name: 'Voir le PDF' })
+    expect(pdfLink).toHaveAttribute('href', `/api/job-specs/${JOB_APPLICATION_ID}/pdf`)
+    expect(pdfLink).toHaveAttribute('target', '_blank')
+    expect(pdfLink).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
+  it('lets the user type more than 50 000 characters so the validation can report it', () => {
+    render(<JobSpecSection jobApplicationId={JOB_APPLICATION_ID} jobSpec={null} {...createActions()} />)
+    expect(screen.getByLabelText('Ou coller le texte de la fiche')).not.toHaveAttribute('maxLength')
+  })
+
   it('shows a pending stack as a draft with the Valider and Ignorer buttons', () => {
     render(
       <JobSpecSection

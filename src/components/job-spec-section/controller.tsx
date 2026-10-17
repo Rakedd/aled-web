@@ -10,7 +10,6 @@ import {
 } from '@/domain/job-spec'
 import type { StackItem } from '@/domain/types'
 import type { JobSpecSectionControllerParameters } from './interfaces'
-import { openUrlInNewTab } from './open-url-in-new-tab'
 
 export const useController = ({
   jobApplicationId,
@@ -19,7 +18,6 @@ export const useController = ({
   saveJobSpecText,
   confirmJobSpecStack,
   discardPendingJobSpecStack,
-  getJobSpecDownloadUrl,
   onDataChanged,
 }: JobSpecSectionControllerParameters) => {
   const [pastedText, setPastedText] = useState('')
@@ -37,7 +35,6 @@ export const useController = ({
     if (isRequestInFlightRef.current) return null
     isRequestInFlightRef.current = true
     setIsSubmitting(true)
-    setErrorMessage(null)
     try {
       return await request()
     } catch {
@@ -46,6 +43,12 @@ export const useController = ({
       isRequestInFlightRef.current = false
       setIsSubmitting(false)
     }
+  }
+
+  const clearMessages = () => {
+    setErrorMessage(null)
+    setAiErrorMessage(null)
+    setNoTechnologyFoundMessage(null)
   }
 
   const showSaveOutcome = (sourceKind: JobSpecSourceKind, saveOutcome: JobSpecSaveOutcome) => {
@@ -74,6 +77,7 @@ export const useController = ({
 
   const selectPdfFile = async (pdfFile: File | null | undefined) => {
     if (!pdfFile || isRequestInFlightRef.current) return
+    clearMessages()
     const pdfFileValidation = validateJobSpecPdfFile(pdfFile)
     if (!pdfFileValidation.ok) {
       setErrorMessage(pdfFileValidation.errorMessage)
@@ -86,6 +90,7 @@ export const useController = ({
 
   const saveText = async () => {
     if (isRequestInFlightRef.current) return
+    clearMessages()
     const textValidation = validateJobSpecText(pastedText)
     if (!textValidation.ok) {
       setErrorMessage(textValidation.errorMessage)
@@ -96,6 +101,8 @@ export const useController = ({
   }
 
   const resolveDraftStack = async (request: () => Promise<ActionResult<null>>) => {
+    if (isRequestInFlightRef.current) return
+    clearMessages()
     const resolutionResult = await runExclusiveRequest(request)
     if (resolutionResult === null) return
     if (!resolutionResult.ok) {
@@ -113,16 +120,6 @@ export const useController = ({
 
   const discardDraftStack = () => resolveDraftStack(() => discardPendingJobSpecStack(jobApplicationId))
 
-  const openPdf = async () => {
-    const downloadUrlResult = await runExclusiveRequest(() => getJobSpecDownloadUrl(jobApplicationId))
-    if (downloadUrlResult === null) return
-    if (!downloadUrlResult.ok) {
-      setErrorMessage(downloadUrlResult.errorMessage)
-      return
-    }
-    openUrlInNewTab(downloadUrlResult.data)
-  }
-
   return {
     pastedText,
     setPastedText,
@@ -137,6 +134,5 @@ export const useController = ({
     saveText,
     confirmDraftStack,
     discardDraftStack,
-    openPdf,
   }
 }

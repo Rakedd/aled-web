@@ -6,7 +6,6 @@ import {
   confirmJobSpecStack,
   discardPendingJobSpecStack,
   getJobSpec,
-  getJobSpecDownloadUrl,
   saveJobSpecText,
   uploadJobSpecPdf,
 } from '@/server/actions/job-spec-actions'
@@ -33,10 +32,14 @@ const jobSpecStack: StackItem[] = [
   { name: 'Kafka', category: 'tool', origin: 'job_spec' },
 ]
 
-const signInAs = async (): Promise<TestUser> => {
-  const user = await createSignedInTestClient(`job-specs-${randomUUID()}@test.local`)
+const actAs = (user: TestUser): void => {
   jest.mocked(getAuthenticatedUser).mockResolvedValue({ id: user.userId, email: 'test@test.local' })
   jest.mocked(createServerSupabaseClient).mockResolvedValue(user.client)
+}
+
+const signInAs = async (): Promise<TestUser> => {
+  const user = await createSignedInTestClient(`job-specs-${randomUUID()}@test.local`)
+  actAs(user)
   return user
 }
 
@@ -179,19 +182,6 @@ describe('job spec actions', () => {
     expect(overviewResult).toMatchObject({ ok: true, data: { stack: postingStack } })
   })
 
-  it('gives a signed url that serves the stored pdf', async () => {
-    const user = await signInAs()
-    const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
-    await uploadJobSpecPdf(jobApplicationId, createPdfFormData('%PDF-1.4 contenu signé'))
-
-    const downloadUrlResult = await getJobSpecDownloadUrl(jobApplicationId)
-
-    if (!downloadUrlResult.ok) throw new Error(downloadUrlResult.errorMessage)
-    const downloadResponse = await fetch(downloadUrlResult.data)
-    expect(downloadResponse.status).toBe(200)
-    expect(await downloadResponse.text()).toBe('%PDF-1.4 contenu signé')
-  })
-
   it("refuses to attach a job spec to another user's job application and stores nothing", async () => {
     const owner = await signInAs()
     const ownerJobApplicationId = await createJobApplicationOrFail(owner.client, owner.userId)
@@ -204,5 +194,36 @@ describe('job spec actions', () => {
     expect(textResult).toEqual({ ok: false, errorMessage: 'Candidature introuvable' })
     expect(await listStoredJobSpecFiles(intruder, ownerJobApplicationId)).toEqual([])
     expect(extractJobSpecStack).not.toHaveBeenCalled()
+  })
+
+  it("refuses to confirm or discard another user's draft and leaves it untouched", async () => {
+    const owner = await signInAs()
+    const ownerJobApplicationId = await createJobApplicationOrFail(owner.client, owner.userId, { stack: postingStack })
+    await saveJobSpecText(ownerJobApplicationId, 'Stack : React, Kafka')
+    await signInAs()
+
+    const confirmationResult = await confirmJobSpecStack(ownerJobApplicationId, jobSpecStack)
+    const discardResult = await discardPendingJobSpecStack(ownerJobApplicationId)
+
+    expect(confirmationResult).toEqual({ ok: false, errorMessage: 'Candidature introuvable' })
+    expect(discardResult).toEqual({ ok: false, errorMessage: 'Fiche métier introuvable' })
+    actAs(owner)
+    expect(await getJobSpec(ownerJobApplicationId)).toMatchObject({ ok: true, data: { pendingStack: jobSpecStack } })
+    const overviewResult = await findJobApplicationOverview(owner.client, owner.userId, ownerJobApplicationId)
+    expect(overviewResult).toMatchObject({ ok: true, data: { stack: postingStack } })
+  })
+
+  it('has a job-specs bucket that refuses files over 4 MB', async () => {
+    const user = await signInAs()
+    const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
+    const oversizedPdfBytes = new Uint8Array(4 * 1024 * 1024 + 1)
+    oversizedPdfBytes.set(new TextEncoder().encode('%PDF-'))
+
+    const { error } = await user.client.storage
+      .from('job-specs')
+      .upload(`${user.userId}/${jobApplicationId}/oversized.pdf`, oversizedPdfBytes, { contentType: 'application/pdf' })
+
+    expect(error).not.toBeNull()
+    expect(await listStoredJobSpecFiles(user, jobApplicationId)).toEqual([])
   })
 })

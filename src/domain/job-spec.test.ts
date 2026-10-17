@@ -3,6 +3,7 @@
  */
 import { AI_ERROR_MESSAGES } from './ai-errors'
 import {
+  buildJobSpecPdfPath,
   hasPdfSignature,
   JOB_SPEC_MESSAGES,
   MAX_JOB_SPEC_PDF_BYTES,
@@ -17,15 +18,19 @@ const createFileOfSize = (sizeInBytes: number, mimeType: string): File => {
 }
 
 describe('validateJobSpecPdfFile', () => {
-  it('accepts a pdf of exactly 10 MB', () => {
+  it('caps job spec pdfs at 4 MB', () => {
+    expect(MAX_JOB_SPEC_PDF_BYTES).toBe(4_194_304)
+  })
+
+  it('accepts a pdf of exactly 4 MB', () => {
     const pdfFile = createFileOfSize(MAX_JOB_SPEC_PDF_BYTES, 'application/pdf')
     expect(validateJobSpecPdfFile(pdfFile)).toEqual({ ok: true, data: pdfFile })
   })
 
-  it('refuses a pdf over 10 MB', () => {
+  it('refuses a pdf over 4 MB', () => {
     expect(validateJobSpecPdfFile(createFileOfSize(MAX_JOB_SPEC_PDF_BYTES + 1, 'application/pdf'))).toEqual({
       ok: false,
-      errorMessage: 'PDF trop lourd (10 Mo maximum)',
+      errorMessage: 'PDF trop lourd (4 Mo maximum)',
     })
   })
 
@@ -54,6 +59,14 @@ describe('hasPdfSignature', () => {
   it('rejects bytes that do not start with %PDF-', () => {
     expect(hasPdfSignature(new TextEncoder().encode('<html>%PDF-'))).toBe(false)
     expect(hasPdfSignature(new TextEncoder().encode('%PDF'))).toBe(false)
+  })
+})
+
+describe('buildJobSpecPdfPath', () => {
+  it('points to the authenticated pdf route of the job application', () => {
+    expect(buildJobSpecPdfPath('6f1c2a9e-1b2d-4c3e-8f4a-5b6c7d8e9f00')).toBe(
+      '/api/job-specs/6f1c2a9e-1b2d-4c3e-8f4a-5b6c7d8e9f00/pdf',
+    )
   })
 })
 

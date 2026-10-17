@@ -17,7 +17,6 @@ import {
   confirmJobSpecStack,
   discardPendingJobSpecStack,
   getJobSpec,
-  getJobSpecDownloadUrl,
   saveJobSpecText,
   uploadJobSpecPdf,
 } from '@/server/actions/job-spec-actions'
@@ -93,7 +92,6 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
             saveJobSpecText={saveJobSpecText}
             confirmJobSpecStack={confirmJobSpecStack}
             discardPendingJobSpecStack={discardPendingJobSpecStack}
-            getJobSpecDownloadUrl={getJobSpecDownloadUrl}
           />
           <ClientBriefSection />
           <InterviewsSection />
