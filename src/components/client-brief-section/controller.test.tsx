@@ -161,7 +161,7 @@ describe('client-brief-section useController', () => {
     expect(updateEndClientNotes).toHaveBeenCalledTimes(1)
     expect(updateEndClientNotes).toHaveBeenCalledWith(END_CLIENT_ID, 'Parler du projet Kafka')
     expect(result.current.notesSaveStatus).toBe('saved')
-    expect(onDataChanged).toHaveBeenCalledTimes(1)
+    expect(onDataChanged).not.toHaveBeenCalled()
   })
 
   it('saves the pending notes right away when the section unmounts', async () => {
@@ -212,6 +212,54 @@ describe('client-brief-section useController', () => {
     await act(() => jest.advanceTimersByTimeAsync(NOTES_AUTOSAVE_DELAY_IN_MILLISECONDS))
     expect(result.current.notesSaveStatus).toBe('failed')
     expect(result.current.notesErrorMessage).toBe(GENERIC_ACTION_ERROR_MESSAGE)
+  })
+  it('keeps failed notes pending so leaving warns and a retry sends them again', async () => {
+    jest.useFakeTimers()
+    const { result, updateEndClientNotes } = renderClientBriefController()
+    updateEndClientNotes.mockResolvedValueOnce({ ok: false, errorMessage: 'Impossible' })
+    act(() => result.current.changeNotes('Notes importantes'))
+    await act(() => jest.advanceTimersByTimeAsync(NOTES_AUTOSAVE_DELAY_IN_MILLISECONDS))
+    expect(result.current.notesSaveStatus).toBe('failed')
+
+    const beforeUnloadAfterFailure = new Event('beforeunload', { cancelable: true })
+    window.dispatchEvent(beforeUnloadAfterFailure)
+    expect(beforeUnloadAfterFailure.defaultPrevented).toBe(true)
+
+    await act(async () => {
+      result.current.retryNotesSave()
+      await jest.advanceTimersByTimeAsync(0)
+    })
+    expect(updateEndClientNotes).toHaveBeenCalledTimes(2)
+    expect(updateEndClientNotes).toHaveBeenLastCalledWith(END_CLIENT_ID, 'Notes importantes')
+    expect(result.current.notesSaveStatus).toBe('saved')
+
+    const beforeUnloadAfterRetry = new Event('beforeunload', { cancelable: true })
+    window.dispatchEvent(beforeUnloadAfterRetry)
+    expect(beforeUnloadAfterRetry.defaultPrevented).toBe(false)
+  })
+
+  it('sends failed notes again with the next edit', async () => {
+    jest.useFakeTimers()
+    const { result, updateEndClientNotes } = renderClientBriefController()
+    updateEndClientNotes.mockResolvedValueOnce({ ok: false, errorMessage: 'Impossible' })
+    act(() => result.current.changeNotes('Version'))
+    await act(() => jest.advanceTimersByTimeAsync(NOTES_AUTOSAVE_DELAY_IN_MILLISECONDS))
+    act(() => result.current.changeNotes('Version corrigée'))
+    await act(() => jest.advanceTimersByTimeAsync(NOTES_AUTOSAVE_DELAY_IN_MILLISECONDS))
+    expect(updateEndClientNotes).toHaveBeenLastCalledWith(END_CLIENT_ID, 'Version corrigée')
+    expect(result.current.notesSaveStatus).toBe('saved')
+  })
+
+  it('saves failed notes again when the section unmounts', async () => {
+    jest.useFakeTimers()
+    const { result, unmount, updateEndClientNotes } = renderClientBriefController()
+    updateEndClientNotes.mockResolvedValueOnce({ ok: false, errorMessage: 'Impossible' })
+    act(() => result.current.changeNotes('À ne pas perdre'))
+    await act(() => jest.advanceTimersByTimeAsync(NOTES_AUTOSAVE_DELAY_IN_MILLISECONDS))
+    unmount()
+    await jest.advanceTimersByTimeAsync(0)
+    expect(updateEndClientNotes).toHaveBeenCalledTimes(2)
+    expect(updateEndClientNotes).toHaveBeenLastCalledWith(END_CLIENT_ID, 'À ne pas perdre')
   })
 })
 

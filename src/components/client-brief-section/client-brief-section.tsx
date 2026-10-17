@@ -58,8 +58,18 @@ export const ClientBriefSection = ({
   updateEndClientNotes,
 }: ClientBriefSectionProps) => {
   const router = useRouter()
-  const { state, brief, isGenerating, errorMessage, generate, notes, changeNotes, notesSaveStatus, notesErrorMessage } =
-    useController({ endClientBrief, generateBriefForEndClient, updateEndClientNotes, onDataChanged: router.refresh })
+  const {
+    state,
+    brief,
+    isGenerating,
+    errorMessage,
+    generate,
+    notes,
+    changeNotes,
+    notesSaveStatus,
+    notesErrorMessage,
+    retryNotesSave,
+  } = useController({ endClientBrief, generateBriefForEndClient, updateEndClientNotes, onDataChanged: router.refresh })
 
   return (
     <section aria-labelledby="client-brief-section-title" className="flex min-w-0 flex-col gap-4">
@@ -123,9 +133,14 @@ export const ClientBriefSection = ({
               {NOTES_SAVE_STATUS_LABELS[notesSaveStatus]}
             </p>
             {notesErrorMessage && (
-              <p role="alert" className="text-sm text-destructive">
-                {notesErrorMessage}
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p role="alert" className="text-sm text-destructive">
+                  {notesErrorMessage}
+                </p>
+                <Button type="button" variant="outline" size="sm" onClick={retryNotesSave}>
+                  Réessayer
+                </Button>
+              </div>
             )}
           </div>
         </>

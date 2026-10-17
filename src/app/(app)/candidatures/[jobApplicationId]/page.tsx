@@ -34,7 +34,7 @@ import {
 
 export const metadata: Metadata = { title: 'Candidature · Freeclutch' }
 
-export const maxDuration = 120
+export const maxDuration = 300
 
 const loadEndClientBrief = (endClientId: string | null): Promise<ActionResult<EndClientBrief | null>> =>
   endClientId === null ? Promise.resolve({ ok: true, data: null }) : getEndClientBrief(endClientId)

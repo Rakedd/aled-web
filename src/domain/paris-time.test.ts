@@ -85,6 +85,18 @@ describe('parisLocalDateTimeToUtc', () => {
     expect(parisLocalDateTimeToUtc('2026-07-01T14:00').toISOString()).toBe('2026-07-01T12:00:00.000Z')
   })
 
+  it('reads an ambiguous autumn wall-clock time as its first occurrence, in summer time', () => {
+    expect(parisLocalDateTimeToUtc('2026-10-25T02:30').toISOString()).toBe('2026-10-25T00:30:00.000Z')
+  })
+
+  it('returns an invalid date for a wall-clock time skipped by the spring time change', () => {
+    expect(Number.isNaN(parisLocalDateTimeToUtc('2026-03-29T02:30').getTime())).toBe(true)
+  })
+
+  it('returns an invalid date for a malformed value', () => {
+    expect(Number.isNaN(parisLocalDateTimeToUtc('28/10/2026 14:00').getTime())).toBe(true)
+  })
+
   it('returns an invalid date for an impossible calendar date', () => {
     expect(Number.isNaN(parisLocalDateTimeToUtc('2026-02-30T10:00').getTime())).toBe(true)
   })

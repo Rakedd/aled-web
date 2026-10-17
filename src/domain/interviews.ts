@@ -1,6 +1,6 @@
 import type { ActionResult } from './action-result'
-import { isRecord, rejectWith, validateOptionalText } from './input-validation'
-import { formatParisLocalDateTime, parisLocalDateTimeToUtc } from './paris-time'
+import { isRecord, isValidDate, rejectWith, validateOptionalText } from './input-validation'
+import { parisLocalDateTimeToUtc } from './paris-time'
 import type { InterviewFormat, InterviewKind, StackItem } from './types'
 
 export type Interview = {
@@ -59,19 +59,14 @@ export const INTERVIEW_VALIDATION_MESSAGES = {
 
 const PARTICIPANTS_TEXT_FIELD_RULE = { label: 'Interlocuteurs', maximumLength: 500 }
 const NOTES_TEXT_FIELD_RULE = { label: 'Notes', maximumLength: 10_000 }
-const PARIS_LOCAL_DATE_TIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
 
 const validateStartsAt = (candidate: unknown): ActionResult<Date> => {
   if (candidate === '' || candidate === null || candidate === undefined) {
     return rejectWith(INTERVIEW_VALIDATION_MESSAGES.missingStartsAt)
   }
-  if (typeof candidate !== 'string' || !PARIS_LOCAL_DATE_TIME_PATTERN.test(candidate)) {
-    return rejectWith(INTERVIEW_VALIDATION_MESSAGES.invalidStartsAt)
-  }
+  if (typeof candidate !== 'string') return rejectWith(INTERVIEW_VALIDATION_MESSAGES.invalidStartsAt)
   const startsAt = parisLocalDateTimeToUtc(candidate)
-  const isExistingParisWallClockTime =
-    !Number.isNaN(startsAt.getTime()) && formatParisLocalDateTime(startsAt) === candidate
-  return isExistingParisWallClockTime ? { ok: true, data: startsAt } : rejectWith(INTERVIEW_VALIDATION_MESSAGES.invalidStartsAt)
+  return isValidDate(startsAt) ? { ok: true, data: startsAt } : rejectWith(INTERVIEW_VALIDATION_MESSAGES.invalidStartsAt)
 }
 
 const validateInterviewKind = (candidate: unknown): ActionResult<InterviewKind> => {

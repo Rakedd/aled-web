@@ -8,8 +8,11 @@ type BriefContentBlock = Anthropic.Beta.BetaContentBlock
 
 export type ClientBriefInput = { endClientName: string; parentGroupName: string | null }
 
+type BriefDeadline = { endsAtInMilliseconds: number; signal: AbortSignal }
+
 const BRIEF_MAX_OUTPUT_TOKENS = 16_000
 const BRIEF_TIMEOUT_IN_MILLISECONDS = 120_000
+const BRIEF_TOTAL_TIME_BUDGET_IN_MILLISECONDS = 240_000
 const BRIEF_MAX_RETRIES = 1
 const MAX_PAUSED_TURN_CONTINUATIONS = 3
 
@@ -52,11 +55,19 @@ const buildBriefUserPrompt = ({ endClientName, parentGroupName }: ClientBriefInp
   ].join('\n')
 }
 
-const requestBriefTurn = (
+const rejectWhenDeadlineIsReached = (deadline: BriefDeadline): Promise<never> =>
+  new Promise((_resolve, reject) => {
+    deadline.signal.addEventListener('abort', () => reject(new AiError('timeout')), { once: true })
+  })
+
+const requestBriefTurn = async (
   client: Anthropic,
   messages: Anthropic.Beta.BetaMessageParam[],
-): Promise<Anthropic.Beta.BetaMessage> =>
-  client.beta.messages
+  deadline: BriefDeadline,
+): Promise<Anthropic.Beta.BetaMessage> => {
+  const remainingTimeInMilliseconds = deadline.endsAtInMilliseconds - Date.now()
+  if (deadline.signal.aborted || remainingTimeInMilliseconds <= 0) throw new AiError('timeout')
+  const finalMessage = client.beta.messages
     .stream(
       {
         model: CLAUDE_MODELS.brief,
@@ -68,9 +79,15 @@ const requestBriefTurn = (
         output_config: { effort: 'medium' },
         messages,
       },
-      { maxRetries: BRIEF_MAX_RETRIES, timeout: BRIEF_TIMEOUT_IN_MILLISECONDS },
+      {
+        maxRetries: BRIEF_MAX_RETRIES,
+        timeout: Math.min(BRIEF_TIMEOUT_IN_MILLISECONDS, remainingTimeInMilliseconds),
+        signal: deadline.signal,
+      },
     )
     .finalMessage()
+  return Promise.race([finalMessage, rejectWhenDeadlineIsReached(deadline)])
+}
 
 const isPairedServerToolBlock = (contentBlock: BriefContentBlock, answeredToolUseIds: Set<string>): boolean => {
   if (contentBlock.type === 'server_tool_use') return answeredToolUseIds.has(contentBlock.id)
@@ -101,8 +118,9 @@ const runBriefTurns = async (
   userMessage: Anthropic.Beta.BetaMessageParam,
   previousAssistantContent: BriefContentBlock[],
   remainingContinuations: number,
+  deadline: BriefDeadline,
 ): Promise<BriefContentBlock[]> => {
-  const response = await requestBriefTurn(client, toBriefMessages(userMessage, previousAssistantContent))
+  const response = await requestBriefTurn(client, toBriefMessages(userMessage, previousAssistantContent), deadline)
   if (response.stop_reason === 'refusal') throw new AiError('refused')
   if (response.stop_reason === 'end_turn') return [...previousAssistantContent, ...response.content]
   if (response.stop_reason !== 'pause_turn' || remainingContinuations === 0) throw new AiError('unknown')
@@ -111,6 +129,7 @@ const runBriefTurns = async (
     userMessage,
     [...previousAssistantContent, ...toContinuationContent(response.content)],
     remainingContinuations - 1,
+    deadline,
   )
 }
 
@@ -193,6 +212,20 @@ export const generateClientBrief = async (client: Anthropic, clientBriefInput: C
     role: 'user',
     content: buildBriefUserPrompt(sanitizeClientBriefInput(clientBriefInput)),
   }
-  const assistantContent = await runBriefTurns(client, userMessage, [], MAX_PAUSED_TURN_CONTINUATIONS)
-  return toClientBrief(assistantContent)
+  const deadlineController = new AbortController()
+  const deadlineTimer = setTimeout(() => deadlineController.abort(), BRIEF_TOTAL_TIME_BUDGET_IN_MILLISECONDS)
+  const deadline = {
+    endsAtInMilliseconds: Date.now() + BRIEF_TOTAL_TIME_BUDGET_IN_MILLISECONDS,
+    signal: deadlineController.signal,
+  }
+  try {
+    const assistantContent = await runBriefTurns(client, userMessage, [], MAX_PAUSED_TURN_CONTINUATIONS, deadline)
+    return toClientBrief(assistantContent)
+  } catch (generationError) {
+    if (deadlineController.signal.aborted) throw new AiError('timeout')
+    throw generationError
+  } finally {
+    clearTimeout(deadlineTimer)
+    deadlineController.abort()
+  }
 }

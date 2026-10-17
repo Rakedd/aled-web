@@ -34,10 +34,10 @@ export const useController = ({
   const latestNotesSaveRequestNumberRef = useRef(0)
   const unsavedNotesRequestCountRef = useRef(0)
   const isMountedRef = useRef(true)
-  const notesSavingDependenciesRef = useRef({ endClientBrief, updateEndClientNotes, onDataChanged })
+  const notesSavingDependenciesRef = useRef({ endClientBrief, updateEndClientNotes })
 
   useEffect(() => {
-    notesSavingDependenciesRef.current = { endClientBrief, updateEndClientNotes, onDataChanged }
+    notesSavingDependenciesRef.current = { endClientBrief, updateEndClientNotes }
   })
 
   const brief = generatedBrief ?? endClientBrief?.brief ?? null
@@ -64,12 +64,12 @@ export const useController = ({
     onDataChanged()
   }
 
-  const showNotesSaveResult = (notesSaveResult: ActionResult<null>, requestNumber: number) => {
+  const showNotesSaveResult = (notesSaveResult: ActionResult<null>, requestNumber: number, savedNotes: string) => {
     const isLatestRequest = requestNumber === latestNotesSaveRequestNumberRef.current
     if (!isMountedRef.current || !isLatestRequest) return
+    if (!notesSaveResult.ok && pendingNotesRef.current === null) pendingNotesRef.current = savedNotes
     setNotesSaveStatus(notesSaveResult.ok ? 'saved' : 'failed')
     setNotesErrorMessage(notesSaveResult.ok ? null : notesSaveResult.errorMessage)
-    if (notesSaveResult.ok) notesSavingDependenciesRef.current.onDataChanged()
   }
 
   const enqueueNotesSave = (notesToSave: string) => {
@@ -83,7 +83,7 @@ export const useController = ({
       if (isMountedRef.current && requestNumber === latestNotesSaveRequestNumberRef.current) setNotesSaveStatus('saving')
       const notesSaveResult = await runActionSafely(() => savingDependencies.updateEndClientNotes(endClientId, notesToSave))
       unsavedNotesRequestCountRef.current -= 1
-      showNotesSaveResult(notesSaveResult, requestNumber)
+      showNotesSaveResult(notesSaveResult, requestNumber, notesToSave)
     })
   }
 
@@ -134,5 +134,6 @@ export const useController = ({
     changeNotes,
     notesSaveStatus,
     notesErrorMessage,
+    retryNotesSave: flushPendingNotes,
   }
 }

@@ -309,3 +309,62 @@ describe('generateClientBrief', () => {
     expect(toAiErrorKind(briefError)).toBe('unknown')
   })
 })
+
+describe('generateClientBrief time budget', () => {
+  const BRIEF_TOTAL_TIME_BUDGET_IN_MILLISECONDS = 240_000
+
+  const createFakeClientAnsweringAfter = (...delayedMessages: [Anthropic.Beta.BetaMessage, number][]): Anthropic => {
+    const stream = jest.fn()
+    delayedMessages.forEach(([finalMessage, delayInMilliseconds]) =>
+      stream.mockReturnValueOnce({
+        finalMessage: () =>
+          new Promise((resolve) => {
+            setTimeout(() => resolve(finalMessage), delayInMilliseconds)
+          }),
+      }),
+    )
+    return { beta: { messages: { stream } } } as unknown as Anthropic
+  }
+
+  const pausedMessage = createFakeBetaMessage([fakeWebSearchToolUseBlock('srvtoolu_1')], 'pause_turn')
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  it('gives every request an abort signal and only the time left in the overall budget', async () => {
+    const client = createFakeClientAnsweringAfter([pausedMessage, 200_000], [citedBriefMessage, 1_000])
+    const pendingBrief = generateClientBrief(client, STANDALONE_CLIENT)
+    await jest.advanceTimersByTimeAsync(201_000)
+    await expect(pendingBrief).resolves.toEqual(expect.objectContaining({ markdown: expect.any(String) }))
+    const [firstRequestOptions, secondRequestOptions] = readStreamCalls(client).map(([, requestOptions]) => requestOptions)
+    expect(firstRequestOptions).toEqual(expect.objectContaining({ timeout: 120_000, signal: expect.any(AbortSignal) }))
+    expect(secondRequestOptions).toEqual(expect.objectContaining({ timeout: 40_000, signal: expect.any(AbortSignal) }))
+  })
+
+  it('fails with a timeout once the overall budget of four minutes is spent across continuations', async () => {
+    const client = createFakeClientAnsweringAfter(
+      [pausedMessage, 119_000],
+      [pausedMessage, 119_000],
+      [citedBriefMessage, 119_000],
+    )
+    const pendingRejection = captureRejection(generateClientBrief(client, STANDALONE_CLIENT))
+    await jest.advanceTimersByTimeAsync(BRIEF_TOTAL_TIME_BUDGET_IN_MILLISECONDS)
+    const rejection = await pendingRejection
+    expect(rejection).toBeInstanceOf(AiError)
+    expect(toAiErrorKind(rejection)).toBe('timeout')
+  })
+
+  it('aborts the request in flight when the budget runs out', async () => {
+    const client = createFakeClientAnsweringAfter([citedBriefMessage, 10 * BRIEF_TOTAL_TIME_BUDGET_IN_MILLISECONDS])
+    const pendingRejection = captureRejection(generateClientBrief(client, STANDALONE_CLIENT))
+    await jest.advanceTimersByTimeAsync(BRIEF_TOTAL_TIME_BUDGET_IN_MILLISECONDS)
+    expect(toAiErrorKind(await pendingRejection)).toBe('timeout')
+    const [, requestOptions] = readStreamCalls(client)[0]
+    expect(requestOptions?.signal?.aborted).toBe(true)
+  })
+})
