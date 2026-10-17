@@ -4,7 +4,7 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import { AiError, toAiErrorKind } from './ai-error'
 import { extractJobSpecStack } from './extract-job-spec-stack'
-import { createFakeAnthropicClientReturning } from './testing/fake-anthropic-client'
+import { captureRejection, createFakeAnthropicClientReturning } from './testing/fake-anthropic-client'
 
 jest.mock('server-only', () => ({}))
 jest.mock('@/server/repositories/profile-repository', () => ({ getDecryptedAnthropicApiKeyForUser: jest.fn() }))
@@ -85,18 +85,14 @@ describe('extractJobSpecStack', () => {
 
   it('throws a refused AiError when claude refuses', async () => {
     const client = createFakeAnthropicClientReturning('', 'refusal')
-    const extractionError = await extractJobSpecStack(client, { kind: 'text', text: 'React' }).catch(
-      (error: unknown) => error,
-    )
+    const extractionError = await captureRejection(extractJobSpecStack(client, { kind: 'text', text: 'React' }))
     expect(extractionError).toBeInstanceOf(AiError)
     expect(toAiErrorKind(extractionError)).toBe('refused')
   })
 
   it('fails with an unknown error when the output does not match the schema', async () => {
     const client = createFakeAnthropicClientReturning({ stack: 'React' })
-    const extractionError = await extractJobSpecStack(client, { kind: 'text', text: 'React' }).catch(
-      (error: unknown) => error,
-    )
+    const extractionError = await captureRejection(extractJobSpecStack(client, { kind: 'text', text: 'React' }))
     expect(toAiErrorKind(extractionError)).toBe('unknown')
   })
 })

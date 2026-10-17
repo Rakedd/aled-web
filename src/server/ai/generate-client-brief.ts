@@ -33,6 +33,18 @@ Rules:
 const BASE_BRIEF_SECTIONS = ['Enjeux', "Chiffre d'affaires et croissance", 'Marché', 'Actualités récentes']
 const GROUP_CONTEXT_SECTION = 'Contexte du groupe'
 
+const ANGLE_BRACKETS_PATTERN = /[<>]/g
+
+const removeAngleBrackets = (companyName: string): string => companyName.replace(ANGLE_BRACKETS_PATTERN, '').trim()
+
+const sanitizeClientBriefInput = ({ endClientName, parentGroupName }: ClientBriefInput): ClientBriefInput => {
+  const sanitizedParentGroupName = parentGroupName === null ? '' : removeAngleBrackets(parentGroupName)
+  return {
+    endClientName: removeAngleBrackets(endClientName),
+    parentGroupName: sanitizedParentGroupName === '' ? null : sanitizedParentGroupName,
+  }
+}
+
 const buildBriefUserPrompt = ({ endClientName, parentGroupName }: ClientBriefInput): string => {
   const endClientRequest = `Rédige le brief de l'entreprise cliente <end_client>${endClientName}</end_client>.`
   if (parentGroupName === null) return `${endClientRequest}\nSections : ${BASE_BRIEF_SECTIONS.join(', ')}.`
@@ -106,25 +118,56 @@ const runBriefTurns = async (
   )
 }
 
-const isTextBlock = (contentBlock: BriefContentBlock): contentBlock is Anthropic.Beta.BetaTextBlock =>
-  contentBlock.type === 'text'
+type BriefTextPiece = { text: string; citations: Anthropic.Beta.BetaTextCitation[] }
 
-const isThinkingBlock = (contentBlock: BriefContentBlock): boolean =>
-  contentBlock.type === 'thinking' || contentBlock.type === 'redacted_thinking'
+const SEARCH_BREAK_PIECE: BriefTextPiece = { text: '\n\n', citations: [] }
+const FIRST_SECTION_HEADING_PATTERN = /^## /m
+const EXTRA_BLANK_LINES_PATTERN = /\n{3,}/g
+const NO_MATCH_OFFSET = -1
 
-const readBriefTextBlocks = (assistantContent: BriefContentBlock[]): Anthropic.Beta.BetaTextBlock[] => {
-  const lastNonTextBlockIndex = assistantContent.findLastIndex(
-    (contentBlock) => !isTextBlock(contentBlock) && !isThinkingBlock(contentBlock),
+const isServerToolBlock = (contentBlock: BriefContentBlock): boolean =>
+  contentBlock.type === 'server_tool_use' || 'tool_use_id' in contentBlock
+
+const toBriefTextPieces = (assistantContent: BriefContentBlock[]): BriefTextPiece[] =>
+  assistantContent.reduce<BriefTextPiece[]>((textPieces, contentBlock) => {
+    if (contentBlock.type === 'text') {
+      return [...textPieces, { text: contentBlock.text, citations: contentBlock.citations ?? [] }]
+    }
+    if (isServerToolBlock(contentBlock) && textPieces.at(-1) !== SEARCH_BREAK_PIECE) {
+      return [...textPieces, SEARCH_BREAK_PIECE]
+    }
+    return textPieces
+  }, [])
+
+const toPieceStartOffsets = (textPieces: BriefTextPiece[]): number[] =>
+  textPieces.reduce<number[]>(
+    (startOffsets, _textPiece, pieceIndex) => [
+      ...startOffsets,
+      pieceIndex === 0 ? 0 : startOffsets[pieceIndex - 1] + textPieces[pieceIndex - 1].text.length,
+    ],
+    [],
   )
-  return assistantContent.slice(lastNonTextBlockIndex + 1).filter(isTextBlock)
+
+const keepPiecesFromFirstSectionHeading = (textPieces: BriefTextPiece[]): BriefTextPiece[] => {
+  const firstSectionHeadingOffset = textPieces
+    .map((textPiece) => textPiece.text)
+    .join('')
+    .search(FIRST_SECTION_HEADING_PATTERN)
+  if (firstSectionHeadingOffset === NO_MATCH_OFFSET) throw new AiError('unknown')
+  const pieceStartOffsets = toPieceStartOffsets(textPieces)
+  return textPieces.flatMap((textPiece, pieceIndex) => {
+    const pieceStartOffset = pieceStartOffsets[pieceIndex]
+    if (pieceStartOffset + textPiece.text.length <= firstSectionHeadingOffset) return []
+    return [{ ...textPiece, text: textPiece.text.slice(Math.max(0, firstSectionHeadingOffset - pieceStartOffset)) }]
+  })
 }
 
 const removeDuplicateUrls = (sources: ClientBriefSource[]): ClientBriefSource[] =>
   sources.filter((source, sourceIndex) => sources.findIndex(({ url }) => url === source.url) === sourceIndex)
 
-const readCitedSources = (briefTextBlocks: Anthropic.Beta.BetaTextBlock[]): ClientBriefSource[] =>
-  briefTextBlocks.flatMap((textBlock) =>
-    (textBlock.citations ?? []).flatMap((citation) =>
+const readCitedSources = (briefTextPieces: BriefTextPiece[]): ClientBriefSource[] =>
+  briefTextPieces.flatMap((textPiece) =>
+    textPiece.citations.flatMap((citation) =>
       citation.type === 'web_search_result_location' ? [{ title: citation.title ?? citation.url, url: citation.url }] : [],
     ),
   )
@@ -137,19 +180,23 @@ const readSearchResultSources = (assistantContent: BriefContentBlock[]): ClientB
   )
 
 const toClientBrief = (assistantContent: BriefContentBlock[]): ClientBrief => {
-  const briefTextBlocks = readBriefTextBlocks(assistantContent)
-  const markdown = briefTextBlocks
-    .map((textBlock) => textBlock.text)
+  const briefTextPieces = keepPiecesFromFirstSectionHeading(toBriefTextPieces(assistantContent))
+  const markdown = briefTextPieces
+    .map((textPiece) => textPiece.text)
     .join('')
+    .replace(EXTRA_BLANK_LINES_PATTERN, '\n\n')
     .trim()
-  const citedSources = readCitedSources(briefTextBlocks)
+  const citedSources = readCitedSources(briefTextPieces)
   const sources = removeDuplicateUrls(citedSources.length > 0 ? citedSources : readSearchResultSources(assistantContent))
-  if (markdown === '' || sources.length === 0) throw new AiError('unknown')
+  if (sources.length === 0) throw new AiError('unknown')
   return { markdown, sources }
 }
 
 export const generateClientBrief = async (client: Anthropic, clientBriefInput: ClientBriefInput): Promise<ClientBrief> => {
-  const userMessage: Anthropic.Beta.BetaMessageParam = { role: 'user', content: buildBriefUserPrompt(clientBriefInput) }
+  const userMessage: Anthropic.Beta.BetaMessageParam = {
+    role: 'user',
+    content: buildBriefUserPrompt(sanitizeClientBriefInput(clientBriefInput)),
+  }
   const assistantContent = await runBriefTurns(client, userMessage, [], MAX_PAUSED_TURN_CONTINUATIONS)
   return toClientBrief(assistantContent)
 }

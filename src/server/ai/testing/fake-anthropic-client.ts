@@ -103,3 +103,11 @@ export const createFakeAnthropicClientStreaming = (...finalMessages: Anthropic.B
   )
   return { beta: { messages: { stream } } } as unknown as Anthropic
 }
+
+export const captureRejection = (pendingPromise: Promise<unknown>): Promise<unknown> =>
+  pendingPromise.then(
+    () => {
+      throw new Error('Expected the promise to reject')
+    },
+    (rejectionReason: unknown) => rejectionReason,
+  )
