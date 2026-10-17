@@ -10,12 +10,19 @@ import { createServerSupabaseClient } from '@/server/supabase/create-server-supa
 const MAGIC_LINK_FAILURE_MESSAGE =
   "Impossible d'envoyer le lien de connexion pour le moment. Réessaie dans quelques minutes."
 
-const UNKNOWN_ACCOUNT_ERROR_CODES = new Set(['otp_disabled', 'signup_disabled', 'user_not_found'])
+const ACCOUNT_REVEALING_ERROR_CODES = new Set([
+  'otp_disabled',
+  'signup_disabled',
+  'user_not_found',
+  'over_email_send_rate_limit',
+])
 
-const isUnknownAccountError = (authError: AuthError): boolean =>
-  authError.code !== undefined && UNKNOWN_ACCOUNT_ERROR_CODES.has(authError.code)
+const isAccountRevealingError = (authError: AuthError): boolean =>
+  authError.code !== undefined && ACCOUNT_REVEALING_ERROR_CODES.has(authError.code)
 
 export const requestMagicLink = async (email: string): Promise<ActionResult<null>> => {
+  if (typeof email !== 'string') return { ok: false, errorMessage: INVALID_EMAIL_ADDRESS_MESSAGE }
+
   const trimmedEmail = email.trim()
   if (!isValidEmailAddress(trimmedEmail)) return { ok: false, errorMessage: INVALID_EMAIL_ADDRESS_MESSAGE }
 
@@ -25,7 +32,7 @@ export const requestMagicLink = async (email: string): Promise<ActionResult<null
     options: { shouldCreateUser: false },
   })
 
-  if (signInError && !isUnknownAccountError(signInError)) {
+  if (signInError && !isAccountRevealingError(signInError)) {
     console.error('Magic link request failed', { code: signInError.code, status: signInError.status })
     return { ok: false, errorMessage: MAGIC_LINK_FAILURE_MESSAGE }
   }

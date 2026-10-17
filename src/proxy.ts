@@ -10,6 +10,7 @@ const isPublicPathname = (pathname: string): boolean =>
 
 export const proxy = async (request: NextRequest) => {
   let sessionResponse = NextResponse.next({ request })
+  let authCacheHeaders: Record<string, string> = {}
 
   const supabase = createServerClient<Database>(
     readSupabaseEnvironmentVariable('SUPABASE_URL'),
@@ -21,7 +22,10 @@ export const proxy = async (request: NextRequest) => {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           sessionResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) => sessionResponse.cookies.set(name, value, options))
-          Object.entries(headers).forEach(([headerName, headerValue]) => sessionResponse.headers.set(headerName, headerValue))
+          authCacheHeaders = { ...authCacheHeaders, ...headers }
+          Object.entries(authCacheHeaders).forEach(([headerName, headerValue]) =>
+            sessionResponse.headers.set(headerName, headerValue),
+          )
         },
       },
     },
@@ -34,7 +38,12 @@ export const proxy = async (request: NextRequest) => {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     loginUrl.search = ''
-    return NextResponse.redirect(loginUrl)
+    const loginRedirectResponse = NextResponse.redirect(loginUrl)
+    sessionResponse.cookies.getAll().forEach((authCookie) => loginRedirectResponse.cookies.set(authCookie))
+    Object.entries(authCacheHeaders).forEach(([headerName, headerValue]) =>
+      loginRedirectResponse.headers.set(headerName, headerValue),
+    )
+    return loginRedirectResponse
   }
 
   return sessionResponse

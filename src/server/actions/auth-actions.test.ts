@@ -39,11 +39,31 @@ describe('requestMagicLink', () => {
     await expect(requestMagicLink('stranger@example.com')).resolves.toEqual({ ok: true, data: null })
   })
 
+  it('reports success when the existing account is throttled, so the throttle cannot reveal the account', async () => {
+    signInWithOtp.mockResolvedValue({
+      data: {},
+      error: new AuthApiError('Email rate limit exceeded', 429, 'over_email_send_rate_limit'),
+    })
+
+    await expect(requestMagicLink('freelance@example.com')).resolves.toEqual({ ok: true, data: null })
+  })
+
+  it.each([undefined, null, 42, { email: 'freelance@example.com' }])(
+    'rejects the non-string payload %p without calling Supabase',
+    async (nonStringPayload) => {
+      await expect(requestMagicLink(nonStringPayload as unknown as string)).resolves.toEqual({
+        ok: false,
+        errorMessage: 'Adresse e-mail invalide',
+      })
+      expect(signInWithOtp).not.toHaveBeenCalled()
+    },
+  )
+
   it('reports a generic error when Supabase fails for another reason', async () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
     signInWithOtp.mockResolvedValue({
       data: {},
-      error: new AuthApiError('Email rate limit exceeded', 429, 'over_email_send_rate_limit'),
+      error: new AuthApiError('Unexpected failure', 500, 'unexpected_failure'),
     })
 
     await expect(requestMagicLink('freelance@example.com')).resolves.toEqual({
