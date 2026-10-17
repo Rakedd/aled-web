@@ -5,6 +5,8 @@ import { z } from 'zod'
 import type { JobPostingExtraction } from '@/domain/job-posting-extraction'
 import { AiError } from './ai-error'
 import { CLAUDE_MODELS } from './claude-models'
+import { extractedStackItemSchema, toStackItems } from './extracted-stack-item-schema'
+import { readStructuredOutputText } from './read-structured-output-text'
 
 const EXTRACTION_MAX_OUTPUT_TOKENS = 8_000
 const EXTRACTION_TIMEOUT_IN_MILLISECONDS = 60_000
@@ -32,21 +34,10 @@ const extractedJobPostingSchema = z.object({
   remotePolicy: z.string().nullable().describe('Remote work policy, for example full remote or 2 days on site'),
   desiredStart: z.string().nullable().describe('Desired start date or delay'),
   duration: z.string().nullable().describe('Mission duration'),
-  stack: z.array(
-    z.object({
-      name: z.string(),
-      category: z.enum(['language', 'framework', 'tool', 'method', 'other']).catch('other'),
-    }),
-  ),
+  stack: z.array(extractedStackItemSchema),
 })
 
 const EXTRACTED_JOB_POSTING_OUTPUT_FORMAT = zodOutputFormat(extractedJobPostingSchema)
-
-const readStructuredOutputText = (response: Anthropic.Message): string => {
-  const textBlock = response.content.find((contentBlock) => contentBlock.type === 'text')
-  if (!textBlock) throw new AiError('unknown')
-  return textBlock.text
-}
 
 export const extractJobPosting = async (client: Anthropic, rawText: string): Promise<JobPostingExtraction> => {
   const response = await client.messages.create(
@@ -61,12 +52,5 @@ export const extractJobPosting = async (client: Anthropic, rawText: string): Pro
   )
   if (response.stop_reason === 'refusal') throw new AiError('refused')
   const extractedJobPosting = EXTRACTED_JOB_POSTING_OUTPUT_FORMAT.parse(readStructuredOutputText(response))
-  return {
-    ...extractedJobPosting,
-    stack: extractedJobPosting.stack.map((extractedStackItem) => ({
-      name: extractedStackItem.name,
-      category: extractedStackItem.category,
-      origin: 'posting',
-    })),
-  }
+  return { ...extractedJobPosting, stack: toStackItems(extractedJobPosting.stack, 'posting') }
 }

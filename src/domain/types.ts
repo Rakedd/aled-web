@@ -1,4 +1,6 @@
-export type StackCategory = 'language' | 'framework' | 'tool' | 'method' | 'other'
+export const STACK_CATEGORIES = ['language', 'framework', 'tool', 'method', 'other'] as const
+
+export type StackCategory = (typeof STACK_CATEGORIES)[number]
 
 export type StackItemOrigin = 'posting' | 'job_spec'
 
