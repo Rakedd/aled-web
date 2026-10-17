@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { AnthropicApiKeyForm } from '@/components/anthropic-api-key-form'
 import { ProfileForm } from '@/components/profile-form'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import {
   deleteAnthropicApiKey,
   getProfileSettings,
@@ -61,12 +61,9 @@ const SettingsPage = async () => {
                 Télécharge une copie complète de tes données. Ta clé API n&apos;y figure jamais.
               </p>
             </div>
-            <Button type="button" variant="outline" className="self-start" disabled aria-describedby="settings-export-hint">
+            <a href="/api/export" download className={buttonVariants({ variant: 'outline', className: 'self-start' })}>
               Exporter mes données
-            </Button>
-            <p id="settings-export-hint" className="text-xs text-muted-foreground">
-              Bientôt disponible.
-            </p>
+            </a>
           </section>
         </>
       )}
