@@ -1,0 +1,144 @@
+'use server'
+
+import 'server-only'
+import type { ActionResult } from '@/domain/action-result'
+import { type ActivityLogEntry, type ActivityLogEntryInput, validateActivityLogEntryInput } from '@/domain/activity-log'
+import { type SnoozeDurationInDays, validateSnoozeAlertArguments } from '@/domain/alert-snoozes'
+import {
+  JOB_APPLICATION_VALIDATION_MESSAGES,
+  type JobApplicationInput,
+  type JobApplicationOverview,
+  validateJobApplicationId,
+  validateJobApplicationInput,
+  validateJobApplicationUpdateInput,
+} from '@/domain/job-application'
+import { isJobApplicationStatus, type JobApplicationStatus } from '@/domain/job-application-status'
+import type { AlertSnooze } from '@/domain/todo-alerts'
+import type { AlertKind } from '@/domain/types'
+import {
+  listActivityLogEntriesForJobApplication,
+  recordActivityLogEntry,
+} from '@/server/repositories/activity-log-repository'
+import { listActiveAlertSnoozes, snoozeJobApplicationAlert } from '@/server/repositories/alert-snoozes-repository'
+import {
+  changeJobApplicationStatusRow,
+  findJobApplicationOverview,
+  insertJobApplication,
+  listJobApplicationOverviews,
+  updateJobApplicationRow,
+} from '@/server/repositories/job-applications-repository'
+import { runAuthenticatedOperation } from './run-authenticated-operation'
+
+const LOAD_FAILURE_MESSAGE = 'Impossible de charger les candidatures pour le moment. Réessaie dans quelques minutes.'
+const SAVE_FAILURE_MESSAGE = "Impossible d'enregistrer la candidature pour le moment. Réessaie dans quelques minutes."
+const NO_ARGUMENTS: ActionResult<null> = { ok: true, data: null }
+
+export const listJobApplications = async (): Promise<ActionResult<JobApplicationOverview[]>> =>
+  runAuthenticatedOperation({
+    operationName: 'listJobApplications',
+    failureMessage: LOAD_FAILURE_MESSAGE,
+    validateArguments: () => NO_ARGUMENTS,
+    operation: async (supabase, userId) => ({ ok: true, data: await listJobApplicationOverviews(supabase, userId) }),
+  })
+
+export const getJobApplication = async (jobApplicationId: string): Promise<ActionResult<JobApplicationOverview>> =>
+  runAuthenticatedOperation({
+    operationName: 'getJobApplication',
+    failureMessage: LOAD_FAILURE_MESSAGE,
+    validateArguments: () => validateJobApplicationId(jobApplicationId),
+    operation: (supabase, userId, validatedJobApplicationId) =>
+      findJobApplicationOverview(supabase, userId, validatedJobApplicationId),
+  })
+
+export const createJobApplication = async (input: JobApplicationInput): Promise<ActionResult<{ id: string }>> =>
+  runAuthenticatedOperation({
+    operationName: 'createJobApplication',
+    failureMessage: SAVE_FAILURE_MESSAGE,
+    validateArguments: () => validateJobApplicationInput(input),
+    operation: (supabase, userId, validatedInput) => insertJobApplication(supabase, userId, validatedInput),
+  })
+
+export const updateJobApplication = async (
+  jobApplicationId: string,
+  input: Partial<JobApplicationInput>,
+): Promise<ActionResult<null>> =>
+  runAuthenticatedOperation({
+    operationName: 'updateJobApplication',
+    failureMessage: SAVE_FAILURE_MESSAGE,
+    validateArguments: (): ActionResult<{ jobApplicationId: string; input: Partial<JobApplicationInput> }> => {
+      const jobApplicationIdValidation = validateJobApplicationId(jobApplicationId)
+      if (!jobApplicationIdValidation.ok) return jobApplicationIdValidation
+      const inputValidation = validateJobApplicationUpdateInput(input)
+      if (!inputValidation.ok) return inputValidation
+      return { ok: true, data: { jobApplicationId: jobApplicationIdValidation.data, input: inputValidation.data } }
+    },
+    operation: (supabase, userId, validatedArguments) =>
+      updateJobApplicationRow(supabase, userId, validatedArguments.jobApplicationId, validatedArguments.input),
+  })
+
+export const changeJobApplicationStatus = async (
+  jobApplicationId: string,
+  newStatus: JobApplicationStatus,
+): Promise<ActionResult<null>> =>
+  runAuthenticatedOperation({
+    operationName: 'changeJobApplicationStatus',
+    failureMessage: SAVE_FAILURE_MESSAGE,
+    validateArguments: (): ActionResult<{ jobApplicationId: string; newStatus: JobApplicationStatus }> => {
+      const jobApplicationIdValidation = validateJobApplicationId(jobApplicationId)
+      if (!jobApplicationIdValidation.ok) return jobApplicationIdValidation
+      if (!isJobApplicationStatus(newStatus)) {
+        return { ok: false, errorMessage: JOB_APPLICATION_VALIDATION_MESSAGES.invalidStatus }
+      }
+      return { ok: true, data: { jobApplicationId: jobApplicationIdValidation.data, newStatus } }
+    },
+    operation: (supabase, userId, validatedArguments) =>
+      changeJobApplicationStatusRow(supabase, userId, validatedArguments.jobApplicationId, validatedArguments.newStatus),
+  })
+
+export const addActivityLogEntry = async (
+  jobApplicationId: string,
+  input: ActivityLogEntryInput,
+): Promise<ActionResult<null>> =>
+  runAuthenticatedOperation({
+    operationName: 'addActivityLogEntry',
+    failureMessage: SAVE_FAILURE_MESSAGE,
+    validateArguments: (): ActionResult<{ jobApplicationId: string; input: ActivityLogEntryInput }> => {
+      const jobApplicationIdValidation = validateJobApplicationId(jobApplicationId)
+      if (!jobApplicationIdValidation.ok) return jobApplicationIdValidation
+      const inputValidation = validateActivityLogEntryInput(input)
+      if (!inputValidation.ok) return inputValidation
+      return { ok: true, data: { jobApplicationId: jobApplicationIdValidation.data, input: inputValidation.data } }
+    },
+    operation: (supabase, userId, validatedArguments) =>
+      recordActivityLogEntry(supabase, userId, validatedArguments.jobApplicationId, validatedArguments.input),
+  })
+
+export const listActivityLogEntries = async (jobApplicationId: string): Promise<ActionResult<ActivityLogEntry[]>> =>
+  runAuthenticatedOperation({
+    operationName: 'listActivityLogEntries',
+    failureMessage: LOAD_FAILURE_MESSAGE,
+    validateArguments: () => validateJobApplicationId(jobApplicationId),
+    operation: (supabase, userId, validatedJobApplicationId) =>
+      listActivityLogEntriesForJobApplication(supabase, userId, validatedJobApplicationId),
+  })
+
+export const snoozeAlert = async (
+  jobApplicationId: string,
+  alertKind: AlertKind,
+  days: SnoozeDurationInDays,
+): Promise<ActionResult<null>> =>
+  runAuthenticatedOperation({
+    operationName: 'snoozeAlert',
+    failureMessage: SAVE_FAILURE_MESSAGE,
+    validateArguments: () => validateSnoozeAlertArguments(jobApplicationId, alertKind, days),
+    operation: (supabase, userId, validatedArguments) =>
+      snoozeJobApplicationAlert(supabase, userId, validatedArguments, new Date()),
+  })
+
+export const listAlertSnoozes = async (): Promise<ActionResult<AlertSnooze[]>> =>
+  runAuthenticatedOperation({
+    operationName: 'listAlertSnoozes',
+    failureMessage: LOAD_FAILURE_MESSAGE,
+    validateArguments: () => NO_ARGUMENTS,
+    operation: async (supabase, userId) => ({ ok: true, data: await listActiveAlertSnoozes(supabase, userId, new Date()) }),
+  })

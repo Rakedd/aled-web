@@ -1,5 +1,5 @@
-import { differenceInCalendarDays } from 'date-fns'
-import { toZonedTime } from 'date-fns-tz'
+import { addDays, differenceInCalendarDays } from 'date-fns'
+import { formatInTimeZone, fromZonedTime, toZonedTime } from 'date-fns-tz'
 
 export const PARIS_TIME_ZONE = 'Europe/Paris'
 
@@ -12,3 +12,11 @@ export const formatRelativeDaysAgo = (date: Date, now: Date): string => {
   if (daysAgo === 1) return 'hier'
   return `il y a ${daysAgo} j`
 }
+
+export const parseParisCalendarDate = (calendarDate: string): Date =>
+  fromZonedTime(`${calendarDate}T00:00:00`, PARIS_TIME_ZONE)
+
+export const formatParisCalendarDate = (date: Date): string => formatInTimeZone(date, PARIS_TIME_ZONE, 'yyyy-MM-dd')
+
+export const addParisCalendarDays = (date: Date, days: number): Date =>
+  fromZonedTime(addDays(toZonedTime(date, PARIS_TIME_ZONE), days), PARIS_TIME_ZONE)

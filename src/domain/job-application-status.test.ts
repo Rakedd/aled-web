@@ -3,6 +3,7 @@ import {
   getNextPipelineStatus,
   getSuggestedKoStatuses,
   isActiveStatus,
+  isJobApplicationStatus,
   isTerminalStatus,
 } from './job-application-status'
 
@@ -40,5 +41,16 @@ describe('job application status', () => {
     expect(getSuggestedKoStatuses('interview_done')).toEqual(['ko_interview', 'no_news_abandoned'])
     expect(getSuggestedKoStatuses('contract_received')).toEqual(['no_news_abandoned'])
     expect(getSuggestedKoStatuses('signed')).toEqual([])
+  })
+})
+
+describe('isJobApplicationStatus', () => {
+  it('recognizes every known status', () => {
+    expect(isJobApplicationStatus('applied')).toBe(true)
+    expect(isJobApplicationStatus('no_news_abandoned')).toBe(true)
+  })
+
+  it.each(['hired', 'toString', '', null, 3])('rejects %p', (candidate) => {
+    expect(isJobApplicationStatus(candidate)).toBe(false)
   })
 })

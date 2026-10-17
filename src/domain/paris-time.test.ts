@@ -1,4 +1,11 @@
-import { PARIS_TIME_ZONE, countParisCalendarDaysBetween, formatRelativeDaysAgo } from './paris-time'
+import {
+  PARIS_TIME_ZONE,
+  addParisCalendarDays,
+  countParisCalendarDaysBetween,
+  formatParisCalendarDate,
+  formatRelativeDaysAgo,
+  parseParisCalendarDate,
+} from './paris-time'
 
 describe('PARIS_TIME_ZONE', () => {
   it('is the Europe/Paris IANA zone', () => {
@@ -27,5 +34,29 @@ describe('formatRelativeDaysAgo', () => {
   })
   it('counts days for anything older', () => {
     expect(formatRelativeDaysAgo(new Date('2026-10-12T10:00:00Z'), now)).toBe('il y a 5 j')
+  })
+})
+
+describe('parseParisCalendarDate', () => {
+  it('reads a calendar date as midnight in Paris', () => {
+    expect(parseParisCalendarDate('2026-10-17')).toEqual(new Date('2026-10-16T22:00:00Z'))
+    expect(parseParisCalendarDate('2026-12-01')).toEqual(new Date('2026-11-30T23:00:00Z'))
+  })
+})
+
+describe('formatParisCalendarDate', () => {
+  it('writes the Paris calendar date of an instant', () => {
+    expect(formatParisCalendarDate(new Date('2026-10-16T22:30:00Z'))).toBe('2026-10-17')
+    expect(formatParisCalendarDate(new Date('2026-10-16T21:30:00Z'))).toBe('2026-10-16')
+  })
+
+  it('round-trips with parseParisCalendarDate', () => {
+    expect(formatParisCalendarDate(parseParisCalendarDate('2026-03-29'))).toBe('2026-03-29')
+  })
+})
+
+describe('addParisCalendarDays', () => {
+  it('keeps the Paris wall-clock time across the winter time change', () => {
+    expect(addParisCalendarDays(new Date('2026-10-24T08:00:00Z'), 3)).toEqual(new Date('2026-10-27T09:00:00Z'))
   })
 })

@@ -52,6 +52,9 @@ const SUGGESTED_KO_STATUSES_BY_STATUS: Partial<Record<JobApplicationStatus, JobA
   contract_received: ['no_news_abandoned'],
 }
 
+export const isJobApplicationStatus = (candidate: unknown): candidate is JobApplicationStatus =>
+  typeof candidate === 'string' && Object.hasOwn(JOB_APPLICATION_STATUS_LABELS, candidate)
+
 export const isTerminalStatus = (status: JobApplicationStatus): boolean =>
   TERMINAL_STATUSES.includes(status)
 
