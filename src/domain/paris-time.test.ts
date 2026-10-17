@@ -3,6 +3,7 @@ import {
   addParisCalendarDays,
   countParisCalendarDaysBetween,
   formatParisCalendarDate,
+  formatParisDateTime,
   formatRelativeDaysAgo,
   parseParisCalendarDate,
 } from './paris-time'
@@ -58,5 +59,12 @@ describe('formatParisCalendarDate', () => {
 describe('addParisCalendarDays', () => {
   it('keeps the Paris wall-clock time across the winter time change', () => {
     expect(addParisCalendarDays(new Date('2026-10-24T08:00:00Z'), 3)).toEqual(new Date('2026-10-27T09:00:00Z'))
+  })
+})
+
+describe('formatParisDateTime', () => {
+  it('formats in Paris time across the daylight saving change', () => {
+    expect(formatParisDateTime(new Date('2026-10-17T22:30:00Z'))).toBe('18/10/2026 00:30')
+    expect(formatParisDateTime(new Date('2026-12-01T22:30:00Z'))).toBe('01/12/2026 23:30')
   })
 })

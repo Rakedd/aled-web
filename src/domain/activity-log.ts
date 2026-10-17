@@ -15,9 +15,17 @@ export type ActivityLogEntryInput = { kind: ActivityKind; summary: string; occur
 
 export const ACTIVITY_KINDS: readonly ActivityKind[] = ['call', 'message', 'email', 'status_change', 'other']
 
-const USER_LOGGABLE_ACTIVITY_KINDS: readonly ActivityKind[] = ACTIVITY_KINDS.filter(
+export const USER_LOGGABLE_ACTIVITY_KINDS: readonly ActivityKind[] = ACTIVITY_KINDS.filter(
   (activityKind) => activityKind !== 'status_change',
 )
+
+export const ACTIVITY_KIND_LABELS: Record<ActivityKind, string> = {
+  call: 'Appel',
+  message: 'Message',
+  email: 'E-mail',
+  status_change: 'Changement de statut',
+  other: 'Autre',
+}
 
 export const ACTIVITY_LOG_VALIDATION_MESSAGES = {
   malformedPayload: 'Échange invalide',

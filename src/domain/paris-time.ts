@@ -20,3 +20,5 @@ export const formatParisCalendarDate = (date: Date): string => formatInTimeZone(
 
 export const addParisCalendarDays = (date: Date, days: number): Date =>
   fromZonedTime(addDays(toZonedTime(date, PARIS_TIME_ZONE), days), PARIS_TIME_ZONE)
+
+export const formatParisDateTime = (date: Date): string => formatInTimeZone(date, PARIS_TIME_ZONE, 'dd/MM/yyyy HH:mm')
