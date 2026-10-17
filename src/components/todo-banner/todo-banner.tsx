@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { SNOOZE_DURATIONS_IN_DAYS, isSnoozableAlertKind } from '@/domain/alert-snoozes'
 import { useController } from './controller'
@@ -15,10 +16,12 @@ export const TodoBanner = ({
   interviews,
   now,
 }: TodoBannerProps) => {
-  const { alerts, errorMessage, snooze, closeAsNoNews } = useController({
+  const router = useRouter()
+  const { alerts, errorMessage, isAlertPending, snooze, closeAsNoNews } = useController({
     initialAlerts,
     snoozeAlert,
     changeJobApplicationStatus,
+    onDataChanged: router.refresh,
   })
 
   return (
@@ -48,12 +51,12 @@ export const TodoBanner = ({
                 {isSnoozableAlertKind(alert.kind) && (
                   <div className="flex flex-wrap gap-2">
                     {SNOOZE_DURATIONS_IN_DAYS.map((days) => (
-                      <Button key={days} type="button" size="sm" variant="outline" onClick={() => void snooze(alert, days)}>
+                      <Button key={days} type="button" size="sm" variant="outline" disabled={isAlertPending(alert)} onClick={() => void snooze(alert, days)}>
                         Reporter {days} j
                       </Button>
                     ))}
                     {alert.kind === 'no_news_suggestion' && (
-                      <Button type="button" size="sm" variant="secondary" onClick={() => void closeAsNoNews(alert)}>
+                      <Button type="button" size="sm" variant="secondary" disabled={isAlertPending(alert)} onClick={() => void closeAsNoNews(alert)}>
                         Clore
                       </Button>
                     )}

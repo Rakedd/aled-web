@@ -5,7 +5,7 @@ import {
   type JobApplicationsSortKey,
   type JobApplicationsTableFilters,
 } from '@/domain/job-applications-filters'
-import type { JobApplicationStatus } from '@/domain/job-application-status'
+import { isTerminalStatus, type JobApplicationStatus } from '@/domain/job-application-status'
 import type { JobApplicationsTableControllerParameters } from './interfaces'
 
 const INITIAL_FILTERS: JobApplicationsTableFilters = { searchText: '', statuses: [], sources: [], showTerminal: false }
@@ -27,7 +27,11 @@ export const useController = ({ jobApplications }: JobApplicationsTableControlle
   const setSearchText = (searchText: string) => setFilters((currentFilters) => ({ ...currentFilters, searchText }))
 
   const setShowTerminal = (showTerminal: boolean) =>
-    setFilters((currentFilters) => ({ ...currentFilters, showTerminal }))
+    setFilters((currentFilters) => ({
+      ...currentFilters,
+      showTerminal,
+      statuses: showTerminal ? currentFilters.statuses : currentFilters.statuses.filter((status) => !isTerminalStatus(status)),
+    }))
 
   const toggleStatus = (status: JobApplicationStatus) =>
     setFilters((currentFilters) => ({ ...currentFilters, statuses: toggleValueInList(currentFilters.statuses, status) }))

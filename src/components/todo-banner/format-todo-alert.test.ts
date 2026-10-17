@@ -22,6 +22,16 @@ describe('formatTodoAlertMessage', () => {
     expect(message).toBe('Relancer Marie : CV positionné il y a 7 j sans retour')
   })
 
+  it('never says yesterday and omits a missing status cleanly', () => {
+    const message = formatTodoAlertMessage(
+      buildAlert({ kind: 'follow_up_due', referenceDate: new Date('2026-10-16T10:00:00Z') }),
+      undefined,
+      [],
+      now,
+    )
+    expect(message).toBe('Relancer Dev React : il y a 1 j sans retour')
+  })
+
   it('falls back to the intermediary on a follow-up without contact', () => {
     const message = formatTodoAlertMessage(
       buildAlert({ kind: 'follow_up_due' }),

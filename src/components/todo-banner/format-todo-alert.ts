@@ -1,7 +1,7 @@
 import { formatInTimeZone } from 'date-fns-tz'
 import { fr } from 'date-fns/locale'
 import { JOB_APPLICATION_STATUS_LABELS } from '@/domain/job-application-status'
-import { PARIS_TIME_ZONE, countParisCalendarDaysBetween, formatRelativeDaysAgo } from '@/domain/paris-time'
+import { PARIS_TIME_ZONE, countParisCalendarDaysBetween } from '@/domain/paris-time'
 import type { AlertInterview, TodoAlert } from '@/domain/todo-alerts'
 import type { InterviewKind } from '@/domain/types'
 import type { TodoBannerJobApplicationSummary } from './interfaces'
@@ -21,8 +21,12 @@ const formatFollowUpMessage = (
   now: Date,
 ): string => {
   const recipientName = summary?.contactName ?? summary?.intermediaryName ?? alert.jobApplicationTitle
-  const statusLabel = summary ? JOB_APPLICATION_STATUS_LABELS[summary.status] : ''
-  return `Relancer ${recipientName} : ${statusLabel} ${formatRelativeDaysAgo(alert.referenceDate, now)} sans retour`
+  const messageParts = [
+    summary ? JOB_APPLICATION_STATUS_LABELS[summary.status] : null,
+    `il y a ${countParisCalendarDaysBetween(alert.referenceDate, now)} j`,
+    'sans retour',
+  ].filter((messagePart) => messagePart !== null)
+  return `Relancer ${recipientName} : ${messageParts.join(' ')}`
 }
 
 const formatInterviewMessage = (alert: TodoAlert, interviews: AlertInterview[]): string => {

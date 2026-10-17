@@ -54,6 +54,16 @@ describe('job-applications-table useController', () => {
     expect(result.current.visibleJobApplications.map(({ id }) => id)).toContain('c')
   })
 
+  it('drops terminal status filters when terminal applications are hidden again', () => {
+    const { result } = renderHook(() => useController({ jobApplications }))
+    act(() => result.current.setShowTerminal(true))
+    act(() => result.current.toggleStatus('signed'))
+    act(() => result.current.toggleStatus('applied'))
+    act(() => result.current.setShowTerminal(false))
+    expect(result.current.filters.statuses).toEqual(['applied'])
+    expect(result.current.visibleJobApplications.length).toBeGreaterThan(0)
+  })
+
   it('sorts by last activity descending at first', () => {
     const { result } = renderHook(() => useController({ jobApplications }))
     expect(result.current.sort).toEqual({ key: 'lastActivityAt', direction: 'desc' })

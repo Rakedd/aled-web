@@ -16,14 +16,16 @@ const renderTodoBannerController = (serverResult: ActionResult<null> | Error = {
   const respond = () => (serverResult instanceof Error ? Promise.reject(serverResult) : Promise.resolve(serverResult))
   const snoozeAlert = jest.fn().mockImplementation(respond)
   const changeJobApplicationStatus = jest.fn().mockImplementation(respond)
+  const onDataChanged = jest.fn()
   const { result } = renderHook(() =>
     useController({
       initialAlerts: [followUpAlert, noNewsAlert, otherApplicationAlert],
       snoozeAlert,
       changeJobApplicationStatus,
+      onDataChanged,
     }),
   )
-  return { result, snoozeAlert, changeJobApplicationStatus }
+  return { result, snoozeAlert, changeJobApplicationStatus, onDataChanged }
 }
 
 describe('todo-banner useController', () => {
@@ -77,5 +79,39 @@ describe('todo-banner useController', () => {
     await act(() => result.current.closeAsNoNews(noNewsAlert))
     expect(result.current.alerts).toHaveLength(3)
     expect(result.current.errorMessage).toBe('Une erreur est survenue, réessaie.')
+  })
+
+  it('refreshes the data after a successful snooze or close', async () => {
+    const { result, onDataChanged } = renderTodoBannerController()
+    await act(() => result.current.snooze(followUpAlert, 3))
+    await act(() => result.current.closeAsNoNews(noNewsAlert))
+    expect(onDataChanged).toHaveBeenCalledTimes(2)
+  })
+
+  it.each([{ ok: false, errorMessage: 'Échec' } as const, new Error('network')])(
+    'does not refresh the data when the action fails (%p)',
+    async (serverResult) => {
+      const { result, onDataChanged } = renderTodoBannerController(serverResult)
+      await act(() => result.current.snooze(followUpAlert, 3))
+      await act(() => result.current.closeAsNoNews(noNewsAlert))
+      expect(onDataChanged).not.toHaveBeenCalled()
+    },
+  )
+
+  it('flags an alert as pending while its action is in flight', async () => {
+    const { result, changeJobApplicationStatus } = renderTodoBannerController()
+    let resolveStatusChange: (actionResult: ActionResult<null>) => void = () => undefined
+    changeJobApplicationStatus.mockReturnValue(new Promise((resolve) => (resolveStatusChange = resolve)))
+    let closing: Promise<void> = Promise.resolve()
+    act(() => {
+      closing = result.current.closeAsNoNews(noNewsAlert)
+    })
+    expect(result.current.isAlertPending(noNewsAlert)).toBe(true)
+    expect(result.current.isAlertPending(followUpAlert)).toBe(false)
+    await act(async () => {
+      resolveStatusChange({ ok: true, data: null })
+      await closing
+    })
+    expect(result.current.isAlertPending(noNewsAlert)).toBe(false)
   })
 })

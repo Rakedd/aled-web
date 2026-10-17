@@ -25,9 +25,10 @@ export type TodoBannerControllerParameters = {
   initialAlerts: TodoAlert[]
   snoozeAlert: SnoozeAlert
   changeJobApplicationStatus: ChangeJobApplicationStatus
+  onDataChanged: () => void
 }
 
-export type TodoBannerProps = TodoBannerControllerParameters & {
+export type TodoBannerProps = Omit<TodoBannerControllerParameters, 'onDataChanged'> & {
   jobApplicationSummaries: TodoBannerJobApplicationSummary[]
   interviews: AlertInterview[]
   now: Date
