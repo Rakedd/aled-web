@@ -2,17 +2,28 @@ import 'server-only'
 import type { ActionResult } from '@/domain/action-result'
 import { rejectWith } from '@/domain/input-validation'
 import { validateJobApplicationInput } from '@/domain/job-application'
-import { buildJobApplicationInputFromOpportunity, OPPORTUNITY_VALIDATION_MESSAGES } from '@/domain/opportunities'
+import {
+  buildJobApplicationInputFromOpportunity,
+  mergeStackItems,
+  OPPORTUNITY_VALIDATION_MESSAGES,
+} from '@/domain/opportunities'
 import { formatParisCalendarDate, parseParisCalendarDate } from '@/domain/paris-time'
+import type { StackItem } from '@/domain/types'
+import { createAnthropicClient } from '@/server/ai/create-anthropic-client'
+import { extractJobSpecStack, type JobSpecStackRequestOptions } from '@/server/ai/extract-job-spec-stack'
 import { insertJobApplication } from '@/server/repositories/job-applications-repository'
 import { findOpportunity } from '@/server/repositories/opportunities-repository'
 import {
   findOpportunityDecision,
   upsertOpportunityDecision,
 } from '@/server/repositories/opportunity-decisions-repository'
+import { getDecryptedAnthropicApiKeyForUser } from '@/server/repositories/profile-repository'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
+import { extractOpportunityStack } from './extract-opportunity-stack'
 
 type AppliedOpportunity = { jobApplicationId: string }
+
+const STACK_EXTRACTION_REQUEST_OPTIONS: JobSpecStackRequestOptions = { maxRetries: 1, timeout: 30_000 }
 
 const describeError = (unknownError: unknown): string =>
   unknownError instanceof Error ? unknownError.message : typeof unknownError
@@ -43,6 +54,20 @@ const recordAppliedDecision = async (
   }
 }
 
+const extractPostingStackForUser = (userId: string, description: string | null): Promise<StackItem[]> =>
+  extractOpportunityStack(
+    {
+      getApiKey: () => getDecryptedAnthropicApiKeyForUser(userId),
+      extract: (apiKey, descriptionText) =>
+        extractJobSpecStack(
+          createAnthropicClient(apiKey),
+          { kind: 'text', text: descriptionText },
+          STACK_EXTRACTION_REQUEST_OPTIONS,
+        ),
+    },
+    description,
+  )
+
 export const applyToOpportunityForUser = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
@@ -58,7 +83,12 @@ export const applyToOpportunityForUser = async (
   }
   if (opportunity === null) return rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.notFound)
   const parisToday = parseParisCalendarDate(formatParisCalendarDate(now))
-  const inputValidation = validateJobApplicationInput(buildJobApplicationInputFromOpportunity(opportunity, parisToday))
+  const opportunityInput = buildJobApplicationInputFromOpportunity(opportunity, parisToday)
+  const extractedStack = await extractPostingStackForUser(userId, opportunityInput.postingRawText)
+  const inputValidation = validateJobApplicationInput({
+    ...opportunityInput,
+    stack: mergeStackItems(opportunityInput.stack, extractedStack),
+  })
   if (!inputValidation.ok) return inputValidation
   const jobApplicationCreation = await insertJobApplication(supabase, userId, inputValidation.data)
   if (!jobApplicationCreation.ok) return jobApplicationCreation

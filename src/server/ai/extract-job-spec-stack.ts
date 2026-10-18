@@ -10,9 +10,16 @@ import { readStructuredOutputText } from './read-structured-output-text'
 
 export type JobSpecInput = { kind: 'pdf'; base64Pdf: string } | { kind: 'text'; text: string }
 
+export type JobSpecStackRequestOptions = { maxRetries: number; timeout: number }
+
 const EXTRACTION_MAX_OUTPUT_TOKENS = 8_000
 const EXTRACTION_TIMEOUT_IN_MILLISECONDS = 60_000
 const EXTRACTION_MAX_RETRIES = 1
+
+const DEFAULT_REQUEST_OPTIONS: JobSpecStackRequestOptions = {
+  maxRetries: EXTRACTION_MAX_RETRIES,
+  timeout: EXTRACTION_TIMEOUT_IN_MILLISECONDS,
+}
 
 const JOB_SPEC_STACK_EXTRACTION_SYSTEM_PROMPT = `You extract the technical stack from a job spec ("fiche métier") that a freelancer received for a mission they applied to. The job spec is usually written in French and lists everything the mission requires.
 
@@ -51,7 +58,11 @@ const removeDuplicatesIgnoringCase = (stackItems: StackItem[]): StackItem[] => {
   })
 }
 
-export const extractJobSpecStack = async (client: Anthropic, jobSpecInput: JobSpecInput): Promise<StackItem[]> => {
+export const extractJobSpecStack = async (
+  client: Anthropic,
+  jobSpecInput: JobSpecInput,
+  requestOptions: JobSpecStackRequestOptions = DEFAULT_REQUEST_OPTIONS,
+): Promise<StackItem[]> => {
   const response = await client.messages.create(
     {
       model: CLAUDE_MODELS.extraction,
@@ -60,7 +71,7 @@ export const extractJobSpecStack = async (client: Anthropic, jobSpecInput: JobSp
       messages: [{ role: 'user', content: toUserContent(jobSpecInput) }],
       output_config: { effort: 'low', format: EXTRACTED_JOB_SPEC_STACK_OUTPUT_FORMAT },
     },
-    { maxRetries: EXTRACTION_MAX_RETRIES, timeout: EXTRACTION_TIMEOUT_IN_MILLISECONDS },
+    requestOptions,
   )
   if (response.stop_reason === 'refusal') throw new AiError('refused')
   const extractedJobSpecStack = EXTRACTED_JOB_SPEC_STACK_OUTPUT_FORMAT.parse(readStructuredOutputText(response))

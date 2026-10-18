@@ -83,6 +83,13 @@ describe('extractJobSpecStack', () => {
     expect(requestOptions).toEqual(expect.objectContaining({ maxRetries: 1, timeout: 60_000 }))
   })
 
+  it('lets the caller choose the retries and the timeout', async () => {
+    const client = createFakeAnthropicClientReturning({ stack: [] })
+    await extractJobSpecStack(client, { kind: 'text', text: 'React' }, { maxRetries: 1, timeout: 30_000 })
+    const [, requestOptions] = readCreateCall(client)
+    expect(requestOptions).toEqual(expect.objectContaining({ maxRetries: 1, timeout: 30_000 }))
+  })
+
   it('throws a refused AiError when claude refuses', async () => {
     const client = createFakeAnthropicClientReturning('', 'refusal')
     const extractionError = await captureRejection(extractJobSpecStack(client, { kind: 'text', text: 'React' }))

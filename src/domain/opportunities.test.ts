@@ -1,4 +1,4 @@
-import { validateJobApplicationInput } from './job-application'
+import { MAXIMUM_STACK_ITEM_COUNT, validateJobApplicationInput } from './job-application'
 import {
   type Opportunity,
   REMOTE_MODE_LABELS,
@@ -6,6 +6,7 @@ import {
   formatOpportunityRate,
   isOpportunityFeedStale,
   isRemoteMode,
+  mergeStackItems,
   validateOpportunityId,
   validateOpportunityListingRequest,
   validateOpportunitySource,
@@ -144,6 +145,52 @@ describe('buildJobApplicationInputFromOpportunity', () => {
 
   it('falls back to the low end of the range for the posted daily rate', () => {
     expect(buildJobApplicationInputFromOpportunity({ ...bareOpportunity, rateMin: 480 }, today).postedDailyRate).toBe(480)
+  })
+})
+
+describe('mergeStackItems', () => {
+  it('appends the extra items that are not already in the base, keeping the base order', () => {
+    expect(
+      mergeStackItems(
+        [{ name: 'React', category: 'framework', origin: 'posting' }],
+        [
+          { name: 'react', category: 'tool', origin: 'posting' },
+          { name: 'TypeScript', category: 'language', origin: 'posting' },
+        ],
+      ),
+    ).toEqual([
+      { name: 'React', category: 'framework', origin: 'posting' },
+      { name: 'TypeScript', category: 'language', origin: 'posting' },
+    ])
+  })
+
+  it('treats names that differ only by accents or spacing as duplicates', () => {
+    expect(
+      mergeStackItems(
+        [{ name: 'Modélisation  UML', category: 'method', origin: 'posting' }],
+        [{ name: ' modelisation uml ', category: 'method', origin: 'posting' }],
+      ),
+    ).toEqual([{ name: 'Modélisation  UML', category: 'method', origin: 'posting' }])
+  })
+
+  it('caps the merged stack at the maximum item count', () => {
+    const extraItems = Array.from({ length: 150 }, (_, index) => ({
+      name: `Skill ${index}`,
+      category: 'other' as const,
+      origin: 'posting' as const,
+    }))
+    const mergedStack = mergeStackItems([], extraItems)
+    expect(mergedStack).toHaveLength(MAXIMUM_STACK_ITEM_COUNT)
+    expect(mergedStack[0].name).toBe('Skill 0')
+  })
+
+  it('shortens overlong names and drops blank ones', () => {
+    expect(
+      mergeStackItems(
+        [{ name: '   ', category: 'other', origin: 'posting' }],
+        [{ name: 'S'.repeat(120), category: 'tool', origin: 'posting' }],
+      ),
+    ).toEqual([{ name: 'S'.repeat(100), category: 'tool', origin: 'posting' }])
   })
 })
 

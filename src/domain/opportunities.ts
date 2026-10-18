@@ -1,5 +1,6 @@
 import { formatInTimeZone } from 'date-fns-tz'
 import type { ActionResult } from './action-result'
+import { normalizeEntityName } from './entity-names'
 import { isRecord, isUuid, rejectWith, validateUuid } from './input-validation'
 import {
   JOB_APPLICATION_TEXT_FIELD_RULES,
@@ -150,19 +151,25 @@ const truncateOptionalText = (text: string | null, maximumLength: number): strin
 const formatDuration = (durationMonths: number | null): string | null =>
   durationMonths === null || durationMonths <= 0 ? null : `${durationMonths} mois`
 
-const buildStackFromSkills = (skills: string[]): StackItem[] => {
-  const seenSkillNames = new Set<string>()
-  const stack: StackItem[] = []
-  for (const skill of skills) {
-    if (stack.length === MAXIMUM_STACK_ITEM_COUNT) break
-    const skillName = truncateText(skill, MAXIMUM_STACK_ITEM_NAME_LENGTH)
-    const lowercaseSkillName = skillName.toLowerCase()
-    if (skillName === '' || seenSkillNames.has(lowercaseSkillName)) continue
-    seenSkillNames.add(lowercaseSkillName)
-    stack.push({ name: skillName, category: 'other', origin: 'posting' })
+export const mergeStackItems = (base: StackItem[], extra: StackItem[]): StackItem[] => {
+  const seenStackItemKeys = new Set<string>()
+  const mergedStack: StackItem[] = []
+  for (const stackItem of [...base, ...extra]) {
+    if (mergedStack.length === MAXIMUM_STACK_ITEM_COUNT) break
+    const stackItemName = truncateText(stackItem.name, MAXIMUM_STACK_ITEM_NAME_LENGTH)
+    const stackItemKey = normalizeEntityName(stackItemName)
+    if (stackItemKey === '' || seenStackItemKeys.has(stackItemKey)) continue
+    seenStackItemKeys.add(stackItemKey)
+    mergedStack.push({ ...stackItem, name: stackItemName })
   }
-  return stack
+  return mergedStack
 }
+
+const buildStackFromSkills = (skills: string[]): StackItem[] =>
+  mergeStackItems(
+    skills.map((skill) => ({ name: skill, category: 'other', origin: 'posting' })),
+    [],
+  )
 
 export const buildJobApplicationInputFromOpportunity = (opportunity: Opportunity, today: Date): JobApplicationInput => ({
   title: truncateText(opportunity.title, JOB_APPLICATION_TEXT_FIELD_RULES.title.maximumLength),

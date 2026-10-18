@@ -13,6 +13,8 @@ import {
 
 export const metadata: Metadata = { title: 'Mes opportunités · Freeclutch' }
 
+export const maxDuration = 60
+
 const OpportunitiesPage = async ({ searchParams }: PageProps<'/opportunites'>) => {
   const { tab } = await searchParams
   const selectedTab = isOpportunityTab(tab) ? tab : 'to_process'
