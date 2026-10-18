@@ -233,3 +233,17 @@ export const updateJobApplicationRow = async (
   if (error) throw toRepositoryError('updateJobApplicationRow', error)
   return { ok: true, data: null }
 }
+
+export const deleteJobApplicationRow = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  jobApplicationId: string,
+): Promise<boolean> => {
+  const { count, error } = await supabase
+    .from('job_applications')
+    .delete({ count: 'exact' })
+    .eq('id', jobApplicationId)
+    .eq('user_id', userId)
+  if (error) throw toRepositoryError('deleteJobApplicationRow', error)
+  return (count ?? 0) > 0
+}

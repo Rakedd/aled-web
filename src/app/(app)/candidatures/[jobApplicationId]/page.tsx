@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ActivityLog } from '@/components/activity-log'
+import { DeleteJobApplicationButton } from '@/components/delete-job-application-button'
 import { InterviewPreparationButton } from '@/components/interview-preparation-button'
 import { InterviewsSection } from '@/components/interviews-section'
 import { JobApplicationHeader } from '@/components/job-application-header'
@@ -27,6 +28,7 @@ import { generateInterviewPreparation, getInterviewPreparation } from '@/server/
 import {
   addActivityLogEntry,
   changeJobApplicationStatus,
+  deleteJobApplication,
   getJobApplication,
   listActivityLogEntries,
   updateJobApplication,
@@ -171,6 +173,7 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
         listActivityLogEntries={listActivityLogEntries}
         now={now}
       />
+      <DeleteJobApplicationButton jobApplicationId={jobApplication.id} deleteJobApplication={deleteJobApplication} />
     </div>
   )
 }

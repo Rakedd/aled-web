@@ -4,7 +4,9 @@ import 'server-only'
 import type { ActionResult } from '@/domain/action-result'
 import { type ActivityLogEntry, type ActivityLogEntryInput, validateActivityLogEntryInput } from '@/domain/activity-log'
 import { type SnoozeDurationInDays, validateSnoozeAlertArguments } from '@/domain/alert-snoozes'
+import { rejectWith } from '@/domain/input-validation'
 import {
+  JOB_APPLICATION_NOT_FOUND_MESSAGE,
   JOB_APPLICATION_VALIDATION_MESSAGES,
   type JobApplicationInput,
   type JobApplicationListItem,
@@ -21,17 +23,48 @@ import {
   recordActivityLogEntry,
 } from '@/server/repositories/activity-log-repository'
 import { listActiveAlertSnoozes, snoozeJobApplicationAlert } from '@/server/repositories/alert-snoozes-repository'
+import { isJobApplicationOwnedByUser } from '@/server/repositories/job-application-ownership'
 import {
   changeJobApplicationStatusRow,
+  deleteJobApplicationRow,
   findJobApplicationOverview,
   insertJobApplication,
   listJobApplicationItems,
   updateJobApplicationRow,
 } from '@/server/repositories/job-applications-repository'
+import { findJobSpecStoragePath, removeJobSpecFile } from '@/server/repositories/job-specs-repository'
+import { deleteAppliedOpportunityDecisionsOfJobApplication } from '@/server/repositories/opportunity-decisions-repository'
+import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 import { NO_ARGUMENTS, runAuthenticatedOperation } from './run-authenticated-operation'
 
 const LOAD_FAILURE_MESSAGE = 'Impossible de charger les candidatures pour le moment. Réessaie dans quelques minutes.'
 const SAVE_FAILURE_MESSAGE = "Impossible d'enregistrer la candidature pour le moment. Réessaie dans quelques minutes."
+const DELETE_FAILURE_MESSAGE = 'Impossible de supprimer la candidature pour le moment. Réessaie dans quelques minutes.'
+
+const removeJobSpecFileWithoutFailing = async (supabase: FreeclutchSupabaseClient, storagePath: string): Promise<void> => {
+  try {
+    await removeJobSpecFile(supabase, storagePath)
+  } catch (removalError) {
+    console.error('Job spec file removal failed after job application deletion', {
+      errorName: removalError instanceof Error ? removalError.name : typeof removalError,
+    })
+  }
+}
+
+const deleteJobApplicationWithFiles = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  jobApplicationId: string,
+): Promise<ActionResult<null>> => {
+  const isOwnedByUser = await isJobApplicationOwnedByUser(supabase, userId, jobApplicationId)
+  if (!isOwnedByUser) return rejectWith(JOB_APPLICATION_NOT_FOUND_MESSAGE)
+  const jobSpecStoragePath = await findJobSpecStoragePath(supabase, userId, jobApplicationId)
+  await deleteAppliedOpportunityDecisionsOfJobApplication(supabase, userId, jobApplicationId)
+  const isDeleted = await deleteJobApplicationRow(supabase, userId, jobApplicationId)
+  if (!isDeleted) return rejectWith(JOB_APPLICATION_NOT_FOUND_MESSAGE)
+  if (jobSpecStoragePath !== null) await removeJobSpecFileWithoutFailing(supabase, jobSpecStoragePath)
+  return { ok: true, data: null }
+}
 
 export const listJobApplications = async (): Promise<ActionResult<JobApplicationListItem[]>> =>
   runAuthenticatedOperation({
@@ -93,6 +126,14 @@ export const changeJobApplicationStatus = async (
     },
     operation: (supabase, userId, validatedArguments) =>
       changeJobApplicationStatusRow(supabase, userId, validatedArguments.jobApplicationId, validatedArguments.newStatus),
+  })
+
+export const deleteJobApplication = async (jobApplicationId: string): Promise<ActionResult<null>> =>
+  runAuthenticatedOperation({
+    operationName: 'deleteJobApplication',
+    failureMessage: DELETE_FAILURE_MESSAGE,
+    validateArguments: () => validateJobApplicationId(jobApplicationId),
+    operation: deleteJobApplicationWithFiles,
   })
 
 export const addActivityLogEntry = async (

@@ -7,19 +7,24 @@ import {
   recordActivityLogEntry,
 } from '@/server/repositories/activity-log-repository'
 import { listActiveAlertSnoozes, snoozeJobApplicationAlert } from '@/server/repositories/alert-snoozes-repository'
+import { isJobApplicationOwnedByUser } from '@/server/repositories/job-application-ownership'
 import {
   changeJobApplicationStatusRow,
+  deleteJobApplicationRow,
   findJobApplicationOverview,
   insertJobApplication,
   listJobApplicationItems,
   updateJobApplicationRow,
 } from '@/server/repositories/job-applications-repository'
+import { findJobSpecStoragePath, removeJobSpecFile } from '@/server/repositories/job-specs-repository'
+import { deleteAppliedOpportunityDecisionsOfJobApplication } from '@/server/repositories/opportunity-decisions-repository'
 import { createServerSupabaseClient } from '@/server/supabase/create-server-supabase-client'
 import { getAuthenticatedUser } from '@/server/supabase/get-authenticated-user'
 import {
   addActivityLogEntry,
   changeJobApplicationStatus,
   createJobApplication,
+  deleteJobApplication,
   getJobApplication,
   listActivityLogEntries,
   listAlertSnoozes,
@@ -37,6 +42,15 @@ jest.mock('@/server/repositories/job-applications-repository', () => ({
   insertJobApplication: jest.fn(),
   updateJobApplicationRow: jest.fn(),
   changeJobApplicationStatusRow: jest.fn(),
+  deleteJobApplicationRow: jest.fn(),
+}))
+jest.mock('@/server/repositories/job-application-ownership', () => ({ isJobApplicationOwnedByUser: jest.fn() }))
+jest.mock('@/server/repositories/job-specs-repository', () => ({
+  findJobSpecStoragePath: jest.fn(),
+  removeJobSpecFile: jest.fn(),
+}))
+jest.mock('@/server/repositories/opportunity-decisions-repository', () => ({
+  deleteAppliedOpportunityDecisionsOfJobApplication: jest.fn(),
 }))
 jest.mock('@/server/repositories/activity-log-repository', () => ({
   recordActivityLogEntry: jest.fn(),
@@ -242,5 +256,121 @@ describe('listAlertSnoozes', () => {
     jest.mocked(listActiveAlertSnoozes).mockResolvedValue([])
     await expect(listAlertSnoozes()).resolves.toEqual({ ok: true, data: [] })
     expect(listActiveAlertSnoozes).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', expect.any(Date))
+  })
+})
+
+describe('deleteJobApplication', () => {
+  const storagePath = `user-1/${jobApplicationId}/fiche.pdf`
+  const deletionFailureMessage =
+    'Impossible de supprimer la candidature pour le moment. Réessaie dans quelques minutes.'
+  let consoleErrorSpy: jest.SpyInstance
+
+  beforeEach(() => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    jest.mocked(isJobApplicationOwnedByUser).mockResolvedValue(true)
+    jest.mocked(findJobSpecStoragePath).mockResolvedValue(storagePath)
+    jest.mocked(deleteAppliedOpportunityDecisionsOfJobApplication).mockResolvedValue(undefined)
+    jest.mocked(deleteJobApplicationRow).mockResolvedValue(true)
+    jest.mocked(removeJobSpecFile).mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('rejects a malformed id without touching the database', async () => {
+    await expect(deleteJobApplication('42')).resolves.toEqual({ ok: false, errorMessage: 'Candidature introuvable' })
+    expect(isJobApplicationOwnedByUser).not.toHaveBeenCalled()
+    expect(deleteJobApplicationRow).not.toHaveBeenCalled()
+  })
+
+  it('checks ownership, reads the pdf path, deletes the decisions, the application then the pdf, in that order', async () => {
+    const callOrder: string[] = []
+    jest.mocked(isJobApplicationOwnedByUser).mockImplementation(async () => {
+      callOrder.push('ownership')
+      return true
+    })
+    jest.mocked(findJobSpecStoragePath).mockImplementation(async () => {
+      callOrder.push('storagePath')
+      return storagePath
+    })
+    jest.mocked(deleteAppliedOpportunityDecisionsOfJobApplication).mockImplementation(async () => {
+      callOrder.push('decisions')
+    })
+    jest.mocked(deleteJobApplicationRow).mockImplementation(async () => {
+      callOrder.push('application')
+      return true
+    })
+    jest.mocked(removeJobSpecFile).mockImplementation(async () => {
+      callOrder.push('pdf')
+    })
+
+    await expect(deleteJobApplication(jobApplicationId)).resolves.toEqual(succeeded)
+
+    expect(callOrder).toEqual(['ownership', 'storagePath', 'decisions', 'application', 'pdf'])
+    expect(isJobApplicationOwnedByUser).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', jobApplicationId)
+    expect(findJobSpecStoragePath).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', jobApplicationId)
+    expect(deleteAppliedOpportunityDecisionsOfJobApplication).toHaveBeenCalledWith(
+      fakeSupabaseClient,
+      'user-1',
+      jobApplicationId,
+    )
+    expect(deleteJobApplicationRow).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', jobApplicationId)
+    expect(removeJobSpecFile).toHaveBeenCalledWith(fakeSupabaseClient, storagePath)
+  })
+
+  it('does not touch the storage when the application has no pdf', async () => {
+    jest.mocked(findJobSpecStoragePath).mockResolvedValue(null)
+
+    await expect(deleteJobApplication(jobApplicationId)).resolves.toEqual(succeeded)
+
+    expect(deleteJobApplicationRow).toHaveBeenCalled()
+    expect(removeJobSpecFile).not.toHaveBeenCalled()
+  })
+
+  it('answers « Candidature introuvable » and deletes nothing when the application is not owned', async () => {
+    jest.mocked(isJobApplicationOwnedByUser).mockResolvedValue(false)
+
+    await expect(deleteJobApplication(jobApplicationId)).resolves.toEqual({
+      ok: false,
+      errorMessage: 'Candidature introuvable',
+    })
+
+    expect(findJobSpecStoragePath).not.toHaveBeenCalled()
+    expect(deleteAppliedOpportunityDecisionsOfJobApplication).not.toHaveBeenCalled()
+    expect(deleteJobApplicationRow).not.toHaveBeenCalled()
+    expect(removeJobSpecFile).not.toHaveBeenCalled()
+  })
+
+  it('stops and deletes nothing more when a step before the application deletion fails', async () => {
+    jest.mocked(deleteAppliedOpportunityDecisionsOfJobApplication).mockRejectedValue(new Error('Repository failure'))
+
+    await expect(deleteJobApplication(jobApplicationId)).resolves.toEqual({
+      ok: false,
+      errorMessage: deletionFailureMessage,
+    })
+
+    expect(deleteJobApplicationRow).not.toHaveBeenCalled()
+    expect(removeJobSpecFile).not.toHaveBeenCalled()
+  })
+
+  it('keeps the pdf when the application disappeared before its deletion', async () => {
+    jest.mocked(deleteJobApplicationRow).mockResolvedValue(false)
+
+    await expect(deleteJobApplication(jobApplicationId)).resolves.toEqual({
+      ok: false,
+      errorMessage: 'Candidature introuvable',
+    })
+
+    expect(removeJobSpecFile).not.toHaveBeenCalled()
+  })
+
+  it('still succeeds and logs without the path when the pdf removal throws', async () => {
+    jest.mocked(removeJobSpecFile).mockRejectedValue(new Error(`Network failure on ${storagePath}`))
+
+    await expect(deleteJobApplication(jobApplicationId)).resolves.toEqual(succeeded)
+
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1)
+    expect(JSON.stringify(consoleErrorSpy.mock.calls)).not.toContain(storagePath)
   })
 })

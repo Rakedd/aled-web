@@ -117,3 +117,17 @@ export const deleteDismissedOpportunityDecision = async (
   if (error) throw toRepositoryError('deleteDismissedOpportunityDecision', error)
   return (count ?? 0) > 0
 }
+
+export const deleteAppliedOpportunityDecisionsOfJobApplication = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  jobApplicationId: string,
+): Promise<void> => {
+  const { error } = await supabase
+    .from('opportunity_decisions')
+    .delete()
+    .eq('user_id', userId)
+    .eq('job_application_id', jobApplicationId)
+    .eq('decision', 'applied')
+  if (error) throw toRepositoryError('deleteAppliedOpportunityDecisionsOfJobApplication', error)
+}

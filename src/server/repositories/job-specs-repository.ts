@@ -36,7 +36,7 @@ export const findJobSpecStoragePath = async (
   return data?.storage_path ?? null
 }
 
-const removeJobSpecFile = async (supabase: FreeclutchSupabaseClient, storagePath: string): Promise<void> => {
+export const removeJobSpecFile = async (supabase: FreeclutchSupabaseClient, storagePath: string): Promise<void> => {
   const { error } = await supabase.storage.from(JOB_SPECS_BUCKET).remove([storagePath])
   if (error) console.error('Job spec file removal failed', { httpStatus: error.status ?? null })
 }

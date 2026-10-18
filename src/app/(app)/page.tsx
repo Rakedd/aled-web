@@ -4,6 +4,7 @@ import { JobApplicationsTable } from '@/components/job-applications-table'
 import { TodoBanner } from '@/components/todo-banner'
 import { buttonVariants } from '@/components/ui/button'
 import { addParisCalendarDays } from '@/domain/paris-time'
+import { JOB_APPLICATION_DELETED_SEARCH_PARAMETER } from '@/domain/routes'
 import { computeTodoAlerts, type AlertInterview } from '@/domain/todo-alerts'
 import { listUpcomingInterviews } from '@/server/actions/interview-actions'
 import {
@@ -18,8 +19,10 @@ export const metadata: Metadata = { title: 'Mes candidatures · Freeclutch' }
 
 const PAGE_LOAD_FAILURE_MESSAGE = 'Impossible de charger tes candidatures.'
 const UPCOMING_INTERVIEWS_LOOKAHEAD_DAYS = 8
+const JOB_APPLICATION_DELETED_MESSAGE = 'Candidature supprimée'
 
-const JobApplicationsPage = async () => {
+const JobApplicationsPage = async ({ searchParams }: PageProps<'/'>) => {
+  const isJobApplicationDeleted = (await searchParams)[JOB_APPLICATION_DELETED_SEARCH_PARAMETER] === '1'
   const now = new Date()
   const [jobApplicationsResult, profileSettingsResult, alertSnoozesResult, upcomingInterviewsResult] =
     await Promise.all([
@@ -38,6 +41,12 @@ const JobApplicationsPage = async () => {
     </div>
   )
 
+  const deletionNotice = isJobApplicationDeleted && (
+    <p role="status" className="text-sm text-muted-foreground">
+      {JOB_APPLICATION_DELETED_MESSAGE}
+    </p>
+  )
+
   if (
     !jobApplicationsResult.ok ||
     !profileSettingsResult.ok ||
@@ -53,6 +62,7 @@ const JobApplicationsPage = async () => {
     return (
       <div className="flex min-w-0 flex-col gap-6">
         {header}
+        {deletionNotice}
         <p role="alert" className="text-sm text-destructive">
           {failedResult && !failedResult.ok ? failedResult.errorMessage : PAGE_LOAD_FAILURE_MESSAGE}
         </p>
@@ -81,6 +91,7 @@ const JobApplicationsPage = async () => {
   return (
     <div className="flex min-w-0 flex-col gap-6">
       {header}
+      {deletionNotice}
       <TodoBanner
         initialAlerts={initialAlerts}
         snoozeAlert={snoozeAlert}
