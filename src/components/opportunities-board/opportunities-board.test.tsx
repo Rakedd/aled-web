@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type { OpportunityListing, OpportunityListItem } from '@/domain/opportunities'
 import { OpportunitiesBoard } from './opportunities-board'
 
@@ -34,6 +35,7 @@ const renderBoard = (
   listingOverrides: Partial<OpportunityListing>,
   hasActiveFilters = false,
   initialTab: 'to_process' | 'applied' | 'dismissed' = 'to_process',
+  applyToOpportunity: jest.Mock = jest.fn(),
 ) => {
   const succeeded = { ok: true, data: null }
   render(
@@ -50,7 +52,7 @@ const renderBoard = (
       hasActiveFilters={hasActiveFilters}
       now={NOW}
       listOpportunities={jest.fn()}
-      applyToOpportunity={jest.fn()}
+      applyToOpportunity={applyToOpportunity}
       dismissOpportunity={jest.fn()}
       restoreOpportunity={jest.fn()}
       markOpportunitiesViewed={jest.fn().mockResolvedValue(succeeded)}
@@ -59,6 +61,22 @@ const renderBoard = (
 }
 
 describe('OpportunitiesBoard', () => {
+  it('shows « Création… » on the apply button while the application is being created', async () => {
+    const neverSettlingApply = jest.fn().mockReturnValue(new Promise(() => undefined))
+    renderBoard(
+      { items: [buildOpportunity('opportunity-1', '2026-10-18T09:00:00Z')], counts: { to_process: 1, applied: 0, dismissed: 0 } },
+      false,
+      'to_process',
+      neverSettlingApply,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: "J'ai postulé" }))
+
+    expect(screen.getByRole('button', { name: 'Création…' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: "J'ai postulé" })).not.toBeInTheDocument()
+    expect(neverSettlingApply).toHaveBeenCalledWith('opportunity-1')
+  })
+
   it('shows the filters empty state with a link to the Free-Work settings', () => {
     renderBoard({}, true)
     expect(screen.getByText(/Rien de nouveau qui correspond à tes filtres/)).toBeInTheDocument()

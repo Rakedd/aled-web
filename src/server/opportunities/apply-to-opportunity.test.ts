@@ -97,7 +97,7 @@ describe('applyToOpportunityForUser', () => {
     expect(extractJobSpecStack).not.toHaveBeenCalled()
   })
 
-  it('extracts the stack from the description with one retry and a 30 second timeout', async () => {
+  it('extracts the stack from the description without retry and with a 25 second timeout', async () => {
     await applyToOpportunityForUser(fakeSupabaseClient, 'user-1', opportunityId, now)
 
     expect(getDecryptedAnthropicApiKeyForUser).toHaveBeenCalledWith('user-1')
@@ -105,7 +105,7 @@ describe('applyToOpportunityForUser', () => {
     expect(extractJobSpecStack).toHaveBeenCalledWith(
       fakeAnthropicClient,
       { kind: 'text', text: 'Mission React' },
-      { maxRetries: 1, timeout: 30_000 },
+      { maxRetries: 0, timeout: 25_000 },
     )
   })
 
@@ -122,7 +122,7 @@ describe('applyToOpportunityForUser', () => {
       'user-1',
       expect.objectContaining({
         stack: [
-          { name: 'React', category: 'other', origin: 'posting' },
+          { name: 'React', category: 'framework', origin: 'posting' },
           { name: 'TypeScript', category: 'language', origin: 'posting' },
         ],
       }),
@@ -143,6 +143,32 @@ describe('applyToOpportunityForUser', () => {
       expect.objectContaining({ stack: [{ name: 'React', category: 'other', origin: 'posting' }] }),
     )
     consoleErrorSpy.mockRestore()
+  })
+
+  it('returns the job application created meanwhile by a concurrent apply instead of creating a second one', async () => {
+    jest
+      .mocked(findOpportunityDecision)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ opportunityId, decision: 'applied', jobApplicationId: 'application-0' })
+
+    await expect(applyToOpportunityForUser(fakeSupabaseClient, 'user-1', opportunityId, now)).resolves.toEqual({
+      ok: true,
+      data: { jobApplicationId: 'application-0' },
+    })
+    expect(extractJobSpecStack).toHaveBeenCalledTimes(1)
+    expect(insertJobApplication).not.toHaveBeenCalled()
+    expect(upsertOpportunityDecision).not.toHaveBeenCalled()
+  })
+
+  it('rejects an opportunity whose job application input is invalid without calling Claude', async () => {
+    jest.mocked(findOpportunity).mockResolvedValue({ ...opportunity, url: 'javascript:alert(1)' })
+
+    const applyResult = await applyToOpportunityForUser(fakeSupabaseClient, 'user-1', opportunityId, now)
+
+    expect(applyResult.ok).toBe(false)
+    expect(getDecryptedAnthropicApiKeyForUser).not.toHaveBeenCalled()
+    expect(extractJobSpecStack).not.toHaveBeenCalled()
+    expect(insertJobApplication).not.toHaveBeenCalled()
   })
 
   it('creates the job application without calling Claude when the user has no key', async () => {

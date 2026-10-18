@@ -1,7 +1,7 @@
 import 'server-only'
 import type { ActionResult } from '@/domain/action-result'
 import { rejectWith } from '@/domain/input-validation'
-import { validateJobApplicationInput } from '@/domain/job-application'
+import { type JobApplicationInput, validateJobApplicationInput } from '@/domain/job-application'
 import {
   buildJobApplicationInputFromOpportunity,
   mergeStackItems,
@@ -23,7 +23,7 @@ import { extractOpportunityStack } from './extract-opportunity-stack'
 
 type AppliedOpportunity = { jobApplicationId: string }
 
-const STACK_EXTRACTION_REQUEST_OPTIONS: JobSpecStackRequestOptions = { maxRetries: 1, timeout: 30_000 }
+const STACK_EXTRACTION_REQUEST_OPTIONS: JobSpecStackRequestOptions = { maxRetries: 0, timeout: 25_000 }
 
 const describeError = (unknownError: unknown): string =>
   unknownError instanceof Error ? unknownError.message : typeof unknownError
@@ -68,29 +68,48 @@ const extractPostingStackForUser = (userId: string, description: string | null):
     description,
   )
 
+const findExistingJobApplicationId = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  opportunityId: string,
+): Promise<string | null> => {
+  const existingDecision = await findOpportunityDecision(supabase, userId, opportunityId)
+  return existingDecision?.decision === 'applied' ? existingDecision.jobApplicationId : null
+}
+
+const withExtractedStack = (baseInput: JobApplicationInput, extractedStack: StackItem[]): JobApplicationInput => {
+  const mergedInputValidation = validateJobApplicationInput({
+    ...baseInput,
+    stack: mergeStackItems(baseInput.stack, extractedStack),
+  })
+  return mergedInputValidation.ok ? mergedInputValidation.data : baseInput
+}
+
 export const applyToOpportunityForUser = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   opportunityId: string,
   now: Date,
 ): Promise<ActionResult<AppliedOpportunity>> => {
-  const [existingDecision, opportunity] = await Promise.all([
-    findOpportunityDecision(supabase, userId, opportunityId),
+  const [existingJobApplicationId, opportunity] = await Promise.all([
+    findExistingJobApplicationId(supabase, userId, opportunityId),
     findOpportunity(supabase, opportunityId),
   ])
-  if (existingDecision?.decision === 'applied' && existingDecision.jobApplicationId !== null) {
-    return { ok: true, data: { jobApplicationId: existingDecision.jobApplicationId } }
-  }
+  if (existingJobApplicationId !== null) return { ok: true, data: { jobApplicationId: existingJobApplicationId } }
   if (opportunity === null) return rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.notFound)
   const parisToday = parseParisCalendarDate(formatParisCalendarDate(now))
-  const opportunityInput = buildJobApplicationInputFromOpportunity(opportunity, parisToday)
-  const extractedStack = await extractPostingStackForUser(userId, opportunityInput.postingRawText)
-  const inputValidation = validateJobApplicationInput({
-    ...opportunityInput,
-    stack: mergeStackItems(opportunityInput.stack, extractedStack),
-  })
-  if (!inputValidation.ok) return inputValidation
-  const jobApplicationCreation = await insertJobApplication(supabase, userId, inputValidation.data)
+  const baseInputValidation = validateJobApplicationInput(buildJobApplicationInputFromOpportunity(opportunity, parisToday))
+  if (!baseInputValidation.ok) return baseInputValidation
+  const extractedStack = await extractPostingStackForUser(userId, baseInputValidation.data.postingRawText)
+  const jobApplicationIdCreatedMeanwhile = await findExistingJobApplicationId(supabase, userId, opportunityId)
+  if (jobApplicationIdCreatedMeanwhile !== null) {
+    return { ok: true, data: { jobApplicationId: jobApplicationIdCreatedMeanwhile } }
+  }
+  const jobApplicationCreation = await insertJobApplication(
+    supabase,
+    userId,
+    withExtractedStack(baseInputValidation.data, extractedStack),
+  )
   if (!jobApplicationCreation.ok) return jobApplicationCreation
   const jobApplicationId = jobApplicationCreation.data.id
   await recordAppliedDecision(supabase, userId, opportunityId, jobApplicationId)

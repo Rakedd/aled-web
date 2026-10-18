@@ -85,7 +85,7 @@ export const OpportunityCard = ({
         {tab === 'to_process' && opportunity.jobApplicationId === null && (
           <>
             <Button type="button" size="sm" disabled={isPending} onClick={() => onApply(opportunity)}>
-              J&apos;ai postulé
+              {isPending ? 'Création…' : <>J&apos;ai postulé</>}
             </Button>
             <Button type="button" size="sm" variant="ghost" disabled={isPending} onClick={() => onDismiss(opportunity)}>
               Pas intéressé

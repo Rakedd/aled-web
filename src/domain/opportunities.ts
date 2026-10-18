@@ -151,15 +151,23 @@ const truncateOptionalText = (text: string | null, maximumLength: number): strin
 const formatDuration = (durationMonths: number | null): string | null =>
   durationMonths === null || durationMonths <= 0 ? null : `${durationMonths} mois`
 
+const upgradeOtherCategory = (keptStackItem: StackItem, duplicateStackItem: StackItem): StackItem =>
+  keptStackItem.category === 'other' ? { ...keptStackItem, category: duplicateStackItem.category } : keptStackItem
+
 export const mergeStackItems = (base: StackItem[], extra: StackItem[]): StackItem[] => {
-  const seenStackItemKeys = new Set<string>()
+  const mergedStackItemIndexByKey = new Map<string, number>()
   const mergedStack: StackItem[] = []
   for (const stackItem of [...base, ...extra]) {
-    if (mergedStack.length === MAXIMUM_STACK_ITEM_COUNT) break
     const stackItemName = truncateText(stackItem.name, MAXIMUM_STACK_ITEM_NAME_LENGTH)
     const stackItemKey = normalizeEntityName(stackItemName)
-    if (stackItemKey === '' || seenStackItemKeys.has(stackItemKey)) continue
-    seenStackItemKeys.add(stackItemKey)
+    if (stackItemKey === '') continue
+    const duplicateIndex = mergedStackItemIndexByKey.get(stackItemKey)
+    if (duplicateIndex !== undefined) {
+      mergedStack[duplicateIndex] = upgradeOtherCategory(mergedStack[duplicateIndex], stackItem)
+      continue
+    }
+    if (mergedStack.length === MAXIMUM_STACK_ITEM_COUNT) continue
+    mergedStackItemIndexByKey.set(stackItemKey, mergedStack.length)
     mergedStack.push({ ...stackItem, name: stackItemName })
   }
   return mergedStack

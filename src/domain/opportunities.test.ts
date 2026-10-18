@@ -173,6 +173,27 @@ describe('mergeStackItems', () => {
     ).toEqual([{ name: 'Modélisation  UML', category: 'method', origin: 'posting' }])
   })
 
+  it('upgrades the other category of a base item with the category of its extra duplicate', () => {
+    expect(
+      mergeStackItems(
+        [
+          { name: 'React', category: 'other', origin: 'posting' },
+          { name: 'Scrum', category: 'method', origin: 'posting' },
+        ],
+        [
+          { name: 'react', category: 'framework', origin: 'posting' },
+          { name: 'scrum', category: 'tool', origin: 'posting' },
+          { name: 'Kafka', category: 'other', origin: 'posting' },
+          { name: 'kafka', category: 'other', origin: 'posting' },
+        ],
+      ),
+    ).toEqual([
+      { name: 'React', category: 'framework', origin: 'posting' },
+      { name: 'Scrum', category: 'method', origin: 'posting' },
+      { name: 'Kafka', category: 'other', origin: 'posting' },
+    ])
+  })
+
   it('caps the merged stack at the maximum item count', () => {
     const extraItems = Array.from({ length: 150 }, (_, index) => ({
       name: `Skill ${index}`,

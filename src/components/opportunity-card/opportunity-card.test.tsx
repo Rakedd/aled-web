@@ -123,9 +123,9 @@ describe('OpportunityCard', () => {
     expect(screen.queryByRole('button', { name: 'Pas intéressé' })).not.toBeInTheDocument()
   })
 
-  it('disables the buttons while the action is in flight', () => {
+  it('disables the buttons and shows « Création… » while the action is in flight', () => {
     renderCard(buildOpportunity(), { isPending: true })
-    expect(screen.getByRole('button', { name: "J'ai postulé" })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Création…' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Pas intéressé' })).toBeDisabled()
   })
 
