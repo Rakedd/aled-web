@@ -17,8 +17,11 @@ const restoreBackupFile = async (backupFilePath: string | undefined): Promise<vo
     readRequiredEnvironmentVariable('SUPABASE_SERVICE_ROLE_KEY'),
     { auth: { persistSession: false, autoRefreshToken: false } },
   )
-  await restoreUserDataSnapshot(serviceRoleClient, snapshot)
+  const { skippedOpportunityDecisionCount } = await restoreUserDataSnapshot(serviceRoleClient, snapshot)
   process.stdout.write(`Restored the data of user ${snapshot.userId} from ${backupFilePath}\n`)
+  if (skippedOpportunityDecisionCount > 0) {
+    process.stdout.write(`Skipped ${skippedOpportunityDecisionCount} opportunity decisions whose mission no longer exists\n`)
+  }
 }
 
 restoreBackupFile(process.argv[2]).catch((restoreError: unknown) => {

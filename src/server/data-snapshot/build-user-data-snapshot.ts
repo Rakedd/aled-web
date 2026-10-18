@@ -1,5 +1,6 @@
 import 'server-only'
 import { JOB_SPECS_BUCKET } from '@/domain/job-spec'
+import type { OpportunityDecision } from '@/domain/opportunities'
 import { toRepositoryError } from '@/server/repositories/repository-error'
 import type { Tables } from '@/server/supabase/database-types'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
@@ -11,6 +12,14 @@ export type UserDataSnapshotProfile = Omit<
 >
 
 export type UserDataSnapshotJobSpec = Tables<'job_specs'> & { pdfBase64: string | null }
+
+export type UserDataSnapshotOpportunityDecision = {
+  source: string
+  externalId: string
+  decision: OpportunityDecision
+  jobApplicationId: string | null
+  decidedAt: string
+}
 
 export type UserDataSnapshot = {
   formatVersion: 1
@@ -25,6 +34,8 @@ export type UserDataSnapshot = {
   interviews: Tables<'interviews'>[]
   jobSpecs: UserDataSnapshotJobSpec[]
   alertSnoozes: Tables<'alert_snoozes'>[]
+  opportunityFilters: Tables<'opportunity_filters'>[]
+  opportunityDecisions: UserDataSnapshotOpportunityDecision[]
 }
 
 const SNAPSHOT_PROFILE_COLUMNS = 'id, first_name, last_name, email, links, follow_up_delay_days, created_at, updated_at'
@@ -59,6 +70,27 @@ const attachJobSpecPdfs = (
     })),
   )
 
+const fetchSnapshotOpportunityDecisions = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+): Promise<UserDataSnapshotOpportunityDecision[]> => {
+  const decisionRows = await fetchEveryRow('fetchSnapshotOpportunityDecisions', (firstRowIndex, lastRowIndex) =>
+    supabase
+      .from('opportunity_decisions')
+      .select('decision, job_application_id, decided_at, opportunity_id, opportunities!inner(source, external_id)')
+      .eq('user_id', userId)
+      .order('opportunity_id')
+      .range(firstRowIndex, lastRowIndex),
+  )
+  return decisionRows.map((decisionRow) => ({
+    source: decisionRow.opportunities.source,
+    externalId: decisionRow.opportunities.external_id,
+    decision: decisionRow.decision as OpportunityDecision,
+    jobApplicationId: decisionRow.job_application_id,
+    decidedAt: decisionRow.decided_at,
+  }))
+}
+
 export const buildUserDataSnapshot = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
@@ -73,6 +105,8 @@ export const buildUserDataSnapshot = async (
     interviews,
     jobSpecRows,
     alertSnoozes,
+    opportunityFilters,
+    opportunityDecisions,
   ] = await Promise.all([
     fetchSnapshotProfile(supabase, userId),
     fetchEveryRow('fetchSnapshotIntermediaries', (firstRowIndex, lastRowIndex) =>
@@ -109,6 +143,15 @@ export const buildUserDataSnapshot = async (
     fetchEveryRow('fetchSnapshotAlertSnoozes', (firstRowIndex, lastRowIndex) =>
       supabase.from('alert_snoozes').select('*').eq('user_id', userId).order('id').range(firstRowIndex, lastRowIndex),
     ),
+    fetchEveryRow('fetchSnapshotOpportunityFilters', (firstRowIndex, lastRowIndex) =>
+      supabase
+        .from('opportunity_filters')
+        .select('*')
+        .eq('user_id', userId)
+        .order('id')
+        .range(firstRowIndex, lastRowIndex),
+    ),
+    fetchSnapshotOpportunityDecisions(supabase, userId),
   ])
 
   return {
@@ -124,5 +167,7 @@ export const buildUserDataSnapshot = async (
     interviews,
     jobSpecs: await attachJobSpecPdfs(supabase, jobSpecRows),
     alertSnoozes,
+    opportunityFilters,
+    opportunityDecisions,
   }
 }

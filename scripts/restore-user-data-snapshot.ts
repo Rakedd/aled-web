@@ -2,6 +2,7 @@ import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js'
 import type {
   UserDataSnapshot,
   UserDataSnapshotJobSpec,
+  UserDataSnapshotOpportunityDecision,
 } from '../src/server/data-snapshot/build-user-data-snapshot'
 import { JOB_SPEC_PDF_MIME_TYPE, JOB_SPECS_BUCKET, MAX_JOB_SPEC_PDF_BYTES } from '../src/domain/job-spec'
 import type { Database, Tables } from '../src/server/supabase/database-types'
@@ -17,8 +18,15 @@ const SNAPSHOT_TABLE_NAMES = {
   interviews: 'interviews',
   jobSpecs: 'job_specs',
   alertSnoozes: 'alert_snoozes',
+  opportunityFilters: 'opportunity_filters',
 } as const satisfies Record<string, keyof Database['public']['Tables']>
 const SNAPSHOT_ARRAY_KEYS = Object.keys(SNAPSHOT_TABLE_NAMES) as (keyof typeof SNAPSHOT_TABLE_NAMES)[]
+const ARRAY_KEYS_ABSENT_FROM_EARLIER_SNAPSHOTS = ['opportunityFilters', 'opportunityDecisions'] as const
+const REQUIRED_SNAPSHOT_ARRAY_KEYS = SNAPSHOT_ARRAY_KEYS.filter(
+  (snapshotArrayKey) => !(ARRAY_KEYS_ABSENT_FROM_EARLIER_SNAPSHOTS as readonly string[]).includes(snapshotArrayKey),
+)
+const OPPORTUNITY_DECISION_VALUES: readonly string[] = ['applied', 'dismissed']
+const OPPORTUNITY_KEY_SEPARATOR = '\u0000'
 const ROW_ID_LOOKUP_CHUNK_SIZE = 100
 const PARENT_DIRECTORY_SEGMENT = '..'
 const USER_NOT_FOUND_ERROR_CODE = 'user_not_found'
@@ -32,9 +40,17 @@ export const parseUserDataSnapshot = (snapshotJson: unknown): UserDataSnapshot =
     snapshotJson.formatVersion === 1 &&
     typeof snapshotJson.userId === 'string' &&
     isRecord(snapshotJson.profile) &&
-    SNAPSHOT_ARRAY_KEYS.every((snapshotArrayKey) => Array.isArray(snapshotJson[snapshotArrayKey]))
+    REQUIRED_SNAPSHOT_ARRAY_KEYS.every((snapshotArrayKey) => Array.isArray(snapshotJson[snapshotArrayKey])) &&
+    ARRAY_KEYS_ABSENT_FROM_EARLIER_SNAPSHOTS.every(
+      (snapshotArrayKey) => snapshotJson[snapshotArrayKey] === undefined || Array.isArray(snapshotJson[snapshotArrayKey]),
+    )
   if (!hasSnapshotShape) throw new Error('The file is not a Freeclutch snapshot with formatVersion 1')
-  return snapshotJson as UserDataSnapshot
+  const parsedSnapshot = snapshotJson as UserDataSnapshot
+  return {
+    ...parsedSnapshot,
+    opportunityFilters: parsedSnapshot.opportunityFilters ?? [],
+    opportunityDecisions: parsedSnapshot.opportunityDecisions ?? [],
+  }
 }
 
 const assertEveryRowBelongsToSnapshotUser = (snapshot: UserDataSnapshot): void => {
@@ -46,6 +62,28 @@ const assertEveryRowBelongsToSnapshotUser = (snapshot: UserDataSnapshot): void =
   ]
   if (snapshotRowOwnerIds.some((ownerId) => ownerId !== snapshot.userId)) {
     throw new Error('Snapshot rows must all belong to the snapshot user')
+  }
+}
+
+const isOpportunityDecisionRestorable = (
+  opportunityDecision: UserDataSnapshotOpportunityDecision,
+  snapshotJobApplicationIds: Set<string>,
+): boolean =>
+  isRecord(opportunityDecision) &&
+  typeof opportunityDecision.source === 'string' &&
+  typeof opportunityDecision.externalId === 'string' &&
+  OPPORTUNITY_DECISION_VALUES.includes(opportunityDecision.decision) &&
+  (opportunityDecision.jobApplicationId === null ||
+    snapshotJobApplicationIds.has(opportunityDecision.jobApplicationId))
+
+const assertEveryOpportunityDecisionIsRestorable = (snapshot: UserDataSnapshot): void => {
+  const snapshotJobApplicationIds = new Set(snapshot.jobApplications.map((jobApplication) => jobApplication.id))
+  if (
+    !snapshot.opportunityDecisions.every((opportunityDecision) =>
+      isOpportunityDecisionRestorable(opportunityDecision, snapshotJobApplicationIds),
+    )
+  ) {
+    throw new Error('Snapshot opportunity decisions must be valid and only reference job applications of the snapshot user')
   }
 }
 
@@ -148,11 +186,68 @@ const uploadJobSpecPdfs = async (supabase: RestoreSupabaseClient, snapshot: User
   }
 }
 
+const buildOpportunityKey = (source: string, externalId: string): string =>
+  `${source}${OPPORTUNITY_KEY_SEPARATOR}${externalId}`
+
+const findOpportunityIdsByKey = async (
+  supabase: RestoreSupabaseClient,
+  opportunityDecisions: UserDataSnapshotOpportunityDecision[],
+): Promise<Map<string, string>> => {
+  const externalIdChunks = splitIntoChunks(
+    [...new Set(opportunityDecisions.map((opportunityDecision) => opportunityDecision.externalId))],
+    ROW_ID_LOOKUP_CHUNK_SIZE,
+  )
+  const opportunityRowChunks = await Promise.all(
+    externalIdChunks.map(async (externalIdChunk) => {
+      const { data, error } = await supabase
+        .from('opportunities')
+        .select('id, source, external_id')
+        .in('external_id', externalIdChunk)
+      if (error) throw new Error(`Restore operation findOpportunities failed with code ${error.code}: ${error.message}`)
+      return data
+    }),
+  )
+  return new Map(
+    opportunityRowChunks.flat().map((opportunityRow) => [
+      buildOpportunityKey(opportunityRow.source, opportunityRow.external_id),
+      opportunityRow.id,
+    ]),
+  )
+}
+
+const restoreOpportunityDecisions = async (
+  supabase: RestoreSupabaseClient,
+  snapshot: UserDataSnapshot,
+): Promise<number> => {
+  const opportunityIdsByKey = await findOpportunityIdsByKey(supabase, snapshot.opportunityDecisions)
+  const decisionRows = snapshot.opportunityDecisions.flatMap((opportunityDecision) => {
+    const opportunityId = opportunityIdsByKey.get(
+      buildOpportunityKey(opportunityDecision.source, opportunityDecision.externalId),
+    )
+    if (opportunityId === undefined) return []
+    return [
+      {
+        user_id: snapshot.userId,
+        opportunity_id: opportunityId,
+        decision: opportunityDecision.decision,
+        job_application_id: opportunityDecision.jobApplicationId,
+        decided_at: opportunityDecision.decidedAt,
+      },
+    ]
+  })
+  failOnWriteError(
+    'upsertOpportunityDecisions',
+    await supabase.from('opportunity_decisions').upsert(decisionRows, { onConflict: 'user_id,opportunity_id' }),
+  )
+  return snapshot.opportunityDecisions.length - decisionRows.length
+}
+
 export const restoreUserDataSnapshot = async (
   supabase: RestoreSupabaseClient,
   snapshot: UserDataSnapshot,
-): Promise<void> => {
+): Promise<{ skippedOpportunityDecisionCount: number }> => {
   assertEveryRowBelongsToSnapshotUser(snapshot)
+  assertEveryOpportunityDecisionIsRestorable(snapshot)
   assertEveryJobSpecFileStaysInUserFolder(snapshot)
   await assertNoRowIdBelongsToAnotherUser(supabase, snapshot)
   await ensureSnapshotUserExists(supabase, snapshot)
@@ -171,5 +266,11 @@ export const restoreUserDataSnapshot = async (
     await supabase.from('job_specs').upsert(snapshot.jobSpecs.map(toJobSpecRow)),
   )
   failOnWriteError('upsertAlertSnoozes', await supabase.from('alert_snoozes').upsert(snapshot.alertSnoozes))
+  failOnWriteError(
+    'upsertOpportunityFilters',
+    await supabase.from('opportunity_filters').upsert(snapshot.opportunityFilters, { onConflict: 'user_id,source' }),
+  )
+  const skippedOpportunityDecisionCount = await restoreOpportunityDecisions(supabase, snapshot)
   await uploadJobSpecPdfs(supabase, snapshot)
+  return { skippedOpportunityDecisionCount }
 }

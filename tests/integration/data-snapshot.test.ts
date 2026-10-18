@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { JOB_SPECS_BUCKET } from '@/domain/job-spec'
 import { buildUserDataSnapshot, type UserDataSnapshot } from '@/server/data-snapshot/build-user-data-snapshot'
 import type { Database } from '@/server/supabase/database-types'
-import { restoreUserDataSnapshot } from '../../scripts/restore-user-data-snapshot'
+import { parseUserDataSnapshot, restoreUserDataSnapshot } from '../../scripts/restore-user-data-snapshot'
 import { createServiceRoleTestClient, createSignedInTestClient } from './create-test-user'
 import {
   seedEveryUserTable,
@@ -16,6 +16,8 @@ import {
 jest.mock('server-only', () => ({}))
 
 const USER_OWNED_TABLES_CHILDREN_FIRST = [
+  'opportunity_decisions',
+  'opportunity_filters',
   'alert_snoozes',
   'job_specs',
   'interviews',
@@ -80,6 +82,7 @@ const collectSnapshotRowOwnerIds = (snapshot: UserDataSnapshot): string[] => [
     ...snapshot.interviews,
     ...snapshot.jobSpecs,
     ...snapshot.alertSnoozes,
+    ...snapshot.opportunityFilters,
   ].map((snapshotRow) => snapshotRow.user_id),
 ]
 
@@ -87,6 +90,75 @@ const listChildEndClientsBeforeRootOnes = (endClients: UserDataSnapshot['endClie
   ...endClients.filter((endClient) => endClient.parent_end_client_id !== null),
   ...endClients.filter((endClient) => endClient.parent_end_client_id === null),
 ]
+
+type SeededOpportunities = { keptOpportunityExternalId: string; vanishingOpportunityExternalId: string; source: string }
+
+const insertOpportunity = async (
+  serviceRoleClient: SupabaseClient<Database>,
+  source: string,
+  externalId: string,
+): Promise<string> => {
+  const { data, error } = await serviceRoleClient
+    .from('opportunities')
+    .insert({
+      source,
+      external_id: externalId,
+      url: `https://opportunities.example/${externalId}`,
+      title: `Mission ${externalId}`,
+      title_normalized: `mission ${externalId}`,
+      published_at: '2026-10-15T08:00:00+00:00',
+    })
+    .select('id')
+    .single()
+  if (error) throw error
+  return data.id
+}
+
+const seedOpportunityFiltersAndDecisions = async (
+  serviceRoleClient: SupabaseClient<Database>,
+  { client, userId }: TestUser,
+  jobApplicationId: string,
+): Promise<SeededOpportunities> => {
+  const source = `snapshot-source-${randomUUID()}`
+  const keptOpportunityExternalId = `kept-${randomUUID()}`
+  const vanishingOpportunityExternalId = `vanishing-${randomUUID()}`
+  const keptOpportunityId = await insertOpportunity(serviceRoleClient, source, keptOpportunityExternalId)
+  const vanishingOpportunityId = await insertOpportunity(serviceRoleClient, source, vanishingOpportunityExternalId)
+  const { error: filterError } = await client.from('opportunity_filters').insert({
+    user_id: userId,
+    source,
+    include_keywords: ['react'],
+    always_exclude_keywords: ['stage'],
+    regions: ['Île-de-France'],
+    rate_floor_full_remote: 500,
+  })
+  if (filterError) throw filterError
+  const { error: decisionError } = await client.from('opportunity_decisions').insert([
+    {
+      user_id: userId,
+      opportunity_id: keptOpportunityId,
+      decision: 'applied',
+      job_application_id: jobApplicationId,
+      decided_at: '2026-10-16T09:00:00+00:00',
+    },
+    {
+      user_id: userId,
+      opportunity_id: vanishingOpportunityId,
+      decision: 'dismissed',
+      decided_at: '2026-10-16T10:00:00+00:00',
+    },
+  ])
+  if (decisionError) throw decisionError
+  return { keptOpportunityExternalId, vanishingOpportunityExternalId, source }
+}
+
+const createSeededUserWithOpportunities = async () => {
+  const serviceRoleClient = createServiceRoleTestClient()
+  const testUser = await createSignedInTestClient(`data-snapshot-${randomUUID()}@test.local`)
+  const { pdfStoragePath, jobApplicationId } = await seedEveryUserTable(testUser)
+  const seededOpportunities = await seedOpportunityFiltersAndDecisions(serviceRoleClient, testUser, jobApplicationId)
+  return { ...testUser, pdfStoragePath, jobApplicationId, seededOpportunities, serviceRoleClient }
+}
 
 describe('user data snapshot', () => {
   it('contains every row of the user and nothing from another user, even with the service role', async () => {
@@ -280,5 +352,163 @@ describe('user data snapshot', () => {
       .eq('id', owner.userId)
       .single()
     expect(profileAfterRefusal).toEqual({ first_name: 'Camille' })
+  })
+
+  it('exports the opportunity filters and the decisions keyed by mission, and nothing from another user', async () => {
+    const owner = await createSeededUserWithOpportunities()
+    const otherUser = await createSeededUserWithOpportunities()
+
+    const snapshot = await buildUserDataSnapshot(owner.serviceRoleClient, owner.userId)
+
+    expect(snapshot.opportunityFilters).toHaveLength(1)
+    expect(snapshot.opportunityFilters[0]).toMatchObject({
+      user_id: owner.userId,
+      source: owner.seededOpportunities.source,
+      include_keywords: ['react'],
+    })
+    expect(snapshot.opportunityDecisions).toEqual(
+      expect.arrayContaining([
+        {
+          source: owner.seededOpportunities.source,
+          externalId: owner.seededOpportunities.keptOpportunityExternalId,
+          decision: 'applied',
+          jobApplicationId: owner.jobApplicationId,
+          decidedAt: '2026-10-16T09:00:00+00:00',
+        },
+        {
+          source: owner.seededOpportunities.source,
+          externalId: owner.seededOpportunities.vanishingOpportunityExternalId,
+          decision: 'dismissed',
+          jobApplicationId: null,
+          decidedAt: '2026-10-16T10:00:00+00:00',
+        },
+      ]),
+    )
+    expect(snapshot.opportunityDecisions).toHaveLength(2)
+    expect(JSON.stringify(snapshot)).not.toContain(otherUser.userId)
+    expect(JSON.stringify(snapshot)).not.toContain(otherUser.seededOpportunities.source)
+    expect(snapshot.profile).not.toHaveProperty('opportunities_last_viewed_at')
+  })
+
+  it('restores the opportunity filters and decisions identically after the user data was deleted', async () => {
+    const owner = await createSeededUserWithOpportunities()
+    const originalSnapshot = await buildUserDataSnapshot(owner.serviceRoleClient, owner.userId)
+    await deleteEveryUserRowAndFile(owner.serviceRoleClient, owner.userId, owner.pdfStoragePath)
+
+    const { skippedOpportunityDecisionCount } = await restoreUserDataSnapshot(owner.serviceRoleClient, {
+      ...originalSnapshot,
+      endClients: listChildEndClientsBeforeRootOnes(originalSnapshot.endClients),
+    })
+
+    expect(skippedOpportunityDecisionCount).toBe(0)
+    const restoredSnapshot = await buildUserDataSnapshot(owner.serviceRoleClient, owner.userId)
+    expect({ ...restoredSnapshot, exportedAt: originalSnapshot.exportedAt }).toEqual(originalSnapshot)
+    expect(restoredSnapshot.opportunityDecisions).toHaveLength(2)
+  })
+
+  it('skips a decision whose mission no longer exists without failing the restoration', async () => {
+    const owner = await createSeededUserWithOpportunities()
+    const originalSnapshot = await buildUserDataSnapshot(owner.serviceRoleClient, owner.userId)
+    await deleteEveryUserRowAndFile(owner.serviceRoleClient, owner.userId, owner.pdfStoragePath)
+    const { error: opportunityDeletionError } = await owner.serviceRoleClient
+      .from('opportunities')
+      .delete()
+      .eq('source', owner.seededOpportunities.source)
+      .eq('external_id', owner.seededOpportunities.vanishingOpportunityExternalId)
+    expect(opportunityDeletionError).toBeNull()
+
+    const { skippedOpportunityDecisionCount } = await restoreUserDataSnapshot(owner.serviceRoleClient, {
+      ...originalSnapshot,
+      endClients: listChildEndClientsBeforeRootOnes(originalSnapshot.endClients),
+    })
+
+    expect(skippedOpportunityDecisionCount).toBe(1)
+    const restoredSnapshot = await buildUserDataSnapshot(owner.serviceRoleClient, owner.userId)
+    expect(restoredSnapshot.opportunityDecisions).toEqual(
+      originalSnapshot.opportunityDecisions.filter(
+        (decision) => decision.externalId === owner.seededOpportunities.keptOpportunityExternalId,
+      ),
+    )
+    expect(restoredSnapshot.opportunityFilters).toEqual(originalSnapshot.opportunityFilters)
+  })
+
+  it('refuses an opportunity filter of another user and a reused filter id, writing nothing', async () => {
+    const owner = await createSeededUserWithOpportunities()
+    const victim = await createSeededUserWithOpportunities()
+    const originalSnapshot = await buildUserDataSnapshot(owner.serviceRoleClient, owner.userId)
+    const victimSnapshot = await buildUserDataSnapshot(owner.serviceRoleClient, victim.userId)
+    const profileWithMarker = { ...originalSnapshot.profile, first_name: 'Modifié' }
+
+    await expect(
+      restoreUserDataSnapshot(owner.serviceRoleClient, {
+        ...originalSnapshot,
+        profile: profileWithMarker,
+        opportunityFilters: originalSnapshot.opportunityFilters.map((filter) => ({ ...filter, user_id: victim.userId })),
+      }),
+    ).rejects.toThrow('Snapshot rows must all belong to the snapshot user')
+    await expect(
+      restoreUserDataSnapshot(owner.serviceRoleClient, {
+        ...originalSnapshot,
+        profile: profileWithMarker,
+        opportunityFilters: originalSnapshot.opportunityFilters.map((filter) => ({
+          ...filter,
+          id: victimSnapshot.opportunityFilters[0].id,
+        })),
+      }),
+    ).rejects.toThrow('Snapshot row ids must not belong to another user')
+
+    const victimSnapshotAfterRefusal = await buildUserDataSnapshot(owner.serviceRoleClient, victim.userId)
+    expect({ ...victimSnapshotAfterRefusal, exportedAt: victimSnapshot.exportedAt }).toEqual(victimSnapshot)
+    const { data: profileAfterRefusal } = await owner.serviceRoleClient
+      .from('profiles')
+      .select('first_name')
+      .eq('id', owner.userId)
+      .single()
+    expect(profileAfterRefusal).toEqual({ first_name: 'Camille' })
+  })
+
+  it("refuses a decision pointing at another user's job application, writing nothing", async () => {
+    const owner = await createSeededUserWithOpportunities()
+    const victim = await createSeededUserWithOpportunities()
+    const originalSnapshot = await buildUserDataSnapshot(owner.serviceRoleClient, owner.userId)
+
+    await expect(
+      restoreUserDataSnapshot(owner.serviceRoleClient, {
+        ...originalSnapshot,
+        profile: { ...originalSnapshot.profile, first_name: 'Modifié' },
+        opportunityDecisions: originalSnapshot.opportunityDecisions.map((decision) => ({
+          ...decision,
+          jobApplicationId: victim.jobApplicationId,
+        })),
+      }),
+    ).rejects.toThrow('Snapshot opportunity decisions must be valid and only reference job applications of the snapshot user')
+
+    const { data: profileAfterRefusal } = await owner.serviceRoleClient
+      .from('profiles')
+      .select('first_name')
+      .eq('id', owner.userId)
+      .single()
+    expect(profileAfterRefusal).toEqual({ first_name: 'Camille' })
+  })
+
+  it('still parses and restores a snapshot written before the opportunity fields existed', async () => {
+    const owner = await createSeededTestUser()
+    const serviceRoleClient = createServiceRoleTestClient()
+    const currentSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    const earlierSnapshot: Partial<UserDataSnapshot> = { ...currentSnapshot }
+    delete earlierSnapshot.opportunityFilters
+    delete earlierSnapshot.opportunityDecisions
+    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner.pdfStoragePath)
+
+    const parsedSnapshot = parseUserDataSnapshot(JSON.parse(JSON.stringify(earlierSnapshot)))
+    await restoreUserDataSnapshot(serviceRoleClient, {
+      ...parsedSnapshot,
+      endClients: listChildEndClientsBeforeRootOnes(parsedSnapshot.endClients),
+    })
+
+    expect(parsedSnapshot.opportunityFilters).toEqual([])
+    expect(parsedSnapshot.opportunityDecisions).toEqual([])
+    const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    expect({ ...restoredSnapshot, exportedAt: currentSnapshot.exportedAt }).toEqual(currentSnapshot)
   })
 })

@@ -28,6 +28,8 @@ const EMPTY_SNAPSHOT: UserDataSnapshot = {
   interviews: [],
   jobSpecs: [],
   alertSnoozes: [],
+  opportunityFilters: [],
+  opportunityDecisions: [],
 }
 
 const buildFakeClient = (getUserByIdResult: { data: { user: null }; error: { status: number; code: string; message: string } }) => {
