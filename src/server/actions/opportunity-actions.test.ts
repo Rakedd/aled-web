@@ -95,15 +95,38 @@ describe('dismissOpportunity', () => {
 
 describe('listOpportunities', () => {
   it.each([
-    ['an unknown tab', 'archived', 1],
-    ['a page below 1', 'to_process', 0],
-    ['a fractional page', 'to_process', 1.5],
-  ])('rejects %s without querying the database', async (_caseName, tab, page) => {
-    await expect(listOpportunities(tab as 'to_process', page)).resolves.toEqual({
+    ['an unknown tab', 'archived', null],
+    ['a page number', 'to_process', 2],
+    ['a cursor with an invalid id', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: '42' }],
+  ])('rejects %s without querying the database', async (_caseName, tab, cursor) => {
+    await expect(
+      listOpportunities(tab as 'to_process', cursor as { publishedAt: string; id: string } | null),
+    ).resolves.toEqual({
       ok: false,
       errorMessage: 'Onglet ou page invalide',
     })
     expect(buildOpportunityListing).not.toHaveBeenCalled()
+  })
+
+  it('lists the items after the cursor for the authenticated user', async () => {
+    const listing = {
+      items: [],
+      hasMore: false,
+      counts: { to_process: 0, applied: 0, dismissed: 0 },
+      lastReceivedAt: null,
+      lastViewedAt: null,
+    }
+    jest.mocked(buildOpportunityListing).mockResolvedValue(listing)
+
+    await expect(
+      listOpportunities('to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: opportunityId }),
+    ).resolves.toEqual({ ok: true, data: listing })
+    expect(buildOpportunityListing).toHaveBeenCalledWith(
+      fakeSupabaseClient,
+      'user-1',
+      { tab: 'to_process', after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: opportunityId } },
+      expect.any(Date),
+    )
   })
 })
 

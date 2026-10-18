@@ -222,18 +222,33 @@ describe('isRemoteMode', () => {
 })
 
 describe('validateOpportunityListingRequest', () => {
-  it('accepts a known tab with a page from 1', () => {
-    expect(validateOpportunityListingRequest('dismissed', 3)).toEqual({ ok: true, data: { tab: 'dismissed', page: 3 } })
+  const cursorId = '6f1f4f7e-2f8c-4c55-9f0e-1b2c3d4e5f60'
+
+  it('accepts a known tab without cursor', () => {
+    expect(validateOpportunityListingRequest('dismissed', null)).toEqual({
+      ok: true,
+      data: { tab: 'dismissed', after: null },
+    })
+  })
+
+  it('accepts a known tab with the position of the last loaded item', () => {
+    expect(
+      validateOpportunityListingRequest('applied', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId }),
+    ).toEqual({
+      ok: true,
+      data: { tab: 'applied', after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: cursorId } },
+    })
   })
 
   it.each([
-    ['an unknown tab', 'archived', 1],
-    ['a page of 0', 'to_process', 0],
-    ['a fractional page', 'applied', 1.5],
-    ['a page given as text', 'applied', '2'],
-    ['an infinite page', 'applied', Number.POSITIVE_INFINITY],
-  ])('rejects %s', (_caseName, tab, page) => {
-    expect(validateOpportunityListingRequest(tab, page)).toEqual({
+    ['an unknown tab', 'archived', null],
+    ['a page number instead of a cursor', 'to_process', 2],
+    ['a cursor without id', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z' }],
+    ['a cursor with an id that is not a uuid', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: '42' }],
+    ['a cursor with an invalid date', 'applied', { publishedAt: 'hier', id: cursorId }],
+    ['a cursor with a date given as number', 'applied', { publishedAt: 1760691600000, id: cursorId }],
+  ])('rejects %s', (_caseName, tab, cursor) => {
+    expect(validateOpportunityListingRequest(tab, cursor)).toEqual({
       ok: false,
       errorMessage: 'Onglet ou page invalide',
     })

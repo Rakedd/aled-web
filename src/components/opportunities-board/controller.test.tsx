@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ActionResult } from '@/domain/action-result'
-import type { OpportunityListing, OpportunityListItem } from '@/domain/opportunities'
+import type { OpportunityListing, OpportunityListingCursor, OpportunityListItem } from '@/domain/opportunities'
 import { useController } from './controller'
 
 const buildOpportunity = (id: string, overrides: Partial<OpportunityListItem> = {}): OpportunityListItem => ({
@@ -129,25 +129,55 @@ describe('opportunities-board useController', () => {
     expect(listOpportunities).not.toHaveBeenCalled()
   })
 
-  it('refetches the current page after a decision so no item is skipped', async () => {
-    const serverItems = Array.from({ length: 51 }, (_, index) => buildOpportunity(`item-${index}`))
-    const serverPage = (removedIds: string[], page: number) => {
-      const liveItems = serverItems.filter(({ id }) => !removedIds.includes(id))
-      const pageItems = liveItems.slice((page - 1) * 50, page * 50)
-      return succeeded(buildListing({ items: pageItems, hasMore: liveItems.length > page * 50 }))
+  it('never skips an item when « Voir plus » follows many dismissals', async () => {
+    const serverItems = Array.from({ length: 120 }, (_, index) =>
+      buildOpportunity(`item-${String(index).padStart(3, '0')}`, {
+        publishedAt: new Date(Date.UTC(2026, 9, 18, 8) - index * 60_000),
+      }),
+    )
+    const dismissedIds = new Set<string>()
+    const isAfterCursor = (item: OpportunityListItem, cursor: OpportunityListingCursor | null): boolean =>
+      cursor === null ||
+      item.publishedAt.getTime() < new Date(cursor.publishedAt).getTime() ||
+      (item.publishedAt.getTime() === new Date(cursor.publishedAt).getTime() && item.id < cursor.id)
+    const serverPage = (cursor: OpportunityListingCursor | null) => {
+      const remainingItems = serverItems.filter(({ id }) => !dismissedIds.has(id))
+      const itemsAfterCursor = remainingItems.filter((item) => isAfterCursor(item, cursor))
+      return succeeded(buildListing({ items: itemsAfterCursor.slice(0, 50), hasMore: itemsAfterCursor.length > 50 }))
     }
     const { result, listOpportunities, dismissOpportunity } = renderBoardController({
       items: serverItems.slice(0, 50),
-      counts: { to_process: 51, applied: 0, dismissed: 0 },
+      counts: { to_process: 120, applied: 0, dismissed: 0 },
     })
-    listOpportunities.mockImplementation((_tab, page) => Promise.resolve(serverPage(['item-0'], page)))
-    await act(() => result.current.dismiss(result.current.items[0]))
-    expect(dismissOpportunity).toHaveBeenCalledWith('item-0')
+    listOpportunities.mockImplementation((_tab, cursor: OpportunityListingCursor | null) =>
+      Promise.resolve(serverPage(cursor)),
+    )
+    dismissOpportunity.mockImplementation((opportunityId: string) => {
+      dismissedIds.add(opportunityId)
+      return Promise.resolve(succeeded(null))
+    })
+    const dismissFirstVisibleItems = async (count: number) => {
+      for (const item of result.current.items.slice(0, count)) {
+        await act(() => result.current.dismiss(item))
+      }
+    }
+
+    await dismissFirstVisibleItems(45)
     await act(() => result.current.loadMore())
-    expect(listOpportunities).toHaveBeenCalledWith('to_process', 1)
-    expect(listOpportunities).toHaveBeenCalledWith('to_process', 2)
-    expect(result.current.items.map(({ id }) => id)).toContain('item-50')
-    expect(result.current.items).toHaveLength(50)
+    await dismissFirstVisibleItems(45)
+    await act(() => result.current.loadMore())
+
+    expect(listOpportunities).toHaveBeenNthCalledWith(1, 'to_process', {
+      publishedAt: serverItems[49].publishedAt.toISOString(),
+      id: 'item-049',
+    })
+    expect(listOpportunities).toHaveBeenNthCalledWith(2, 'to_process', {
+      publishedAt: serverItems[99].publishedAt.toISOString(),
+      id: 'item-099',
+    })
+    const remainingIds = serverItems.map(({ id }) => id).filter((id) => !dismissedIds.has(id))
+    expect(dismissedIds.size).toBe(90)
+    expect(result.current.items.map(({ id }) => id)).toEqual(remainingIds)
     expect(result.current.hasMore).toBe(false)
   })
 
@@ -220,7 +250,10 @@ describe('opportunities-board useController', () => {
       succeeded(buildListing({ items: [buildOpportunity('third')], hasMore: false })),
     )
     await act(() => result.current.loadMore())
-    expect(listOpportunities).toHaveBeenCalledWith('to_process', 2)
+    expect(listOpportunities).toHaveBeenCalledWith('to_process', {
+      publishedAt: '2026-10-18T08:00:00.000Z',
+      id: 'second',
+    })
     expect(result.current.items.map(({ id }) => id)).toEqual(['first', 'second', 'third'])
     expect(result.current.hasMore).toBe(false)
   })
@@ -237,7 +270,7 @@ describe('opportunities-board useController', () => {
       ),
     )
     await act(() => result.current.selectTab('applied'))
-    expect(listOpportunities).toHaveBeenCalledWith('applied', 1)
+    expect(listOpportunities).toHaveBeenCalledWith('applied', null)
     expect(result.current.tab).toBe('applied')
     expect(result.current.items.map(({ id }) => id)).toEqual(['done'])
     expect(onTabChanged).toHaveBeenCalledWith('applied')

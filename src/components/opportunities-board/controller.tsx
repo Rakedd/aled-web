@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
-import type { OpportunityListItem, OpportunityListing, OpportunityTab } from '@/domain/opportunities'
+import type {
+  OpportunityListingCursor,
+  OpportunityListItem,
+  OpportunityListing,
+  OpportunityTab,
+} from '@/domain/opportunities'
 import type { OpportunitiesBoardControllerParameters } from './interfaces'
 
 type OpportunityCounts = OpportunityListing['counts']
@@ -10,6 +15,11 @@ const shiftCount = (counts: OpportunityCounts, from: OpportunityTab, to: Opportu
   [from]: Math.max(0, counts[from] - 1),
   [to]: counts[to] + 1,
 })
+
+const toListingCursor = (items: OpportunityListItem[]): OpportunityListingCursor | null => {
+  const lastItem = items.at(-1)
+  return lastItem === undefined ? null : { publishedAt: lastItem.publishedAt.toISOString(), id: lastItem.id }
+}
 
 export const useController = ({
   initialTab,
@@ -27,7 +37,6 @@ export const useController = ({
   const [loadedItems, setLoadedItems] = useState(initialListing.items)
   const [hasMore, setHasMore] = useState(initialListing.hasMore)
   const [counts, setCounts] = useState(initialListing.counts)
-  const [currentPage, setCurrentPage] = useState(1)
   const [removedOpportunityIds, setRemovedOpportunityIds] = useState<string[]>([])
   const [pendingOpportunityIds, setPendingOpportunityIds] = useState<string[]>([])
   const [isLoadingListing, setIsLoadingListing] = useState(false)
@@ -35,7 +44,6 @@ export const useController = ({
   const inFlightOpportunityIds = useRef(new Set<string>())
   const isListingRequestInFlight = useRef(false)
   const hasMarkedViewed = useRef(false)
-  const decisionCountSinceLoad = useRef(0)
 
   useEffect(() => {
     if (hasMarkedViewed.current) return
@@ -89,7 +97,6 @@ export const useController = ({
       ),
     )
     setCounts((currentCounts) => shiftCount(currentCounts, 'to_process', 'applied'))
-    decisionCountSinceLoad.current += 1
     onDataChanged()
   }
 
@@ -104,7 +111,6 @@ export const useController = ({
     const actionResult = await runOpportunityAction(opportunity.id, serverAction)
     if (actionResult === null) return
     if (actionResult.ok) {
-      decisionCountSinceLoad.current += 1
       onDataChanged()
       return
     }
@@ -121,14 +127,14 @@ export const useController = ({
 
   const fetchListing = async (
     requestedTab: OpportunityTab,
-    page: number,
+    cursor: OpportunityListingCursor | null,
   ): Promise<ActionResult<OpportunityListing> | null> => {
     if (isListingRequestInFlight.current) return null
     isListingRequestInFlight.current = true
     setIsLoadingListing(true)
     setErrorMessage(null)
     try {
-      return await listOpportunities(requestedTab, page)
+      return await listOpportunities(requestedTab, cursor)
     } catch {
       return { ok: false, errorMessage: GENERIC_ACTION_ERROR_MESSAGE }
     } finally {
@@ -139,7 +145,7 @@ export const useController = ({
 
   const selectTab = async (nextTab: OpportunityTab) => {
     if (nextTab === tab || inFlightOpportunityIds.current.size > 0) return
-    const actionResult = await fetchListing(nextTab, 1)
+    const actionResult = await fetchListing(nextTab, null)
     if (actionResult === null) return
     if (!actionResult.ok) {
       setErrorMessage(actionResult.errorMessage)
@@ -149,32 +155,19 @@ export const useController = ({
     setLoadedItems(actionResult.data.items)
     setHasMore(actionResult.data.hasMore)
     setCounts(actionResult.data.counts)
-    setCurrentPage(1)
     setRemovedOpportunityIds([])
-    decisionCountSinceLoad.current = 0
     onTabChanged(nextTab)
   }
 
   const loadMore = async () => {
-    const shouldRefetchCurrentPage = decisionCountSinceLoad.current > 0
-    const fetchedListings: OpportunityListing[] = []
-    const pagesToFetch = shouldRefetchCurrentPage ? [currentPage, currentPage + 1] : [currentPage + 1]
-    for (const page of pagesToFetch) {
-      const actionResult = await fetchListing(tab, page)
-      if (actionResult === null) return
-      if (!actionResult.ok) {
-        setErrorMessage(actionResult.errorMessage)
-        return
-      }
-      fetchedListings.push(actionResult.data)
+    const actionResult = await fetchListing(tab, toListingCursor(loadedItems))
+    if (actionResult === null) return
+    if (!actionResult.ok) {
+      setErrorMessage(actionResult.errorMessage)
+      return
     }
-    const fetchedItems = fetchedListings.flatMap(({ items: pageItems }) => pageItems)
-    setLoadedItems((currentItems) => {
-      const knownIds = new Set(currentItems.map(({ id }) => id))
-      return [...currentItems, ...fetchedItems.filter(({ id }) => !knownIds.has(id))]
-    })
-    setHasMore(fetchedListings[fetchedListings.length - 1].hasMore)
-    setCurrentPage((page) => page + 1)
+    setLoadedItems((currentItems) => [...currentItems, ...actionResult.data.items])
+    setHasMore(actionResult.data.hasMore)
   }
 
   return {

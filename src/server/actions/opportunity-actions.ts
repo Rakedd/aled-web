@@ -5,6 +5,7 @@ import type { ActionResult } from '@/domain/action-result'
 import {
   HISTORY_WINDOW_DAYS,
   type OpportunityListing,
+  type OpportunityListingCursor,
   type OpportunitySource,
   type OpportunityTab,
   validateOpportunityId,
@@ -33,12 +34,12 @@ const FILTERS_SAVE_FAILURE_MESSAGE = "Impossible d'enregistrer tes filtres pour 
 
 export const listOpportunities = async (
   tab: OpportunityTab,
-  page: number,
+  cursor: OpportunityListingCursor | null,
 ): Promise<ActionResult<OpportunityListing>> =>
   runAuthenticatedOperation({
     operationName: 'listOpportunities',
     failureMessage: LOAD_FAILURE_MESSAGE,
-    validateArguments: () => validateOpportunityListingRequest(tab, page),
+    validateArguments: () => validateOpportunityListingRequest(tab, cursor),
     operation: async (supabase, userId, listingRequest) => ({
       ok: true,
       data: await buildOpportunityListing(supabase, userId, listingRequest, new Date()),

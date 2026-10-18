@@ -1,6 +1,6 @@
 import { formatInTimeZone } from 'date-fns-tz'
 import type { ActionResult } from './action-result'
-import { rejectWith, validateUuid } from './input-validation'
+import { isRecord, isUuid, rejectWith, validateUuid } from './input-validation'
 import {
   JOB_APPLICATION_TEXT_FIELD_RULES,
   type JobApplicationInput,
@@ -79,7 +79,11 @@ export const OPPORTUNITY_VALIDATION_MESSAGES = {
   invalidListingRequest: 'Onglet ou page invalide',
 } as const
 
-export type OpportunityListingRequest = { tab: OpportunityTab; page: number }
+export type OpportunityListingCursor = { publishedAt: string; id: string }
+
+export type OpportunityListingPosition = { publishedAt: Date; id: string }
+
+export type OpportunityListingRequest = { tab: OpportunityTab; after: OpportunityListingPosition | null }
 
 const UNDISCLOSED_RATE_LABEL = 'Non communiqué'
 const FEED_WATCH_START_HOUR = 9
@@ -103,13 +107,23 @@ export const validateOpportunitySource = (candidate: unknown): ActionResult<Oppo
     ? { ok: true, data: candidate }
     : rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.unknownSource)
 
+const toListingPosition = (cursor: unknown): OpportunityListingPosition | null => {
+  if (!isRecord(cursor) || typeof cursor.publishedAt !== 'string' || !isUuid(cursor.id)) return null
+  const publishedAt = new Date(cursor.publishedAt)
+  return Number.isNaN(publishedAt.getTime()) ? null : { publishedAt, id: cursor.id.toLowerCase() }
+}
+
 export const validateOpportunityListingRequest = (
   tab: unknown,
-  page: unknown,
-): ActionResult<OpportunityListingRequest> =>
-  isOpportunityTab(tab) && typeof page === 'number' && Number.isSafeInteger(page) && page >= 1
-    ? { ok: true, data: { tab, page } }
-    : rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.invalidListingRequest)
+  cursor: unknown,
+): ActionResult<OpportunityListingRequest> => {
+  if (!isOpportunityTab(tab)) return rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.invalidListingRequest)
+  if (cursor === null) return { ok: true, data: { tab, after: null } }
+  const after = toListingPosition(cursor)
+  return after === null
+    ? rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.invalidListingRequest)
+    : { ok: true, data: { tab, after } }
+}
 
 export const getOpportunityEffectiveRate = (opportunity: Pick<Opportunity, 'rateMin' | 'rateMax'>): number | null =>
   opportunity.rateMax ?? opportunity.rateMin

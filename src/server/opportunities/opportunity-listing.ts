@@ -6,6 +6,7 @@ import {
   OPPORTUNITY_SOURCES,
   type OpportunityDecision,
   type OpportunityListing,
+  type OpportunityListingPosition,
   type OpportunityListingRequest,
   type OpportunityListItem,
   type OpportunitySource,
@@ -59,33 +60,52 @@ const buildSourceAwareMatcher = (
   return (summary) => matcherBySource.get(summary.source)?.(summary) ?? false
 }
 
-const selectOpportunityIdsToProcess = ({ recentSummaries, decisions, filtersBySource }: ToProcessContext): string[] => {
-  const decidedOpportunityIds = new Set(decisions.map((storedDecision) => storedDecision.opportunityId))
-  const matchesUserFilters = buildSourceAwareMatcher(filtersBySource)
-  return recentSummaries
-    .filter((summary) => !decidedOpportunityIds.has(summary.id) && matchesUserFilters(summary))
-    .map((summary) => summary.id)
+const compareByPublicationDescending = (
+  firstPosition: OpportunityListingPosition,
+  secondPosition: OpportunityListingPosition,
+): number => {
+  const publicationDifference = secondPosition.publishedAt.getTime() - firstPosition.publishedAt.getTime()
+  if (publicationDifference !== 0) return publicationDifference
+  if (firstPosition.id === secondPosition.id) return 0
+  return firstPosition.id < secondPosition.id ? 1 : -1
 }
 
-const compareByPublicationDescending = (
-  firstDecision: StoredOpportunityDecision,
-  secondDecision: StoredOpportunityDecision,
-): number =>
-  secondDecision.opportunityPublishedAt.getTime() - firstDecision.opportunityPublishedAt.getTime() ||
-  secondDecision.opportunityId.localeCompare(firstDecision.opportunityId)
+const toSortedUniquePositions = (positions: OpportunityListingPosition[]): OpportunityListingPosition[] =>
+  [...new Map(positions.map((position) => [position.id, position])).values()].sort(compareByPublicationDescending)
 
-const selectDecidedOpportunityIds = (
+const selectPositionsToProcess = ({
+  recentSummaries,
+  decisions,
+  filtersBySource,
+}: ToProcessContext): OpportunityListingPosition[] => {
+  const decidedOpportunityIds = new Set(decisions.map((storedDecision) => storedDecision.opportunityId))
+  const matchesUserFilters = buildSourceAwareMatcher(filtersBySource)
+  return toSortedUniquePositions(
+    recentSummaries
+      .filter((summary) => !decidedOpportunityIds.has(summary.id) && matchesUserFilters(summary))
+      .map(({ id, publishedAt }) => ({ id, publishedAt })),
+  )
+}
+
+const selectDecidedPositions = (
   decisions: StoredOpportunityDecision[],
   decision: OpportunityDecision,
   publishedSince: Date,
-): string[] =>
-  decisions
-    .filter(
-      (storedDecision) =>
-        storedDecision.decision === decision && storedDecision.opportunityPublishedAt >= publishedSince,
-    )
-    .sort(compareByPublicationDescending)
-    .map((storedDecision) => storedDecision.opportunityId)
+): OpportunityListingPosition[] =>
+  toSortedUniquePositions(
+    decisions
+      .filter(
+        (storedDecision) =>
+          storedDecision.decision === decision && storedDecision.opportunityPublishedAt >= publishedSince,
+      )
+      .map((storedDecision) => ({ id: storedDecision.opportunityId, publishedAt: storedDecision.opportunityPublishedAt })),
+  )
+
+const selectPositionsAfter = (
+  positions: OpportunityListingPosition[],
+  after: OpportunityListingPosition | null,
+): OpportunityListingPosition[] =>
+  after === null ? positions : positions.filter((position) => compareByPublicationDescending(position, after) > 0)
 
 const toListItems = (
   pageOpportunityIds: string[],
@@ -114,12 +134,12 @@ export const countOpportunitiesToProcessForUser = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   now: Date,
-): Promise<number> => selectOpportunityIdsToProcess(await loadToProcessContext(supabase, userId, now)).length
+): Promise<number> => selectPositionsToProcess(await loadToProcessContext(supabase, userId, now)).length
 
 export const buildOpportunityListing = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
-  { tab, page }: OpportunityListingRequest,
+  { tab, after }: OpportunityListingRequest,
   now: Date,
 ): Promise<OpportunityListing> => {
   const [toProcessContext, lastReceivedAt, lastViewedAt] = await Promise.all([
@@ -128,22 +148,21 @@ export const buildOpportunityListing = async (
     findOpportunitiesLastViewedAt(supabase, userId),
   ])
   const historyStart = addParisCalendarDays(now, -HISTORY_WINDOW_DAYS)
-  const opportunityIdsByTab: Record<OpportunityTab, string[]> = {
-    to_process: selectOpportunityIdsToProcess(toProcessContext),
-    applied: selectDecidedOpportunityIds(toProcessContext.decisions, 'applied', historyStart),
-    dismissed: selectDecidedOpportunityIds(toProcessContext.decisions, 'dismissed', historyStart),
+  const positionsByTab: Record<OpportunityTab, OpportunityListingPosition[]> = {
+    to_process: selectPositionsToProcess(toProcessContext),
+    applied: selectDecidedPositions(toProcessContext.decisions, 'applied', historyStart),
+    dismissed: selectDecidedPositions(toProcessContext.decisions, 'dismissed', historyStart),
   }
-  const firstPageIndex = (page - 1) * OPPORTUNITY_PAGE_SIZE
-  const nextPageIndex = firstPageIndex + OPPORTUNITY_PAGE_SIZE
-  const pageOpportunityIds = opportunityIdsByTab[tab].slice(firstPageIndex, nextPageIndex)
+  const positionsAfterCursor = selectPositionsAfter(positionsByTab[tab], after)
+  const pageOpportunityIds = positionsAfterCursor.slice(0, OPPORTUNITY_PAGE_SIZE).map(({ id }) => id)
   const pageOpportunities = await listOpportunitiesByIds(supabase, pageOpportunityIds)
   return {
     items: toListItems(pageOpportunityIds, pageOpportunities, toProcessContext.decisions),
-    hasMore: opportunityIdsByTab[tab].length > nextPageIndex,
+    hasMore: positionsAfterCursor.length > OPPORTUNITY_PAGE_SIZE,
     counts: {
-      to_process: opportunityIdsByTab.to_process.length,
-      applied: opportunityIdsByTab.applied.length,
-      dismissed: opportunityIdsByTab.dismissed.length,
+      to_process: positionsByTab.to_process.length,
+      applied: positionsByTab.applied.length,
+      dismissed: positionsByTab.dismissed.length,
     },
     lastReceivedAt,
     lastViewedAt,
