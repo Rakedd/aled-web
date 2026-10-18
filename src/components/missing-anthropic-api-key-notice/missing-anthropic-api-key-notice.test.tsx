@@ -6,8 +6,8 @@ describe('MissingAnthropicApiKeyNotice', () => {
     render(<MissingAnthropicApiKeyNotice featureDescription="le pré-remplissage" />)
 
     expect(screen.getByRole('note')).toHaveTextContent(
-      'Ajoute ta clé Claude dans les réglages pour activer le pré-remplissage.',
+      'Ajoute ta clé Claude dans tes préférences pour activer le pré-remplissage.',
     )
-    expect(screen.getByRole('link', { name: 'réglages' })).toHaveAttribute('href', '/settings')
+    expect(screen.getByRole('link', { name: 'préférences' })).toHaveAttribute('href', '/preferences')
   })
 })

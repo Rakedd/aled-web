@@ -61,7 +61,7 @@ describe('validateProfileSettingsInput', () => {
   it.each([null, 'settings', { firstName: 'Ada' }, { ...validProfileSettingsInput, links: 'https://example.com' }])(
     'rejects the malformed payload %p',
     (malformedPayload) => {
-      expect(validateProfileSettingsInput(malformedPayload)).toEqual({ ok: false, errorMessage: 'Réglages invalides' })
+      expect(validateProfileSettingsInput(malformedPayload)).toEqual({ ok: false, errorMessage: 'Préférences invalides' })
     },
   )
 })

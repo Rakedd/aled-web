@@ -82,7 +82,7 @@ describe('OpportunitiesBoard', () => {
     expect(screen.getByText(/Rien de nouveau qui correspond à tes filtres/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /filtres Free-Work/ })).toHaveAttribute(
       'href',
-      '/settings/opportunites/free-work',
+      '/preferences/opportunites/free-work',
     )
   })
 

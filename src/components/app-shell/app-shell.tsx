@@ -3,23 +3,28 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { CALENDAR_ROUTE, HOME_ROUTE, JOB_APPLICATIONS_ROUTE, OPPORTUNITIES_ROUTE, PREFERENCES_ROUTE } from '@/domain/routes'
 import { cn } from '@/lib/utils'
 import type { AppShellNavigationItem, AppShellProps } from './interfaces'
 
 const NAVIGATION_ITEMS: AppShellNavigationItem[] = [
   {
-    label: 'Candidatures',
-    href: '/',
-    isActiveForPathname: (pathname) => pathname === '/' || pathname.startsWith('/candidatures'),
+    label: 'Mes candidatures',
+    href: JOB_APPLICATIONS_ROUTE,
+    isActiveForPathname: (pathname) => pathname.startsWith(JOB_APPLICATIONS_ROUTE),
   },
+  { label: 'Mon calendrier', href: CALENDAR_ROUTE, isActiveForPathname: (pathname) => pathname.startsWith(CALENDAR_ROUTE) },
   {
-    label: 'Opportunités',
-    href: '/opportunites',
-    isActiveForPathname: (pathname) => pathname.startsWith('/opportunites'),
+    label: 'Mes opportunités',
+    href: OPPORTUNITIES_ROUTE,
+    isActiveForPathname: (pathname) => pathname.startsWith(OPPORTUNITIES_ROUTE),
     showsOpportunitiesToProcessCount: true,
   },
-  { label: 'Calendrier', href: '/calendar', isActiveForPathname: (pathname) => pathname.startsWith('/calendar') },
-  { label: 'Réglages', href: '/settings', isActiveForPathname: (pathname) => pathname.startsWith('/settings') },
+  {
+    label: 'Préférences',
+    href: PREFERENCES_ROUTE,
+    isActiveForPathname: (pathname) => pathname.startsWith(PREFERENCES_ROUTE),
+  },
 ]
 
 export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, children }: AppShellProps) => {
@@ -29,7 +34,7 @@ export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, chil
     <div className="flex min-h-full flex-1 flex-col">
       <header className="border-b">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-          <Link href="/" className="text-lg font-semibold">
+          <Link href={HOME_ROUTE} className="text-lg font-semibold">
             Freeclutch
           </Link>
           <nav aria-label="Navigation principale" className="order-last w-full sm:order-none sm:w-auto">

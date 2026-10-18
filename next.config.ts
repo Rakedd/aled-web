@@ -9,6 +9,10 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  redirects: async () => [
+    { source: "/settings", destination: "/preferences", permanent: true },
+    { source: "/settings/:path*", destination: "/preferences/:path*", permanent: true },
+  ],
   headers: async () => [{ source: "/:path*", headers: SECURITY_HEADERS }],
   experimental: {
     serverActions: { bodySizeLimit: "5mb" },

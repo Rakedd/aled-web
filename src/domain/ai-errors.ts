@@ -9,8 +9,8 @@ export type AiErrorKind =
 
 export const AI_ERROR_MESSAGES: Record<AiErrorKind, string> = {
   missing_api_key:
-    'Ajoute ta clé Claude dans les réglages pour activer le pré-remplissage. Tu peux saisir à la main en attendant.',
-  invalid_api_key: 'Ta clé Claude est invalide ou sans crédit, remplace-la dans les réglages.',
+    'Ajoute ta clé Claude dans tes préférences pour activer le pré-remplissage. Tu peux saisir à la main en attendant.',
+  invalid_api_key: 'Ta clé Claude est invalide ou sans crédit, remplace-la dans tes préférences.',
   rate_limited: 'Claude est saturé, réessaie dans une minute.',
   refused: "Claude n'a pas pu traiter ce texte. Saisis les champs à la main.",
   timeout: "Claude n'a pas répondu à temps, réessaie.",

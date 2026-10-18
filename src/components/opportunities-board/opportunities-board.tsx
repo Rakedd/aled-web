@@ -6,6 +6,7 @@ import { OpportunityCard } from '@/components/opportunity-card'
 import { OpportunityFeedFreshness } from '@/components/opportunity-feed-freshness'
 import { Button } from '@/components/ui/button'
 import { OPPORTUNITY_TABS, type OpportunityTab } from '@/domain/opportunities'
+import { FREE_WORK_PREFERENCES_ROUTE } from '@/domain/routes'
 import { cn } from '@/lib/utils'
 import { useController } from './controller'
 import type { OpportunitiesBoardProps } from './interfaces'
@@ -54,7 +55,7 @@ export const OpportunitiesBoard = ({
     return (
       <p className="text-sm text-muted-foreground">
         Rien de nouveau qui correspond à tes filtres.{' '}
-        <Link href="/settings/opportunites/free-work" className="underline underline-offset-4">
+        <Link href={FREE_WORK_PREFERENCES_ROUTE} className="underline underline-offset-4">
           Ajuster mes filtres Free-Work
         </Link>
       </p>

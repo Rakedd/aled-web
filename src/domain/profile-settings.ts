@@ -24,7 +24,7 @@ const MAXIMUM_LINK_LABEL_LENGTH = 50
 const MAXIMUM_LINK_URL_LENGTH = 2048
 
 export const PROFILE_SETTINGS_VALIDATION_MESSAGES = {
-  malformedPayload: 'Réglages invalides',
+  malformedPayload: 'Préférences invalides',
   nameTooLong: `Nom et prénom : ${MAXIMUM_NAME_LENGTH} caractères maximum`,
   followUpDelayOutOfRange: `Entre ${MINIMUM_FOLLOW_UP_DELAY_DAYS} et ${MAXIMUM_FOLLOW_UP_DELAY_DAYS} jours`,
   tooManyLinks: `${MAXIMUM_PROFILE_LINK_COUNT} liens maximum`,

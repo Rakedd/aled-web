@@ -63,7 +63,7 @@ describe('DeleteJobApplicationButton controller', () => {
     expect(deleteJobApplication).toHaveBeenCalledTimes(1)
     expect(deleteJobApplication).toHaveBeenCalledWith(JOB_APPLICATION_ID)
     expect(navigate).toHaveBeenCalledTimes(1)
-    expect(navigate).toHaveBeenCalledWith('/?supprimee=1')
+    expect(navigate).toHaveBeenCalledWith('/candidatures?supprimee=1')
     expect(result.current.isDeleting).toBe(true)
   })
 
@@ -107,7 +107,7 @@ describe('DeleteJobApplicationButton controller', () => {
     await act(() => result.current.confirmDeletion())
 
     expect(deleteJobApplication).toHaveBeenCalledTimes(2)
-    expect(navigate).toHaveBeenCalledWith('/?supprimee=1')
+    expect(navigate).toHaveBeenCalledWith('/candidatures?supprimee=1')
   })
 
   it('shows the generic message when the action throws', async () => {

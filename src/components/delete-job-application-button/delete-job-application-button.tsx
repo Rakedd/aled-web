@@ -16,7 +16,7 @@ export const DeleteJobApplicationButton = (controllerParameters: DeleteJobApplic
     isDeleting,
     confirmLabel,
     errorMessage,
-  } = useController({ ...controllerParameters, navigate: router.push })
+  } = useController({ ...controllerParameters, navigate: (route) => router.replace(route) })
 
   return (
     <div className="flex border-t pt-6">

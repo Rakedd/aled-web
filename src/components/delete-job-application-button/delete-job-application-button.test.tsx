@@ -2,9 +2,9 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { DeleteJobApplicationButton } from './delete-job-application-button'
 
-const mockedPush = jest.fn()
+const mockedReplace = jest.fn()
 
-jest.mock('next/navigation', () => ({ useRouter: () => ({ push: mockedPush }) }))
+jest.mock('next/navigation', () => ({ useRouter: () => ({ replace: mockedReplace }) }))
 
 const JOB_APPLICATION_ID = '4f1e0a52-1b3c-4d5e-8f60-71829304a5b6'
 
@@ -42,6 +42,6 @@ describe('DeleteJobApplicationButton', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Supprimer' }))
 
     expect(deleteJobApplication).toHaveBeenCalledWith(JOB_APPLICATION_ID)
-    expect(mockedPush).toHaveBeenCalledWith('/?supprimee=1')
+    expect(mockedReplace).toHaveBeenCalledWith('/candidatures?supprimee=1')
   })
 })

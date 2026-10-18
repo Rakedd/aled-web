@@ -10,14 +10,14 @@ import {
   updateProfileSettings,
 } from '@/server/actions/settings-actions'
 
-export const metadata: Metadata = { title: 'Réglages · Freeclutch' }
+export const metadata: Metadata = { title: 'Préférences · Freeclutch' }
 
 const SettingsPage = async () => {
   const profileSettingsResult = await getProfileSettings()
 
   return (
     <div className="flex w-full max-w-2xl flex-col gap-10">
-      <h1 className="text-2xl font-semibold">Réglages</h1>
+      <h1 className="text-2xl font-semibold">Préférences</h1>
       <SettingsNavigation />
       {!profileSettingsResult.ok ? (
         <p role="alert" className="text-sm text-destructive">

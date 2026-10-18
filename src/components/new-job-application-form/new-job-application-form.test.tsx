@@ -24,8 +24,8 @@ describe('NewJobApplicationForm', () => {
     renderNewJobApplicationForm({ hasAnthropicApiKey: false })
 
     expect(screen.getByRole('button', { name: 'Pré-remplir' })).toBeDisabled()
-    expect(screen.getByRole('note')).toHaveTextContent('Ajoute ta clé Claude dans les réglages pour activer')
-    expect(screen.getByRole('link', { name: 'réglages' })).toHaveAttribute('href', '/settings')
+    expect(screen.getByRole('note')).toHaveTextContent('Ajoute ta clé Claude dans tes préférences pour activer')
+    expect(screen.getByRole('link', { name: 'préférences' })).toHaveAttribute('href', '/preferences')
     await userEvent.click(screen.getByRole('button', { name: 'Saisie manuelle' }))
     expect(screen.getByLabelText('Titre de la mission *')).toBeInTheDocument()
   })

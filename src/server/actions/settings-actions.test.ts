@@ -55,7 +55,7 @@ describe('getProfileSettings', () => {
     jest.mocked(findProfileSettings).mockRejectedValue(new Error('Profile repository failed'))
     await expect(getProfileSettings()).resolves.toEqual({
       ok: false,
-      errorMessage: 'Impossible de charger tes réglages pour le moment. Réessaie dans quelques minutes.',
+      errorMessage: 'Impossible de charger tes préférences pour le moment. Réessaie dans quelques minutes.',
     })
     expect(consoleErrorSpy).toHaveBeenCalled()
     consoleErrorSpy.mockRestore()
@@ -110,7 +110,7 @@ describe('updateProfileSettings', () => {
       updateProfileSettings({ firstName: 'Ada', lastName: 'Lovelace', links: [], followUpDelayDays: 7 }),
     ).resolves.toEqual({
       ok: false,
-      errorMessage: "Impossible d'enregistrer tes réglages pour le moment. Réessaie dans quelques minutes.",
+      errorMessage: "Impossible d'enregistrer tes préférences pour le moment. Réessaie dans quelques minutes.",
     })
     consoleErrorSpy.mockRestore()
   })

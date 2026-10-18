@@ -3,7 +3,7 @@ import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
 import { type ProfileLink, type ProfileSettings, validateProfileSettingsInput } from '@/domain/profile-settings'
 import type { EditableProfileLinkField, ProfileFormControllerParameters, ProfileFormStatus } from './interfaces'
 
-const PROFILE_SETTINGS_SAVED_MESSAGE = 'Réglages enregistrés'
+const PROFILE_SETTINGS_SAVED_MESSAGE = 'Préférences enregistrées'
 const EMPTY_PROFILE_LINK: ProfileLink = { label: '', url: '' }
 
 export const useController = ({ initialProfileSettings, updateProfileSettings }: ProfileFormControllerParameters) => {

@@ -119,7 +119,7 @@ describe('job-spec-section useController', () => {
       saveOutcome: {
         pendingStack: null,
         aiErrorMessage:
-          'Ajoute ta clé Claude dans les réglages pour activer le pré-remplissage. Tu peux saisir à la main en attendant.',
+          'Ajoute ta clé Claude dans tes préférences pour activer le pré-remplissage. Tu peux saisir à la main en attendant.',
       },
     })
     act(() => result.current.setPastedText('Stack : React, Kafka'))
@@ -217,9 +217,9 @@ describe('JobSpecSection', () => {
       />,
     )
     expect(screen.getByRole('note')).toHaveTextContent(
-      "Ajoute ta clé Claude dans les réglages pour activer l'extraction de la stack.",
+      "Ajoute ta clé Claude dans tes préférences pour activer l'extraction de la stack.",
     )
-    expect(screen.getByRole('link', { name: 'réglages' })).toHaveAttribute('href', '/settings')
+    expect(screen.getByRole('link', { name: 'préférences' })).toHaveAttribute('href', '/preferences')
     expect(screen.getByLabelText('Ou coller le texte de la fiche')).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Enregistrer le texte' })).toBeEnabled()
   })

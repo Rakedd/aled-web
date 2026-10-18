@@ -92,6 +92,6 @@ describe('InterviewPreparationButton', () => {
   it('points to the settings and disables the generation without a Claude key', () => {
     renderButton(buildPreparation(), false)
     expect(screen.getByRole('button', { name: 'Générer le brief' })).toBeDisabled()
-    expect(screen.getByRole('link', { name: 'réglages' })).toHaveAttribute('href', '/settings')
+    expect(screen.getByRole('link', { name: 'préférences' })).toHaveAttribute('href', '/preferences')
   })
 })

@@ -2,14 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { FREE_WORK_PREFERENCES_ROUTE, PREFERENCES_ROUTE } from '@/domain/routes'
 import { cn } from '@/lib/utils'
 import type { SettingsNavigationItem } from './interfaces'
 
 const SETTINGS_NAVIGATION_ITEMS: SettingsNavigationItem[] = [
-  { label: 'Profil', href: '/settings' },
+  { label: 'Profil', href: PREFERENCES_ROUTE },
   {
     label: 'Opportunités · Free-Work',
-    href: '/settings/opportunites/free-work',
+    href: FREE_WORK_PREFERENCES_ROUTE,
   },
 ]
 
@@ -17,7 +18,7 @@ export const SettingsNavigation = () => {
   const pathname = usePathname()
 
   return (
-    <nav aria-label="Navigation des réglages">
+    <nav aria-label="Navigation des préférences">
       <ul className="flex flex-wrap gap-1">
         {SETTINGS_NAVIGATION_ITEMS.map((navigationItem) => {
           const isActive = pathname === navigationItem.href

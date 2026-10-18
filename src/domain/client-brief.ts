@@ -14,7 +14,7 @@ export const CLIENT_BRIEF_MESSAGES = {
 
 export const CLIENT_BRIEF_AI_ERROR_MESSAGES: Record<AiErrorKind, string> = {
   ...AI_ERROR_MESSAGES,
-  missing_api_key: 'Ajoute ta clé Claude dans les réglages pour générer le brief.',
+  missing_api_key: 'Ajoute ta clé Claude dans tes préférences pour générer le brief.',
   refused: "Claude n'a pas pu générer ce brief. Réessaie plus tard.",
   unknown: 'La génération du brief a échoué, réessaie.',
 }

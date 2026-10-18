@@ -13,9 +13,9 @@ import { saveAnthropicApiKeyWithVerifier } from '@/server/settings/save-anthropi
 import { NO_ARGUMENTS, runAuthenticatedOperation } from './run-authenticated-operation'
 
 const PROFILE_SETTINGS_LOAD_FAILURE_MESSAGE =
-  'Impossible de charger tes réglages pour le moment. Réessaie dans quelques minutes.'
+  'Impossible de charger tes préférences pour le moment. Réessaie dans quelques minutes.'
 const PROFILE_SETTINGS_SAVE_FAILURE_MESSAGE =
-  "Impossible d'enregistrer tes réglages pour le moment. Réessaie dans quelques minutes."
+  "Impossible d'enregistrer tes préférences pour le moment. Réessaie dans quelques minutes."
 const ANTHROPIC_API_KEY_DELETION_FAILURE_MESSAGE =
   'Impossible de supprimer la clé pour le moment. Réessaie dans quelques minutes.'
 

@@ -65,7 +65,7 @@ describe('profile-form useController', () => {
       followUpDelayDays: 10,
     })
     expect(result.current.links).toEqual(savedProfileSettings.links)
-    expect(result.current.successMessage).toBe('Réglages enregistrés')
+    expect(result.current.successMessage).toBe('Préférences enregistrées')
     expect(result.current.errorMessage).toBeNull()
   })
 

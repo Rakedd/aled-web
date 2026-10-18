@@ -8,7 +8,7 @@ import {
 } from '@/server/actions/opportunity-actions'
 
 export const metadata: Metadata = {
-  title: 'Opportunités Free-Work · Réglages · Freeclutch',
+  title: 'Opportunités Free-Work · Préférences · Freeclutch',
 }
 
 const FreeWorkOpportunitySettingsPage = async () => {
@@ -19,7 +19,7 @@ const FreeWorkOpportunitySettingsPage = async () => {
 
   return (
     <div className="flex w-full max-w-2xl flex-col gap-8">
-      <h1 className="text-2xl font-semibold">Réglages</h1>
+      <h1 className="text-2xl font-semibold">Préférences</h1>
       <SettingsNavigation />
       <section aria-labelledby="settings-free-work-title" className="flex flex-col gap-4">
         <h2 id="settings-free-work-title" className="text-lg font-semibold">
