@@ -1,5 +1,10 @@
 import { formatInTimeZone } from 'date-fns-tz'
-import type { JobApplicationInput } from './job-application'
+import {
+  JOB_APPLICATION_TEXT_FIELD_RULES,
+  type JobApplicationInput,
+  MAXIMUM_STACK_ITEM_COUNT,
+  MAXIMUM_STACK_ITEM_NAME_LENGTH,
+} from './job-application'
 import { PARIS_TIME_ZONE } from './paris-time'
 import type { StackItem } from './types'
 
@@ -71,18 +76,31 @@ export const getOpportunityEffectiveRate = (opportunity: Pick<Opportunity, 'rate
   opportunity.rateMax ?? opportunity.rateMin
 
 export const formatOpportunityRate = (opportunity: Pick<Opportunity, 'rateLabel' | 'rateMin' | 'rateMax'>): string => {
-  if (opportunity.rateLabel) return opportunity.rateLabel
+  const trimmedRateLabel = opportunity.rateLabel?.trim() ?? ''
+  if (trimmedRateLabel !== '') return trimmedRateLabel
   const { rateMin, rateMax } = opportunity
   if (rateMin !== null && rateMax !== null && rateMin !== rateMax) return `${rateMin}-${rateMax} €/j`
   const singleRate = rateMax ?? rateMin
   return singleRate === null ? UNDISCLOSED_RATE_LABEL : `${singleRate} €/j`
 }
 
+const truncateText = (text: string, maximumLength: number): string => text.trim().slice(0, maximumLength).trimEnd()
+
+const truncateOptionalText = (text: string | null, maximumLength: number): string | null => {
+  if (text === null) return null
+  const truncatedText = truncateText(text, maximumLength)
+  return truncatedText === '' ? null : truncatedText
+}
+
+const formatDuration = (durationMonths: number | null): string | null =>
+  durationMonths === null || durationMonths <= 0 ? null : `${durationMonths} mois`
+
 const buildStackFromSkills = (skills: string[]): StackItem[] => {
   const seenSkillNames = new Set<string>()
   const stack: StackItem[] = []
   for (const skill of skills) {
-    const skillName = skill.trim()
+    if (stack.length === MAXIMUM_STACK_ITEM_COUNT) break
+    const skillName = truncateText(skill, MAXIMUM_STACK_ITEM_NAME_LENGTH)
     const lowercaseSkillName = skillName.toLowerCase()
     if (skillName === '' || seenSkillNames.has(lowercaseSkillName)) continue
     seenSkillNames.add(lowercaseSkillName)
@@ -92,22 +110,28 @@ const buildStackFromSkills = (skills: string[]): StackItem[] => {
 }
 
 export const buildJobApplicationInputFromOpportunity = (opportunity: Opportunity, today: Date): JobApplicationInput => ({
-  title: opportunity.title,
+  title: truncateText(opportunity.title, JOB_APPLICATION_TEXT_FIELD_RULES.title.maximumLength),
   source: OPPORTUNITY_SOURCE_LABELS[opportunity.source],
   postingUrl: opportunity.url,
-  postingRawText: opportunity.description,
+  postingRawText: truncateOptionalText(
+    opportunity.description,
+    JOB_APPLICATION_TEXT_FIELD_RULES.postingRawText.maximumLength,
+  ),
   status: 'applied',
   postedDailyRate: getOpportunityEffectiveRate(opportunity),
   requestedDailyRate: null,
-  location: opportunity.locationLabel,
+  location: truncateOptionalText(opportunity.locationLabel, JOB_APPLICATION_TEXT_FIELD_RULES.location.maximumLength),
   remotePolicy: opportunity.remoteMode === null ? null : REMOTE_MODE_LABELS[opportunity.remoteMode],
   desiredStart: null,
-  duration: opportunity.durationMonths === null ? null : `${opportunity.durationMonths} mois`,
+  duration: formatDuration(opportunity.durationMonths),
   appliedOn: today,
   notes: null,
   actualStartDate: null,
   stack: buildStackFromSkills(opportunity.skills),
-  intermediaryName: opportunity.company,
+  intermediaryName: truncateOptionalText(
+    opportunity.company,
+    JOB_APPLICATION_TEXT_FIELD_RULES.intermediaryName.maximumLength,
+  ),
   contactName: null,
   contactEmail: null,
   contactPhone: null,

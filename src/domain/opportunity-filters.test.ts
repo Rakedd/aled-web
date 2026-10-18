@@ -49,6 +49,9 @@ describe('createOpportunityMatcher', () => {
   it('does not treat keyword metacharacters as regular expression syntax', () => {
     expect(createOpportunityMatcher(filters({ includeKeywords: ['node.js'] }))(candidate({ title: 'Backend nodexjs' }))).toBe(false)
   })
+  it('keeps the inclusive middle dot as a word boundary, unlike the watcher which strips it', () => {
+    expect(createOpportunityMatcher(filters({ includeKeywords: ['developpeur'] }))(candidate({ title: 'Développeur·se React' }))).toBe(true)
+  })
   it('ignores an include list made only of blank keywords', () => {
     expect(createOpportunityMatcher(filters({ includeKeywords: ['  '] }))(candidate({ title: 'Plombier' }))).toBe(true)
   })

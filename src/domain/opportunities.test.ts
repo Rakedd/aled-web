@@ -1,3 +1,4 @@
+import { validateJobApplicationInput } from './job-application'
 import {
   type Opportunity,
   REMOTE_MODE_LABELS,
@@ -109,6 +110,34 @@ describe('buildJobApplicationInputFromOpportunity', () => {
     })
   })
 
+  it('leaves the duration empty when the number of months is not positive', () => {
+    expect(buildJobApplicationInputFromOpportunity({ ...bareOpportunity, durationMonths: 0 }, today).duration).toBeNull()
+    expect(buildJobApplicationInputFromOpportunity({ ...bareOpportunity, durationMonths: -2 }, today).duration).toBeNull()
+  })
+
+  it('always produces an input that job application validation accepts, even from oversized data', () => {
+    const messyOpportunity: Opportunity = {
+      ...completeOpportunity,
+      title: 'T'.repeat(300),
+      description: 'D'.repeat(60_000),
+      company: 'C'.repeat(250),
+      locationLabel: 'L'.repeat(250),
+      skills: [...Array.from({ length: 150 }, (_, index) => `Skill ${index}`), 'S'.repeat(120)],
+    }
+    const jobApplicationInput = buildJobApplicationInputFromOpportunity(messyOpportunity, today)
+    expect(validateJobApplicationInput(jobApplicationInput).ok).toBe(true)
+    expect(jobApplicationInput.title).toBe('T'.repeat(200))
+    expect(jobApplicationInput.postingRawText).toBe('D'.repeat(50_000))
+    expect(jobApplicationInput.intermediaryName).toBe('C'.repeat(200))
+    expect(jobApplicationInput.location).toBe('L'.repeat(200))
+    expect(jobApplicationInput.stack).toHaveLength(100)
+  })
+
+  it('shortens an overlong skill name instead of dropping it', () => {
+    const jobApplicationInput = buildJobApplicationInputFromOpportunity({ ...bareOpportunity, skills: ['S'.repeat(120)] }, today)
+    expect(jobApplicationInput.stack).toEqual([{ name: 'S'.repeat(100), category: 'other', origin: 'posting' }])
+  })
+
   it('falls back to the low end of the range for the posted daily rate', () => {
     expect(buildJobApplicationInputFromOpportunity({ ...bareOpportunity, rateMin: 480 }, today).postedDailyRate).toBe(480)
   })
@@ -143,6 +172,10 @@ describe('formatOpportunityRate', () => {
 
   it('prefers the label published by the source', () => {
     expect(formatOpportunityRate({ rateLabel: '500 €/j', rateMin: 400, rateMax: 450 })).toBe('500 €/j')
+  })
+  it('ignores a blank label', () => {
+    expect(formatOpportunityRate({ rateLabel: '   ', rateMin: 400, rateMax: 500 })).toBe('400-500 €/j')
+    expect(formatOpportunityRate({ ...unknownRate, rateLabel: '   ' })).toBe('Non communiqué')
   })
   it('shows the range when both ends are known', () => {
     expect(formatOpportunityRate({ ...unknownRate, rateMin: 400, rateMax: 500 })).toBe('400-500 €/j')

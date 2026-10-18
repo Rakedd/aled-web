@@ -94,12 +94,12 @@ export const JOB_APPLICATION_VALIDATION_MESSAGES = {
 } as const
 
 const MAXIMUM_DAILY_RATE = 100_000
-const MAXIMUM_STACK_ITEM_COUNT = 100
-const MAXIMUM_STACK_ITEM_NAME_LENGTH = 100
+export const MAXIMUM_STACK_ITEM_COUNT = 100
+export const MAXIMUM_STACK_ITEM_NAME_LENGTH = 100
 const POSTING_URL_ALLOWED_PROTOCOLS = ['http:', 'https:']
 const STACK_ITEM_ORIGINS: readonly StackItemOrigin[] = ['posting', 'job_spec']
 
-const TEXT_FIELD_RULES = {
+export const JOB_APPLICATION_TEXT_FIELD_RULES = {
   title: { label: 'Titre', maximumLength: 200 },
   source: { label: 'Source', maximumLength: 100 },
   postingRawText: { label: "Texte de l'annonce", maximumLength: MAX_PASTED_TEXT_LENGTH },
@@ -168,29 +168,29 @@ export const validateStack = (candidate: unknown): ActionResult<StackItem[]> => 
 
 const JOB_APPLICATION_FIELD_VALIDATORS: JobApplicationFieldValidators = {
   title: (candidate) =>
-    validateRequiredText(candidate, TEXT_FIELD_RULES.title, JOB_APPLICATION_VALIDATION_MESSAGES.missingTitle),
-  source: validateOptionalTextField(TEXT_FIELD_RULES.source),
+    validateRequiredText(candidate, JOB_APPLICATION_TEXT_FIELD_RULES.title, JOB_APPLICATION_VALIDATION_MESSAGES.missingTitle),
+  source: validateOptionalTextField(JOB_APPLICATION_TEXT_FIELD_RULES.source),
   postingUrl: (candidate) =>
     validateOptionalUrl(candidate, POSTING_URL_ALLOWED_PROTOCOLS, JOB_APPLICATION_VALIDATION_MESSAGES.invalidPostingUrl),
-  postingRawText: validateOptionalTextField(TEXT_FIELD_RULES.postingRawText),
+  postingRawText: validateOptionalTextField(JOB_APPLICATION_TEXT_FIELD_RULES.postingRawText),
   status: validateStatus,
   postedDailyRate: validateDailyRate,
   requestedDailyRate: validateDailyRate,
-  location: validateOptionalTextField(TEXT_FIELD_RULES.location),
-  remotePolicy: validateOptionalTextField(TEXT_FIELD_RULES.remotePolicy),
-  desiredStart: validateOptionalTextField(TEXT_FIELD_RULES.desiredStart),
-  duration: validateOptionalTextField(TEXT_FIELD_RULES.duration),
+  location: validateOptionalTextField(JOB_APPLICATION_TEXT_FIELD_RULES.location),
+  remotePolicy: validateOptionalTextField(JOB_APPLICATION_TEXT_FIELD_RULES.remotePolicy),
+  desiredStart: validateOptionalTextField(JOB_APPLICATION_TEXT_FIELD_RULES.desiredStart),
+  duration: validateOptionalTextField(JOB_APPLICATION_TEXT_FIELD_RULES.duration),
   appliedOn: validateAppliedOn,
-  notes: validateOptionalTextField(TEXT_FIELD_RULES.notes),
+  notes: validateOptionalTextField(JOB_APPLICATION_TEXT_FIELD_RULES.notes),
   actualStartDate: validateActualStartDate,
   stack: validateStack,
-  intermediaryName: validateOptionalEntityNameField(TEXT_FIELD_RULES.intermediaryName),
-  contactName: validateOptionalEntityNameField(TEXT_FIELD_RULES.contactName),
+  intermediaryName: validateOptionalEntityNameField(JOB_APPLICATION_TEXT_FIELD_RULES.intermediaryName),
+  contactName: validateOptionalEntityNameField(JOB_APPLICATION_TEXT_FIELD_RULES.contactName),
   contactEmail: (candidate) =>
     validateOptionalEmailAddress(candidate, JOB_APPLICATION_VALIDATION_MESSAGES.invalidContactEmail),
-  contactPhone: validateOptionalTextField(TEXT_FIELD_RULES.contactPhone),
-  endClientName: validateOptionalEntityNameField(TEXT_FIELD_RULES.endClientName),
-  endClientParentName: validateOptionalEntityNameField(TEXT_FIELD_RULES.endClientParentName),
+  contactPhone: validateOptionalTextField(JOB_APPLICATION_TEXT_FIELD_RULES.contactPhone),
+  endClientName: validateOptionalEntityNameField(JOB_APPLICATION_TEXT_FIELD_RULES.endClientName),
+  endClientParentName: validateOptionalEntityNameField(JOB_APPLICATION_TEXT_FIELD_RULES.endClientParentName),
 }
 
 const JOB_APPLICATION_FIELD_NAMES = Object.keys(JOB_APPLICATION_FIELD_VALIDATORS) as (keyof JobApplicationInput)[]
