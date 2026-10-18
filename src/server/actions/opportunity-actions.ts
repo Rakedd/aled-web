@@ -2,8 +2,10 @@
 
 import 'server-only'
 import type { ActionResult } from '@/domain/action-result'
+import { rejectWith } from '@/domain/input-validation'
 import {
   HISTORY_WINDOW_DAYS,
+  OPPORTUNITY_VALIDATION_MESSAGES,
   type OpportunityListing,
   type OpportunityListingCursor,
   type OpportunitySource,
@@ -18,8 +20,8 @@ import { applyToOpportunityForUser } from '@/server/opportunities/apply-to-oppor
 import { buildOpportunityListing, countOpportunitiesToProcessForUser } from '@/server/opportunities/opportunity-listing'
 import { listOpportunityRegionsPublishedSince } from '@/server/repositories/opportunities-repository'
 import {
-  deleteOpportunityDecision,
-  upsertOpportunityDecision,
+  deleteDismissedOpportunityDecision,
+  recordDismissedOpportunityDecision,
 } from '@/server/repositories/opportunity-decisions-repository'
 import { findOpportunityFilters, upsertOpportunityFilters } from '@/server/repositories/opportunity-filters-repository'
 import { recordOpportunitiesViewedAt } from '@/server/repositories/profile-repository'
@@ -74,11 +76,7 @@ export const dismissOpportunity = async (opportunityId: string): Promise<ActionR
     failureMessage: DECISION_FAILURE_MESSAGE,
     validateArguments: () => validateOpportunityId(opportunityId),
     operation: (supabase, userId, validatedOpportunityId) =>
-      upsertOpportunityDecision(supabase, userId, {
-        opportunityId: validatedOpportunityId,
-        decision: 'dismissed',
-        jobApplicationId: null,
-      }),
+      recordDismissedOpportunityDecision(supabase, userId, validatedOpportunityId),
   })
 
 export const restoreOpportunity = async (opportunityId: string): Promise<ActionResult<null>> =>
@@ -86,10 +84,10 @@ export const restoreOpportunity = async (opportunityId: string): Promise<ActionR
     operationName: 'restoreOpportunity',
     failureMessage: DECISION_FAILURE_MESSAGE,
     validateArguments: () => validateOpportunityId(opportunityId),
-    operation: async (supabase, userId, validatedOpportunityId) => {
-      await deleteOpportunityDecision(supabase, userId, validatedOpportunityId)
-      return { ok: true, data: null }
-    },
+    operation: async (supabase, userId, validatedOpportunityId) =>
+      (await deleteDismissedOpportunityDecision(supabase, userId, validatedOpportunityId))
+        ? { ok: true, data: null }
+        : rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.notDismissed),
   })
 
 export const markOpportunitiesViewed = async (): Promise<ActionResult<null>> =>

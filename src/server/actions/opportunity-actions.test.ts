@@ -6,8 +6,8 @@ import type { OpportunitySource } from '@/domain/opportunities'
 import { applyToOpportunityForUser } from '@/server/opportunities/apply-to-opportunity'
 import { buildOpportunityListing } from '@/server/opportunities/opportunity-listing'
 import {
-  deleteOpportunityDecision,
-  upsertOpportunityDecision,
+  deleteDismissedOpportunityDecision,
+  recordDismissedOpportunityDecision,
 } from '@/server/repositories/opportunity-decisions-repository'
 import {
   findOpportunityFilters,
@@ -33,8 +33,8 @@ jest.mock('@/server/opportunities/opportunity-listing', () => ({
   countOpportunitiesToProcessForUser: jest.fn(),
 }))
 jest.mock('@/server/repositories/opportunity-decisions-repository', () => ({
-  upsertOpportunityDecision: jest.fn(),
-  deleteOpportunityDecision: jest.fn(),
+  recordDismissedOpportunityDecision: jest.fn(),
+  deleteDismissedOpportunityDecision: jest.fn(),
 }))
 jest.mock('@/server/repositories/opportunity-filters-repository', () => ({
   findOpportunityFilters: jest.fn(),
@@ -63,8 +63,8 @@ describe('opportunity id validation', () => {
     await expect(action("'; drop table opportunities; --")).resolves.toEqual(notFound)
     expect(createServerSupabaseClient).not.toHaveBeenCalled()
     expect(applyToOpportunityForUser).not.toHaveBeenCalled()
-    expect(upsertOpportunityDecision).not.toHaveBeenCalled()
-    expect(deleteOpportunityDecision).not.toHaveBeenCalled()
+    expect(recordDismissedOpportunityDecision).not.toHaveBeenCalled()
+    expect(deleteDismissedOpportunityDecision).not.toHaveBeenCalled()
   })
 })
 
@@ -81,14 +81,39 @@ describe('applyToOpportunity', () => {
 })
 
 describe('dismissOpportunity', () => {
-  it('records a dismissed decision without job application', async () => {
-    jest.mocked(upsertOpportunityDecision).mockResolvedValue({ ok: true, data: null })
+  it('records a dismissed decision for the authenticated user', async () => {
+    jest.mocked(recordDismissedOpportunityDecision).mockResolvedValue({ ok: true, data: null })
 
     await expect(dismissOpportunity(opportunityId)).resolves.toEqual({ ok: true, data: null })
-    expect(upsertOpportunityDecision).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', {
-      opportunityId,
-      decision: 'dismissed',
-      jobApplicationId: null,
+    expect(recordDismissedOpportunityDecision).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', opportunityId)
+  })
+
+  it('relays the refusal when the opportunity was already applied to', async () => {
+    jest
+      .mocked(recordDismissedOpportunityDecision)
+      .mockResolvedValue({ ok: false, errorMessage: 'Tu as déjà postulé à cette mission' })
+
+    await expect(dismissOpportunity(opportunityId)).resolves.toEqual({
+      ok: false,
+      errorMessage: 'Tu as déjà postulé à cette mission',
+    })
+  })
+})
+
+describe('restoreOpportunity', () => {
+  it('deletes the dismissed decision of the authenticated user', async () => {
+    jest.mocked(deleteDismissedOpportunityDecision).mockResolvedValue(true)
+
+    await expect(restoreOpportunity(opportunityId)).resolves.toEqual({ ok: true, data: null })
+    expect(deleteDismissedOpportunityDecision).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', opportunityId)
+  })
+
+  it('refuses when no dismissed decision was deleted', async () => {
+    jest.mocked(deleteDismissedOpportunityDecision).mockResolvedValue(false)
+
+    await expect(restoreOpportunity(opportunityId)).resolves.toEqual({
+      ok: false,
+      errorMessage: "Cette mission n'est pas ignorée",
     })
   })
 })

@@ -77,6 +77,8 @@ export const OPPORTUNITY_VALIDATION_MESSAGES = {
   notFound: 'Opportunité introuvable',
   unknownSource: 'Source inconnue',
   invalidListingRequest: 'Onglet ou page invalide',
+  notDismissed: "Cette mission n'est pas ignorée",
+  alreadyApplied: 'Tu as déjà postulé à cette mission',
 } as const
 
 export type OpportunityListingCursor = { publishedAt: string; id: string }

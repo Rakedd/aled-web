@@ -81,15 +81,39 @@ export const upsertOpportunityDecision = async (
   return { ok: true, data: null }
 }
 
-export const deleteOpportunityDecision = async (
+export const recordDismissedOpportunityDecision = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   opportunityId: string,
-): Promise<void> => {
-  const { error } = await supabase
+): Promise<ActionResult<null>> => {
+  const { error } = await supabase.from('opportunity_decisions').upsert(
+    {
+      user_id: userId,
+      opportunity_id: opportunityId,
+      decision: 'dismissed',
+      job_application_id: null,
+      decided_at: new Date().toISOString(),
+    },
+    { onConflict: DECISION_UNIQUE_KEY_COLUMNS, ignoreDuplicates: true },
+  )
+  if (error?.code === POSTGRES_FOREIGN_KEY_VIOLATION_CODE) return rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.notFound)
+  if (error) throw toRepositoryError('recordDismissedOpportunityDecision', error)
+  const storedDecision = await findOpportunityDecision(supabase, userId, opportunityId)
+  if (storedDecision?.decision === 'applied') return rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.alreadyApplied)
+  return { ok: true, data: null }
+}
+
+export const deleteDismissedOpportunityDecision = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  opportunityId: string,
+): Promise<boolean> => {
+  const { count, error } = await supabase
     .from('opportunity_decisions')
-    .delete()
+    .delete({ count: 'exact' })
     .eq('user_id', userId)
     .eq('opportunity_id', opportunityId)
-  if (error) throw toRepositoryError('deleteOpportunityDecision', error)
+    .eq('decision', 'dismissed')
+  if (error) throw toRepositoryError('deleteDismissedOpportunityDecision', error)
+  return (count ?? 0) > 0
 }

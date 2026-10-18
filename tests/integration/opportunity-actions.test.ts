@@ -306,6 +306,66 @@ describe('dismissOpportunity and restoreOpportunity', () => {
   })
 })
 
+describe('decision integrity', () => {
+  it('refuses to restore an opportunity that was applied to and keeps the application', async () => {
+    const user = await createTestUser()
+    actAs(user)
+    const opportunityId = await seedOpportunityOrFail({ title: `Développeur React ${buildUniqueKeyword()}` })
+    const application = await applyToOpportunity(opportunityId)
+    if (!application.ok) throw new Error(application.errorMessage)
+
+    await expect(restoreOpportunity(opportunityId)).resolves.toEqual({
+      ok: false,
+      errorMessage: "Cette mission n'est pas ignorée",
+    })
+
+    expect((await listOrFail('applied')).items).toEqual([
+      expect.objectContaining({ id: opportunityId, decision: 'applied', jobApplicationId: application.data.jobApplicationId }),
+    ])
+  })
+
+  it('refuses to restore an opportunity without decision', async () => {
+    const user = await createTestUser()
+    actAs(user)
+    const opportunityId = await seedOpportunityOrFail({ title: `Développeur React ${buildUniqueKeyword()}` })
+
+    await expect(restoreOpportunity(opportunityId)).resolves.toEqual({
+      ok: false,
+      errorMessage: "Cette mission n'est pas ignorée",
+    })
+  })
+
+  it('refuses to dismiss an opportunity that was applied to and keeps the application', async () => {
+    const user = await createTestUser()
+    actAs(user)
+    const opportunityId = await seedOpportunityOrFail({ title: `Développeur React ${buildUniqueKeyword()}` })
+    const application = await applyToOpportunity(opportunityId)
+    if (!application.ok) throw new Error(application.errorMessage)
+
+    await expect(dismissOpportunity(opportunityId)).resolves.toEqual({
+      ok: false,
+      errorMessage: 'Tu as déjà postulé à cette mission',
+    })
+
+    const appliedListing = await listOrFail('applied')
+    expect(appliedListing.items).toEqual([
+      expect.objectContaining({ id: opportunityId, decision: 'applied', jobApplicationId: application.data.jobApplicationId }),
+    ])
+    expect(appliedListing.counts).toMatchObject({ applied: 1, dismissed: 0 })
+  })
+
+  it('accepts dismissing the same opportunity twice', async () => {
+    const user = await createTestUser()
+    actAs(user)
+    const opportunityId = await seedOpportunityOrFail({ title: `Développeur React ${buildUniqueKeyword()}` })
+
+    await expect(dismissOpportunity(opportunityId)).resolves.toEqual({ ok: true, data: null })
+    await expect(dismissOpportunity(opportunityId)).resolves.toEqual({ ok: true, data: null })
+
+    expect(await listIdsOrFail('dismissed')).toEqual([opportunityId])
+  })
+})
+
 describe('user isolation', () => {
   it('keeps the decisions and filters of A away from B, and applies for B only', async () => {
     const userA = await createTestUser()
