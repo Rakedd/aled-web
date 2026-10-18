@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import type { ActionResult } from '@/domain/action-result'
+import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
 import type { OpportunityListing, OpportunityListingCursor, OpportunityListItem } from '@/domain/opportunities'
 import { useController } from './controller'
 
@@ -47,7 +47,7 @@ const renderBoardController = (listingOverrides: Partial<OpportunityListing> = {
   const markOpportunitiesViewed = jest.fn().mockResolvedValue(succeeded(null))
   const onDataChanged = jest.fn()
   const onTabChanged = jest.fn()
-  const { result, rerender } = renderHook(
+  const { result, rerender, unmount } = renderHook(
     ({ initialListing }: { initialListing: OpportunityListing }) =>
       useController({
       initialTab: 'to_process',
@@ -65,6 +65,7 @@ const renderBoardController = (listingOverrides: Partial<OpportunityListing> = {
   return {
     result,
     rerender,
+    unmount,
     listOpportunities,
     applyToOpportunity,
     dismissOpportunity,
@@ -170,11 +171,11 @@ describe('opportunities-board useController', () => {
     expect(listOpportunities).toHaveBeenNthCalledWith(1, 'to_process', {
       publishedAt: serverItems[49].publishedAt.toISOString(),
       id: 'item-049',
-    })
+    }, '')
     expect(listOpportunities).toHaveBeenNthCalledWith(2, 'to_process', {
       publishedAt: serverItems[99].publishedAt.toISOString(),
       id: 'item-099',
-    })
+    }, '')
     const remainingIds = serverItems.map(({ id }) => id).filter((id) => !dismissedIds.has(id))
     expect(dismissedIds.size).toBe(90)
     expect(result.current.items.map(({ id }) => id)).toEqual(remainingIds)
@@ -253,7 +254,7 @@ describe('opportunities-board useController', () => {
     expect(listOpportunities).toHaveBeenCalledWith('to_process', {
       publishedAt: '2026-10-18T08:00:00.000Z',
       id: 'second',
-    })
+    }, '')
     expect(result.current.items.map(({ id }) => id)).toEqual(['first', 'second', 'third'])
     expect(result.current.hasMore).toBe(false)
   })
@@ -270,7 +271,7 @@ describe('opportunities-board useController', () => {
       ),
     )
     await act(() => result.current.selectTab('applied'))
-    expect(listOpportunities).toHaveBeenCalledWith('applied', null)
+    expect(listOpportunities).toHaveBeenCalledWith('applied', null, '')
     expect(result.current.tab).toBe('applied')
     expect(result.current.items.map(({ id }) => id)).toEqual(['done'])
     expect(onTabChanged).toHaveBeenCalledWith('applied')
@@ -299,5 +300,188 @@ describe('opportunities-board useController', () => {
       await applying
     })
     expect(result.current.isOpportunityPending('first')).toBe(false)
+  })
+
+  describe('search', () => {
+    const SEARCH_DEBOUNCE_IN_MILLISECONDS = 300
+
+    beforeEach(() => {
+      jest.useFakeTimers()
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    const typeSearch = (result: ReturnType<typeof renderBoardController>['result'], value: string) =>
+      act(() => {
+        result.current.changeSearch(value)
+      })
+
+    const advanceDebounce = (milliseconds = SEARCH_DEBOUNCE_IN_MILLISECONDS) =>
+      act(async () => {
+        await jest.advanceTimersByTimeAsync(milliseconds)
+      })
+
+    it('shows the typed value immediately but only queries after 300 ms of silence', async () => {
+      const { result, listOpportunities } = renderBoardController()
+
+      typeSearch(result, 'rea')
+      await advanceDebounce(200)
+      typeSearch(result, 'react')
+      await advanceDebounce(299)
+
+      expect(result.current.searchInput).toBe('react')
+      expect(listOpportunities).not.toHaveBeenCalled()
+
+      await advanceDebounce(1)
+
+      expect(listOpportunities).toHaveBeenCalledTimes(1)
+      expect(listOpportunities).toHaveBeenCalledWith('to_process', null, 'react')
+    })
+
+    it('trims the search and replaces the list from the start', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      listOpportunities.mockResolvedValue(
+        succeeded(
+          buildListing({
+            items: [buildOpportunity('found')],
+            hasMore: false,
+            counts: { to_process: 1, applied: 0, dismissed: 0 },
+          }),
+        ),
+      )
+
+      typeSearch(result, '  react  ')
+      await advanceDebounce()
+
+      expect(listOpportunities).toHaveBeenCalledWith('to_process', null, 'react')
+      expect(result.current.items.map(({ id }) => id)).toEqual(['found'])
+      expect(result.current.counts).toEqual({ to_process: 1, applied: 0, dismissed: 0 })
+      expect(result.current.hasMore).toBe(false)
+      expect(result.current.hasActiveSearch).toBe(true)
+    })
+
+    it('does not query when the trimmed search did not change', async () => {
+      const { result, listOpportunities } = renderBoardController()
+
+      typeSearch(result, '   ')
+      await advanceDebounce()
+
+      expect(listOpportunities).not.toHaveBeenCalled()
+    })
+
+    it('ignores the response of an outdated search', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      let resolveFirstSearch: (actionResult: ActionResult<OpportunityListing>) => void = () => undefined
+      listOpportunities
+        .mockReturnValueOnce(new Promise((resolve) => (resolveFirstSearch = resolve)))
+        .mockResolvedValueOnce(
+          succeeded(buildListing({ items: [buildOpportunity('latest')], hasMore: false })),
+        )
+
+      typeSearch(result, 'java')
+      await advanceDebounce()
+      typeSearch(result, 'react')
+      await advanceDebounce()
+      await act(async () => {
+        resolveFirstSearch(succeeded(buildListing({ items: [buildOpportunity('outdated')], hasMore: false })))
+      })
+
+      expect(listOpportunities).toHaveBeenNthCalledWith(1, 'to_process', null, 'java')
+      expect(listOpportunities).toHaveBeenNthCalledWith(2, 'to_process', null, 'react')
+      expect(result.current.items.map(({ id }) => id)).toEqual(['latest'])
+      expect(result.current.isLoadingListing).toBe(false)
+    })
+
+    it('ignores a search still in flight when the input returns to the applied search', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      let resolveSearch: (actionResult: ActionResult<OpportunityListing>) => void = () => undefined
+      listOpportunities.mockReturnValueOnce(new Promise((resolve) => (resolveSearch = resolve)))
+      typeSearch(result, 'java')
+      await advanceDebounce()
+
+      typeSearch(result, '')
+      await act(async () => {
+        resolveSearch(succeeded(buildListing({ items: [buildOpportunity('outdated')], hasMore: false })))
+      })
+
+      expect(result.current.items.map(({ id }) => id)).toEqual(['first', 'second'])
+      expect(result.current.isLoadingListing).toBe(false)
+    })
+
+    it('restores the full list immediately when the search is cleared', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      listOpportunities.mockResolvedValueOnce(
+        succeeded(buildListing({ items: [buildOpportunity('found')], hasMore: false })),
+      )
+      typeSearch(result, 'react')
+      await advanceDebounce()
+      listOpportunities.mockResolvedValueOnce(succeeded(buildListing()))
+
+      typeSearch(result, '')
+      await advanceDebounce(0)
+
+      expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, '')
+      expect(result.current.items.map(({ id }) => id)).toEqual(['first', 'second'])
+      expect(result.current.hasActiveSearch).toBe(false)
+    })
+
+    it('keeps the search when the tab changes and when loading more', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      typeSearch(result, 'react')
+      await advanceDebounce()
+
+      await act(() => result.current.selectTab('applied'))
+      await act(() => result.current.loadMore())
+
+      expect(listOpportunities).toHaveBeenNthCalledWith(2, 'applied', null, 'react')
+      expect(listOpportunities).toHaveBeenNthCalledWith(
+        3,
+        'applied',
+        { publishedAt: '2026-10-18T08:00:00.000Z', id: 'second' },
+        'react',
+      )
+    })
+
+    it('searches in the tab selected while the input was being debounced', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      typeSearch(result, 'react')
+      await act(() => result.current.selectTab('dismissed'))
+      await advanceDebounce()
+
+      expect(listOpportunities).toHaveBeenLastCalledWith('dismissed', null, 'react')
+    })
+
+    it('shows the error and keeps the list when the search fails', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      listOpportunities.mockResolvedValue({ ok: false, errorMessage: 'La recherche ne peut pas dépasser 100 caractères' })
+
+      typeSearch(result, 'react')
+      await advanceDebounce()
+
+      expect(result.current.errorMessage).toBe('La recherche ne peut pas dépasser 100 caractères')
+      expect(result.current.items.map(({ id }) => id)).toEqual(['first', 'second'])
+    })
+
+    it('shows the generic error when the search throws', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      listOpportunities.mockRejectedValue(new Error('network'))
+
+      typeSearch(result, 'react')
+      await advanceDebounce()
+
+      expect(result.current.errorMessage).toBe(GENERIC_ACTION_ERROR_MESSAGE)
+    })
+
+    it('cancels the pending search on unmount', async () => {
+      const { result, listOpportunities, unmount } = renderBoardController()
+      typeSearch(result, 'react')
+
+      unmount()
+      await advanceDebounce()
+
+      expect(listOpportunities).not.toHaveBeenCalled()
+    })
   })
 })

@@ -75,6 +75,7 @@ export type ApplyToOpportunity = (opportunityId: string) => Promise<ActionResult
 export const OPPORTUNITY_PAGE_SIZE = 50
 export const TO_PROCESS_WINDOW_DAYS = 7
 export const HISTORY_WINDOW_DAYS = 30
+export const OPPORTUNITY_SEARCH_MAX_LENGTH = 100
 export const HIGHLIGHTED_OPPORTUNITIES_WINDOW_HOURS = 48
 export const HIGHLIGHTED_OPPORTUNITIES_COUNT = 2
 
@@ -82,6 +83,7 @@ export const OPPORTUNITY_VALIDATION_MESSAGES = {
   notFound: 'Opportunité introuvable',
   unknownSource: 'Source inconnue',
   invalidListingRequest: 'Onglet ou page invalide',
+  searchTooLong: 'La recherche ne peut pas dépasser 100 caractères',
   notDismissed: "Cette mission n'est pas ignorée",
   alreadyApplied: 'Tu as déjà postulé à cette mission',
 } as const
@@ -90,7 +92,11 @@ export type OpportunityListingCursor = { publishedAt: string; id: string }
 
 export type OpportunityListingPosition = { publishedAt: Date; id: string }
 
-export type OpportunityListingRequest = { tab: OpportunityTab; after: OpportunityListingPosition | null }
+export type OpportunityListingRequest = {
+  tab: OpportunityTab
+  after: OpportunityListingPosition | null
+  search: string
+}
 
 const UNDISCLOSED_RATE_LABEL = 'Non communiqué'
 const FEED_WATCH_START_HOUR = 9
@@ -123,13 +129,20 @@ const toListingPosition = (cursor: unknown): OpportunityListingPosition | null =
 export const validateOpportunityListingRequest = (
   tab: unknown,
   cursor: unknown,
+  search: unknown,
 ): ActionResult<OpportunityListingRequest> => {
-  if (!isOpportunityTab(tab)) return rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.invalidListingRequest)
-  if (cursor === null) return { ok: true, data: { tab, after: null } }
+  if (!isOpportunityTab(tab) || typeof search !== 'string') {
+    return rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.invalidListingRequest)
+  }
+  const trimmedSearch = search.trim()
+  if (trimmedSearch.length > OPPORTUNITY_SEARCH_MAX_LENGTH) {
+    return rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.searchTooLong)
+  }
+  if (cursor === null) return { ok: true, data: { tab, after: null, search: trimmedSearch } }
   const after = toListingPosition(cursor)
   return after === null
     ? rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.invalidListingRequest)
-    : { ok: true, data: { tab, after } }
+    : { ok: true, data: { tab, after, search: trimmedSearch } }
 }
 
 export const getOpportunityEffectiveRate = (opportunity: Pick<Opportunity, 'rateMin' | 'rateMax'>): number | null =>

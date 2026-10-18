@@ -39,11 +39,12 @@ const FILTERS_SAVE_FAILURE_MESSAGE = "Impossible d'enregistrer tes filtres pour 
 export const listOpportunities = async (
   tab: OpportunityTab,
   cursor: OpportunityListingCursor | null,
+  search: string,
 ): Promise<ActionResult<OpportunityListing>> =>
   runAuthenticatedOperation({
     operationName: 'listOpportunities',
     failureMessage: LOAD_FAILURE_MESSAGE,
-    validateArguments: () => validateOpportunityListingRequest(tab, cursor),
+    validateArguments: () => validateOpportunityListingRequest(tab, cursor, search),
     operation: async (supabase, userId, listingRequest) => ({
       ok: true,
       data: await buildOpportunityListing(supabase, userId, listingRequest, new Date()),

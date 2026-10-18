@@ -10,6 +10,8 @@ import type { OpportunitiesBoardControllerParameters } from './interfaces'
 
 type OpportunityCounts = OpportunityListing['counts']
 
+const SEARCH_DEBOUNCE_IN_MILLISECONDS = 300
+
 const shiftCount = (counts: OpportunityCounts, from: OpportunityTab, to: OpportunityTab): OpportunityCounts => ({
   ...counts,
   [from]: Math.max(0, counts[from] - 1),
@@ -44,6 +46,26 @@ export const useController = ({
   const inFlightOpportunityIds = useRef(new Set<string>())
   const isListingRequestInFlight = useRef(false)
   const hasMarkedViewed = useRef(false)
+  const [searchInput, setSearchInput] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
+  const currentTabRef = useRef(initialTab)
+  const appliedSearchRef = useRef('')
+  const latestListingRequestId = useRef(0)
+  const inFlightSearchCount = useRef(0)
+  const searchDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearSearchDebounceTimer = () => {
+    if (searchDebounceTimer.current === null) return
+    clearTimeout(searchDebounceTimer.current)
+    searchDebounceTimer.current = null
+  }
+
+  useEffect(
+    () => () => {
+      if (searchDebounceTimer.current !== null) clearTimeout(searchDebounceTimer.current)
+    },
+    [],
+  )
 
   useEffect(() => {
     if (hasMarkedViewed.current) return
@@ -128,39 +150,91 @@ export const useController = ({
   const fetchListing = async (
     requestedTab: OpportunityTab,
     cursor: OpportunityListingCursor | null,
+    requestedSearch: string,
+    supersedesInFlightRequest = false,
   ): Promise<ActionResult<OpportunityListing> | null> => {
-    if (isListingRequestInFlight.current) return null
+    if (isListingRequestInFlight.current && !supersedesInFlightRequest) return null
+    latestListingRequestId.current += 1
+    const requestId = latestListingRequestId.current
     isListingRequestInFlight.current = true
     setIsLoadingListing(true)
     setErrorMessage(null)
     try {
-      return await listOpportunities(requestedTab, cursor)
+      const actionResult = await listOpportunities(requestedTab, cursor, requestedSearch)
+      return requestId === latestListingRequestId.current ? actionResult : null
     } catch {
-      return { ok: false, errorMessage: GENERIC_ACTION_ERROR_MESSAGE }
+      return requestId === latestListingRequestId.current
+        ? { ok: false, errorMessage: GENERIC_ACTION_ERROR_MESSAGE }
+        : null
     } finally {
-      isListingRequestInFlight.current = false
-      setIsLoadingListing(false)
+      if (requestId === latestListingRequestId.current) {
+        isListingRequestInFlight.current = false
+        setIsLoadingListing(false)
+      }
     }
+  }
+
+  const replaceListing = (listing: OpportunityListing) => {
+    setLoadedItems(listing.items)
+    setHasMore(listing.hasMore)
+    setCounts(listing.counts)
+    setRemovedOpportunityIds([])
   }
 
   const selectTab = async (nextTab: OpportunityTab) => {
     if (nextTab === tab || inFlightOpportunityIds.current.size > 0) return
-    const actionResult = await fetchListing(nextTab, null)
+    const actionResult = await fetchListing(nextTab, null, appliedSearchRef.current)
     if (actionResult === null) return
     if (!actionResult.ok) {
       setErrorMessage(actionResult.errorMessage)
       return
     }
+    currentTabRef.current = nextTab
     setTab(nextTab)
-    setLoadedItems(actionResult.data.items)
-    setHasMore(actionResult.data.hasMore)
-    setCounts(actionResult.data.counts)
-    setRemovedOpportunityIds([])
+    replaceListing(actionResult.data)
     onTabChanged(nextTab)
   }
 
+  const applySearch = async (search: string) => {
+    inFlightSearchCount.current += 1
+    const actionResult = await fetchListing(currentTabRef.current, null, search, true)
+    inFlightSearchCount.current -= 1
+    if (actionResult === null) return
+    if (!actionResult.ok) {
+      setErrorMessage(actionResult.errorMessage)
+      return
+    }
+    appliedSearchRef.current = search
+    setAppliedSearch(search)
+    replaceListing(actionResult.data)
+  }
+
+  const cancelInFlightListingRequest = () => {
+    latestListingRequestId.current += 1
+    isListingRequestInFlight.current = false
+    setIsLoadingListing(false)
+  }
+
+  const changeSearch = (nextSearchInput: string) => {
+    setSearchInput(nextSearchInput)
+    clearSearchDebounceTimer()
+    const trimmedSearch = nextSearchInput.trim()
+    if (trimmedSearch === appliedSearchRef.current) {
+      if (inFlightSearchCount.current > 0) cancelInFlightListingRequest()
+      return
+    }
+    if (trimmedSearch === '') {
+      void applySearch('')
+      return
+    }
+    searchDebounceTimer.current = setTimeout(() => {
+      searchDebounceTimer.current = null
+      void applySearch(trimmedSearch)
+    }, SEARCH_DEBOUNCE_IN_MILLISECONDS)
+  }
+
   const loadMore = async () => {
-    const actionResult = await fetchListing(tab, toListingCursor(loadedItems))
+    const actionResult = await fetchListing(tab, toListingCursor(loadedItems), appliedSearchRef.current)
     if (actionResult === null) return
     if (!actionResult.ok) {
       setErrorMessage(actionResult.errorMessage)
@@ -172,6 +246,8 @@ export const useController = ({
 
   return {
     tab,
+    searchInput,
+    hasActiveSearch: appliedSearch !== '',
     items,
     hasMore,
     counts,
@@ -184,6 +260,7 @@ export const useController = ({
     dismiss,
     restore,
     selectTab,
+    changeSearch,
     loadMore,
   }
 }

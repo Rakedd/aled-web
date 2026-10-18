@@ -293,18 +293,22 @@ describe('validateOpportunityListingRequest', () => {
   const cursorId = '6f1f4f7e-2f8c-4c55-9f0e-1b2c3d4e5f60'
 
   it('accepts a known tab without cursor', () => {
-    expect(validateOpportunityListingRequest('dismissed', null)).toEqual({
+    expect(validateOpportunityListingRequest('dismissed', null, '')).toEqual({
       ok: true,
-      data: { tab: 'dismissed', after: null },
+      data: { tab: 'dismissed', after: null, search: '' },
     })
   })
 
   it('accepts a known tab with the position of the last loaded item', () => {
     expect(
-      validateOpportunityListingRequest('applied', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId }),
+      validateOpportunityListingRequest('applied', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId }, ''),
     ).toEqual({
       ok: true,
-      data: { tab: 'applied', after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: cursorId } },
+      data: {
+        tab: 'applied',
+        after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: cursorId },
+        search: '',
+      },
     })
   })
 
@@ -316,9 +320,45 @@ describe('validateOpportunityListingRequest', () => {
     ['a cursor with an invalid date', 'applied', { publishedAt: 'hier', id: cursorId }],
     ['a cursor with a date given as number', 'applied', { publishedAt: 1760691600000, id: cursorId }],
   ])('rejects %s', (_caseName, tab, cursor) => {
-    expect(validateOpportunityListingRequest(tab, cursor)).toEqual({
+    expect(validateOpportunityListingRequest(tab, cursor, '')).toEqual({
       ok: false,
       errorMessage: 'Onglet ou page invalide',
+    })
+  })
+
+  it('rejects a search that is not a string', () => {
+    expect(validateOpportunityListingRequest('to_process', null, 42)).toEqual({
+      ok: false,
+      errorMessage: 'Onglet ou page invalide',
+    })
+  })
+
+  it('trims the search', () => {
+    expect(validateOpportunityListingRequest('to_process', null, '  react  ')).toEqual({
+      ok: true,
+      data: { tab: 'to_process', after: null, search: 'react' },
+    })
+  })
+
+  it('treats a whitespace-only search as no search', () => {
+    expect(validateOpportunityListingRequest('to_process', null, '   ')).toEqual({
+      ok: true,
+      data: { tab: 'to_process', after: null, search: '' },
+    })
+  })
+
+  it('accepts a search of exactly 100 characters', () => {
+    const search = 'a'.repeat(100)
+    expect(validateOpportunityListingRequest('to_process', null, search)).toEqual({
+      ok: true,
+      data: { tab: 'to_process', after: null, search },
+    })
+  })
+
+  it('rejects a search longer than 100 characters', () => {
+    expect(validateOpportunityListingRequest('to_process', null, 'a'.repeat(101))).toEqual({
+      ok: false,
+      errorMessage: 'La recherche ne peut pas dépasser 100 caractères',
     })
   })
 })

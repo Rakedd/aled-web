@@ -116,4 +116,12 @@ describe('OpportunitiesBoard', () => {
     expect(screen.getAllByText('nouveau')).toHaveLength(1)
     expect(screen.getByRole('tab', { name: 'À traiter (2)' })).toBeInTheDocument()
   })
+
+  it('renders a labelled search input capped at 100 characters above the tabs', () => {
+    renderBoard({})
+    const searchInput = screen.getByRole('searchbox', { name: 'Rechercher une mission' })
+    expect(searchInput).toHaveAttribute('placeholder', 'Rechercher une mission…')
+    expect(searchInput).toHaveAttribute('maxlength', '100')
+    expect(searchInput.compareDocumentPosition(screen.getByRole('tablist')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
 })

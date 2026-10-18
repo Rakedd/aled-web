@@ -157,7 +157,7 @@ const seedOpportunityOrFail = async (title: string): Promise<string> => {
 }
 
 const listToProcessOpportunityIdsOrFail = async (): Promise<string[]> => {
-  const listingResult = await listOpportunities('to_process', null)
+  const listingResult = await listOpportunities('to_process', null, '')
   if (!listingResult.ok) throw new Error(listingResult.errorMessage)
   return listingResult.data.items.map((listItem) => listItem.id)
 }

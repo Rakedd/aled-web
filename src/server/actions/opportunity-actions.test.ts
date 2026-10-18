@@ -125,10 +125,18 @@ describe('listOpportunities', () => {
     ['a cursor with an invalid id', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: '42' }],
   ])('rejects %s without querying the database', async (_caseName, tab, cursor) => {
     await expect(
-      listOpportunities(tab as 'to_process', cursor as { publishedAt: string; id: string } | null),
+      listOpportunities(tab as 'to_process', cursor as { publishedAt: string; id: string } | null, ''),
     ).resolves.toEqual({
       ok: false,
       errorMessage: 'Onglet ou page invalide',
+    })
+    expect(buildOpportunityListing).not.toHaveBeenCalled()
+  })
+
+  it('rejects a search longer than 100 characters without querying the database', async () => {
+    await expect(listOpportunities('to_process', null, 'a'.repeat(101))).resolves.toEqual({
+      ok: false,
+      errorMessage: 'La recherche ne peut pas dépasser 100 caractères',
     })
     expect(buildOpportunityListing).not.toHaveBeenCalled()
   })
@@ -144,12 +152,16 @@ describe('listOpportunities', () => {
     jest.mocked(buildOpportunityListing).mockResolvedValue(listing)
 
     await expect(
-      listOpportunities('to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: opportunityId }),
+      listOpportunities('to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: opportunityId }, '  react '),
     ).resolves.toEqual({ ok: true, data: listing })
     expect(buildOpportunityListing).toHaveBeenCalledWith(
       fakeSupabaseClient,
       'user-1',
-      { tab: 'to_process', after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: opportunityId } },
+      {
+        tab: 'to_process',
+        after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: opportunityId },
+        search: 'react',
+      },
       expect.any(Date),
     )
   })

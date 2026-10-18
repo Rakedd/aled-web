@@ -9,6 +9,7 @@ import type {
 export type ListOpportunities = (
   tab: OpportunityTab,
   cursor: OpportunityListingCursor | null,
+  search: string,
 ) => Promise<ActionResult<OpportunityListing>>
 export type DecideOnOpportunity = (opportunityId: string) => Promise<ActionResult<null>>
 export type MarkOpportunitiesViewed = () => Promise<ActionResult<null>>

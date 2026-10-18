@@ -24,10 +24,13 @@ type OpportunitySummaryRow = Pick<
   'id' | 'source' | 'title' | 'rate_min' | 'rate_max' | 'remote_mode' | 'region' | 'location_label' | 'published_at'
 >
 
+export type OpportunitySearchFields = Pick<Opportunity, 'id' | 'title' | 'company' | 'locationLabel'>
+
 type OpportunityRow = Omit<Tables<'opportunities'>, 'title_normalized' | 'updated_at'>
 
 const OPPORTUNITY_NATURAL_KEY_COLUMNS = 'source,external_id'
 const OPPORTUNITY_SUMMARY_COLUMNS = 'id, source, title, rate_min, rate_max, remote_mode, region, location_label, published_at'
+const OPPORTUNITY_SEARCH_COLUMNS = 'id, title, company, location_label'
 const OPPORTUNITY_COLUMNS =
   'id, source, external_id, url, title, company, description, rate_min, rate_max, rate_label, currency, remote_mode, location_label, region, country, duration_months, published_at, skills, received_at'
 
@@ -149,6 +152,29 @@ export const listOpportunitySummariesPublishedSince = async (
       .range(firstRowIndex, lastRowIndex),
   )
   return toOpportunitySummaries(summaryRows)
+}
+
+export const listOpportunitySearchFieldsPublishedSince = async (
+  supabase: FreeclutchSupabaseClient,
+  publishedSince: Date,
+): Promise<OpportunitySearchFields[]> => {
+  const searchRows = await fetchEveryRow(
+    'listOpportunitySearchFieldsPublishedSince',
+    (firstRowIndex, lastRowIndex) =>
+      supabase
+        .from('opportunities')
+        .select(OPPORTUNITY_SEARCH_COLUMNS)
+        .gte('published_at', publishedSince.toISOString())
+        .order('published_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(firstRowIndex, lastRowIndex),
+  )
+  return searchRows.map((searchRow) => ({
+    id: searchRow.id,
+    title: searchRow.title,
+    company: searchRow.company,
+    locationLabel: searchRow.location_label,
+  }))
 }
 
 export const listOpportunitiesByIds = async (

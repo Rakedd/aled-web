@@ -14,12 +14,19 @@ import {
   type OpportunityTab,
   TO_PROCESS_WINDOW_DAYS,
 } from '@/domain/opportunities'
-import { createOpportunityMatcher, EMPTY_OPPORTUNITY_FILTERS, type OpportunityFilters } from '@/domain/opportunity-filters'
+import {
+  createOpportunityMatcher,
+  EMPTY_OPPORTUNITY_FILTERS,
+  normalizeForKeywordMatch,
+  type OpportunityFilters,
+} from '@/domain/opportunity-filters'
 import { addParisCalendarDays, formatParisCalendarDate } from '@/domain/paris-time'
 import {
   findLastOpportunityReceivedAt,
   listOpportunitiesByIds,
+  listOpportunitySearchFieldsPublishedSince,
   listOpportunitySummariesPublishedSince,
+  type OpportunitySearchFields,
   type OpportunitySummary,
 } from '@/server/repositories/opportunities-repository'
 import {
@@ -123,6 +130,31 @@ const selectPositionsAfter = (
 ): OpportunityListingPosition[] =>
   after === null ? positions : positions.filter((position) => compareByPublicationDescending(position, after) > 0)
 
+const buildSearchPredicate = (
+  searchFields: OpportunitySearchFields[],
+  search: string,
+): ((position: OpportunityListingPosition) => boolean) => {
+  const normalizedSearch = normalizeForKeywordMatch(search)
+  const matchingOpportunityIds = new Set(
+    searchFields
+      .filter(({ title, company, locationLabel }) =>
+        [title, company, locationLabel].some((field) => normalizeForKeywordMatch(field ?? '').includes(normalizedSearch)),
+      )
+      .map(({ id }) => id),
+  )
+  return ({ id }) => matchingOpportunityIds.has(id)
+}
+
+const loadSearchPredicate = async (
+  supabase: FreeclutchSupabaseClient,
+  search: string,
+  historyStart: Date,
+): Promise<(position: OpportunityListingPosition) => boolean> => {
+  if (search === '') return () => true
+  const searchFields = await listOpportunitySearchFieldsPublishedSince(supabase, historyStart)
+  return buildSearchPredicate(searchFields, search)
+}
+
 export const toListItems = (
   pageOpportunityIds: string[],
   pageOpportunities: Opportunity[],
@@ -164,19 +196,20 @@ export const countOpportunitiesToProcessForUser = async (
 export const buildOpportunityListing = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
-  { tab, after }: OpportunityListingRequest,
+  { tab, after, search }: OpportunityListingRequest,
   now: Date,
 ): Promise<OpportunityListing> => {
-  const [toProcessContext, lastReceivedAt, lastViewedAt] = await Promise.all([
+  const historyStart = addParisCalendarDays(now, -HISTORY_WINDOW_DAYS)
+  const [toProcessContext, lastReceivedAt, lastViewedAt, matchesSearch] = await Promise.all([
     loadToProcessContextOncePerRequest(supabase, userId, now),
     findLastOpportunityReceivedAt(supabase),
     findOpportunitiesLastViewedAt(supabase, userId),
+    loadSearchPredicate(supabase, search, historyStart),
   ])
-  const historyStart = addParisCalendarDays(now, -HISTORY_WINDOW_DAYS)
   const positionsByTab: Record<OpportunityTab, OpportunityListingPosition[]> = {
-    to_process: selectPositionsToProcess(toProcessContext),
-    applied: selectDecidedPositions(toProcessContext.decisions, 'applied', historyStart),
-    dismissed: selectDecidedPositions(toProcessContext.decisions, 'dismissed', historyStart),
+    to_process: selectPositionsToProcess(toProcessContext).filter(matchesSearch),
+    applied: selectDecidedPositions(toProcessContext.decisions, 'applied', historyStart).filter(matchesSearch),
+    dismissed: selectDecidedPositions(toProcessContext.decisions, 'dismissed', historyStart).filter(matchesSearch),
   }
   const positionsAfterCursor = selectPositionsAfter(positionsByTab[tab], after)
   const pageOpportunityIds = positionsAfterCursor.slice(0, OPPORTUNITY_PAGE_SIZE).map(({ id }) => id)

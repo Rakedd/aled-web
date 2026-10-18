@@ -24,7 +24,13 @@ jest.mock('@/server/supabase/create-server-supabase-client', () => ({ createServ
 
 type TestUser = { client: SupabaseClient<Database>; userId: string }
 
-type SeededOpportunity = { title: string; daysAgo?: number; region?: string | null; publishedAt?: Date }
+type SeededOpportunity = {
+  title: string
+  daysAgo?: number
+  region?: string | null
+  publishedAt?: Date
+  company?: string
+}
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
 
@@ -42,6 +48,7 @@ const buildOpportunityRow = ({
   daysAgo = 0,
   region = null,
   publishedAt,
+  company = 'Agence X',
 }: SeededOpportunity): TablesInsert<'opportunities'> => {
   const externalId = randomUUID()
   return {
@@ -50,7 +57,7 @@ const buildOpportunityRow = ({
     url: `https://www.free-work.com/fr/tech-it/job-mission/${externalId}`,
     title,
     title_normalized: title.toLowerCase(),
-    company: 'Agence X',
+    company,
     description: 'Mission longue',
     rate_max: 550,
     remote_mode: 'partial',
@@ -92,8 +99,9 @@ const saveFiltersOrFail = async (filters: OpportunityFilters): Promise<void> => 
 const listOrFail = async (
   tab: OpportunityTab,
   cursor: OpportunityListingCursor | null = null,
+  search = '',
 ): Promise<OpportunityListing> => {
-  const listingResult = await listOpportunities(tab, cursor)
+  const listingResult = await listOpportunities(tab, cursor, search)
   if (!listingResult.ok) throw new Error(listingResult.errorMessage)
   return listingResult.data
 }
@@ -106,9 +114,12 @@ const toCursor = (items: OpportunityListing['items']): OpportunityListingCursor 
 const listEveryItemOrFail = async (
   tab: OpportunityTab,
   cursor: OpportunityListingCursor | null = null,
+  search = '',
 ): Promise<OpportunityListing['items']> => {
-  const listing = await listOrFail(tab, cursor)
-  return listing.hasMore ? [...listing.items, ...(await listEveryItemOrFail(tab, toCursor(listing.items)))] : listing.items
+  const listing = await listOrFail(tab, cursor, search)
+  return listing.hasMore
+    ? [...listing.items, ...(await listEveryItemOrFail(tab, toCursor(listing.items), search))]
+    : listing.items
 }
 
 const listIdsOrFail = async (tab: OpportunityTab): Promise<string[]> =>
@@ -204,15 +215,144 @@ describe('listOpportunities', () => {
     expect(dismissedItems.map((listItem) => listItem.id)).toEqual(firstPage.items.slice(0, 40).map((listItem) => listItem.id))
   })
 
+  describe('search', () => {
+    it('finds a company ignoring case and accents', async () => {
+      const user = await createTestUser()
+      actAs(user)
+      const keyword = buildUniqueKeyword()
+      const matchingId = await seedOpportunityOrFail({ title: `Mission ${keyword}`, company: `Société Générale ${keyword}` })
+      await seedOpportunityOrFail({ title: `Mission ${keyword} autre`, company: `Agence ${keyword}` })
+
+      const listing = await listOrFail('to_process', null, `SOCIETE generale ${keyword}`)
+
+      expect(listing.items.map((listItem) => listItem.id)).toEqual([matchingId])
+    })
+
+    it('finds a location', async () => {
+      const user = await createTestUser()
+      actAs(user)
+      const keyword = buildUniqueKeyword()
+      const matchingId = await seedOpportunityOrFail({ title: `Mission ${keyword}`, region: `Paris ${keyword}` })
+      await seedOpportunityOrFail({ title: `Mission ${keyword} autre`, region: `Lyon ${keyword}` })
+
+      const listing = await listOrFail('to_process', null, `paris ${keyword}`)
+
+      expect(listing.items.map((listItem) => listItem.id)).toEqual([matchingId])
+    })
+
+    it('finds a title', async () => {
+      const user = await createTestUser()
+      actAs(user)
+      const keyword = buildUniqueKeyword()
+      const matchingId = await seedOpportunityOrFail({ title: `Ingénieur Données ${keyword}` })
+      await seedOpportunityOrFail({ title: `Développeur Java ${keyword}` })
+
+      const listing = await listOrFail('to_process', null, `  INGENIEUR donnees ${keyword}  `)
+
+      expect(listing.items.map((listItem) => listItem.id)).toEqual([matchingId])
+    })
+
+    it('treats an empty search as no search', async () => {
+      const user = await createTestUser()
+      actAs(user)
+      const keyword = buildUniqueKeyword()
+      await seedOpportunitiesOrFail([{ title: `Mission ${keyword} A` }, { title: `Mission ${keyword} B` }])
+      await saveFiltersOrFail(filtersWith({ includeKeywords: [keyword] }))
+
+      const listing = await listOrFail('to_process', null, '   ')
+
+      expect(listing.items).toHaveLength(2)
+    })
+
+    it('filters the counters of the three tabs', async () => {
+      const user = await createTestUser()
+      actAs(user)
+      const keyword = buildUniqueKeyword()
+      const alphaId = await seedOpportunityOrFail({ title: `Alpha ${keyword}` })
+      const betaId = await seedOpportunityOrFail({ title: `Beta ${keyword}` })
+      const gammaId = await seedOpportunityOrFail({ title: `Gamma ${keyword}` })
+      await dismissOpportunity(alphaId)
+      await dismissOpportunity(betaId)
+      await applyToOpportunity(gammaId)
+
+      const alphaListing = await listOrFail('dismissed', null, `alpha ${keyword}`)
+      const keywordListing = await listOrFail('dismissed', null, keyword)
+
+      expect(alphaListing.items.map((listItem) => listItem.id)).toEqual([alphaId])
+      expect(alphaListing.counts).toEqual({ to_process: 0, applied: 0, dismissed: 1 })
+      expect(keywordListing.counts).toEqual({ to_process: 0, applied: 1, dismissed: 2 })
+    })
+
+    it('applies together with the Free-Work filters', async () => {
+      const user = await createTestUser()
+      actAs(user)
+      const keyword = buildUniqueKeyword()
+      const reactId = await seedOpportunityOrFail({ title: `Dev React ${keyword}` })
+      await seedOpportunityOrFail({ title: `Dev Java ${keyword}` })
+      await saveFiltersOrFail(filtersWith({ includeKeywords: ['react'] }))
+
+      const listing = await listOrFail('to_process', null, keyword)
+
+      expect(listing.items.map((listItem) => listItem.id)).toEqual([reactId])
+      expect(listing.counts.to_process).toBe(1)
+    })
+
+    it('paginates by cursor within the search results', async () => {
+      const user = await createTestUser()
+      actAs(user)
+      const keyword = buildUniqueKeyword()
+      const now = Date.now()
+      await seedOpportunitiesOrFail([
+        ...Array.from({ length: 60 }, (_, index) => ({
+          title: `Mission ${keyword} ${index}`,
+          publishedAt: new Date(now - (index + 1) * 60_000),
+        })),
+        { title: 'Sans rapport', publishedAt: new Date(now - 30_000) },
+      ])
+
+      const firstPage = await listOrFail('to_process', null, keyword)
+      const nextPage = await listOrFail('to_process', toCursor(firstPage.items), keyword)
+
+      expect(firstPage.items).toHaveLength(50)
+      expect(firstPage.hasMore).toBe(true)
+      expect(nextPage.items).toHaveLength(10)
+      expect(nextPage.hasMore).toBe(false)
+      expect(new Set([...firstPage.items, ...nextPage.items].map((listItem) => listItem.id)).size).toBe(60)
+      expect(nextPage.counts.to_process).toBe(60)
+    })
+
+    it('does not change the count of opportunities to process', async () => {
+      const user = await createTestUser()
+      actAs(user)
+      const keyword = buildUniqueKeyword()
+      await seedOpportunitiesOrFail([{ title: `Alpha ${keyword}` }, { title: `Beta ${keyword}` }])
+      await saveFiltersOrFail(filtersWith({ includeKeywords: [keyword] }))
+
+      await listOrFail('to_process', null, 'alpha')
+
+      await expect(countOpportunitiesToProcess()).resolves.toEqual({ ok: true, data: 2 })
+    })
+
+    it('rejects a search longer than 100 characters', async () => {
+      const user = await createTestUser()
+      actAs(user)
+
+      await expect(listOpportunities('to_process', null, 'a'.repeat(101))).resolves.toEqual({
+        ok: false,
+        errorMessage: 'La recherche ne peut pas dépasser 100 caractères',
+      })
+    })
+  })
+
   it('rejects an unknown tab or a malformed cursor', async () => {
     const user = await createTestUser()
     actAs(user)
 
-    await expect(listOpportunities('archived' as OpportunityTab, null)).resolves.toEqual({
+    await expect(listOpportunities('archived' as OpportunityTab, null, '')).resolves.toEqual({
       ok: false,
       errorMessage: 'Onglet ou page invalide',
     })
-    await expect(listOpportunities('to_process', { publishedAt: 'hier', id: randomUUID() })).resolves.toEqual({
+    await expect(listOpportunities('to_process', { publishedAt: 'hier', id: randomUUID() }, '')).resolves.toEqual({
       ok: false,
       errorMessage: 'Onglet ou page invalide',
     })

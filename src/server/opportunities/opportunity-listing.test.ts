@@ -3,6 +3,7 @@ import { EMPTY_OPPORTUNITY_FILTERS } from '@/domain/opportunity-filters'
 import {
   findLastOpportunityReceivedAt,
   listOpportunitiesByIds,
+  listOpportunitySearchFieldsPublishedSince,
   listOpportunitySummariesPublishedSince,
 } from '@/server/repositories/opportunities-repository'
 import { listOpportunityDecisions } from '@/server/repositories/opportunity-decisions-repository'
@@ -26,6 +27,7 @@ jest.mock('react', () => {
 jest.mock('@/server/repositories/opportunities-repository', () => ({
   findLastOpportunityReceivedAt: jest.fn(),
   listOpportunitiesByIds: jest.fn(),
+  listOpportunitySearchFieldsPublishedSince: jest.fn(),
   listOpportunitySummariesPublishedSince: jest.fn(),
 }))
 jest.mock('@/server/repositories/opportunity-decisions-repository', () => ({ listOpportunityDecisions: jest.fn() }))
@@ -62,7 +64,7 @@ describe('to-process context loading', () => {
   it('loads the summaries, decisions and filters once per request for the layout count and the listing', async () => {
     const [toProcessCount, listing] = await Promise.all([
       countOpportunitiesToProcessForUser(layoutClient, 'user-1', NOW),
-      buildOpportunityListing(pageClient, 'user-1', { tab: 'to_process', after: null }, NOW),
+      buildOpportunityListing(pageClient, 'user-1', { tab: 'to_process', after: null, search: '' }, NOW),
     ])
 
     expect(toProcessCount).toBe(1)
@@ -70,6 +72,29 @@ describe('to-process context loading', () => {
     expect(listOpportunitySummariesPublishedSince).toHaveBeenCalledTimes(1)
     expect(listOpportunityDecisions).toHaveBeenCalledTimes(1)
     expect(findOpportunityFiltersBySource).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not load the search fields without a search', async () => {
+    await buildOpportunityListing(pageClient, 'user-1', { tab: 'to_process', after: null, search: '' }, NOW)
+
+    expect(listOpportunitySearchFieldsPublishedSince).not.toHaveBeenCalled()
+  })
+
+  it('narrows the listing and its counts to the search while the to-process count stays unfiltered', async () => {
+    jest.mocked(listOpportunitySearchFieldsPublishedSince).mockResolvedValue([
+      { id: '6f1f4f7e-2f8c-4c55-9f0e-1b2c3d4e5f60', title: 'Développeur React', company: null, locationLabel: null },
+    ])
+
+    const listing = await buildOpportunityListing(
+      pageClient,
+      'user-1',
+      { tab: 'to_process', after: null, search: 'java' },
+      NOW,
+    )
+    const toProcessCount = await countOpportunitiesToProcessForUser(pageClient, 'user-1', NOW)
+
+    expect(listing.counts.to_process).toBe(0)
+    expect(toProcessCount).toBe(1)
   })
 
   it('never shares the context of one user with another', async () => {

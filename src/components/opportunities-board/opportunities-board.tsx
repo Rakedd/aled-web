@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { OpportunityCard } from '@/components/opportunity-card'
 import { OpportunityFeedFreshness } from '@/components/opportunity-feed-freshness'
 import { Button } from '@/components/ui/button'
-import { OPPORTUNITY_TABS, type OpportunityTab } from '@/domain/opportunities'
+import { Input } from '@/components/ui/input'
+import { OPPORTUNITY_SEARCH_MAX_LENGTH, OPPORTUNITY_TABS, type OpportunityTab } from '@/domain/opportunities'
 import { FREE_WORK_PREFERENCES_ROUTE } from '@/domain/routes'
 import { cn } from '@/lib/utils'
 import { useController } from './controller'
@@ -34,7 +35,7 @@ export const OpportunitiesBoard = ({
   markOpportunitiesViewed,
 }: OpportunitiesBoardProps) => {
   const router = useRouter()
-  const { tab, items, hasMore, counts, errorMessage, isLoadingListing, isOpportunityPending, isOpportunityNew, isAnyOpportunityPending, applyTo, dismiss, restore, selectTab, loadMore } =
+  const { tab, searchInput, hasActiveSearch, items, hasMore, counts, errorMessage, isLoadingListing, isOpportunityPending, isOpportunityNew, isAnyOpportunityPending, applyTo, dismiss, restore, selectTab, changeSearch, loadMore } =
     useController({
       initialTab,
       initialListing,
@@ -49,6 +50,7 @@ export const OpportunitiesBoard = ({
   const { lastReceivedAt } = initialListing
 
   const renderEmptyState = () => {
+    if (hasActiveSearch) return <p className="text-sm text-muted-foreground">Aucune mission ne correspond à ta recherche.</p>
     if (tab !== 'to_process') return <p className="text-sm text-muted-foreground">{EMPTY_TAB_MESSAGES[tab]}</p>
     if (lastReceivedAt === null) return null
     if (!hasActiveFilters) return <p className="text-sm text-muted-foreground">Rien de nouveau pour l&apos;instant.</p>
@@ -65,6 +67,14 @@ export const OpportunitiesBoard = ({
   return (
     <div className="flex min-w-0 flex-col gap-4">
       <OpportunityFeedFreshness lastReceivedAt={lastReceivedAt} now={now} />
+      <Input
+        type="search"
+        value={searchInput}
+        maxLength={OPPORTUNITY_SEARCH_MAX_LENGTH}
+        placeholder="Rechercher une mission…"
+        aria-label="Rechercher une mission"
+        onChange={(event) => changeSearch(event.target.value)}
+      />
       <div role="tablist" aria-label="Opportunités" className="flex gap-1 overflow-x-auto border-b">
         {OPPORTUNITY_TABS.map((tabKey) => (
           <button
