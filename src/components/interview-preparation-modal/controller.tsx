@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
-import type { GeneratedClientBrief } from '@/domain/client-brief'
-import type { ClientBriefSectionControllerParameters, ClientBriefSectionState, NotesSaveStatus } from './interfaces'
+import type { BriefLanguage } from '@/domain/interview-preparation'
+import type { InterviewPreparationModalControllerParameters, NotesSaveStatus } from './interfaces'
 
 const NOTES_AUTOSAVE_DELAY_IN_MILLISECONDS = 800
 
@@ -16,57 +16,32 @@ const runActionSafely = async <ResultData,>(
 }
 
 export const useController = ({
-  endClientBrief,
-  generateBriefForEndClient,
+  endClientId,
+  initialNotes,
+  language,
   updateEndClientNotes,
-  hasAnthropicApiKey,
-  onDataChanged,
-}: ClientBriefSectionControllerParameters) => {
-  const [generatedBrief, setGeneratedBrief] = useState<GeneratedClientBrief | null>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [notes, setNotes] = useState(endClientBrief?.notes ?? '')
+  onNotesSaved,
+  onRegenerate,
+}: InterviewPreparationModalControllerParameters) => {
+  const [notes, setNotes] = useState(initialNotes ?? '')
   const [notesSaveStatus, setNotesSaveStatus] = useState<NotesSaveStatus>('idle')
   const [notesErrorMessage, setNotesErrorMessage] = useState<string | null>(null)
-  const isGenerationInFlightRef = useRef(false)
+  const [regenerationLanguage, setRegenerationLanguage] = useState<BriefLanguage>(language)
   const pendingNotesRef = useRef<string | null>(null)
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const notesSaveQueueRef = useRef<Promise<void>>(Promise.resolve())
   const latestNotesSaveRequestNumberRef = useRef(0)
   const unsavedNotesRequestCountRef = useRef(0)
   const isMountedRef = useRef(true)
-  const notesSavingDependenciesRef = useRef({ endClientBrief, updateEndClientNotes })
+  const notesSavingDependenciesRef = useRef({ endClientId, updateEndClientNotes, onNotesSaved })
 
   useEffect(() => {
-    notesSavingDependenciesRef.current = { endClientBrief, updateEndClientNotes }
+    notesSavingDependenciesRef.current = { endClientId, updateEndClientNotes, onNotesSaved }
   })
-
-  const brief = generatedBrief ?? endClientBrief?.brief ?? null
-
-  const computeState = (): ClientBriefSectionState => {
-    if (endClientBrief === null) return 'unknown_client'
-    if (isGenerating) return 'generating'
-    return brief === null ? 'no_brief' : 'brief_available'
-  }
-
-  const generate = async () => {
-    if (endClientBrief === null || !hasAnthropicApiKey || isGenerationInFlightRef.current) return
-    isGenerationInFlightRef.current = true
-    setIsGenerating(true)
-    setErrorMessage(null)
-    const generationResult = await runActionSafely(() => generateBriefForEndClient(endClientBrief.endClientId))
-    isGenerationInFlightRef.current = false
-    setIsGenerating(false)
-    if (!generationResult.ok) {
-      setErrorMessage(generationResult.errorMessage)
-      return
-    }
-    setGeneratedBrief(generationResult.data)
-    onDataChanged()
-  }
 
   const showNotesSaveResult = (notesSaveResult: ActionResult<null>, requestNumber: number, savedNotes: string) => {
     const isLatestRequest = requestNumber === latestNotesSaveRequestNumberRef.current
+    if (notesSaveResult.ok) notesSavingDependenciesRef.current.onNotesSaved(savedNotes)
     if (!isMountedRef.current || !isLatestRequest) return
     if (!notesSaveResult.ok && pendingNotesRef.current === null) pendingNotesRef.current = savedNotes
     setNotesSaveStatus(notesSaveResult.ok ? 'saved' : 'failed')
@@ -75,14 +50,16 @@ export const useController = ({
 
   const enqueueNotesSave = (notesToSave: string) => {
     const savingDependencies = notesSavingDependenciesRef.current
-    if (savingDependencies.endClientBrief === null) return
-    const { endClientId } = savingDependencies.endClientBrief
+    if (savingDependencies.endClientId === null) return
+    const { endClientId: endClientIdToSave } = savingDependencies
     latestNotesSaveRequestNumberRef.current += 1
     unsavedNotesRequestCountRef.current += 1
     const requestNumber = latestNotesSaveRequestNumberRef.current
     notesSaveQueueRef.current = notesSaveQueueRef.current.then(async () => {
       if (isMountedRef.current && requestNumber === latestNotesSaveRequestNumberRef.current) setNotesSaveStatus('saving')
-      const notesSaveResult = await runActionSafely(() => savingDependencies.updateEndClientNotes(endClientId, notesToSave))
+      const notesSaveResult = await runActionSafely(() =>
+        savingDependencies.updateEndClientNotes(endClientIdToSave, notesToSave),
+      )
       unsavedNotesRequestCountRef.current -= 1
       showNotesSaveResult(notesSaveResult, requestNumber, notesToSave)
     })
@@ -126,15 +103,13 @@ export const useController = ({
   }, [])
 
   return {
-    state: computeState(),
-    brief,
-    isGenerating,
-    errorMessage,
-    generate,
     notes,
     changeNotes,
     notesSaveStatus,
     notesErrorMessage,
     retryNotesSave: flushPendingNotes,
+    regenerationLanguage,
+    changeRegenerationLanguage: setRegenerationLanguage,
+    requestRegeneration: () => onRegenerate(regenerationLanguage),
   }
 }

@@ -1,15 +1,15 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ActivityLog } from '@/components/activity-log'
-import { ClientBriefSection } from '@/components/client-brief-section'
+import { InterviewPreparationButton } from '@/components/interview-preparation-button'
 import { InterviewsSection } from '@/components/interviews-section'
 import { JobApplicationHeader } from '@/components/job-application-header'
 import { JobSpecSection } from '@/components/job-spec-section'
 import { MissionInfoForm } from '@/components/mission-info-form'
 import type { ActionResult } from '@/domain/action-result'
-import type { EndClientBrief } from '@/domain/client-brief'
+import type { InterviewPreparation } from '@/domain/interview-preparation'
 import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from '@/domain/job-application'
-import { generateBriefForEndClient, getEndClientBrief, updateEndClientNotes } from '@/server/actions/client-brief-actions'
+import { updateEndClientNotes } from '@/server/actions/client-brief-actions'
 import {
   getContactDetails,
   searchEntities,
@@ -23,6 +23,7 @@ import {
   listInterviewsForJobApplication,
   updateInterview,
 } from '@/server/actions/interview-actions'
+import { generateInterviewPreparation, getInterviewPreparation } from '@/server/actions/interview-preparation-actions'
 import {
   addActivityLogEntry,
   changeJobApplicationStatus,
@@ -43,8 +44,15 @@ export const metadata: Metadata = { title: 'Candidature · Freeclutch' }
 
 export const maxDuration = 300
 
-const loadEndClientBrief = (endClientId: string | null): Promise<ActionResult<EndClientBrief | null>> =>
-  endClientId === null ? Promise.resolve({ ok: true, data: null }) : getEndClientBrief(endClientId)
+const DEFAULT_BRIEF_LANGUAGE = 'fr'
+
+const loadInitialInterviewPreparation = async (jobApplicationId: string): Promise<ActionResult<InterviewPreparation>> => {
+  const defaultLanguagePreparationResult = await getInterviewPreparation(jobApplicationId, DEFAULT_BRIEF_LANGUAGE)
+  if (!defaultLanguagePreparationResult.ok) return defaultLanguagePreparationResult
+  const { lastUsedLanguage } = defaultLanguagePreparationResult.data
+  if (lastUsedLanguage === null || lastUsedLanguage === DEFAULT_BRIEF_LANGUAGE) return defaultLanguagePreparationResult
+  return getInterviewPreparation(jobApplicationId, lastUsedLanguage)
+}
 
 const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobApplicationId: string }> }) => {
   const { jobApplicationId } = await params
@@ -92,12 +100,12 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
 
   const jobApplication = jobApplicationResult.data
   const now = new Date()
-  const endClientBriefResult = await loadEndClientBrief(jobApplication.endClientId)
+  const interviewPreparationResult = await loadInitialInterviewPreparation(jobApplication.id)
 
-  if (!endClientBriefResult.ok) {
+  if (!interviewPreparationResult.ok) {
     return (
       <p role="alert" className="text-sm text-destructive">
-        {endClientBriefResult.errorMessage}
+        {interviewPreparationResult.errorMessage}
       </p>
     )
   }
@@ -130,11 +138,12 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
             discardPendingJobSpecStack={discardPendingJobSpecStack}
             hasAnthropicApiKey={hasAnthropicApiKey}
           />
-          <ClientBriefSection
-            key={jobApplication.endClientId ?? 'unknown-end-client'}
-            endClientBrief={endClientBriefResult.data}
-            endClientLabel={jobApplication.endClientLabel}
-            generateBriefForEndClient={generateBriefForEndClient}
+          <InterviewPreparationButton
+            key={`${jobApplication.id}-${jobApplication.endClientId ?? 'unknown-end-client'}`}
+            jobApplicationId={jobApplication.id}
+            initialPreparation={interviewPreparationResult.data}
+            getInterviewPreparation={getInterviewPreparation}
+            generateInterviewPreparation={generateInterviewPreparation}
             updateEndClientNotes={updateEndClientNotes}
             hasAnthropicApiKey={hasAnthropicApiKey}
           />

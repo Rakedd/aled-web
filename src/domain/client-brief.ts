@@ -6,14 +6,6 @@ export type ClientBriefSource = { title: string; url: string }
 
 export type ClientBrief = { markdown: string; sources: ClientBriefSource[] }
 
-export type GeneratedClientBrief = ClientBrief & { generatedAt: Date }
-
-export type EndClientBrief = {
-  endClientId: string
-  notes: string | null
-  brief: GeneratedClientBrief | null
-}
-
 export const CLIENT_BRIEF_MESSAGES = {
   unknownClient: "Client inconnu, demande-le à l'intermédiaire",
   unusableEndClientName: 'Le nom du client final ne permet pas de générer un brief. Corrige-le dans les infos mission.',

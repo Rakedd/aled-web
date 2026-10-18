@@ -1,9 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { ClientBrief } from '@/domain/client-brief'
 import type { InterviewInput } from '@/domain/interviews'
 import type { StackItem } from '@/domain/types'
-import { generateBriefForEndClient, getEndClientBrief, updateEndClientNotes } from '@/server/actions/client-brief-actions'
+import { updateEndClientNotes } from '@/server/actions/client-brief-actions'
 import {
   createInterview,
   deleteInterview,
@@ -11,9 +10,7 @@ import {
   listUpcomingInterviews,
   updateInterview,
 } from '@/server/actions/interview-actions'
-import { generateClientBrief } from '@/server/ai/generate-client-brief'
 import { findJobApplicationOverview } from '@/server/repositories/job-applications-repository'
-import { getDecryptedAnthropicApiKeyForUser } from '@/server/repositories/profile-repository'
 import { createServerSupabaseClient } from '@/server/supabase/create-server-supabase-client'
 import type { Database } from '@/server/supabase/database-types'
 import { getAuthenticatedUser } from '@/server/supabase/get-authenticated-user'
@@ -23,15 +20,8 @@ import { createJobApplicationOrFail } from './job-application-fixtures'
 jest.mock('server-only', () => ({}))
 jest.mock('@/server/supabase/get-authenticated-user', () => ({ getAuthenticatedUser: jest.fn() }))
 jest.mock('@/server/supabase/create-server-supabase-client', () => ({ createServerSupabaseClient: jest.fn() }))
-jest.mock('@/server/repositories/profile-repository', () => ({ getDecryptedAnthropicApiKeyForUser: jest.fn() }))
-jest.mock('@/server/ai/generate-client-brief', () => ({ generateClientBrief: jest.fn() }))
 
 type TestUser = { client: SupabaseClient<Database>; userId: string }
-
-const generatedClientBrief: ClientBrief = {
-  markdown: '## Enjeux\n\nDigitaliser la gestion immobilière',
-  sources: [{ title: 'Rapport annuel', url: 'https://example.com/report' }],
-}
 
 const jobApplicationStack: StackItem[] = [{ name: 'React', category: 'framework', origin: 'job_spec' }]
 
@@ -66,39 +56,15 @@ const createInterviewOrFail = async (jobApplicationId: string, input: InterviewI
 
 beforeEach(() => {
   jest.clearAllMocks()
-  jest.mocked(getDecryptedAnthropicApiKeyForUser).mockResolvedValue('sk-ant-test-key')
-  jest.mocked(generateClientBrief).mockResolvedValue(generatedClientBrief)
 })
 
-describe('client brief actions', () => {
-  it('stores the brief on the end client so every application with this client shares it', async () => {
-    const user = await createTestUser()
-    actAs(user)
-    const firstJobApplicationId = await createJobApplicationOrFail(user.client, user.userId, {
-      endClientName: 'BNP Paribas Real Estate',
-      endClientParentName: 'BNP Paribas',
-    })
-    const secondJobApplicationId = await createJobApplicationOrFail(user.client, user.userId, {
-      title: 'Lead dev',
-      endClientName: 'bnp paribas real estate',
-    })
-    const endClientId = await findEndClientIdOrFail(user, firstJobApplicationId)
-    expect(await findEndClientIdOrFail(user, secondJobApplicationId)).toBe(endClientId)
+const readEndClientNotes = async (user: TestUser, endClientId: string): Promise<string | null | undefined> => {
+  const { data, error } = await user.client.from('end_clients').select('notes').eq('id', endClientId).maybeSingle()
+  if (error) throw new Error(error.message)
+  return data?.notes
+}
 
-    const generationResult = await generateBriefForEndClient(endClientId)
-
-    expect(generateClientBrief).toHaveBeenCalledWith(expect.anything(), {
-      endClientName: 'BNP Paribas Real Estate',
-      parentGroupName: 'BNP Paribas',
-      language: 'fr',
-    })
-    expect(generationResult).toEqual({ ok: true, data: { ...generatedClientBrief, generatedAt: expect.any(Date) } })
-    expect(await getEndClientBrief(endClientId)).toEqual({
-      ok: true,
-      data: { endClientId, notes: null, brief: { ...generatedClientBrief, generatedAt: expect.any(Date) } },
-    })
-  })
-
+describe('end client notes action', () => {
   it('saves the personal notes of the end client', async () => {
     const user = await createTestUser()
     actAs(user)
@@ -107,13 +73,10 @@ describe('client brief actions', () => {
 
     expect(await updateEndClientNotes(endClientId, '  Parler de la refonte  ')).toEqual({ ok: true, data: null })
 
-    expect(await getEndClientBrief(endClientId)).toEqual({
-      ok: true,
-      data: { endClientId, notes: 'Parler de la refonte', brief: null },
-    })
+    expect(await readEndClientNotes(user, endClientId)).toBe('Parler de la refonte')
   })
 
-  it('prevents user B from reading, generating or annotating the brief of user A end client', async () => {
+  it('prevents user B from annotating the end client of user A', async () => {
     const userA = await createTestUser()
     const userB = await createTestUser()
     actAs(userA)
@@ -122,17 +85,13 @@ describe('client brief actions', () => {
     await updateEndClientNotes(endClientId, 'Notes de A')
 
     actAs(userB)
-    const endClientNotFound = { ok: false, errorMessage: 'Client final introuvable' }
-    expect(await getEndClientBrief(endClientId)).toEqual(endClientNotFound)
-    expect(await generateBriefForEndClient(endClientId)).toEqual(endClientNotFound)
-    expect(generateClientBrief).not.toHaveBeenCalled()
-    expect(await updateEndClientNotes(endClientId, 'Écrasé par B')).toEqual(endClientNotFound)
+    expect(await updateEndClientNotes(endClientId, 'Écrasé par B')).toEqual({
+      ok: false,
+      errorMessage: 'Client final introuvable',
+    })
 
     actAs(userA)
-    expect(await getEndClientBrief(endClientId)).toEqual({
-      ok: true,
-      data: { endClientId, notes: 'Notes de A', brief: null },
-    })
+    expect(await readEndClientNotes(userA, endClientId)).toBe('Notes de A')
   })
 })
 
