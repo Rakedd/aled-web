@@ -1,27 +1,19 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import type { ComponentProps, FormEvent } from 'react'
-import { BlockFormActions } from '@/components/block-form-actions'
+import { BlockForm } from '@/components/block-form'
 import { EntityAutocomplete } from '@/components/entity-autocomplete'
 import { FormField } from '@/components/form-field'
-import { Input } from '@/components/ui/input'
+import { TextField } from '@/components/text-field'
 import { INTERMEDIARY_KIND_LABELS, INTERMEDIARY_KINDS } from '@/domain/entities'
 import { useController } from './controller'
-import type { HeaderEditFormProps, HeaderEditFormValueName } from './interfaces'
+import type { HeaderEditFormProps } from './interfaces'
 
+const INTERMEDIARY_NAME_INPUT_ID = 'header-edit-intermediaryName'
 const INTERMEDIARY_KIND_SELECT_ID = 'header-edit-intermediaryKind'
+const END_CLIENT_NAME_INPUT_ID = 'header-edit-endClientName'
 const NEW_INTERMEDIARY_KIND_HINT = "Enregistre d'abord le nouvel intermédiaire pour choisir son type."
 
-export const HeaderEditForm = ({
-  jobApplication,
-  updateJobApplication,
-  setEndClientParent,
-  updateIntermediaryKind,
-  searchEntities,
-  onClose,
-}: HeaderEditFormProps) => {
-  const router = useRouter()
+export const HeaderEditForm = ({ searchEntities, ...controllerParameters }: HeaderEditFormProps) => {
   const {
     formValues,
     setFormValue,
@@ -31,66 +23,49 @@ export const HeaderEditForm = ({
     errorMessage,
     save,
     cancel,
-  } = useController({
-    jobApplication,
-    updateJobApplication,
-    setEndClientParent,
-    updateIntermediaryKind,
-    onDataChanged: router.refresh,
-    onClose,
-  })
-
-  const renderTextInput = (
-    valueName: HeaderEditFormValueName,
-    label: string,
-    inputProps: ComponentProps<typeof Input> = {},
-  ) => (
-    <FormField htmlFor={`header-edit-${valueName}`} label={label}>
-      <Input
-        id={`header-edit-${valueName}`}
-        value={formValues[valueName]}
-        onChange={(changeEvent) => setFormValue(valueName, changeEvent.target.value)}
-        {...inputProps}
-      />
-    </FormField>
-  )
-
-  const renderEntityField = (
-    valueName: 'intermediaryName' | 'endClientName',
-    entityKind: 'intermediary' | 'end_client',
-    label: string,
-  ) => (
-    <FormField htmlFor={`header-edit-${valueName}`} label={label}>
-      <EntityAutocomplete
-        id={`header-edit-${valueName}`}
-        entityKind={entityKind}
-        value={formValues[valueName]}
-        onChange={(value) => setFormValue(valueName, value)}
-        onSelectSuggestion={
-          entityKind === 'end_client'
-            ? (suggestion) => setFormValue('endClientParentName', suggestion.parentName ?? '')
-            : undefined
-        }
-        searchEntities={searchEntities}
-      />
-    </FormField>
-  )
-
-  const handleSubmit = (formEvent: FormEvent<HTMLFormElement>) => {
-    formEvent.preventDefault()
-    void save()
-  }
+  } = useController(controllerParameters)
 
   const shouldExplainIntermediaryKind =
-    jobApplication.intermediaryId !== null && isIntermediaryKindDisabled && formValues.intermediaryName.trim().length > 0
+    controllerParameters.jobApplication.intermediaryId !== null &&
+    isIntermediaryKindDisabled &&
+    formValues.intermediaryName.trim().length > 0
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <BlockForm isSaving={isSaving} errorMessage={errorMessage} onSave={save} onCancel={cancel}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">{renderTextInput('title', 'Titre de la mission *', { required: true })}</div>
-        {renderTextInput('source', 'Source')}
-        {renderTextInput('postingUrl', "Lien de l'annonce", { type: 'url', inputMode: 'url', placeholder: 'https://' })}
-        {renderEntityField('intermediaryName', 'intermediary', 'Intermédiaire')}
+        <div className="sm:col-span-2">
+          <TextField
+            id="header-edit-title"
+            label="Titre de la mission *"
+            required
+            value={formValues.title}
+            onValueChange={(value) => setFormValue('title', value)}
+          />
+        </div>
+        <TextField
+          id="header-edit-source"
+          label="Source"
+          value={formValues.source}
+          onValueChange={(value) => setFormValue('source', value)}
+        />
+        <TextField
+          id="header-edit-postingUrl"
+          label="Lien de l'annonce"
+          type="url"
+          inputMode="url"
+          placeholder="https://"
+          value={formValues.postingUrl}
+          onValueChange={(value) => setFormValue('postingUrl', value)}
+        />
+        <FormField htmlFor={INTERMEDIARY_NAME_INPUT_ID} label="Intermédiaire">
+          <EntityAutocomplete
+            id={INTERMEDIARY_NAME_INPUT_ID}
+            entityKind="intermediary"
+            value={formValues.intermediaryName}
+            onChange={(value) => setFormValue('intermediaryName', value)}
+            searchEntities={searchEntities}
+          />
+        </FormField>
         <FormField
           htmlFor={INTERMEDIARY_KIND_SELECT_ID}
           label="Type d'intermédiaire"
@@ -113,11 +88,31 @@ export const HeaderEditForm = ({
             ))}
           </select>
         </FormField>
-        {renderEntityField('endClientName', 'end_client', 'Client final')}
-        {renderTextInput('endClientParentName', 'Groupe du client final', { disabled: isEndClientParentDisabled })}
-        {renderTextInput('appliedOn', 'Date de candidature', { type: 'date' })}
+        <FormField htmlFor={END_CLIENT_NAME_INPUT_ID} label="Client final">
+          <EntityAutocomplete
+            id={END_CLIENT_NAME_INPUT_ID}
+            entityKind="end_client"
+            value={formValues.endClientName}
+            onChange={(value) => setFormValue('endClientName', value)}
+            onSelectSuggestion={(suggestion) => setFormValue('endClientParentName', suggestion.parentName ?? '')}
+            searchEntities={searchEntities}
+          />
+        </FormField>
+        <TextField
+          id="header-edit-endClientParentName"
+          label="Groupe du client final"
+          disabled={isEndClientParentDisabled}
+          value={formValues.endClientParentName}
+          onValueChange={(value) => setFormValue('endClientParentName', value)}
+        />
+        <TextField
+          id="header-edit-appliedOn"
+          label="Date de candidature"
+          type="date"
+          value={formValues.appliedOn}
+          onValueChange={(value) => setFormValue('appliedOn', value)}
+        />
       </div>
-      <BlockFormActions isSaving={isSaving} errorMessage={errorMessage} onCancel={cancel} />
-    </form>
+    </BlockForm>
   )
 }

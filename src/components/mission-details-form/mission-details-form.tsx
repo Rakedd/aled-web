@@ -1,54 +1,64 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import type { ComponentProps, FormEvent } from 'react'
-import { BlockFormActions } from '@/components/block-form-actions'
+import { BlockForm } from '@/components/block-form'
 import { FormField } from '@/components/form-field'
-import { Input } from '@/components/ui/input'
+import { TextField } from '@/components/text-field'
 import { useController } from './controller'
-import type { MissionDetailsFormProps, MissionDetailsFormValueName } from './interfaces'
+import type { MissionDetailsFormProps } from './interfaces'
 
 const NOTES_TEXTAREA_ID = 'mission-details-notes'
 
-export const MissionDetailsForm = ({ jobApplication, updateJobApplication, onClose }: MissionDetailsFormProps) => {
-  const router = useRouter()
-  const { formValues, setFormValue, isSaving, errorMessage, save, cancel } = useController({
-    jobApplication,
-    updateJobApplication,
-    onDataChanged: router.refresh,
-    onClose,
-  })
-
-  const renderTextInput = (
-    valueName: MissionDetailsFormValueName,
-    label: string,
-    inputProps: ComponentProps<typeof Input> = {},
-  ) => (
-    <FormField htmlFor={`mission-details-${valueName}`} label={label}>
-      <Input
-        id={`mission-details-${valueName}`}
-        value={formValues[valueName]}
-        onChange={(changeEvent) => setFormValue(valueName, changeEvent.target.value)}
-        {...inputProps}
-      />
-    </FormField>
-  )
-
-  const handleSubmit = (formEvent: FormEvent<HTMLFormElement>) => {
-    formEvent.preventDefault()
-    void save()
-  }
+export const MissionDetailsForm = (props: MissionDetailsFormProps) => {
+  const { formValues, setFormValue, isSaving, errorMessage, save, cancel } = useController(props)
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <BlockForm isSaving={isSaving} errorMessage={errorMessage} onSave={save} onCancel={cancel}>
       <div className="grid gap-4 sm:grid-cols-2">
-        {renderTextInput('postedDailyRate', 'TJM annoncé (€)', { inputMode: 'numeric' })}
-        {renderTextInput('requestedDailyRate', 'TJM demandé (€)', { inputMode: 'numeric' })}
-        {renderTextInput('location', 'Lieu')}
-        {renderTextInput('remotePolicy', 'Présentiel / télétravail')}
-        {renderTextInput('desiredStart', 'Démarrage souhaité')}
-        {renderTextInput('actualStartDate', 'Démarrage effectif', { type: 'date' })}
-        {renderTextInput('duration', 'Durée')}
+        <TextField
+          id="mission-details-postedDailyRate"
+          label="TJM annoncé (€)"
+          inputMode="numeric"
+          value={formValues.postedDailyRate}
+          onValueChange={(value) => setFormValue('postedDailyRate', value)}
+        />
+        <TextField
+          id="mission-details-requestedDailyRate"
+          label="TJM demandé (€)"
+          inputMode="numeric"
+          value={formValues.requestedDailyRate}
+          onValueChange={(value) => setFormValue('requestedDailyRate', value)}
+        />
+        <TextField
+          id="mission-details-location"
+          label="Lieu"
+          value={formValues.location}
+          onValueChange={(value) => setFormValue('location', value)}
+        />
+        <TextField
+          id="mission-details-remotePolicy"
+          label="Présentiel / télétravail"
+          value={formValues.remotePolicy}
+          onValueChange={(value) => setFormValue('remotePolicy', value)}
+        />
+        <TextField
+          id="mission-details-desiredStart"
+          label="Démarrage souhaité"
+          value={formValues.desiredStart}
+          onValueChange={(value) => setFormValue('desiredStart', value)}
+        />
+        <TextField
+          id="mission-details-actualStartDate"
+          label="Démarrage effectif"
+          type="date"
+          value={formValues.actualStartDate}
+          onValueChange={(value) => setFormValue('actualStartDate', value)}
+        />
+        <TextField
+          id="mission-details-duration"
+          label="Durée"
+          value={formValues.duration}
+          onValueChange={(value) => setFormValue('duration', value)}
+        />
       </div>
       <FormField htmlFor={NOTES_TEXTAREA_ID} label="Notes">
         <textarea
@@ -59,7 +69,6 @@ export const MissionDetailsForm = ({ jobApplication, updateJobApplication, onClo
           onChange={(changeEvent) => setFormValue('notes', changeEvent.target.value)}
         />
       </FormField>
-      <BlockFormActions isSaving={isSaving} errorMessage={errorMessage} onCancel={cancel} />
-    </form>
+    </BlockForm>
   )
 }

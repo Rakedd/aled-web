@@ -1,11 +1,7 @@
 import { type ContactDetails, validateContactDetailsInput } from '@/domain/entities'
 import { findChangedFields, toFormText, toNullableText } from '@/domain/form-values'
 import { type SavePlan, planJobApplicationUpdate, useBlockForm } from '@/lib/use-block-form'
-import type {
-  ContactEditFormControllerParameters,
-  ContactEditFormValueName,
-  ContactEditFormValues,
-} from './interfaces'
+import type { ContactEditFormControllerParameters, ContactEditFormValues } from './interfaces'
 
 const toFormValues = (contactName: string | null, contactDetails: ContactDetails | null): ContactEditFormValues => ({
   contactName: toFormText(contactName),
@@ -30,7 +26,7 @@ export const useController = ({
 }: ContactEditFormControllerParameters) => {
   const linkedContactDetails =
     contactDetails !== null && contactDetails.id === jobApplication.contactId ? contactDetails : null
-  const { baselineFormValues, formValues, setFormValues, isSaving, errorMessage, save } = useBlockForm({
+  const { baselineFormValues, formValues, setFormValue, isSaving, errorMessage, save } = useBlockForm({
     serverFormValues: toFormValues(jobApplication.contactName, linkedContactDetails),
     onDataChanged,
     onClose,
@@ -38,13 +34,6 @@ export const useController = ({
 
   const isContactNameEdited = formValues.contactName !== baselineFormValues.contactName
 
-  const setFormValue = (valueName: ContactEditFormValueName, value: string) =>
-    setFormValues((currentFormValues) => {
-      const isLinkingAnotherContact = valueName === 'contactName' && value !== baselineFormValues.contactName
-      return isLinkingAnotherContact
-        ? { ...baselineFormValues, contactName: value }
-        : { ...currentFormValues, [valueName]: value }
-    })
 
   const planContactSave = (): SavePlan => {
     const changedContactName = findChangedFields(

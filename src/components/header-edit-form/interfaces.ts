@@ -29,6 +29,6 @@ export type HeaderEditFormControllerParameters = {
   onClose: () => void
 }
 
-export type HeaderEditFormProps = Omit<HeaderEditFormControllerParameters, 'onDataChanged'> & {
+export type HeaderEditFormProps = HeaderEditFormControllerParameters & {
   searchEntities: SearchEntities
 }

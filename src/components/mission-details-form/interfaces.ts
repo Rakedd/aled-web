@@ -20,4 +20,4 @@ export type MissionDetailsFormControllerParameters = {
   onClose: () => void
 }
 
-export type MissionDetailsFormProps = Omit<MissionDetailsFormControllerParameters, 'onDataChanged'>
+export type MissionDetailsFormProps = MissionDetailsFormControllerParameters

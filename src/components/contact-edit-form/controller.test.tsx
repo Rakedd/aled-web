@@ -58,10 +58,33 @@ describe('contact-edit-form useController', () => {
     act(() => result.current.setFormValue('phone', '0611223344'))
     act(() => result.current.setFormValue('contactName', 'Paul Durand'))
     expect(result.current.areContactDetailsDisabled).toBe(true)
-    expect(result.current.formValues.phone).toBe('0102030405')
     await act(() => result.current.save())
     expect(updateJobApplication).toHaveBeenCalledWith('application-1', { contactName: 'Paul Durand' })
     expect(updateContactDetails).not.toHaveBeenCalled()
+  })
+
+  it('keeps the typed details as a draft while the name changes and restores them when it is reverted', async () => {
+    const { result, updateContactDetails } = renderContactController()
+    act(() => result.current.setFormValue('phone', '0611223344'))
+    act(() => result.current.setFormValue('contactName', 'Paul Durand'))
+    expect(result.current.formValues.phone).toBe('0611223344')
+    act(() => result.current.setFormValue('contactName', 'Jeanne Martin'))
+    expect(result.current.areContactDetailsDisabled).toBe(false)
+    expect(result.current.formValues.phone).toBe('0611223344')
+    await act(() => result.current.save())
+    expect(updateContactDetails).toHaveBeenCalledWith('contact-1', expect.objectContaining({ phone: '0611223344' }))
+  })
+
+  it('ignores details that belong to another contact than the linked one', async () => {
+    const { result, updateContactDetails, onClose } = renderContactController({
+      contactDetails: buildContactDetails({ id: 'contact-2', phone: '0799999999' }),
+    })
+    expect(result.current.formValues.phone).toBe('')
+    expect(result.current.areContactDetailsDisabled).toBe(true)
+    act(() => result.current.setFormValue('phone', '0611223344'))
+    await act(() => result.current.save())
+    expect(updateContactDetails).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 
   it('detaches a cleared contact by sending a null name', async () => {

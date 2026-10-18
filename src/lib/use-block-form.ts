@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { type ActionResult, guardActionCall } from '@/domain/action-result'
 import { isSameFormValue, mergeUntouchedFormValues } from '@/domain/form-values'
 import { type JobApplicationInput, validateJobApplicationUpdateInput } from '@/domain/job-application'
@@ -34,12 +34,22 @@ export const useBlockForm = <FormValues extends Record<string, unknown>>({
   const [formValues, setFormValues] = useState<FormValues>(serverFormValues)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isRefreshing, startRefreshTransition] = useTransition()
   const isSaveInFlightRef = useRef(false)
+  const shouldCloseAfterRefreshRef = useRef(false)
 
   if (!isSameFormValue(serverFormValues, baselineFormValues)) {
     setBaselineFormValues(serverFormValues)
     setFormValues(mergeUntouchedFormValues(baselineFormValues, serverFormValues, formValues))
   }
+
+  useEffect(() => {
+    if (isRefreshing || !shouldCloseAfterRefreshRef.current) return
+    shouldCloseAfterRefreshRef.current = false
+    onClose()
+  }, [isRefreshing, onClose])
+
+  const refreshData = () => startRefreshTransition(() => onDataChanged())
 
   const setFormValue = <ValueName extends keyof FormValues>(valueName: ValueName, value: FormValues[ValueName]) =>
     setFormValues((currentFormValues) => ({ ...currentFormValues, [valueName]: value }))
@@ -50,7 +60,7 @@ export const useBlockForm = <FormValues extends Record<string, unknown>>({
   }
 
   const save = async (planSave: () => SavePlan) => {
-    if (isSaveInFlightRef.current) return
+    if (isSaveInFlightRef.current || shouldCloseAfterRefreshRef.current) return
     setErrorMessage(null)
     const savePlan = planSave()
     if (!savePlan.ok) {
@@ -69,14 +79,14 @@ export const useBlockForm = <FormValues extends Record<string, unknown>>({
       if (!stepResult.ok) {
         finishSaving()
         setErrorMessage(stepResult.errorMessage)
-        if (hasSavedAnyStep) onDataChanged()
+        if (hasSavedAnyStep) refreshData()
         return
       }
       hasSavedAnyStep = true
     }
     finishSaving()
-    onDataChanged()
-    onClose()
+    shouldCloseAfterRefreshRef.current = true
+    refreshData()
   }
 
   return {
@@ -84,7 +94,7 @@ export const useBlockForm = <FormValues extends Record<string, unknown>>({
     formValues,
     setFormValues,
     setFormValue,
-    isSaving,
+    isSaving: isSaving || isRefreshing,
     errorMessage,
     save,
   }

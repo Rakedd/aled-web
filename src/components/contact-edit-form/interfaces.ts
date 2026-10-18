@@ -23,6 +23,6 @@ export type ContactEditFormControllerParameters = {
   onClose: () => void
 }
 
-export type ContactEditFormProps = Omit<ContactEditFormControllerParameters, 'onDataChanged'> & {
+export type ContactEditFormProps = ContactEditFormControllerParameters & {
   searchEntities: SearchEntities
 }

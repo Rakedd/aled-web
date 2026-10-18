@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ActivityLog } from '@/components/activity-log'
 import { DeleteJobApplicationButton } from '@/components/delete-job-application-button'
+import { HeaderView } from '@/components/header-view'
 import { InterviewPreparationButton } from '@/components/interview-preparation-button'
 import { InterviewsSection } from '@/components/interviews-section'
 import { ContactView } from '@/components/contact-view'
@@ -145,10 +146,11 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
   return (
     <div className="flex min-w-0 flex-col gap-8">
       <div className="flex min-w-0 flex-col gap-4">
+        <JobApplicationSummary title={jobApplication.title} interviews={interviewsResult.data} now={now} />
         <JobApplicationBlock
           title="En-tête"
           isTitleHidden
-          view={<JobApplicationSummary jobApplication={jobApplication} interviews={interviewsResult.data} now={now} />}
+          view={<HeaderView jobApplication={jobApplication} now={now} />}
           form={{
             kind: 'header',
             props: { jobApplication, updateJobApplication, setEndClientParent, updateIntermediaryKind, searchEntities },

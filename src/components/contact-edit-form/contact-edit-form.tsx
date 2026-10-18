@@ -1,13 +1,11 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import type { ComponentProps, FormEvent } from 'react'
-import { BlockFormActions } from '@/components/block-form-actions'
+import { BlockForm } from '@/components/block-form'
 import { EntityAutocomplete } from '@/components/entity-autocomplete'
 import { FormField } from '@/components/form-field'
-import { Input } from '@/components/ui/input'
+import { TextField } from '@/components/text-field'
 import { useController } from './controller'
-import type { ContactEditFormProps, ContactEditFormValueName } from './interfaces'
+import type { ContactEditFormProps } from './interfaces'
 
 const CONTACT_NAME_INPUT_ID = 'contact-edit-contactName'
 const DETAILS_HINT_ID = 'contact-edit-details-hint'
@@ -15,15 +13,7 @@ const NEW_CONTACT_HINT = "Enregistre d'abord le nouveau contact pour modifier se
 const MISSING_CONTACT_HINT = "Renseigne et enregistre d'abord un contact pour ajouter ses coordonnées."
 const UNAVAILABLE_DETAILS_HINT = 'Les coordonnées de ce contact sont indisponibles pour le moment.'
 
-export const ContactEditForm = ({
-  jobApplication,
-  contactDetails,
-  updateJobApplication,
-  updateContactDetails,
-  searchEntities,
-  onClose,
-}: ContactEditFormProps) => {
-  const router = useRouter()
+export const ContactEditForm = ({ searchEntities, ...controllerParameters }: ContactEditFormProps) => {
   const {
     formValues,
     setFormValue,
@@ -33,44 +23,17 @@ export const ContactEditForm = ({
     errorMessage,
     save,
     cancel,
-  } = useController({
-    jobApplication,
-    contactDetails,
-    updateJobApplication,
-    updateContactDetails,
-    onDataChanged: router.refresh,
-    onClose,
-  })
-
-  const renderDetailInput = (
-    valueName: Exclude<ContactEditFormValueName, 'contactName'>,
-    label: string,
-    inputProps: ComponentProps<typeof Input>,
-  ) => (
-    <FormField htmlFor={`contact-edit-${valueName}`} label={label}>
-      <Input
-        id={`contact-edit-${valueName}`}
-        value={formValues[valueName]}
-        disabled={areContactDetailsDisabled}
-        aria-describedby={areContactDetailsDisabled ? DETAILS_HINT_ID : undefined}
-        onChange={(changeEvent) => setFormValue(valueName, changeEvent.target.value)}
-        {...inputProps}
-      />
-    </FormField>
-  )
+  } = useController(controllerParameters)
 
   const readDetailsHint = (): string => {
     if (isContactNameEdited) return NEW_CONTACT_HINT
-    return jobApplication.contactId === null ? MISSING_CONTACT_HINT : UNAVAILABLE_DETAILS_HINT
+    return controllerParameters.jobApplication.contactId === null ? MISSING_CONTACT_HINT : UNAVAILABLE_DETAILS_HINT
   }
 
-  const handleSubmit = (formEvent: FormEvent<HTMLFormElement>) => {
-    formEvent.preventDefault()
-    void save()
-  }
+  const detailsDescriptionId = areContactDetailsDisabled ? DETAILS_HINT_ID : undefined
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <BlockForm isSaving={isSaving} errorMessage={errorMessage} onSave={save} onCancel={cancel}>
       <FormField htmlFor={CONTACT_NAME_INPUT_ID} label="Nom">
         <EntityAutocomplete
           id={CONTACT_NAME_INPUT_ID}
@@ -81,16 +44,43 @@ export const ContactEditForm = ({
         />
       </FormField>
       <div className="grid gap-4 sm:grid-cols-3">
-        {renderDetailInput('phone', 'Téléphone', { type: 'tel', inputMode: 'tel' })}
-        {renderDetailInput('email', 'E-mail', { type: 'email', inputMode: 'email' })}
-        {renderDetailInput('linkedinUrl', 'LinkedIn', { type: 'url', inputMode: 'url', placeholder: 'https://' })}
+        <TextField
+          id="contact-edit-phone"
+          label="Téléphone"
+          type="tel"
+          inputMode="tel"
+          disabled={areContactDetailsDisabled}
+          aria-describedby={detailsDescriptionId}
+          value={formValues.phone}
+          onValueChange={(value) => setFormValue('phone', value)}
+        />
+        <TextField
+          id="contact-edit-email"
+          label="E-mail"
+          type="email"
+          inputMode="email"
+          disabled={areContactDetailsDisabled}
+          aria-describedby={detailsDescriptionId}
+          value={formValues.email}
+          onValueChange={(value) => setFormValue('email', value)}
+        />
+        <TextField
+          id="contact-edit-linkedinUrl"
+          label="LinkedIn"
+          type="url"
+          inputMode="url"
+          placeholder="https://"
+          disabled={areContactDetailsDisabled}
+          aria-describedby={detailsDescriptionId}
+          value={formValues.linkedinUrl}
+          onValueChange={(value) => setFormValue('linkedinUrl', value)}
+        />
       </div>
       {areContactDetailsDisabled && (
         <p id={DETAILS_HINT_ID} className="text-xs text-muted-foreground">
           {readDetailsHint()}
         </p>
       )}
-      <BlockFormActions isSaving={isSaving} errorMessage={errorMessage} onCancel={cancel} />
-    </form>
+    </BlockForm>
   )
 }

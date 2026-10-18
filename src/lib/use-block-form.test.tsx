@@ -46,6 +46,29 @@ describe('useBlockForm', () => {
     expect(calls).toEqual(['first', 'second'])
     expect(onDataChanged).toHaveBeenCalledTimes(1)
     expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onDataChanged.mock.invocationCallOrder[0]).toBeLessThan(onClose.mock.invocationCallOrder[0])
+  })
+
+  it('stays in the saving state until the refreshed data is rendered, then closes', async () => {
+    const onClose = jest.fn()
+    const savingStatesSeenAtClose: boolean[] = []
+    const { result, rerender } = renderHook(
+      (serverFormValues: NoteFormValues) =>
+        useBlockForm({
+          serverFormValues,
+          onDataChanged: () => rerender({ location: 'Lyon', duration: '6 mois' }),
+          onClose: () => {
+            savingStatesSeenAtClose.push(result.current.isSaving)
+            onClose()
+          },
+        }),
+      { initialProps: { location: 'Paris', duration: '6 mois' } },
+    )
+    act(() => result.current.setFormValue('location', 'Lyon'))
+    await act(() => result.current.save(() => ({ ok: true, data: [jest.fn().mockResolvedValue(SUCCESS)] })))
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(savingStatesSeenAtClose).toEqual([true])
+    expect(result.current.baselineFormValues).toEqual({ location: 'Lyon', duration: '6 mois' })
   })
 
   it('stops at the first refused step, refreshes what was saved and stays open', async () => {

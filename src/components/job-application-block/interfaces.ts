@@ -5,10 +5,10 @@ import type { MissionDetailsFormProps } from '@/components/mission-details-form/
 import type { StackEditFormProps } from '@/components/stack-edit-form/interfaces'
 
 export type JobApplicationBlockForm =
-  | { kind: 'header'; props: Omit<HeaderEditFormProps, 'onClose'> }
-  | { kind: 'missionDetails'; props: Omit<MissionDetailsFormProps, 'onClose'> }
-  | { kind: 'contact'; props: Omit<ContactEditFormProps, 'onClose'> }
-  | { kind: 'stack'; props: Omit<StackEditFormProps, 'onClose'> }
+  | { kind: 'header'; props: Omit<HeaderEditFormProps, 'onClose' | 'onDataChanged'> }
+  | { kind: 'missionDetails'; props: Omit<MissionDetailsFormProps, 'onClose' | 'onDataChanged'> }
+  | { kind: 'contact'; props: Omit<ContactEditFormProps, 'onClose' | 'onDataChanged'> }
+  | { kind: 'stack'; props: Omit<StackEditFormProps, 'onClose' | 'onDataChanged'> }
 
 export type JobApplicationBlockProps = {
   title: string

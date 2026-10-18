@@ -12,4 +12,4 @@ export type StackEditFormControllerParameters = {
   onClose: () => void
 }
 
-export type StackEditFormProps = Omit<StackEditFormControllerParameters, 'onDataChanged'>
+export type StackEditFormProps = StackEditFormControllerParameters
