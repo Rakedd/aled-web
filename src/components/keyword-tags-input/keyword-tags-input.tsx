@@ -1,24 +1,17 @@
-"use client";
+'use client'
 
-import { useId } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useController } from "./controller";
-import type { KeywordTagsInputProps } from "./interfaces";
+import { useId } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useController } from './controller'
+import type { KeywordTagsInputProps } from './interfaces'
 
-export const KeywordTagsInput = ({
-  label,
-  helpText,
-  values,
-  onChange,
-  suggestions = [],
-}: KeywordTagsInputProps) => {
-  const { draft, setDraft, addDraft, removeValue, handleDraftKeyDown } =
-    useController({ values, onChange });
-  const inputId = useId();
-  const helpTextId = useId();
-  const suggestionsListId = useId();
+export const KeywordTagsInput = ({ label, helpText, values, onChange, suggestions = [] }: KeywordTagsInputProps) => {
+  const { draft, changeDraft, addDraft, removeValue, handleDraftKeyDown } = useController({ values, onChange })
+  const inputId = useId()
+  const helpTextId = useId()
+  const suggestionsListId = useId()
 
   return (
     <div className="flex flex-col gap-2">
@@ -54,7 +47,8 @@ export const KeywordTagsInput = ({
           value={draft}
           list={suggestions.length > 0 ? suggestionsListId : undefined}
           aria-describedby={helpTextId}
-          onChange={(changeEvent) => setDraft(changeEvent.target.value)}
+          onChange={(changeEvent) => changeDraft(changeEvent.target.value)}
+          onBlur={addDraft}
           onKeyDown={handleDraftKeyDown}
         />
         <Button type="button" variant="outline" onClick={addDraft}>
@@ -69,5 +63,5 @@ export const KeywordTagsInput = ({
         </datalist>
       )}
     </div>
-  );
-};
+  )
+}

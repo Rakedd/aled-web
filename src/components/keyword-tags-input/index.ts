@@ -1,1 +1,1 @@
-export * from "./keyword-tags-input";
+export * from './keyword-tags-input'

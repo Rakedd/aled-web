@@ -1,1 +1,1 @@
-export * from "./opportunity-filters-form";
+export * from './opportunity-filters-form'

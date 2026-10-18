@@ -1,1 +1,1 @@
-export * from "./settings-navigation";
+export * from './settings-navigation'
