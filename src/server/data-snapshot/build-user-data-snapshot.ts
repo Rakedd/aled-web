@@ -7,7 +7,7 @@ import { fetchEveryRow } from './fetch-every-row'
 
 export type UserDataSnapshotProfile = Omit<
   Tables<'profiles'>,
-  'encrypted_anthropic_api_key' | 'anthropic_api_key_last_four'
+  'encrypted_anthropic_api_key' | 'anthropic_api_key_last_four' | 'opportunities_last_viewed_at'
 >
 
 export type UserDataSnapshotJobSpec = Tables<'job_specs'> & { pdfBase64: string | null }

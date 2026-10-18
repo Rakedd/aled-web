@@ -195,16 +195,76 @@ isOneToOne: true
       referencedColumns: ["user_id","id"]
     }
                   ]
-                },"profiles": {
+                },"opportunities": {
                   Row: {
-                    "anthropic_api_key_last_four": string | null,"created_at": string,"email": string | null,"encrypted_anthropic_api_key": string | null,"first_name": string | null,"follow_up_delay_days": number,"id": string,"last_name": string | null,"links": NonNullable<Json>,"updated_at": string
+                    "company": string | null,"country": string | null,"currency": string | null,"description": string | null,"duration_months": number | null,"external_id": string,"id": string,"location_label": string | null,"published_at": string,"rate_label": string | null,"rate_max": number | null,"rate_min": number | null,"received_at": string,"region": string | null,"remote_mode": string | null,"skills": NonNullable<Json>,"source": string,"title": string,"title_normalized": string,"updated_at": string | null,"url": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "anthropic_api_key_last_four"?: string | null,"created_at"?: string,"email"?: string | null,"encrypted_anthropic_api_key"?: string | null,"first_name"?: string | null,"follow_up_delay_days"?: number,"id": string,"last_name"?: string | null,"links"?: NonNullable<Json>,"updated_at"?: string
+                    "company"?: string | null,"country"?: string | null,"currency"?: string | null,"description"?: string | null,"duration_months"?: number | null,"external_id": string,"id"?: string,"location_label"?: string | null,"published_at": string,"rate_label"?: string | null,"rate_max"?: number | null,"rate_min"?: number | null,"received_at"?: string,"region"?: string | null,"remote_mode"?: string | null,"skills"?: NonNullable<Json>,"source": string,"title": string,"title_normalized": string,"updated_at"?: string | null,"url": string
                   }
                   Update: {
-                    "anthropic_api_key_last_four"?: string | null,"created_at"?: string,"email"?: string | null,"encrypted_anthropic_api_key"?: string | null,"first_name"?: string | null,"follow_up_delay_days"?: number,"id"?: string,"last_name"?: string | null,"links"?: NonNullable<Json>,"updated_at"?: string
+                    "company"?: string | null,"country"?: string | null,"currency"?: string | null,"description"?: string | null,"duration_months"?: number | null,"external_id"?: string,"id"?: string,"location_label"?: string | null,"published_at"?: string,"rate_label"?: string | null,"rate_max"?: number | null,"rate_min"?: number | null,"received_at"?: string,"region"?: string | null,"remote_mode"?: string | null,"skills"?: NonNullable<Json>,"source"?: string,"title"?: string,"title_normalized"?: string,"updated_at"?: string | null,"url"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"opportunity_decisions": {
+                  Row: {
+                    "decided_at": string,"decision": string,"id": string,"job_application_id": string | null,"opportunity_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "decided_at"?: string,"decision": string,"id"?: string,"job_application_id"?: string | null,"opportunity_id": string,"user_id": string
+                  }
+                  Update: {
+                    "decided_at"?: string,"decision"?: string,"id"?: string,"job_application_id"?: string | null,"opportunity_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "opportunity_decisions_opportunity_id_fkey"
+      columns: ["opportunity_id"]
+isOneToOne: false
+      referencedRelation: "opportunities"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "opportunity_decisions_user_id_job_application_id_fkey"
+      columns: ["user_id","job_application_id"]
+isOneToOne: false
+      referencedRelation: "job_applications"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "opportunity_decisions_user_id_job_application_id_fkey"
+      columns: ["user_id","job_application_id"]
+isOneToOne: false
+      referencedRelation: "job_applications_overview"
+      referencedColumns: ["user_id","id"]
+    }
+                  ]
+                },"opportunity_filters": {
+                  Row: {
+                    "always_exclude_keywords": (string)[],"created_at": string,"id": string,"include_keywords": (string)[],"rate_floor_full_remote": number | null,"rate_floor_hybrid": number | null,"rate_floor_onsite": number | null,"regions": (string)[],"rescuable_exclude_keywords": (string)[],"rescue_keywords": (string)[],"source": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "always_exclude_keywords"?: (string)[],"created_at"?: string,"id"?: string,"include_keywords"?: (string)[],"rate_floor_full_remote"?: number | null,"rate_floor_hybrid"?: number | null,"rate_floor_onsite"?: number | null,"regions"?: (string)[],"rescuable_exclude_keywords"?: (string)[],"rescue_keywords"?: (string)[],"source": string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "always_exclude_keywords"?: (string)[],"created_at"?: string,"id"?: string,"include_keywords"?: (string)[],"rate_floor_full_remote"?: number | null,"rate_floor_hybrid"?: number | null,"rate_floor_onsite"?: number | null,"regions"?: (string)[],"rescuable_exclude_keywords"?: (string)[],"rescue_keywords"?: (string)[],"source"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"profiles": {
+                  Row: {
+                    "anthropic_api_key_last_four": string | null,"created_at": string,"email": string | null,"encrypted_anthropic_api_key": string | null,"first_name": string | null,"follow_up_delay_days": number,"id": string,"last_name": string | null,"links": NonNullable<Json>,"opportunities_last_viewed_at": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "anthropic_api_key_last_four"?: string | null,"created_at"?: string,"email"?: string | null,"encrypted_anthropic_api_key"?: string | null,"first_name"?: string | null,"follow_up_delay_days"?: number,"id": string,"last_name"?: string | null,"links"?: NonNullable<Json>,"opportunities_last_viewed_at"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "anthropic_api_key_last_four"?: string | null,"created_at"?: string,"email"?: string | null,"encrypted_anthropic_api_key"?: string | null,"first_name"?: string | null,"follow_up_delay_days"?: number,"id"?: string,"last_name"?: string | null,"links"?: NonNullable<Json>,"opportunities_last_viewed_at"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     
