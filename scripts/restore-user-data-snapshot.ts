@@ -1,9 +1,11 @@
+import { randomUUID } from 'node:crypto'
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js'
 import type {
   UserDataSnapshot,
   UserDataSnapshotJobSpec,
   UserDataSnapshotOpportunityDecision,
 } from '../src/server/data-snapshot/build-user-data-snapshot'
+import type { BriefLanguage } from '../src/domain/interview-preparation'
 import { JOB_SPEC_PDF_MIME_TYPE, JOB_SPECS_BUCKET, MAX_JOB_SPEC_PDF_BYTES } from '../src/domain/job-spec'
 import type { Database, Tables } from '../src/server/supabase/database-types'
 
@@ -19,9 +21,16 @@ const SNAPSHOT_TABLE_NAMES = {
   jobSpecs: 'job_specs',
   alertSnoozes: 'alert_snoozes',
   opportunityFilters: 'opportunity_filters',
+  endClientBriefs: 'end_client_briefs',
+  interviewQuestions: 'interview_questions',
 } as const satisfies Record<string, keyof Database['public']['Tables']>
 const SNAPSHOT_ARRAY_KEYS = Object.keys(SNAPSHOT_TABLE_NAMES) as (keyof typeof SNAPSHOT_TABLE_NAMES)[]
-const ARRAY_KEYS_ABSENT_FROM_EARLIER_SNAPSHOTS = ['opportunityFilters', 'opportunityDecisions'] as const
+const ARRAY_KEYS_ABSENT_FROM_EARLIER_SNAPSHOTS = [
+  'opportunityFilters',
+  'opportunityDecisions',
+  'endClientBriefs',
+  'interviewQuestions',
+] as const
 const REQUIRED_SNAPSHOT_ARRAY_KEYS = SNAPSHOT_ARRAY_KEYS.filter(
   (snapshotArrayKey) => !(ARRAY_KEYS_ABSENT_FROM_EARLIER_SNAPSHOTS as readonly string[]).includes(snapshotArrayKey),
 )
@@ -30,9 +39,25 @@ const OPPORTUNITY_KEY_SEPARATOR = '\u0000'
 const ROW_ID_LOOKUP_CHUNK_SIZE = 100
 const PARENT_DIRECTORY_SEGMENT = '..'
 const USER_NOT_FOUND_ERROR_CODE = 'user_not_found'
+const LEGACY_END_CLIENT_BRIEF_LANGUAGE: BriefLanguage = 'fr'
 
 const isRecord = (candidate: unknown): candidate is Record<string, unknown> =>
   typeof candidate === 'object' && candidate !== null && !Array.isArray(candidate)
+
+const toFrenchBriefsFromLegacyColumns = (endClient: Tables<'end_clients'>): Tables<'end_client_briefs'>[] => {
+  if (typeof endClient.brief_markdown !== 'string') return []
+  return [
+    {
+      id: randomUUID(),
+      user_id: endClient.user_id,
+      end_client_id: endClient.id,
+      language: LEGACY_END_CLIENT_BRIEF_LANGUAGE,
+      markdown: endClient.brief_markdown,
+      sources: Array.isArray(endClient.brief_sources) ? endClient.brief_sources : [],
+      generated_at: endClient.brief_generated_at ?? endClient.updated_at,
+    },
+  ]
+}
 
 export const parseUserDataSnapshot = (snapshotJson: unknown): UserDataSnapshot => {
   const hasSnapshotShape =
@@ -50,6 +75,8 @@ export const parseUserDataSnapshot = (snapshotJson: unknown): UserDataSnapshot =
     ...parsedSnapshot,
     opportunityFilters: parsedSnapshot.opportunityFilters ?? [],
     opportunityDecisions: parsedSnapshot.opportunityDecisions ?? [],
+    endClientBriefs: parsedSnapshot.endClientBriefs ?? parsedSnapshot.endClients.flatMap(toFrenchBriefsFromLegacyColumns),
+    interviewQuestions: parsedSnapshot.interviewQuestions ?? [],
   }
 }
 
@@ -269,6 +296,18 @@ export const restoreUserDataSnapshot = async (
   failOnWriteError(
     'upsertOpportunityFilters',
     await supabase.from('opportunity_filters').upsert(snapshot.opportunityFilters, { onConflict: 'user_id,source' }),
+  )
+  failOnWriteError(
+    'upsertEndClientBriefs',
+    await supabase
+      .from('end_client_briefs')
+      .upsert(snapshot.endClientBriefs, { onConflict: 'user_id,end_client_id,language' }),
+  )
+  failOnWriteError(
+    'upsertInterviewQuestions',
+    await supabase
+      .from('interview_questions')
+      .upsert(snapshot.interviewQuestions, { onConflict: 'user_id,job_application_id,language' }),
   )
   const skippedOpportunityDecisionCount = await restoreOpportunityDecisions(supabase, snapshot)
   await uploadJobSpecPdfs(supabase, snapshot)

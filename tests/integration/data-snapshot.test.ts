@@ -18,6 +18,8 @@ jest.mock('server-only', () => ({}))
 const USER_OWNED_TABLES_CHILDREN_FIRST = [
   'opportunity_decisions',
   'opportunity_filters',
+  'interview_questions',
+  'end_client_briefs',
   'alert_snoozes',
   'job_specs',
   'interviews',
@@ -83,8 +85,20 @@ const collectSnapshotRowOwnerIds = (snapshot: UserDataSnapshot): string[] => [
     ...snapshot.jobSpecs,
     ...snapshot.alertSnoozes,
     ...snapshot.opportunityFilters,
+    ...snapshot.endClientBriefs,
+    ...snapshot.interviewQuestions,
   ].map((snapshotRow) => snapshotRow.user_id),
 ]
+
+const removeBriefIds = (endClientBriefs: UserDataSnapshot['endClientBriefs']) =>
+  endClientBriefs.map((endClientBrief) => ({ ...endClientBrief, id: undefined }))
+
+const buildSnapshotWrittenBeforeBriefsByLanguage = (currentSnapshot: UserDataSnapshot): unknown => {
+  const earlierSnapshot: Partial<UserDataSnapshot> = { ...currentSnapshot }
+  delete earlierSnapshot.endClientBriefs
+  delete earlierSnapshot.interviewQuestions
+  return JSON.parse(JSON.stringify(earlierSnapshot))
+}
 
 const listChildEndClientsBeforeRootOnes = (endClients: UserDataSnapshot['endClients']): UserDataSnapshot['endClients'] => [
   ...endClients.filter((endClient) => endClient.parent_end_client_id !== null),
@@ -180,6 +194,8 @@ describe('user data snapshot', () => {
       interviews: snapshot.interviews.length,
       jobSpecs: snapshot.jobSpecs.length,
       alertSnoozes: snapshot.alertSnoozes.length,
+      endClientBriefs: snapshot.endClientBriefs.length,
+      interviewQuestions: snapshot.interviewQuestions.length,
     }).toEqual({
       intermediaries: 1,
       contacts: 1,
@@ -189,6 +205,8 @@ describe('user data snapshot', () => {
       interviews: 1,
       jobSpecs: 1,
       alertSnoozes: 1,
+      endClientBriefs: 1,
+      interviewQuestions: 1,
     })
     expect(Buffer.from(snapshot.jobSpecs[0].pdfBase64 ?? '', 'base64')).toEqual(Buffer.from(STORED_PDF_BYTES))
   })
@@ -510,5 +528,122 @@ describe('user data snapshot', () => {
     expect(parsedSnapshot.opportunityDecisions).toEqual([])
     const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
     expect({ ...restoredSnapshot, exportedAt: currentSnapshot.exportedAt }).toEqual(currentSnapshot)
+  })
+
+  it('restores the briefs by language and the interview questions after the user data was deleted', async () => {
+    const owner = await createSeededTestUser()
+    const serviceRoleClient = createServiceRoleTestClient()
+    const originalSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner.pdfStoragePath)
+
+    await restoreUserDataSnapshot(serviceRoleClient, {
+      ...originalSnapshot,
+      endClients: listChildEndClientsBeforeRootOnes(originalSnapshot.endClients),
+    })
+
+    const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    expect(restoredSnapshot.endClientBriefs).toEqual(originalSnapshot.endClientBriefs)
+    expect(restoredSnapshot.endClientBriefs[0]).toMatchObject({ language: 'fr', markdown: '## Bêta Digital\nÉditeur de logiciels.' })
+    expect(restoredSnapshot.interviewQuestions).toEqual(originalSnapshot.interviewQuestions)
+    expect(restoredSnapshot.interviewQuestions[0]).toMatchObject({
+      language: 'en',
+      questions: ['Which product ships next?', 'How large is the frontend team?'],
+    })
+  })
+
+  it('refuses a brief or interview questions of another user and reused ids, writing nothing', async () => {
+    const owner = await createSeededTestUser()
+    const victim = await createSeededTestUser()
+    const serviceRoleClient = createServiceRoleTestClient()
+    const originalSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    const victimSnapshot = await buildUserDataSnapshot(serviceRoleClient, victim.userId)
+    const profileWithMarker = { ...originalSnapshot.profile, first_name: 'Modifié' }
+
+    await expect(
+      restoreUserDataSnapshot(serviceRoleClient, {
+        ...originalSnapshot,
+        profile: profileWithMarker,
+        endClientBriefs: originalSnapshot.endClientBriefs.map((endClientBrief) => ({ ...endClientBrief, user_id: victim.userId })),
+      }),
+    ).rejects.toThrow('Snapshot rows must all belong to the snapshot user')
+    await expect(
+      restoreUserDataSnapshot(serviceRoleClient, {
+        ...originalSnapshot,
+        profile: profileWithMarker,
+        interviewQuestions: originalSnapshot.interviewQuestions.map((interviewQuestions) => ({
+          ...interviewQuestions,
+          user_id: victim.userId,
+        })),
+      }),
+    ).rejects.toThrow('Snapshot rows must all belong to the snapshot user')
+    await expect(
+      restoreUserDataSnapshot(serviceRoleClient, {
+        ...originalSnapshot,
+        profile: profileWithMarker,
+        endClientBriefs: originalSnapshot.endClientBriefs.map((endClientBrief) => ({
+          ...endClientBrief,
+          id: victimSnapshot.endClientBriefs[0].id,
+          markdown: 'Volé',
+        })),
+      }),
+    ).rejects.toThrow('Snapshot row ids must not belong to another user')
+    await expect(
+      restoreUserDataSnapshot(serviceRoleClient, {
+        ...originalSnapshot,
+        profile: profileWithMarker,
+        interviewQuestions: originalSnapshot.interviewQuestions.map((interviewQuestions) => ({
+          ...interviewQuestions,
+          id: victimSnapshot.interviewQuestions[0].id,
+          questions: ['Volé'],
+        })),
+      }),
+    ).rejects.toThrow('Snapshot row ids must not belong to another user')
+
+    const victimSnapshotAfterRefusal = await buildUserDataSnapshot(serviceRoleClient, victim.userId)
+    expect({ ...victimSnapshotAfterRefusal, exportedAt: victimSnapshot.exportedAt }).toEqual(victimSnapshot)
+    const { data: profileAfterRefusal } = await serviceRoleClient
+      .from('profiles')
+      .select('first_name')
+      .eq('id', owner.userId)
+      .single()
+    expect(profileAfterRefusal).toEqual({ first_name: 'Camille' })
+  })
+
+  it('turns the end client brief of a snapshot written before briefs by language into a french brief', async () => {
+    const owner = await createSeededTestUser()
+    const serviceRoleClient = createServiceRoleTestClient()
+    const currentSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner.pdfStoragePath)
+
+    const parsedSnapshot = parseUserDataSnapshot(buildSnapshotWrittenBeforeBriefsByLanguage(currentSnapshot))
+    await restoreUserDataSnapshot(serviceRoleClient, {
+      ...parsedSnapshot,
+      endClients: listChildEndClientsBeforeRootOnes(parsedSnapshot.endClients),
+    })
+
+    const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    expect(removeBriefIds(restoredSnapshot.endClientBriefs)).toEqual(removeBriefIds(currentSnapshot.endClientBriefs))
+    expect(restoredSnapshot.interviewQuestions).toEqual([])
+    expect({
+      ...restoredSnapshot,
+      exportedAt: currentSnapshot.exportedAt,
+      endClientBriefs: currentSnapshot.endClientBriefs,
+      interviewQuestions: currentSnapshot.interviewQuestions,
+    }).toEqual(currentSnapshot)
+  })
+
+  it('restores a snapshot written before briefs by language over the current data without duplicating the brief', async () => {
+    const owner = await createSeededTestUser()
+    const serviceRoleClient = createServiceRoleTestClient()
+    const currentSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+
+    await restoreUserDataSnapshot(
+      serviceRoleClient,
+      parseUserDataSnapshot(buildSnapshotWrittenBeforeBriefsByLanguage(currentSnapshot)),
+    )
+
+    const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    expect(removeBriefIds(restoredSnapshot.endClientBriefs)).toEqual(removeBriefIds(currentSnapshot.endClientBriefs))
+    expect(restoredSnapshot.interviewQuestions).toEqual(currentSnapshot.interviewQuestions)
   })
 })

@@ -36,6 +36,8 @@ export type UserDataSnapshot = {
   alertSnoozes: Tables<'alert_snoozes'>[]
   opportunityFilters: Tables<'opportunity_filters'>[]
   opportunityDecisions: UserDataSnapshotOpportunityDecision[]
+  endClientBriefs: Tables<'end_client_briefs'>[]
+  interviewQuestions: Tables<'interview_questions'>[]
 }
 
 const SNAPSHOT_PROFILE_COLUMNS = 'id, first_name, last_name, email, links, follow_up_delay_days, created_at, updated_at'
@@ -107,6 +109,8 @@ export const buildUserDataSnapshot = async (
     alertSnoozes,
     opportunityFilters,
     opportunityDecisions,
+    endClientBriefs,
+    interviewQuestions,
   ] = await Promise.all([
     fetchSnapshotProfile(supabase, userId),
     fetchEveryRow('fetchSnapshotIntermediaries', (firstRowIndex, lastRowIndex) =>
@@ -152,6 +156,22 @@ export const buildUserDataSnapshot = async (
         .range(firstRowIndex, lastRowIndex),
     ),
     fetchSnapshotOpportunityDecisions(supabase, userId),
+    fetchEveryRow('fetchSnapshotEndClientBriefs', (firstRowIndex, lastRowIndex) =>
+      supabase
+        .from('end_client_briefs')
+        .select('*')
+        .eq('user_id', userId)
+        .order('id')
+        .range(firstRowIndex, lastRowIndex),
+    ),
+    fetchEveryRow('fetchSnapshotInterviewQuestions', (firstRowIndex, lastRowIndex) =>
+      supabase
+        .from('interview_questions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('id')
+        .range(firstRowIndex, lastRowIndex),
+    ),
   ])
 
   return {
@@ -169,5 +189,7 @@ export const buildUserDataSnapshot = async (
     alertSnoozes,
     opportunityFilters,
     opportunityDecisions,
+    endClientBriefs,
+    interviewQuestions,
   }
 }

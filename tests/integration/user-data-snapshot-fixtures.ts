@@ -16,6 +16,12 @@ export const STORED_PDF_BYTES = Uint8Array.from([
   ...Array.from({ length: 256 }, (_unused, byteValue) => byteValue),
 ])
 
+const SUBSIDIARY_BRIEF = {
+  markdown: '## Bêta Digital\nÉditeur de logiciels.',
+  sources: [{ title: 'Site officiel', url: 'https://beta.example' }],
+  generatedAt: '2026-10-10T08:30:00.123456+00:00',
+}
+
 const readInsertedIdOrFail = ({ data, error }: { data: { id: string } | null; error: PostgrestError | null }): string => {
   if (error !== null || data === null) throw new Error(`Fixture insertion failed: ${error?.message ?? 'no row'}`)
   return data.id
@@ -42,12 +48,22 @@ const insertEndClientChain = async ({ client, userId }: TestUser): Promise<strin
         normalized_name: 'beta digital',
         parent_end_client_id: groupEndClientId,
         notes: 'Filiale numérique',
-        brief_markdown: '## Bêta Digital\nÉditeur de logiciels.',
-        brief_sources: [{ title: 'Site officiel', url: 'https://beta.example' }],
-        brief_generated_at: '2026-10-10T08:30:00.123456+00:00',
+        brief_markdown: SUBSIDIARY_BRIEF.markdown,
+        brief_sources: SUBSIDIARY_BRIEF.sources,
+        brief_generated_at: SUBSIDIARY_BRIEF.generatedAt,
       })
       .select('id')
       .single(),
+  )
+  failOnError(
+    await client.from('end_client_briefs').insert({
+      user_id: userId,
+      end_client_id: subsidiaryEndClientId,
+      language: 'fr',
+      markdown: SUBSIDIARY_BRIEF.markdown,
+      sources: SUBSIDIARY_BRIEF.sources,
+      generated_at: SUBSIDIARY_BRIEF.generatedAt,
+    }),
   )
   const teamEndClientId = readInsertedIdOrFail(
     await client
@@ -162,6 +178,15 @@ export const seedEveryUserTable = async (testUser: TestUser): Promise<SeededUser
       job_application_id: jobApplicationId,
       alert_kind: 'follow_up_due',
       snoozed_until: '2026-10-25T08:00:00+00:00',
+    }),
+  )
+  failOnError(
+    await client.from('interview_questions').insert({
+      user_id: userId,
+      job_application_id: jobApplicationId,
+      language: 'en',
+      questions: ['Which product ships next?', 'How large is the frontend team?'],
+      generated_at: '2026-10-11T14:00:00.654321+00:00',
     }),
   )
   return { jobApplicationId, pdfStoragePath }

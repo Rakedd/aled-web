@@ -1,8 +1,8 @@
 /** @jest-environment node */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { UserDataSnapshot } from '@/server/data-snapshot/build-user-data-snapshot'
-import type { Database } from '@/server/supabase/database-types'
-import { restoreUserDataSnapshot } from './restore-user-data-snapshot'
+import type { Database, Tables } from '@/server/supabase/database-types'
+import { parseUserDataSnapshot, restoreUserDataSnapshot } from './restore-user-data-snapshot'
 
 const SNAPSHOT_USER_ID = '44444444-4444-4444-8444-444444444444'
 
@@ -30,6 +30,30 @@ const EMPTY_SNAPSHOT: UserDataSnapshot = {
   alertSnoozes: [],
   opportunityFilters: [],
   opportunityDecisions: [],
+  endClientBriefs: [],
+  interviewQuestions: [],
+}
+
+const buildEndClientRow = (overrides: Partial<Tables<'end_clients'>>): Tables<'end_clients'> => ({
+  id: '55555555-5555-4555-8555-555555555555',
+  user_id: SNAPSHOT_USER_ID,
+  name: 'Delta Énergie',
+  normalized_name: 'delta energie',
+  parent_end_client_id: null,
+  notes: null,
+  brief_markdown: null,
+  brief_sources: null,
+  brief_generated_at: null,
+  created_at: '2026-10-02T00:00:00+00:00',
+  updated_at: '2026-10-03T00:00:00+00:00',
+  ...overrides,
+})
+
+const buildSnapshotJsonWithoutBriefsByLanguage = (endClients: Tables<'end_clients'>[]): Record<string, unknown> => {
+  const snapshotJson: Record<string, unknown> = { ...EMPTY_SNAPSHOT, endClients }
+  delete snapshotJson.endClientBriefs
+  delete snapshotJson.interviewQuestions
+  return snapshotJson
 }
 
 const buildFakeClient = (getUserByIdResult: { data: { user: null }; error: { status: number; code: string; message: string } }) => {
@@ -52,5 +76,79 @@ describe('restoreUserDataSnapshot', () => {
 
     expect(createUser).not.toHaveBeenCalled()
     expect(from).not.toHaveBeenCalled()
+  })
+})
+
+describe('parseUserDataSnapshot', () => {
+  it('turns each end client brief of a snapshot written before briefs by language into a french brief', () => {
+    const endClientWithBrief = buildEndClientRow({
+      brief_markdown: '## Delta Énergie',
+      brief_sources: [{ title: 'Site', url: 'https://delta.example' }],
+      brief_generated_at: '2026-10-04T10:00:00+00:00',
+    })
+    const endClientWithoutBrief = buildEndClientRow({ id: '66666666-6666-4666-8666-666666666666', name: 'Epsilon' })
+
+    const parsedSnapshot = parseUserDataSnapshot(
+      buildSnapshotJsonWithoutBriefsByLanguage([endClientWithBrief, endClientWithoutBrief]),
+    )
+
+    expect(parsedSnapshot.endClientBriefs).toEqual([
+      {
+        id: expect.any(String),
+        user_id: SNAPSHOT_USER_ID,
+        end_client_id: endClientWithBrief.id,
+        language: 'fr',
+        markdown: '## Delta Énergie',
+        sources: [{ title: 'Site', url: 'https://delta.example' }],
+        generated_at: '2026-10-04T10:00:00+00:00',
+      },
+    ])
+    expect(parsedSnapshot.interviewQuestions).toEqual([])
+  })
+
+  it('falls back to no sources and to the end client update date when the old brief lacks them', () => {
+    const endClientWithPartialBrief = buildEndClientRow({ brief_markdown: '## Delta Énergie', brief_sources: { title: 'Site' } })
+
+    const parsedSnapshot = parseUserDataSnapshot(buildSnapshotJsonWithoutBriefsByLanguage([endClientWithPartialBrief]))
+
+    expect(parsedSnapshot.endClientBriefs).toEqual([
+      expect.objectContaining({ sources: [], generated_at: endClientWithPartialBrief.updated_at }),
+    ])
+  })
+
+  it('keeps the briefs by language and the interview questions of a current snapshot', () => {
+    const endClientBrief: Tables<'end_client_briefs'> = {
+      id: '77777777-7777-4777-8777-777777777777',
+      user_id: SNAPSHOT_USER_ID,
+      end_client_id: '55555555-5555-4555-8555-555555555555',
+      language: 'en',
+      markdown: '## Delta Energy',
+      sources: [],
+      generated_at: '2026-10-05T10:00:00+00:00',
+    }
+    const interviewQuestions: Tables<'interview_questions'> = {
+      id: '88888888-8888-4888-8888-888888888888',
+      user_id: SNAPSHOT_USER_ID,
+      job_application_id: '99999999-9999-4999-8999-999999999999',
+      language: 'fr',
+      questions: ['Quelle équipe ?'],
+      generated_at: '2026-10-05T11:00:00+00:00',
+    }
+
+    const parsedSnapshot = parseUserDataSnapshot({
+      ...EMPTY_SNAPSHOT,
+      endClients: [buildEndClientRow({ brief_markdown: '## Delta Énergie' })],
+      endClientBriefs: [endClientBrief],
+      interviewQuestions: [interviewQuestions],
+    })
+
+    expect(parsedSnapshot.endClientBriefs).toEqual([endClientBrief])
+    expect(parsedSnapshot.interviewQuestions).toEqual([interviewQuestions])
+  })
+
+  it.each(['endClientBriefs', 'interviewQuestions'])('refuses a snapshot whose %s is not a list', (snapshotArrayKey) => {
+    expect(() => parseUserDataSnapshot({ ...EMPTY_SNAPSHOT, [snapshotArrayKey]: {} })).toThrow(
+      'The file is not a Freeclutch snapshot with formatVersion 1',
+    )
   })
 })

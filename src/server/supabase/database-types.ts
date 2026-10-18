@@ -77,6 +77,26 @@ isOneToOne: false
       referencedColumns: ["user_id","id"]
     }
                   ]
+                },"end_client_briefs": {
+                  Row: {
+                    "end_client_id": string,"generated_at": string,"id": string,"language": string,"markdown": string,"sources": NonNullable<Json>,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "end_client_id": string,"generated_at": string,"id"?: string,"language": string,"markdown": string,"sources"?: NonNullable<Json>,"user_id": string
+                  }
+                  Update: {
+                    "end_client_id"?: string,"generated_at"?: string,"id"?: string,"language"?: string,"markdown"?: string,"sources"?: NonNullable<Json>,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "end_client_briefs_user_id_end_client_id_fkey"
+      columns: ["user_id","end_client_id"]
+isOneToOne: false
+      referencedRelation: "end_clients"
+      referencedColumns: ["user_id","id"]
+    }
+                  ]
                 },"end_clients": {
                   Row: {
                     "brief_generated_at": string | null,"brief_markdown": string | null,"brief_sources": Json | null,"created_at": string,"id": string,"name": string,"normalized_name": string,"notes": string | null,"parent_end_client_id": string | null,"updated_at": string,"user_id": string
@@ -110,6 +130,32 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"interview_questions": {
+                  Row: {
+                    "generated_at": string,"id": string,"job_application_id": string,"language": string,"questions": NonNullable<Json>,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "generated_at": string,"id"?: string,"job_application_id": string,"language": string,"questions": NonNullable<Json>,"user_id": string
+                  }
+                  Update: {
+                    "generated_at"?: string,"id"?: string,"job_application_id"?: string,"language"?: string,"questions"?: NonNullable<Json>,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "interview_questions_user_id_job_application_id_fkey"
+      columns: ["user_id","job_application_id"]
+isOneToOne: false
+      referencedRelation: "job_applications"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "interview_questions_user_id_job_application_id_fkey"
+      columns: ["user_id","job_application_id"]
+isOneToOne: false
+      referencedRelation: "job_applications_overview"
+      referencedColumns: ["user_id","id"]
+    }
                   ]
                 },"interviews": {
                   Row: {
