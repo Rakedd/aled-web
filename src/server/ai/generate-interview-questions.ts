@@ -19,9 +19,14 @@ export type InterviewQuestionsInput = {
   briefMarkdown: string | null
 }
 
+export type InterviewQuestionsRequestOptions = { maxRetries: number; timeout: number }
+
 const QUESTIONS_MAX_OUTPUT_TOKENS = 4_000
-const QUESTIONS_TIMEOUT_IN_MILLISECONDS = 30_000
-const QUESTIONS_MAX_RETRIES = 1
+
+export const DEFAULT_INTERVIEW_QUESTIONS_REQUEST_OPTIONS: InterviewQuestionsRequestOptions = {
+  maxRetries: 1,
+  timeout: 30_000,
+}
 
 const QUESTION_LANGUAGE_NAMES: Record<BriefLanguage, string> = { fr: 'French', en: 'English' }
 
@@ -76,6 +81,7 @@ const toBoundedQuestions = (generatedQuestions: string[]): string[] => {
 export const generateInterviewQuestions = async (
   client: Anthropic,
   interviewQuestionsInput: InterviewQuestionsInput,
+  requestOptions: InterviewQuestionsRequestOptions = DEFAULT_INTERVIEW_QUESTIONS_REQUEST_OPTIONS,
 ): Promise<string[]> => {
   const response = await client.messages.create(
     {
@@ -85,7 +91,7 @@ export const generateInterviewQuestions = async (
       messages: [{ role: 'user', content: buildInterviewQuestionsUserPrompt(interviewQuestionsInput) }],
       output_config: { effort: 'low', format: GENERATED_INTERVIEW_QUESTIONS_OUTPUT_FORMAT },
     },
-    { maxRetries: QUESTIONS_MAX_RETRIES, timeout: QUESTIONS_TIMEOUT_IN_MILLISECONDS },
+    requestOptions,
   )
   if (response.stop_reason === 'refusal') throw new AiError('refused')
   const generatedInterviewQuestions = GENERATED_INTERVIEW_QUESTIONS_OUTPUT_FORMAT.parse(readStructuredOutputText(response))

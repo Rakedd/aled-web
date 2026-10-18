@@ -53,6 +53,13 @@ describe('generateInterviewQuestions', () => {
     expect(requestOptions).toEqual({ maxRetries: 1, timeout: 30_000 })
   })
 
+  it('lets the caller choose the retries and the timeout', async () => {
+    const client = createFakeAnthropicClientReturning({ questions: createQuestions(8) })
+    await generateInterviewQuestions(client, COMPLETE_INPUT, { maxRetries: 0, timeout: 12_000 })
+    const [, requestOptions] = readCreateCall(client)
+    expect(requestOptions).toEqual({ maxRetries: 0, timeout: 12_000 })
+  })
+
   it('asks for questions in french for a french preparation', async () => {
     const client = createFakeAnthropicClientReturning({ questions: createQuestions(8) })
     await generateInterviewQuestions(client, COMPLETE_INPUT)

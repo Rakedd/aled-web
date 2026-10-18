@@ -90,6 +90,7 @@ describe('client brief actions', () => {
     expect(generateClientBrief).toHaveBeenCalledWith(expect.anything(), {
       endClientName: 'BNP Paribas Real Estate',
       parentGroupName: 'BNP Paribas',
+      language: 'fr',
     })
     expect(generationResult).toEqual({ ok: true, data: { ...generatedClientBrief, generatedAt: expect.any(Date) } })
     expect(await getEndClientBrief(endClientId)).toEqual({
