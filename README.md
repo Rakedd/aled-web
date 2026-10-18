@@ -66,7 +66,8 @@ La page « Mes opportunités » affiche les missions Free-Work des 7 derniers jo
 - **Authentification** : `Authorization: Bearer <OPPORTUNITIES_INGEST_TOKEN>`. Sans jeton configuré côté Freeclutch, ou avec un jeton incorrect, la requête est refusée.
 - **Lots** : 100 missions au maximum par requête.
 - **Idempotence** : renvoyer une mission déjà reçue ne crée pas de doublon.
-- **Purge** : chaque appel supprime les missions reçues il y a plus de 30 jours.
+- **Missions invalides** : ignorées et comptées (`skippedInvalid`) ; un lot non vide entièrement invalide est refusé (422).
+- **Purge** : chaque appel supprime les missions publiées il y a plus de 30 jours (date de publication Free-Work, pas date de réception).
 
 Générer le jeton une seule fois, avec `openssl rand -hex 32`, puis placer la **même valeur** à deux endroits :
 
