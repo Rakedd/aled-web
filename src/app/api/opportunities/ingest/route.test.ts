@@ -182,6 +182,23 @@ describe('POST /api/opportunities/ingest', () => {
     expect(purgeOpportunitiesPublishedBefore).toHaveBeenCalledTimes(1)
   })
 
+  it('still answers 200 with purged 0 and logs the error when the purge fails after the upsert', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    jest
+      .mocked(purgeOpportunitiesPublishedBefore)
+      .mockRejectedValue(new Error('Repository operation purgeOpportunitiesPublishedBefore failed with code 57014'))
+
+    const ingestResponse = await requestIngest(validBody)
+
+    expect(ingestResponse.status).toBe(200)
+    expect(await ingestResponse.json()).toEqual({ received: 3, upserted: 2, skippedInvalid: 1, purged: 0 })
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1)
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Opportunities purge failed', {
+      errorMessage: 'Repository operation purgeOpportunitiesPublishedBefore failed with code 57014',
+    })
+  })
+
   it('answers 500 and logs only the error message when the write fails', async () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
     jest.spyOn(console, 'warn').mockImplementation(() => undefined)

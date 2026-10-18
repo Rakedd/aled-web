@@ -8,6 +8,7 @@ import {
 } from '@/server/repositories/opportunities-repository'
 import { isAuthorizedBearerRequest } from '@/server/security/is-authorized-bearer-request'
 import { createServiceRoleSupabaseClient } from '@/server/supabase/create-service-role-supabase-client'
+import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 
 export const maxDuration = 60
 
@@ -23,6 +24,15 @@ const isAuthorizedIngestRequest = (request: Request): boolean => {
   const ingestToken = process.env.OPPORTUNITIES_INGEST_TOKEN
   if (!ingestToken) console.error('Opportunities ingest rejected because OPPORTUNITIES_INGEST_TOKEN is not configured')
   return isAuthorizedBearerRequest(request, ingestToken)
+}
+
+const purgeExpiredOpportunities = async (serviceClient: FreeclutchSupabaseClient): Promise<number> => {
+  try {
+    return await purgeOpportunitiesPublishedBefore(serviceClient, addParisCalendarDays(new Date(), -HISTORY_WINDOW_DAYS))
+  } catch (purgeError) {
+    console.error('Opportunities purge failed', { errorMessage: describeError(purgeError) })
+    return 0
+  }
 }
 
 const readJsonBody = async (request: Request): Promise<{ body: unknown } | null> => {
@@ -51,16 +61,8 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   try {
     const serviceClient = createServiceRoleSupabaseClient()
     const upserted = await upsertOpportunities(serviceClient, missions)
-    const purged = await purgeOpportunitiesPublishedBefore(
-      serviceClient,
-      addParisCalendarDays(new Date(), -HISTORY_WINDOW_DAYS),
-    )
-    return NextResponse.json({
-      received,
-      upserted,
-      skippedInvalid,
-      purged,
-    })
+    const purged = await purgeExpiredOpportunities(serviceClient)
+    return NextResponse.json({ received, upserted, skippedInvalid, purged })
   } catch (ingestError) {
     console.error('Opportunities ingest failed', { errorMessage: describeError(ingestError) })
     return NextResponse.json({ error: 'Ingest failed' }, { status: INTERNAL_ERROR_STATUS })
