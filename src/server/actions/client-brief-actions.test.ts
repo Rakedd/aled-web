@@ -62,6 +62,7 @@ describe('generateBriefForEndClient', () => {
     expect(generateClientBrief).toHaveBeenCalledWith(expect.any(Anthropic), {
       endClientName: 'BNP Paribas Real Estate',
       parentGroupName: 'BNP Paribas',
+      language: 'fr',
     })
     expect(generationResult).toEqual({ ok: true, data: { ...generatedClientBrief, generatedAt: expect.any(Date) } })
     expect(saveGeneratedEndClientBrief).toHaveBeenCalledWith(

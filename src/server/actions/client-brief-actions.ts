@@ -40,7 +40,8 @@ const requestClientBrief = async (
   try {
     const decryptedApiKey = await getDecryptedAnthropicApiKeyForUser(userId)
     if (decryptedApiKey === null) return rejectWith(CLIENT_BRIEF_AI_ERROR_MESSAGES.missing_api_key)
-    return { ok: true, data: await generateClientBrief(createAnthropicClient(decryptedApiKey), briefSubject) }
+    const anthropicClient = createAnthropicClient(decryptedApiKey)
+    return { ok: true, data: await generateClientBrief(anthropicClient, { ...briefSubject, language: 'fr' }) }
   } catch (generationError) {
     const aiErrorLogContext = describeAiErrorForLogs(generationError)
     console.error('Client brief generation failed', aiErrorLogContext)
