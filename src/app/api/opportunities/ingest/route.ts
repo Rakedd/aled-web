@@ -13,6 +13,7 @@ export const maxDuration = 60
 
 const BAD_REQUEST_STATUS = 400
 const UNAUTHORIZED_STATUS = 401
+const UNPROCESSABLE_STATUS = 422
 const INTERNAL_ERROR_STATUS = 500
 
 const describeError = (unknownError: unknown): string =>
@@ -38,17 +39,26 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   if (jsonBody === null) return NextResponse.json({ error: 'Invalid JSON body' }, { status: BAD_REQUEST_STATUS })
   const parsedPayload = parseIngestPayload(jsonBody.body)
   if ('error' in parsedPayload) return NextResponse.json({ error: parsedPayload.error }, { status: BAD_REQUEST_STATUS })
+  const { missions, skippedInvalid } = parsedPayload
+  const received = missions.length + skippedInvalid
+  if (skippedInvalid > 0) console.warn('Opportunities ingest skipped invalid missions', { skippedInvalid })
+  if (missions.length === 0 && skippedInvalid > 0) {
+    return NextResponse.json(
+      { error: 'Every mission of the batch is invalid', received, skippedInvalid },
+      { status: UNPROCESSABLE_STATUS },
+    )
+  }
   try {
     const serviceClient = createServiceRoleSupabaseClient()
-    const upserted = await upsertOpportunities(serviceClient, parsedPayload.missions)
+    const upserted = await upsertOpportunities(serviceClient, missions)
     const purged = await purgeOpportunitiesPublishedBefore(
       serviceClient,
       addParisCalendarDays(new Date(), -HISTORY_WINDOW_DAYS),
     )
     return NextResponse.json({
-      received: parsedPayload.missions.length + parsedPayload.skippedInvalid,
+      received,
       upserted,
-      skippedInvalid: parsedPayload.skippedInvalid,
+      skippedInvalid,
       purged,
     })
   } catch (ingestError) {

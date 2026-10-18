@@ -141,6 +141,18 @@ describe('POST /api/opportunities/ingest against local supabase', () => {
     ])
   })
 
+  it('answers 422 and stores nothing when every mission of the batch is invalid', async () => {
+    const blankTitleExternalId = randomUUID()
+
+    const ingest = await ingestMissions([buildWatcherMission(blankTitleExternalId, { title: '  ' })])
+
+    expect(ingest).toEqual({
+      status: 422,
+      counters: { error: expect.any(String), received: 1, skippedInvalid: 1 },
+    })
+    expect(await readOpportunityRows([blankTitleExternalId])).toEqual([])
+  })
+
   it('purges the missions published more than thirty days ago with their decisions and keeps the recent ones', async () => {
     const serviceRoleClient = createServiceRoleTestClient()
     const user = await createSignedInTestClient(`ingest-purge-${randomUUID()}@test.local`)

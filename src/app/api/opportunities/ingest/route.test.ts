@@ -117,6 +117,7 @@ describe('POST /api/opportunities/ingest', () => {
   })
 
   it('upserts the valid missions with the service role client and answers the counters', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined)
     const ingestResponse = await requestIngest(validBody)
 
     expect(ingestResponse.status).toBe(200)
@@ -131,6 +132,7 @@ describe('POST /api/opportunities/ingest', () => {
   })
 
   it('purges the opportunities published more than thirty days ago', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined)
     await requestIngest(validBody)
 
     expect(purgeOpportunitiesPublishedBefore).toHaveBeenCalledWith(
@@ -139,17 +141,50 @@ describe('POST /api/opportunities/ingest', () => {
     )
   })
 
-  it('still purges when every mission of the batch is invalid', async () => {
+  it('warns with the number of invalid missions when some are skipped', async () => {
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    const ingestResponse = await requestIngest(validBody)
+
+    expect(ingestResponse.status).toBe(200)
+    expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Opportunities ingest skipped invalid missions', { skippedInvalid: 1 })
+  })
+
+  it('does not warn when every mission is valid', async () => {
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    await requestIngest(JSON.stringify({ missions: [buildWatcherMission('1')] }))
+
+    expect(consoleWarnSpy).not.toHaveBeenCalled()
+  })
+
+  it('answers 422 and writes nothing when every mission of a non-empty batch is invalid', async () => {
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    const ingestResponse = await requestIngest(JSON.stringify({ missions: [{ id: 'sans-titre' }, { id: 'sans-url' }] }))
+
+    expect(ingestResponse.status).toBe(422)
+    expect(await ingestResponse.json()).toEqual({ error: expect.any(String), received: 2, skippedInvalid: 2 })
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Opportunities ingest skipped invalid missions', { skippedInvalid: 2 })
+    expect(createServiceRoleSupabaseClient).not.toHaveBeenCalled()
+    expect(upsertOpportunities).not.toHaveBeenCalled()
+    expect(purgeOpportunitiesPublishedBefore).not.toHaveBeenCalled()
+  })
+
+  it('still purges when the batch is empty', async () => {
     jest.mocked(upsertOpportunities).mockResolvedValue(0)
 
-    const ingestResponse = await requestIngest(JSON.stringify({ missions: [{ id: 'sans-titre' }] }))
+    const ingestResponse = await requestIngest(JSON.stringify({ missions: [] }))
 
-    expect(await ingestResponse.json()).toEqual({ received: 1, upserted: 0, skippedInvalid: 1, purged: 4 })
+    expect(ingestResponse.status).toBe(200)
+    expect(await ingestResponse.json()).toEqual({ received: 0, upserted: 0, skippedInvalid: 0, purged: 4 })
     expect(purgeOpportunitiesPublishedBefore).toHaveBeenCalledTimes(1)
   })
 
   it('answers 500 and logs only the error message when the write fails', async () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined)
     jest.mocked(upsertOpportunities).mockRejectedValue(new Error('Repository operation upsertOpportunities failed with code 23505'))
 
     const ingestResponse = await requestIngest(validBody)
