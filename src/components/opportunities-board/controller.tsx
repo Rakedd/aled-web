@@ -23,6 +23,7 @@ export const useController = ({
   onTabChanged,
 }: OpportunitiesBoardControllerParameters) => {
   const [tab, setTab] = useState(initialTab)
+  const [frozenLastViewedAt] = useState(initialListing.lastViewedAt)
   const [loadedItems, setLoadedItems] = useState(initialListing.items)
   const [hasMore, setHasMore] = useState(initialListing.hasMore)
   const [counts, setCounts] = useState(initialListing.counts)
@@ -34,14 +35,24 @@ export const useController = ({
   const inFlightOpportunityIds = useRef(new Set<string>())
   const isListingRequestInFlight = useRef(false)
   const hasMarkedViewed = useRef(false)
+  const decisionCountSinceLoad = useRef(0)
 
   useEffect(() => {
     if (hasMarkedViewed.current) return
     hasMarkedViewed.current = true
-    markOpportunitiesViewed().catch(() => undefined)
+    markOpportunitiesViewed()
+      .then((actionResult) => {
+        if (!actionResult.ok) console.error(actionResult.errorMessage)
+      })
+      .catch((error: unknown) => console.error(error))
   }, [markOpportunitiesViewed])
 
   const items = loadedItems.filter(({ id }) => !removedOpportunityIds.includes(id))
+
+  const isOpportunityNew = (opportunity: OpportunityListItem): boolean =>
+    frozenLastViewedAt === null || opportunity.receivedAt > frozenLastViewedAt
+
+  const isAnyOpportunityPending = pendingOpportunityIds.length > 0
 
   const isOpportunityPending = (opportunityId: string): boolean => pendingOpportunityIds.includes(opportunityId)
 
@@ -78,6 +89,7 @@ export const useController = ({
       ),
     )
     setCounts((currentCounts) => shiftCount(currentCounts, 'to_process', 'applied'))
+    decisionCountSinceLoad.current += 1
     onDataChanged()
   }
 
@@ -92,6 +104,7 @@ export const useController = ({
     const actionResult = await runOpportunityAction(opportunity.id, serverAction)
     if (actionResult === null) return
     if (actionResult.ok) {
+      decisionCountSinceLoad.current += 1
       onDataChanged()
       return
     }
@@ -125,7 +138,7 @@ export const useController = ({
   }
 
   const selectTab = async (nextTab: OpportunityTab) => {
-    if (nextTab === tab) return
+    if (nextTab === tab || inFlightOpportunityIds.current.size > 0) return
     const actionResult = await fetchListing(nextTab, 1)
     if (actionResult === null) return
     if (!actionResult.ok) {
@@ -138,21 +151,29 @@ export const useController = ({
     setCounts(actionResult.data.counts)
     setCurrentPage(1)
     setRemovedOpportunityIds([])
+    decisionCountSinceLoad.current = 0
     onTabChanged(nextTab)
   }
 
   const loadMore = async () => {
-    const actionResult = await fetchListing(tab, currentPage + 1)
-    if (actionResult === null) return
-    if (!actionResult.ok) {
-      setErrorMessage(actionResult.errorMessage)
-      return
+    const shouldRefetchCurrentPage = decisionCountSinceLoad.current > 0
+    const fetchedListings: OpportunityListing[] = []
+    const pagesToFetch = shouldRefetchCurrentPage ? [currentPage, currentPage + 1] : [currentPage + 1]
+    for (const page of pagesToFetch) {
+      const actionResult = await fetchListing(tab, page)
+      if (actionResult === null) return
+      if (!actionResult.ok) {
+        setErrorMessage(actionResult.errorMessage)
+        return
+      }
+      fetchedListings.push(actionResult.data)
     }
+    const fetchedItems = fetchedListings.flatMap(({ items: pageItems }) => pageItems)
     setLoadedItems((currentItems) => {
       const knownIds = new Set(currentItems.map(({ id }) => id))
-      return [...currentItems, ...actionResult.data.items.filter(({ id }) => !knownIds.has(id))]
+      return [...currentItems, ...fetchedItems.filter(({ id }) => !knownIds.has(id))]
     })
-    setHasMore(actionResult.data.hasMore)
+    setHasMore(fetchedListings[fetchedListings.length - 1].hasMore)
     setCurrentPage((page) => page + 1)
   }
 
@@ -164,6 +185,8 @@ export const useController = ({
     errorMessage,
     isLoadingListing,
     isOpportunityPending,
+    isOpportunityNew,
+    isAnyOpportunityPending,
     applyTo,
     dismiss,
     restore,

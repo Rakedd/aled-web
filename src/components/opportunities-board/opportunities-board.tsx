@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { OpportunityCard } from '@/components/opportunity-card'
-import { NO_MISSION_RECEIVED_MESSAGE, OpportunityFeedFreshness } from '@/components/opportunity-feed-freshness'
+import { OpportunityFeedFreshness } from '@/components/opportunity-feed-freshness'
 import { Button } from '@/components/ui/button'
 import { OPPORTUNITY_TABS, type OpportunityTab } from '@/domain/opportunities'
 import { cn } from '@/lib/utils'
@@ -33,7 +33,7 @@ export const OpportunitiesBoard = ({
   markOpportunitiesViewed,
 }: OpportunitiesBoardProps) => {
   const router = useRouter()
-  const { tab, items, hasMore, counts, errorMessage, isLoadingListing, isOpportunityPending, applyTo, dismiss, restore, selectTab, loadMore } =
+  const { tab, items, hasMore, counts, errorMessage, isLoadingListing, isOpportunityPending, isOpportunityNew, isAnyOpportunityPending, applyTo, dismiss, restore, selectTab, loadMore } =
     useController({
       initialTab,
       initialListing,
@@ -45,11 +45,11 @@ export const OpportunitiesBoard = ({
       onDataChanged: router.refresh,
       onTabChanged: (nextTab) => window.history.replaceState(null, '', `?tab=${nextTab}`),
     })
-  const { lastReceivedAt, lastViewedAt } = initialListing
+  const { lastReceivedAt } = initialListing
 
   const renderEmptyState = () => {
     if (tab !== 'to_process') return <p className="text-sm text-muted-foreground">{EMPTY_TAB_MESSAGES[tab]}</p>
-    if (lastReceivedAt === null) return <p className="text-sm text-muted-foreground">{NO_MISSION_RECEIVED_MESSAGE}</p>
+    if (lastReceivedAt === null) return null
     if (!hasActiveFilters) return <p className="text-sm text-muted-foreground">Rien de nouveau pour l&apos;instant.</p>
     return (
       <p className="text-sm text-muted-foreground">
@@ -73,7 +73,7 @@ export const OpportunitiesBoard = ({
             id={`opportunities-tab-${tabKey}`}
             aria-selected={tab === tabKey}
             aria-controls="opportunities-panel"
-            disabled={isLoadingListing}
+            disabled={isLoadingListing || isAnyOpportunityPending}
             onClick={() => void selectTab(tabKey)}
             className={cn(
               'h-9 shrink-0 border-b-2 border-transparent px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50',
@@ -96,7 +96,7 @@ export const OpportunitiesBoard = ({
         className="flex flex-col gap-3"
       >
         {items.length === 0 ? (
-          renderEmptyState()
+          !hasMore && renderEmptyState()
         ) : (
           <ul className="flex flex-col gap-3">
             {items.map((opportunity) => (
@@ -104,7 +104,7 @@ export const OpportunitiesBoard = ({
                 <OpportunityCard
                   opportunity={opportunity}
                   tab={tab}
-                  isNew={lastViewedAt === null || opportunity.receivedAt > lastViewedAt}
+                  isNew={isOpportunityNew(opportunity)}
                   isPending={isOpportunityPending(opportunity.id)}
                   now={now}
                   onApply={(selectedOpportunity) => void applyTo(selectedOpportunity)}

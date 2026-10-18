@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ActionResult } from '@/domain/action-result'
 import type { OpportunityListing, OpportunityListItem } from '@/domain/opportunities'
 import { useController } from './controller'
@@ -39,7 +39,7 @@ const buildListing = (overrides: Partial<OpportunityListing> = {}): OpportunityL
 
 const succeeded = <T,>(data: T): ActionResult<T> => ({ ok: true, data })
 
-const renderBoardController = () => {
+const renderBoardController = (listingOverrides: Partial<OpportunityListing> = {}) => {
   const listOpportunities = jest.fn().mockResolvedValue(succeeded(buildListing()))
   const applyToOpportunity = jest.fn().mockResolvedValue(succeeded({ jobApplicationId: 'application-1' }))
   const dismissOpportunity = jest.fn().mockResolvedValue(succeeded(null))
@@ -47,10 +47,11 @@ const renderBoardController = () => {
   const markOpportunitiesViewed = jest.fn().mockResolvedValue(succeeded(null))
   const onDataChanged = jest.fn()
   const onTabChanged = jest.fn()
-  const { result } = renderHook(() =>
-    useController({
+  const { result, rerender } = renderHook(
+    ({ initialListing }: { initialListing: OpportunityListing }) =>
+      useController({
       initialTab: 'to_process',
-      initialListing: buildListing(),
+      initialListing,
       listOpportunities,
       applyToOpportunity,
       dismissOpportunity,
@@ -59,9 +60,11 @@ const renderBoardController = () => {
       onDataChanged,
       onTabChanged,
     }),
+    { initialProps: { initialListing: buildListing(listingOverrides) } },
   )
   return {
     result,
+    rerender,
     listOpportunities,
     applyToOpportunity,
     dismissOpportunity,
@@ -76,6 +79,76 @@ describe('opportunities-board useController', () => {
   it('marks the opportunities as viewed once on mount', () => {
     const { markOpportunitiesViewed } = renderBoardController()
     expect(markOpportunitiesViewed).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ['refuses', () => Promise.resolve({ ok: false, errorMessage: 'Visite refusée' }), 'Visite refusée'],
+    ['throws', () => Promise.reject(new Error('network')), new Error('network')],
+  ])('logs an error when marking as viewed %s', async (_label, respond, expectedLog) => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    const markOpportunitiesViewed = jest.fn().mockImplementation(respond)
+    renderHook(() =>
+      useController({
+        initialTab: 'to_process',
+        initialListing: buildListing(),
+        listOpportunities: jest.fn(),
+        applyToOpportunity: jest.fn(),
+        dismissOpportunity: jest.fn(),
+        restoreOpportunity: jest.fn(),
+        markOpportunitiesViewed,
+        onDataChanged: jest.fn(),
+        onTabChanged: jest.fn(),
+      }),
+    )
+    await waitFor(() => expect(consoleError).toHaveBeenCalledWith(expectedLog))
+    consoleError.mockRestore()
+  })
+
+  it('keeps the new badges frozen when the server sends a later lastViewedAt', () => {
+    const { result, rerender } = renderBoardController()
+    const firstItem = result.current.items[0]
+    expect(result.current.isOpportunityNew(firstItem)).toBe(true)
+    rerender({ initialListing: buildListing({ lastViewedAt: new Date('2026-10-18T12:00:00Z') }) })
+    expect(result.current.isOpportunityNew(firstItem)).toBe(true)
+  })
+
+  it('flags only items received after lastViewedAt as new', () => {
+    const { result } = renderBoardController({ lastViewedAt: new Date('2026-10-18T09:30:00Z') })
+    expect(result.current.isOpportunityNew(result.current.items[0])).toBe(false)
+    expect(result.current.isOpportunityNew(buildOpportunity('late', { receivedAt: new Date('2026-10-18T10:00:00Z') }))).toBe(true)
+  })
+
+  it('blocks tab switching while an opportunity action is in flight', async () => {
+    const { result, applyToOpportunity, listOpportunities } = renderBoardController()
+    applyToOpportunity.mockReturnValue(new Promise(() => undefined))
+    act(() => {
+      void result.current.applyTo(result.current.items[0])
+    })
+    expect(result.current.isAnyOpportunityPending).toBe(true)
+    await act(() => result.current.selectTab('applied'))
+    expect(listOpportunities).not.toHaveBeenCalled()
+  })
+
+  it('refetches the current page after a decision so no item is skipped', async () => {
+    const serverItems = Array.from({ length: 51 }, (_, index) => buildOpportunity(`item-${index}`))
+    const serverPage = (removedIds: string[], page: number) => {
+      const liveItems = serverItems.filter(({ id }) => !removedIds.includes(id))
+      const pageItems = liveItems.slice((page - 1) * 50, page * 50)
+      return succeeded(buildListing({ items: pageItems, hasMore: liveItems.length > page * 50 }))
+    }
+    const { result, listOpportunities, dismissOpportunity } = renderBoardController({
+      items: serverItems.slice(0, 50),
+      counts: { to_process: 51, applied: 0, dismissed: 0 },
+    })
+    listOpportunities.mockImplementation((_tab, page) => Promise.resolve(serverPage(['item-0'], page)))
+    await act(() => result.current.dismiss(result.current.items[0]))
+    expect(dismissOpportunity).toHaveBeenCalledWith('item-0')
+    await act(() => result.current.loadMore())
+    expect(listOpportunities).toHaveBeenCalledWith('to_process', 1)
+    expect(listOpportunities).toHaveBeenCalledWith('to_process', 2)
+    expect(result.current.items.map(({ id }) => id)).toContain('item-50')
+    expect(result.current.items).toHaveLength(50)
+    expect(result.current.hasMore).toBe(false)
   })
 
   it('applies only once despite two clicks, then exposes the job application id and refreshes', async () => {
