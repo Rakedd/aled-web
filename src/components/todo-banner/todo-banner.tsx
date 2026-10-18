@@ -15,6 +15,8 @@ export const TodoBanner = ({
   jobApplicationSummaries,
   interviews,
   now,
+  maximumVisibleAlerts = Number.POSITIVE_INFINITY,
+  seeAllHref,
 }: TodoBannerProps) => {
   const router = useRouter()
   const { alerts, errorMessage, isAlertPending, snooze, closeAsNoNews } = useController({
@@ -38,7 +40,7 @@ export const TodoBanner = ({
         <p className="text-sm text-muted-foreground">Rien d&apos;urgent aujourd&apos;hui.</p>
       ) : (
         <ul className="flex flex-col gap-2">
-          {alerts.map((alert) => {
+          {alerts.slice(0, maximumVisibleAlerts).map((alert) => {
             const summary = jobApplicationSummaries.find(({ id }) => id === alert.jobApplicationId)
             return (
               <li key={getTodoAlertKey(alert)} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
@@ -66,6 +68,11 @@ export const TodoBanner = ({
             )
           })}
         </ul>
+      )}
+      {seeAllHref !== undefined && alerts.length > maximumVisibleAlerts && (
+        <Link href={seeAllHref} className="self-start text-sm underline underline-offset-4">
+          Voir tout
+        </Link>
       )}
     </section>
   )

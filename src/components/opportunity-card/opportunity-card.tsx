@@ -12,6 +12,7 @@ import type { OpportunityCardProps } from './interfaces'
 export const OpportunityCard = ({
   opportunity,
   tab,
+  isCompact = false,
   isNew,
   isPending,
   now,
@@ -54,7 +55,7 @@ export const OpportunityCard = ({
           <li key={`${factIndex}-${fact}`}>{fact}</li>
         ))}
       </ul>
-      {opportunity.description && (
+      {!isCompact && opportunity.description && (
         <div className="flex flex-col items-start gap-1">
           <p id={descriptionId} className={cn('whitespace-pre-line break-words text-sm', !isDescriptionExpanded && 'line-clamp-3')}>
             {opportunity.description}
@@ -87,9 +88,11 @@ export const OpportunityCard = ({
             <Button type="button" size="sm" disabled={isPending} onClick={() => onApply(opportunity)}>
               {isPending ? 'Création…' : <>J&apos;ai postulé</>}
             </Button>
-            <Button type="button" size="sm" variant="ghost" disabled={isPending} onClick={() => onDismiss(opportunity)}>
-              Pas intéressé
-            </Button>
+            {!isCompact && (
+              <Button type="button" size="sm" variant="ghost" disabled={isPending} onClick={() => onDismiss?.(opportunity)}>
+                Pas intéressé
+              </Button>
+            )}
           </>
         )}
         {tab === 'to_process' && opportunity.jobApplicationId !== null && (
@@ -100,7 +103,7 @@ export const OpportunityCard = ({
         )}
         {tab === 'applied' && applicationLink}
         {tab === 'dismissed' && (
-          <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={() => onRestore(opportunity)}>
+          <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={() => onRestore?.(opportunity)}>
             Remettre
           </Button>
         )}

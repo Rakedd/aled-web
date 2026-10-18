@@ -88,19 +88,20 @@ const compareByPublicationDescending = (
 const toSortedUniquePositions = (positions: OpportunityListingPosition[]): OpportunityListingPosition[] =>
   [...new Map(positions.map((position) => [position.id, position])).values()].sort(compareByPublicationDescending)
 
-const selectPositionsToProcess = ({
+const selectSummariesToProcess = ({
   recentSummaries,
   decisions,
   filtersBySource,
-}: ToProcessContext): OpportunityListingPosition[] => {
+}: ToProcessContext): OpportunitySummary[] => {
   const decidedOpportunityIds = new Set(decisions.map((storedDecision) => storedDecision.opportunityId))
   const matchesUserFilters = buildSourceAwareMatcher(filtersBySource)
-  return toSortedUniquePositions(
-    recentSummaries
-      .filter((summary) => !decidedOpportunityIds.has(summary.id) && matchesUserFilters(summary))
-      .map(({ id, publishedAt }) => ({ id, publishedAt })),
-  )
+  return recentSummaries.filter((summary) => !decidedOpportunityIds.has(summary.id) && matchesUserFilters(summary))
 }
+
+const selectPositionsToProcess = (toProcessContext: ToProcessContext): OpportunityListingPosition[] =>
+  toSortedUniquePositions(
+    selectSummariesToProcess(toProcessContext).map(({ id, publishedAt }) => ({ id, publishedAt })),
+  )
 
 const selectDecidedPositions = (
   decisions: StoredOpportunityDecision[],
@@ -122,7 +123,7 @@ const selectPositionsAfter = (
 ): OpportunityListingPosition[] =>
   after === null ? positions : positions.filter((position) => compareByPublicationDescending(position, after) > 0)
 
-const toListItems = (
+export const toListItems = (
   pageOpportunityIds: string[],
   pageOpportunities: Opportunity[],
   decisions: StoredOpportunityDecision[],
@@ -143,6 +144,15 @@ const toListItems = (
       },
     ]
   })
+}
+
+export const listSummariesToProcessForUser = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  now: Date,
+): Promise<{ summaries: OpportunitySummary[]; decisions: StoredOpportunityDecision[] }> => {
+  const toProcessContext = await loadToProcessContextOncePerRequest(supabase, userId, now)
+  return { summaries: selectSummariesToProcess(toProcessContext), decisions: toProcessContext.decisions }
 }
 
 export const countOpportunitiesToProcessForUser = async (

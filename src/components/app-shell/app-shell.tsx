@@ -7,23 +7,26 @@ import { CALENDAR_ROUTE, HOME_ROUTE, JOB_APPLICATIONS_ROUTE, OPPORTUNITIES_ROUTE
 import { cn } from '@/lib/utils'
 import type { AppShellNavigationItem, AppShellProps } from './interfaces'
 
+const isPathnameWithinRoute = (pathname: string, route: string): boolean =>
+  pathname === route || pathname.startsWith(`${route}/`)
+
 const NAVIGATION_ITEMS: AppShellNavigationItem[] = [
   {
     label: 'Mes candidatures',
     href: JOB_APPLICATIONS_ROUTE,
-    isActiveForPathname: (pathname) => pathname.startsWith(JOB_APPLICATIONS_ROUTE),
+    isActiveForPathname: (pathname) => isPathnameWithinRoute(pathname, JOB_APPLICATIONS_ROUTE),
   },
-  { label: 'Mon calendrier', href: CALENDAR_ROUTE, isActiveForPathname: (pathname) => pathname.startsWith(CALENDAR_ROUTE) },
+  { label: 'Mon calendrier', href: CALENDAR_ROUTE, isActiveForPathname: (pathname) => isPathnameWithinRoute(pathname, CALENDAR_ROUTE) },
   {
     label: 'Mes opportunités',
     href: OPPORTUNITIES_ROUTE,
-    isActiveForPathname: (pathname) => pathname.startsWith(OPPORTUNITIES_ROUTE),
+    isActiveForPathname: (pathname) => isPathnameWithinRoute(pathname, OPPORTUNITIES_ROUTE),
     showsOpportunitiesToProcessCount: true,
   },
   {
     label: 'Préférences',
     href: PREFERENCES_ROUTE,
-    isActiveForPathname: (pathname) => pathname.startsWith(PREFERENCES_ROUTE),
+    isActiveForPathname: (pathname) => isPathnameWithinRoute(pathname, PREFERENCES_ROUTE),
   },
 ]
 

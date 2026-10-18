@@ -32,4 +32,6 @@ export type TodoBannerProps = Omit<TodoBannerControllerParameters, 'onDataChange
   jobApplicationSummaries: TodoBannerJobApplicationSummary[]
   interviews: AlertInterview[]
   now: Date
+  maximumVisibleAlerts?: number
+  seeAllHref?: string
 }

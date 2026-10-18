@@ -1,5 +1,6 @@
 import type { EmailOtpType } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
+import { HOME_ROUTE } from '@/domain/routes'
 import { createServerSupabaseClient } from '@/server/supabase/create-server-supabase-client'
 
 const SUPPORTED_EMAIL_OTP_TYPES: EmailOtpType[] = ['email', 'invite']
@@ -20,7 +21,7 @@ export const GET = async (request: NextRequest) => {
   if (tokenHash && isSupportedEmailOtpType(otpType)) {
     const supabase = await createServerSupabaseClient()
     const { error: verificationError } = await supabase.auth.verifyOtp({ type: otpType, token_hash: tokenHash })
-    if (!verificationError) return NextResponse.redirect(buildRedirectUrl(request, '/'))
+    if (!verificationError) return NextResponse.redirect(buildRedirectUrl(request, HOME_ROUTE))
     console.warn('Magic link verification failed', { code: verificationError.code, status: verificationError.status })
   }
 

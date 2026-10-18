@@ -7,6 +7,7 @@ import {
   HISTORY_WINDOW_DAYS,
   OPPORTUNITY_VALIDATION_MESSAGES,
   type OpportunityListing,
+  type OpportunityListItem,
   type OpportunityListingCursor,
   type OpportunitySource,
   type OpportunityTab,
@@ -16,6 +17,7 @@ import {
 } from '@/domain/opportunities'
 import { type OpportunityFilters, validateOpportunityFilters } from '@/domain/opportunity-filters'
 import { addParisCalendarDays } from '@/domain/paris-time'
+import { buildHighlightedOpportunities } from '@/server/opportunities/highlighted-opportunities'
 import { applyToOpportunityForUser } from '@/server/opportunities/apply-to-opportunity'
 import { buildOpportunityListing, countOpportunitiesToProcessForUser } from '@/server/opportunities/opportunity-listing'
 import { listOpportunityRegionsPublishedSince } from '@/server/repositories/opportunities-repository'
@@ -45,6 +47,17 @@ export const listOpportunities = async (
     operation: async (supabase, userId, listingRequest) => ({
       ok: true,
       data: await buildOpportunityListing(supabase, userId, listingRequest, new Date()),
+    }),
+  })
+
+export const listHighlightedOpportunities = async (): Promise<ActionResult<OpportunityListItem[]>> =>
+  runAuthenticatedOperation({
+    operationName: 'listHighlightedOpportunities',
+    failureMessage: LOAD_FAILURE_MESSAGE,
+    validateArguments: () => NO_ARGUMENTS,
+    operation: async (supabase, userId) => ({
+      ok: true,
+      data: await buildHighlightedOpportunities(supabase, userId, new Date()),
     }),
   })
 

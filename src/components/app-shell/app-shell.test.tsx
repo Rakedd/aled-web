@@ -48,6 +48,11 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: 'Préférences' })).not.toHaveAttribute('aria-current')
   })
 
+  it('does not mark Mes candidatures active on a look-alike path', () => {
+    renderShell(0, '/candidaturesx')
+    expect(screen.getByRole('link', { name: 'Mes candidatures' })).not.toHaveAttribute('aria-current')
+  })
+
   it('marks Préférences active on a preferences sub-page', () => {
     renderShell(0, '/preferences/opportunites/free-work')
     expect(screen.getByRole('link', { name: 'Préférences' })).toHaveAttribute('aria-current', 'page')
