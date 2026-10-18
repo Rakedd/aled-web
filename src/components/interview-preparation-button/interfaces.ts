@@ -1,6 +1,7 @@
 import type { ActionResult } from '@/domain/action-result'
 import type { BriefLanguage, InterviewPreparation } from '@/domain/interview-preparation'
-import type { UpdateEndClientNotes } from '@/components/interview-preparation-modal/interfaces'
+
+export type UpdateEndClientNotes = (endClientId: string, notes: string) => Promise<ActionResult<null>>
 
 export type GetInterviewPreparation = (
   jobApplicationId: string,
@@ -18,10 +19,9 @@ export type InterviewPreparationButtonControllerParameters = {
   initialPreparation: InterviewPreparation
   getInterviewPreparation: GetInterviewPreparation
   generateInterviewPreparation: GenerateInterviewPreparation
+  updateEndClientNotes: UpdateEndClientNotes
   hasAnthropicApiKey: boolean
   onDataChanged: () => void
 }
 
-export type InterviewPreparationButtonProps = Omit<InterviewPreparationButtonControllerParameters, 'onDataChanged'> & {
-  updateEndClientNotes: UpdateEndClientNotes
-}
+export type InterviewPreparationButtonProps = Omit<InterviewPreparationButtonControllerParameters, 'onDataChanged'>

@@ -71,6 +71,15 @@ describe('InterviewPreparationButton', () => {
     expect(openingButton).toHaveFocus()
   })
 
+  it('gives the focus back to the button after a generation opened the modal', async () => {
+    renderButton(buildPreparation())
+    await userEvent.click(screen.getByRole('button', { name: 'Générer le brief' }))
+    await screen.findByRole('dialog')
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Brief généré · voir mon brief' })).toHaveFocus()
+  })
+
   it('offers French and English, preselected on the loaded language, and reloads on change', async () => {
     const { getInterviewPreparation } = renderButton(buildPreparation({ language: 'en' }))
     const languageSelect = screen.getByLabelText('Langue du brief')

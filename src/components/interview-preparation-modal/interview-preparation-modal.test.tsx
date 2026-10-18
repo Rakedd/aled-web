@@ -20,7 +20,7 @@ const buildPreparation = (overrides: Partial<InterviewPreparation> = {}): Interv
   endClientName: 'BNP Paribas',
   brief: {
     language: 'fr',
-    markdown: '## Chiffres clés\n\nCA : 1 Md€',
+    markdown: '## Enjeux\n\nCroissance\n\n## Chiffres clés\n\nCA : 1 Md€\n\n## Dates clés\n\n2024 : fusion',
     sources: [
       { title: 'Rapport annuel', url: 'https://example.com/report' },
       { title: 'Source piégée', url: 'javascript:alert(1)' },
@@ -30,7 +30,7 @@ const buildPreparation = (overrides: Partial<InterviewPreparation> = {}): Interv
   questions: {
     language: 'fr',
     questions: ['Pourquoi nous ?', 'Quelle architecture ?'],
-    generatedAt: new Date('2026-10-17T09:15:00Z'),
+    generatedAt: new Date('2026-10-18T08:00:00Z'),
   },
   notes: 'Parler de Kafka',
   lastUsedLanguage: 'fr',
@@ -49,8 +49,12 @@ const renderModal = (overrides: Partial<ComponentProps<typeof InterviewPreparati
       errorMessage={null}
       hasAnthropicApiKey
       onRegenerate={onRegenerate}
-      updateEndClientNotes={jest.fn().mockResolvedValue({ ok: true, data: null })}
-      onNotesSaved={jest.fn()}
+      notes="Parler de Kafka"
+      changeNotes={jest.fn()}
+      notesSaveStatus="idle"
+      notesErrorMessage={null}
+      retryNotesSave={jest.fn()}
+      finalFocusRef={{ current: null }}
       {...overrides}
     />,
   )
@@ -66,9 +70,20 @@ describe('InterviewPreparationModal', () => {
   it('is a titled dialog showing the brief, the notes, the questions and the generation date', () => {
     renderModal()
     expect(screen.getByRole('dialog', { name: "Préparation d'entretien" })).toBeInTheDocument()
-    expect(screen.getByTestId('brief-markdown')).toHaveTextContent('Chiffres clés')
-    expect(screen.getByLabelText("Mes notes sur l'entreprise")).toHaveValue('Parler de Kafka')
-    expect(screen.getByText(/Généré le 17\/10\/2026 11:15/)).toBeInTheDocument()
+        expect(screen.getByLabelText("Mes notes sur l'entreprise")).toHaveValue('Parler de Kafka')
+    expect(screen.getByText(/Brief généré le 17\/10\/2026 11:15/)).toBeInTheDocument()
+    expect(screen.getByText(/Questions générées le 18\/10\/2026 10:00/)).toBeInTheDocument()
+  })
+
+  it('boxes the key figures and key dates above the rest of the brief', () => {
+    renderModal()
+    const keyFigures = screen.getByRole('region', { name: 'Chiffres clés' })
+    const keyDates = screen.getByRole('region', { name: 'Dates clés' })
+    expect(keyFigures).toHaveTextContent('CA : 1 Md€')
+    expect(keyDates).toHaveTextContent('2024 : fusion')
+    const restOfBrief = screen.getByText(/Croissance/)
+    expect(keyFigures.compareDocumentPosition(restOfBrief) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(restOfBrief.textContent).not.toContain('CA : 1 Md€')
   })
 
   it('numbers the interview questions', () => {

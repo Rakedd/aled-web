@@ -56,14 +56,21 @@ const loadInitialInterviewPreparation = async (jobApplicationId: string): Promis
 
 const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobApplicationId: string }> }) => {
   const { jobApplicationId } = await params
-  const [jobApplicationResult, activityLogEntriesResult, jobSpecResult, interviewsResult, hasAnthropicApiKey] =
-    await Promise.all([
-      getJobApplication(jobApplicationId),
-      listActivityLogEntries(jobApplicationId),
-      getJobSpec(jobApplicationId),
-      listInterviewsForJobApplication(jobApplicationId),
-      hasAnthropicApiKeyConfigured(),
-    ])
+  const [
+    jobApplicationResult,
+    activityLogEntriesResult,
+    jobSpecResult,
+    interviewsResult,
+    interviewPreparationResult,
+    hasAnthropicApiKey,
+  ] = await Promise.all([
+    getJobApplication(jobApplicationId),
+    listActivityLogEntries(jobApplicationId),
+    getJobSpec(jobApplicationId),
+    listInterviewsForJobApplication(jobApplicationId),
+    loadInitialInterviewPreparation(jobApplicationId),
+    hasAnthropicApiKeyConfigured(),
+  ])
 
   if (!jobApplicationResult.ok) {
     if (jobApplicationResult.errorMessage === JOB_APPLICATION_NOT_FOUND_MESSAGE) notFound()
@@ -100,7 +107,6 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
 
   const jobApplication = jobApplicationResult.data
   const now = new Date()
-  const interviewPreparationResult = await loadInitialInterviewPreparation(jobApplication.id)
 
   if (!interviewPreparationResult.ok) {
     return (

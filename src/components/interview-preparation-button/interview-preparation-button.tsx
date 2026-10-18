@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useRef } from 'react'
 import { InterviewPreparationModal } from '@/components/interview-preparation-modal'
 import { MissingAnthropicApiKeyNotice } from '@/components/missing-anthropic-api-key-notice'
 import { Button } from '@/components/ui/button'
@@ -11,11 +12,9 @@ import type { InterviewPreparationButtonProps } from './interfaces'
 
 const LANGUAGE_SELECT_ID = 'interview-preparation-language'
 
-export const InterviewPreparationButton = ({
-  updateEndClientNotes,
-  ...controllerParameters
-}: InterviewPreparationButtonProps) => {
+export const InterviewPreparationButton = (controllerParameters: InterviewPreparationButtonProps) => {
   const router = useRouter()
+  const openingButtonRef = useRef<HTMLButtonElement | null>(null)
   const {
     preparation,
     language,
@@ -28,7 +27,11 @@ export const InterviewPreparationButton = ({
     regenerate,
     isModalOpen,
     closeModal,
-    handleNotesSaved,
+    notes,
+    changeNotes,
+    notesSaveStatus,
+    notesErrorMessage,
+    retryNotesSave,
   } = useController({ ...controllerParameters, onDataChanged: router.refresh })
   const { hasAnthropicApiKey } = controllerParameters
 
@@ -39,7 +42,7 @@ export const InterviewPreparationButton = ({
       </h2>
       {!hasAnthropicApiKey && <MissingAnthropicApiKeyNotice featureDescription="la génération du brief" />}
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" onClick={() => void handleButtonClick()} disabled={isButtonDisabled}>
+        <Button ref={openingButtonRef} type="button" onClick={() => void handleButtonClick()} disabled={isButtonDisabled}>
           {buttonLabel}
         </Button>
         <Label htmlFor={LANGUAGE_SELECT_ID} className="sr-only">
@@ -74,8 +77,12 @@ export const InterviewPreparationButton = ({
         errorMessage={errorMessage}
         hasAnthropicApiKey={hasAnthropicApiKey}
         onRegenerate={(regenerationLanguage) => void regenerate(regenerationLanguage)}
-        updateEndClientNotes={updateEndClientNotes}
-        onNotesSaved={handleNotesSaved}
+        notes={notes}
+        changeNotes={changeNotes}
+        notesSaveStatus={notesSaveStatus}
+        notesErrorMessage={notesErrorMessage}
+        retryNotesSave={retryNotesSave}
+        finalFocusRef={openingButtonRef}
       />
     </section>
   )

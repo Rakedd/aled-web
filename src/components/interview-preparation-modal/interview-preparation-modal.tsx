@@ -4,6 +4,7 @@ import { Dialog } from '@base-ui/react/dialog'
 import { MarkdownContent } from '@/components/markdown-content'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { splitBriefHighlights } from '@/domain/brief-highlights'
 import { CLIENT_BRIEF_MESSAGES, type ClientBriefSource, isExternalLinkUrl } from '@/domain/client-brief'
 import { BRIEF_LANGUAGES, BRIEF_LANGUAGE_LABELS, isBriefLanguage } from '@/domain/interview-preparation'
 import { formatParisDateTime } from '@/domain/paris-time'
@@ -47,28 +48,18 @@ const InterviewPreparationModalContent = ({
   errorMessage,
   hasAnthropicApiKey,
   onRegenerate,
-  updateEndClientNotes,
-  onNotesSaved,
+  notes,
+  changeNotes,
+  notesSaveStatus,
+  notesErrorMessage,
+  retryNotesSave,
 }: InterviewPreparationModalContentProps) => {
-  const {
-    notes,
-    changeNotes,
-    notesSaveStatus,
-    notesErrorMessage,
-    retryNotesSave,
-    regenerationLanguage,
-    changeRegenerationLanguage,
-    requestRegeneration,
-  } = useController({
-    endClientId: preparation.endClientId,
-    initialNotes: preparation.notes,
+  const { regenerationLanguage, changeRegenerationLanguage, requestRegeneration } = useController({
     language: preparation.language,
-    updateEndClientNotes,
-    onNotesSaved,
     onRegenerate,
   })
   const { brief, questions } = preparation
-  const generatedAt = brief?.generatedAt ?? questions?.generatedAt ?? null
+  const briefParts = brief === null ? null : splitBriefHighlights(brief.markdown)
 
   return (
     <>
@@ -78,8 +69,19 @@ const InterviewPreparationModalContent = ({
           <Dialog.Description className="text-sm text-muted-foreground">{preparation.endClientName}</Dialog.Description>
         )}
       </div>
-      {brief !== null ? (
-        <MarkdownContent markdown={brief.markdown} />
+      {briefParts !== null ? (
+        <>
+          {briefParts.highlights.map((highlight) => (
+            <section
+              key={highlight.title}
+              aria-label={highlight.title}
+              className="rounded-lg border border-primary/30 bg-muted/50 p-3"
+            >
+              <MarkdownContent markdown={highlight.markdown} />
+            </section>
+          ))}
+          <MarkdownContent markdown={briefParts.rest} />
+        </>
       ) : (
         preparation.endClientId === null && <p className="text-sm text-muted-foreground">{UNKNOWN_CLIENT_MESSAGE}</p>
       )}
@@ -118,8 +120,8 @@ const InterviewPreparationModalContent = ({
             aria-labelledby="interview-preparation-questions-title"
             className="flex list-decimal flex-col gap-1 pl-5 text-sm"
           >
-            {questions.questions.map((question) => (
-              <li key={question} className="break-words">
+            {questions.questions.map((question, questionIndex) => (
+              <li key={`${questionIndex}-${question}`} className="break-words">
                 {question}
               </li>
             ))}
@@ -142,9 +144,10 @@ const InterviewPreparationModalContent = ({
         </p>
       )}
       <div className="mt-auto flex flex-wrap items-center gap-3 border-t pt-4">
-        {generatedAt !== null && (
-          <p className="text-xs text-muted-foreground">Généré le {formatParisDateTime(generatedAt)}</p>
-        )}
+        <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+          {brief !== null && <p>Brief généré le {formatParisDateTime(brief.generatedAt)}</p>}
+          {questions !== null && <p>Questions générées le {formatParisDateTime(questions.generatedAt)}</p>}
+        </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <Label htmlFor={REGENERATION_LANGUAGE_SELECT_ID} className="sr-only">
             Langue de la régénération
@@ -179,7 +182,12 @@ const InterviewPreparationModalContent = ({
   )
 }
 
-export const InterviewPreparationModal = ({ isOpen, onClose, ...contentProps }: InterviewPreparationModalProps) => (
+export const InterviewPreparationModal = ({
+  isOpen,
+  onClose,
+  finalFocusRef,
+  ...contentProps
+}: InterviewPreparationModalProps) => (
   <Dialog.Root
     open={isOpen}
     onOpenChange={(isDialogOpen) => {
@@ -188,7 +196,10 @@ export const InterviewPreparationModal = ({ isOpen, onClose, ...contentProps }: 
   >
     <Dialog.Portal>
       <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/40" />
-      <Dialog.Popup className="fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[min(42rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 overflow-y-auto rounded-xl border bg-background p-6 shadow-xl outline-none">
+      <Dialog.Popup
+        finalFocus={finalFocusRef}
+        className="fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[min(42rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 overflow-y-auto rounded-xl border bg-background p-6 shadow-xl outline-none"
+      >
         <InterviewPreparationModalContent {...contentProps} />
       </Dialog.Popup>
     </Dialog.Portal>

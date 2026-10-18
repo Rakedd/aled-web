@@ -1,16 +1,10 @@
-import type { ActionResult } from '@/domain/action-result'
+import type { RefObject } from 'react'
 import type { BriefLanguage, InterviewPreparation } from '@/domain/interview-preparation'
-
-export type UpdateEndClientNotes = (endClientId: string, notes: string) => Promise<ActionResult<null>>
 
 export type NotesSaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved' | 'failed'
 
 export type InterviewPreparationModalControllerParameters = {
-  endClientId: string | null
-  initialNotes: string | null
   language: BriefLanguage
-  updateEndClientNotes: UpdateEndClientNotes
-  onNotesSaved: (savedNotes: string) => void
   onRegenerate: (language: BriefLanguage) => void
 }
 
@@ -22,8 +16,15 @@ export type InterviewPreparationModalProps = {
   errorMessage: string | null
   hasAnthropicApiKey: boolean
   onRegenerate: (language: BriefLanguage) => void
-  updateEndClientNotes: UpdateEndClientNotes
-  onNotesSaved: (savedNotes: string) => void
+  notes: string
+  changeNotes: (notes: string) => void
+  notesSaveStatus: NotesSaveStatus
+  notesErrorMessage: string | null
+  retryNotesSave: () => void
+  finalFocusRef: RefObject<HTMLElement | null>
 }
 
-export type InterviewPreparationModalContentProps = Omit<InterviewPreparationModalProps, 'isOpen' | 'onClose'>
+export type InterviewPreparationModalContentProps = Omit<
+  InterviewPreparationModalProps,
+  'isOpen' | 'onClose' | 'finalFocusRef'
+>
