@@ -118,3 +118,9 @@ export const sortInterviewsByStartsAt = <SortedInterview extends Pick<Interview,
   interviews: SortedInterview[],
 ): SortedInterview[] =>
   [...interviews].sort((firstInterview, secondInterview) => firstInterview.startsAt.getTime() - secondInterview.startsAt.getTime())
+
+export const findNextInterview = <CandidateInterview extends Pick<Interview, 'startsAt'>>(
+  interviews: CandidateInterview[],
+  now: Date,
+): CandidateInterview | null =>
+  sortInterviewsByStartsAt(interviews).find((interview) => interview.startsAt.getTime() > now.getTime()) ?? null

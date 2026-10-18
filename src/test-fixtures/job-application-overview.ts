@@ -1,0 +1,45 @@
+import type { ContactDetails } from '@/domain/entities'
+import type { JobApplicationOverview } from '@/domain/job-application'
+
+export const buildJobApplicationOverview = (overrides: Partial<JobApplicationOverview> = {}): JobApplicationOverview => ({
+  id: 'application-1',
+  userId: 'user-1',
+  title: 'Développeur React',
+  source: 'Free-Work',
+  postingUrl: null,
+  postingRawText: 'Texte original',
+  status: 'applied',
+  intermediaryId: 'intermediary-1',
+  contactId: 'contact-1',
+  endClientId: 'end-client-1',
+  postedDailyRate: 650,
+  requestedDailyRate: null,
+  location: 'Paris',
+  remotePolicy: null,
+  desiredStart: null,
+  duration: '6 mois',
+  appliedOn: new Date('2026-10-10T08:00:00Z'),
+  notes: null,
+  actualStartDate: null,
+  stack: [{ name: 'React', category: 'framework', origin: 'posting' }],
+  createdAt: new Date('2026-10-10T08:00:00Z'),
+  updatedAt: new Date('2026-10-10T08:00:00Z'),
+  lastActivityAt: null,
+  hasJobSpec: false,
+  intermediaryName: 'Free-Work',
+  intermediaryKind: 'platform',
+  contactName: 'Jeanne Martin',
+  endClientName: 'Société Générale',
+  endClientParentName: 'Groupe SG',
+  endClientLabel: 'Société Générale (Groupe SG)',
+  ...overrides,
+})
+
+export const buildContactDetails = (overrides: Partial<ContactDetails> = {}): ContactDetails => ({
+  id: 'contact-1',
+  fullName: 'Jeanne Martin',
+  phone: '0102030405',
+  email: 'jeanne@example.com',
+  linkedinUrl: 'https://www.linkedin.com/in/jeanne',
+  ...overrides,
+})

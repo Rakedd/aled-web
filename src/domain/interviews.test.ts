@@ -1,4 +1,10 @@
-import { INTERVIEW_VALIDATION_MESSAGES, sortInterviewsByStartsAt, validateInterviewInput, type Interview } from './interviews'
+import {
+  INTERVIEW_VALIDATION_MESSAGES,
+  findNextInterview,
+  sortInterviewsByStartsAt,
+  validateInterviewInput,
+  type Interview,
+} from './interviews'
 
 const buildInterviewInput = (overrides: Record<string, unknown> = {}) => ({
   parisLocalDateTime: '2026-10-28T14:00',
@@ -85,5 +91,23 @@ describe('sortInterviewsByStartsAt', () => {
     ]
     expect(sortInterviewsByStartsAt(interviews).map(({ id }) => id)).toEqual(['earlier', 'later'])
     expect(interviews.map(({ id }) => id)).toEqual(['later', 'earlier'])
+  })
+})
+
+describe('findNextInterview', () => {
+  const now = new Date('2026-10-19T10:00:00Z')
+
+  it('picks the closest interview in the future, whatever the input order', () => {
+    const interviews = [
+      buildInterview('far', '2026-11-02T09:00:00Z'),
+      buildInterview('past', '2026-10-18T09:00:00Z'),
+      buildInterview('closest', '2026-10-20T09:00:00Z'),
+    ]
+    expect(findNextInterview(interviews, now)?.id).toBe('closest')
+  })
+
+  it('returns null when every interview is already past', () => {
+    expect(findNextInterview([buildInterview('past', '2026-10-19T09:59:00Z')], now)).toBeNull()
+    expect(findNextInterview([], now)).toBeNull()
   })
 })

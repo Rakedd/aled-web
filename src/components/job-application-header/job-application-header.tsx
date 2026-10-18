@@ -24,62 +24,19 @@ const getStepState = (step: JobApplicationStatus, currentStatus: JobApplicationS
   return currentIndex !== -1 && stepIndex < currentIndex ? 'done' : 'upcoming'
 }
 
-export const JobApplicationHeader = ({
-  jobApplication,
-  changeJobApplicationStatus,
-  now,
-}: JobApplicationHeaderProps) => {
+export const JobApplicationHeader = ({ jobApplication, changeJobApplicationStatus }: JobApplicationHeaderProps) => {
   const router = useRouter()
-  const {
-    nextStatus,
-    koOptions,
-    endClientDisplayName,
-    sourceDisplay,
-    appliedOnDisplay,
-    lastActivityDisplay,
-    externalPostingUrl,
-    isChangingStatus,
-    errorMessage,
-    advance,
-    changeStatus,
-  } = useController({
+  const { nextStatus, koOptions, isChangingStatus, errorMessage, advance, changeStatus } = useController({
     jobApplication,
     changeJobApplicationStatus,
-    now,
     onDataChanged: router.refresh,
   })
 
-  const contextParts = [jobApplication.intermediaryName, jobApplication.contactName].filter(
-    (contextPart) => contextPart !== null,
-  )
-
   return (
-    <header className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold">{jobApplication.title}</h1>
-          <StatusBadge status={jobApplication.status} />
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {endClientDisplayName}
-          {contextParts.length > 0 && ` · via ${contextParts.join(' · ')}`}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Source : {sourceDisplay} · Candidature du {appliedOnDisplay} · Dernier échange : {lastActivityDisplay}
-          {externalPostingUrl !== null && (
-            <>
-              {' · '}
-              <a
-                href={externalPostingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline underline-offset-2"
-              >
-                Voir l&apos;annonce
-              </a>
-            </>
-          )}
-        </p>
+    <section aria-label="Statut de la candidature" className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-muted-foreground">Statut</span>
+        <StatusBadge status={jobApplication.status} />
       </div>
       <ol className="flex gap-1 overflow-x-auto pb-1" aria-label="Avancement de la candidature">
         {PIPELINE_STATUSES.map((step) => {
@@ -143,6 +100,6 @@ export const JobApplicationHeader = ({
           {errorMessage}
         </p>
       )}
-    </header>
+    </section>
   )
 }

@@ -1,8 +1,9 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import type { ComponentProps, FormEvent, ReactNode } from 'react'
+import type { ComponentProps, FormEvent } from 'react'
 import { EntityAutocomplete } from '@/components/entity-autocomplete'
+import { FormField } from '@/components/form-field'
 import { MissingAnthropicApiKeyNotice } from '@/components/missing-anthropic-api-key-notice'
 import { StackChipsEditor } from '@/components/stack-chips-editor'
 import { Button } from '@/components/ui/button'
@@ -21,13 +22,6 @@ const SOURCE_SUGGESTIONS = ['Free-Work', 'Collective', 'LeHibou', 'Malt', 'Linke
 const SOURCE_SUGGESTIONS_LIST_ID = 'new-job-application-source-suggestions'
 const CONTROL_CLASS_NAME =
   'rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30'
-
-const FormField = ({ htmlFor, label, children }: { htmlFor: string; label: string; children: ReactNode }) => (
-  <div className="flex min-w-0 flex-col gap-2">
-    <Label htmlFor={htmlFor}>{label}</Label>
-    {children}
-  </div>
-)
 
 export const NewJobApplicationForm = ({
   extractJobPosting,

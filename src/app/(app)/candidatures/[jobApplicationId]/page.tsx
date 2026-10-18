@@ -4,12 +4,17 @@ import { ActivityLog } from '@/components/activity-log'
 import { DeleteJobApplicationButton } from '@/components/delete-job-application-button'
 import { InterviewPreparationButton } from '@/components/interview-preparation-button'
 import { InterviewsSection } from '@/components/interviews-section'
+import { ContactView } from '@/components/contact-view'
+import { JobApplicationBlock } from '@/components/job-application-block'
 import { JobApplicationHeader } from '@/components/job-application-header'
+import { JobApplicationSummary } from '@/components/job-application-summary'
 import { JobSpecSection } from '@/components/job-spec-section'
-import { MissionInfoForm } from '@/components/mission-info-form'
+import { MissionDetailsView } from '@/components/mission-details-view'
+import { StackView } from '@/components/stack-view'
 import type { ActionResult } from '@/domain/action-result'
+import type { ContactDetails } from '@/domain/entities'
 import type { InterviewPreparation } from '@/domain/interview-preparation'
-import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from '@/domain/job-application'
+import { JOB_APPLICATION_NOT_FOUND_MESSAGE, type JobApplicationOverview } from '@/domain/job-application'
 import { updateEndClientNotes } from '@/server/actions/client-brief-actions'
 import {
   getContactDetails,
@@ -56,17 +61,32 @@ const loadInitialInterviewPreparation = async (jobApplicationId: string): Promis
   return getInterviewPreparation(jobApplicationId, lastUsedLanguage)
 }
 
+type JobApplicationWithContactDetails = {
+  jobApplicationResult: ActionResult<JobApplicationOverview>
+  contactDetailsResult: ActionResult<ContactDetails> | null
+}
+
+const loadJobApplicationWithContactDetails = async (
+  jobApplicationId: string,
+): Promise<JobApplicationWithContactDetails> => {
+  const jobApplicationResult = await getJobApplication(jobApplicationId)
+  if (!jobApplicationResult.ok || jobApplicationResult.data.contactId === null) {
+    return { jobApplicationResult, contactDetailsResult: null }
+  }
+  return { jobApplicationResult, contactDetailsResult: await getContactDetails(jobApplicationResult.data.contactId) }
+}
+
 const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobApplicationId: string }> }) => {
   const { jobApplicationId } = await params
   const [
-    jobApplicationResult,
+    { jobApplicationResult, contactDetailsResult },
     activityLogEntriesResult,
     jobSpecResult,
     interviewsResult,
     interviewPreparationResult,
     hasAnthropicApiKey,
   ] = await Promise.all([
-    getJobApplication(jobApplicationId),
+    loadJobApplicationWithContactDetails(jobApplicationId),
     listActivityLogEntries(jobApplicationId),
     getJobSpec(jobApplicationId),
     listInterviewsForJobApplication(jobApplicationId),
@@ -118,54 +138,80 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
     )
   }
 
+  const contactDetails = contactDetailsResult?.ok ? contactDetailsResult.data : null
+  const contactDetailsErrorMessage =
+    contactDetailsResult !== null && !contactDetailsResult.ok ? contactDetailsResult.errorMessage : null
+
   return (
     <div className="flex min-w-0 flex-col gap-8">
-      <JobApplicationHeader
-        jobApplication={jobApplication}
-        changeJobApplicationStatus={changeJobApplicationStatus}
-        now={now}
+      <div className="flex min-w-0 flex-col gap-4">
+        <JobApplicationBlock
+          title="En-tête"
+          isTitleHidden
+          view={<JobApplicationSummary jobApplication={jobApplication} interviews={interviewsResult.data} now={now} />}
+          form={{
+            kind: 'header',
+            props: { jobApplication, updateJobApplication, setEndClientParent, updateIntermediaryKind, searchEntities },
+          }}
+        />
+        <JobApplicationHeader jobApplication={jobApplication} changeJobApplicationStatus={changeJobApplicationStatus} />
+      </div>
+      <JobApplicationBlock
+        title="Stack"
+        view={<StackView stack={jobApplication.stack} />}
+        form={{ kind: 'stack', props: { jobApplication, updateJobApplication } }}
       />
-      <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <MissionInfoForm
-          jobApplication={jobApplication}
-          updateJobApplication={updateJobApplication}
-          setEndClientParent={setEndClientParent}
-          getContactDetails={getContactDetails}
-          updateContactDetails={updateContactDetails}
-          updateIntermediaryKind={updateIntermediaryKind}
-          searchEntities={searchEntities}
+      <InterviewPreparationButton
+        key={`${jobApplication.id}-${jobApplication.endClientId ?? 'unknown-end-client'}`}
+        jobApplicationId={jobApplication.id}
+        initialPreparation={interviewPreparationResult.data}
+        getInterviewPreparation={getInterviewPreparation}
+        generateInterviewPreparation={generateInterviewPreparation}
+        updateEndClientNotes={updateEndClientNotes}
+        hasAnthropicApiKey={hasAnthropicApiKey}
+      />
+      <div className="grid min-w-0 gap-8 lg:grid-cols-2">
+        <JobSpecSection
+          key={jobApplication.id}
+          jobApplicationId={jobApplication.id}
+          jobSpec={jobSpecResult.data}
+          uploadJobSpecPdf={uploadJobSpecPdf}
+          saveJobSpecText={saveJobSpecText}
+          confirmJobSpecStack={confirmJobSpecStack}
+          discardPendingJobSpecStack={discardPendingJobSpecStack}
+          hasAnthropicApiKey={hasAnthropicApiKey}
         />
         <div className="flex min-w-0 flex-col gap-8">
-          <JobSpecSection
-            key={jobApplication.id}
-            jobApplicationId={jobApplication.id}
-            jobSpec={jobSpecResult.data}
-            uploadJobSpecPdf={uploadJobSpecPdf}
-            saveJobSpecText={saveJobSpecText}
-            confirmJobSpecStack={confirmJobSpecStack}
-            discardPendingJobSpecStack={discardPendingJobSpecStack}
-            hasAnthropicApiKey={hasAnthropicApiKey}
+          <JobApplicationBlock
+            title="Infos mission"
+            view={<MissionDetailsView jobApplication={jobApplication} />}
+            form={{ kind: 'missionDetails', props: { jobApplication, updateJobApplication } }}
           />
-          <InterviewPreparationButton
-            key={`${jobApplication.id}-${jobApplication.endClientId ?? 'unknown-end-client'}`}
-            jobApplicationId={jobApplication.id}
-            initialPreparation={interviewPreparationResult.data}
-            getInterviewPreparation={getInterviewPreparation}
-            generateInterviewPreparation={generateInterviewPreparation}
-            updateEndClientNotes={updateEndClientNotes}
-            hasAnthropicApiKey={hasAnthropicApiKey}
-          />
-          <InterviewsSection
-            key={jobApplication.id}
-            jobApplicationId={jobApplication.id}
-            initialInterviews={interviewsResult.data}
-            createInterview={createInterview}
-            updateInterview={updateInterview}
-            deleteInterview={deleteInterview}
-            listInterviewsForJobApplication={listInterviewsForJobApplication}
+          <JobApplicationBlock
+            title="Contact"
+            view={
+              <ContactView
+                contactName={jobApplication.contactName}
+                contactDetails={contactDetails}
+                loadErrorMessage={contactDetailsErrorMessage}
+              />
+            }
+            form={{
+              kind: 'contact',
+              props: { jobApplication, contactDetails, updateJobApplication, updateContactDetails, searchEntities },
+            }}
           />
         </div>
       </div>
+      <InterviewsSection
+        key={jobApplication.id}
+        jobApplicationId={jobApplication.id}
+        initialInterviews={interviewsResult.data}
+        createInterview={createInterview}
+        updateInterview={updateInterview}
+        deleteInterview={deleteInterview}
+        listInterviewsForJobApplication={listInterviewsForJobApplication}
+      />
       <ActivityLog
         jobApplicationId={jobApplication.id}
         initialEntries={activityLogEntriesResult.data}

@@ -74,6 +74,11 @@ export type JobApplicationInput = {
   endClientParentName: string | null
 }
 
+export type UpdateJobApplication = (
+  jobApplicationId: string,
+  input: Partial<JobApplicationInput>,
+) => Promise<ActionResult<null>>
+
 type JobApplicationFieldValidators = {
   [FieldName in keyof JobApplicationInput]: (candidate: unknown) => ActionResult<JobApplicationInput[FieldName]>
 }

@@ -5,8 +5,9 @@ import {
   INTERVIEW_KIND_LABELS,
   type InterviewWithJobApplication,
 } from '@/domain/interviews'
+import { formatDailyRate, groupStackByCategory } from '@/domain/job-application-display'
 import { formatParisInterviewDateTime } from '@/domain/paris-time'
-import { STACK_CATEGORIES, STACK_CATEGORY_LABELS, type InterviewKind } from '@/domain/types'
+import type { InterviewKind } from '@/domain/types'
 import type {
   InterviewRevisionMissionDetail,
   InterviewRevisionPanelContent,
@@ -42,11 +43,6 @@ const removeCaseInsensitiveDuplicates = (names: string[]): string[] => {
   })
 }
 
-const DAILY_RATE_NUMBER_FORMAT = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 })
-
-const formatDailyRate = (dailyRate: number | null): string | null =>
-  dailyRate === null ? null : `${DAILY_RATE_NUMBER_FORMAT.format(dailyRate)}\u00a0€`
-
 const toMissionDetails = (interview: InterviewWithJobApplication): InterviewRevisionMissionDetail[] => {
   const candidateMissionDetails: { label: string; value: string | null }[] = [
     { label: 'Lieu', value: interview.location },
@@ -67,12 +63,10 @@ const toRevisionPanelContent = (interview: InterviewWithJobApplication): Intervi
   startsAtLabel: formatParisInterviewDateTime(interview.startsAt),
   kindLabel: INTERVIEW_KIND_LABELS[interview.kind],
   formatLabel: INTERVIEW_FORMAT_LABELS[interview.format],
-  stackGroups: STACK_CATEGORIES.map((category) => ({
-    categoryLabel: STACK_CATEGORY_LABELS[category],
-    stackItemNames: removeCaseInsensitiveDuplicates(
-      interview.stack.filter((stackItem) => stackItem.category === category).map(({ name }) => name),
-    ),
-  })).filter((stackGroup) => stackGroup.stackItemNames.length > 0),
+  stackGroups: groupStackByCategory(interview.stack).map((stackCategoryGroup) => ({
+    categoryLabel: stackCategoryGroup.label,
+    stackItemNames: removeCaseInsensitiveDuplicates(stackCategoryGroup.names),
+  })),
   missionDetails: toMissionDetails(interview),
   postingRawText: interview.postingRawText,
   jobApplicationHref: `/candidatures/${interview.jobApplicationId}`,

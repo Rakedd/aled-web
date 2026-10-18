@@ -7,24 +7,11 @@ export type ChangeJobApplicationStatus = (
   newStatus: JobApplicationStatus,
 ) => Promise<ActionResult<null>>
 
-export type JobApplicationHeaderSummary = Pick<
-  JobApplicationOverview,
-  | 'id'
-  | 'title'
-  | 'status'
-  | 'intermediaryName'
-  | 'contactName'
-  | 'endClientLabel'
-  | 'source'
-  | 'appliedOn'
-  | 'lastActivityAt'
-  | 'postingUrl'
->
+export type JobApplicationHeaderStatus = Pick<JobApplicationOverview, 'id' | 'status'>
 
 export type JobApplicationHeaderControllerParameters = {
-  jobApplication: JobApplicationHeaderSummary
+  jobApplication: JobApplicationHeaderStatus
   changeJobApplicationStatus: ChangeJobApplicationStatus
-  now: Date
   onDataChanged: () => void
 }
 
