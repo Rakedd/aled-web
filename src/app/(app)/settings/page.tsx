@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { AnthropicApiKeyForm } from '@/components/anthropic-api-key-form'
 import { ProfileForm } from '@/components/profile-form'
+import { SettingsNavigation } from '@/components/settings-navigation'
 import { buttonVariants } from '@/components/ui/button'
 import {
   deleteAnthropicApiKey,
@@ -17,6 +18,7 @@ const SettingsPage = async () => {
   return (
     <div className="flex w-full max-w-2xl flex-col gap-10">
       <h1 className="text-2xl font-semibold">Réglages</h1>
+      <SettingsNavigation />
       {!profileSettingsResult.ok ? (
         <p role="alert" className="text-sm text-destructive">
           {profileSettingsResult.errorMessage}
