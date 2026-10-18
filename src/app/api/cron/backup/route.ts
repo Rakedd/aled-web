@@ -1,9 +1,9 @@
-import { createHash, timingSafeEqual } from 'node:crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 import { formatParisCalendarDate } from '@/domain/paris-time'
 import { buildUserDataSnapshot } from '@/server/data-snapshot/build-user-data-snapshot'
 import { fetchEveryRow } from '@/server/data-snapshot/fetch-every-row'
 import { uploadBackupToGcs } from '@/server/data-snapshot/upload-backup-to-gcs'
+import { isAuthorizedBearerRequest } from '@/server/security/is-authorized-bearer-request'
 import { createServiceRoleSupabaseClient } from '@/server/supabase/create-service-role-supabase-client'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 
@@ -15,19 +15,10 @@ const INTERNAL_ERROR_STATUS = 500
 const describeError = (unknownError: unknown): string =>
   unknownError instanceof Error ? unknownError.message : typeof unknownError
 
-const hashForConstantTimeComparison = (secretCandidate: string): Buffer =>
-  createHash('sha256').update(secretCandidate).digest()
-
 const isAuthorizedCronRequest = (request: NextRequest): boolean => {
   const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret) {
-    console.error('Backup cron rejected because CRON_SECRET is not configured')
-    return false
-  }
-  return timingSafeEqual(
-    hashForConstantTimeComparison(request.headers.get('authorization') ?? ''),
-    hashForConstantTimeComparison(`Bearer ${cronSecret}`),
-  )
+  if (!cronSecret) console.error('Backup cron rejected because CRON_SECRET is not configured')
+  return isAuthorizedBearerRequest(request, cronSecret)
 }
 
 const listEveryUserId = async (supabase: FreeclutchSupabaseClient): Promise<string[]> => {

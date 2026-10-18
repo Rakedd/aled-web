@@ -10,7 +10,7 @@ const buildOpportunityRow = (externalId: string) => ({
   url: `https://www.free-work.com/fr/tech-it/missions/${externalId}`,
   title: 'Développeur React Senior',
   title_normalized: 'developpeur react senior',
-  published_at: '2026-10-17T08:00:00Z',
+  published_at: new Date().toISOString(),
 })
 
 const insertOpportunityOrFail = async (): Promise<string> => {

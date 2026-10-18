@@ -1,0 +1,58 @@
+import { NextResponse } from 'next/server'
+import { HISTORY_WINDOW_DAYS } from '@/domain/opportunities'
+import { parseIngestPayload } from '@/domain/opportunity-ingest-payload'
+import { addParisCalendarDays } from '@/domain/paris-time'
+import {
+  purgeOpportunitiesPublishedBefore,
+  upsertOpportunities,
+} from '@/server/repositories/opportunities-repository'
+import { isAuthorizedBearerRequest } from '@/server/security/is-authorized-bearer-request'
+import { createServiceRoleSupabaseClient } from '@/server/supabase/create-service-role-supabase-client'
+
+export const maxDuration = 60
+
+const BAD_REQUEST_STATUS = 400
+const UNAUTHORIZED_STATUS = 401
+const INTERNAL_ERROR_STATUS = 500
+
+const describeError = (unknownError: unknown): string =>
+  unknownError instanceof Error ? unknownError.message : typeof unknownError
+
+const isAuthorizedIngestRequest = (request: Request): boolean => {
+  const ingestToken = process.env.OPPORTUNITIES_INGEST_TOKEN
+  if (!ingestToken) console.error('Opportunities ingest rejected because OPPORTUNITIES_INGEST_TOKEN is not configured')
+  return isAuthorizedBearerRequest(request, ingestToken)
+}
+
+const readJsonBody = async (request: Request): Promise<{ body: unknown } | null> => {
+  try {
+    return { body: await request.json() }
+  } catch {
+    return null
+  }
+}
+
+export const POST = async (request: Request): Promise<NextResponse> => {
+  if (!isAuthorizedIngestRequest(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: UNAUTHORIZED_STATUS })
+  const jsonBody = await readJsonBody(request)
+  if (jsonBody === null) return NextResponse.json({ error: 'Invalid JSON body' }, { status: BAD_REQUEST_STATUS })
+  const parsedPayload = parseIngestPayload(jsonBody.body)
+  if ('error' in parsedPayload) return NextResponse.json({ error: parsedPayload.error }, { status: BAD_REQUEST_STATUS })
+  try {
+    const serviceClient = createServiceRoleSupabaseClient()
+    const upserted = await upsertOpportunities(serviceClient, parsedPayload.missions)
+    const purged = await purgeOpportunitiesPublishedBefore(
+      serviceClient,
+      addParisCalendarDays(new Date(), -HISTORY_WINDOW_DAYS),
+    )
+    return NextResponse.json({
+      received: parsedPayload.missions.length + parsedPayload.skippedInvalid,
+      upserted,
+      skippedInvalid: parsedPayload.skippedInvalid,
+      purged,
+    })
+  } catch (ingestError) {
+    console.error('Opportunities ingest failed', { errorMessage: describeError(ingestError) })
+    return NextResponse.json({ error: 'Ingest failed' }, { status: INTERNAL_ERROR_STATUS })
+  }
+}

@@ -93,10 +93,10 @@ export const JOB_APPLICATION_VALIDATION_MESSAGES = {
   invalidContactEmail: 'E-mail invalide',
 } as const
 
-const MAXIMUM_DAILY_RATE = 100_000
+export const MAXIMUM_DAILY_RATE = 100_000
 export const MAXIMUM_STACK_ITEM_COUNT = 100
 export const MAXIMUM_STACK_ITEM_NAME_LENGTH = 100
-const POSTING_URL_ALLOWED_PROTOCOLS = ['http:', 'https:']
+export const POSTING_URL_ALLOWED_PROTOCOLS: readonly string[] = ['http:', 'https:']
 const STACK_ITEM_ORIGINS: readonly StackItemOrigin[] = ['posting', 'job_spec']
 
 export const JOB_APPLICATION_TEXT_FIELD_RULES = {
