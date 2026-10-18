@@ -46,6 +46,7 @@ Toutes sont lues côté serveur uniquement (aucune n'a le préfixe `NEXT_PUBLIC_
 | `CRON_SECRET` | secret attendu par `/api/cron/backup` dans l'en-tête `Authorization: Bearer <CRON_SECRET>` ; Vercel l'envoie lui-même pour ses crons | `openssl rand -hex 32` |
 | `GCS_BACKUP_BUCKET` | nom du bucket Google Cloud Storage qui reçoit les sauvegardes | facultatif en local |
 | `GCP_BACKUP_SERVICE_ACCOUNT_KEY_BASE64` | clé JSON du compte de service GCP, encodée en base64 (voir ci-dessous) | facultatif en local |
+| `OPPORTUNITIES_INGEST_TOKEN` | jeton attendu par `/api/opportunities/ingest` dans l'en-tête `Authorization: Bearer <OPPORTUNITIES_INGEST_TOKEN>` ; sans lui, la route refuse tout | `openssl rand -hex 32` |
 
 Changer `API_KEY_ENCRYPTION_SECRET` rend illisibles les clés API Claude déjà enregistrées : chaque utilisateur devra ressaisir la sienne.
 
@@ -57,6 +58,22 @@ Sa clé JSON est un secret : la télécharger **hors du dépôt** (par exemple `
 base64 -i ~/Downloads/cle.json | tr -d '\n' | pbcopy
 rm ~/Downloads/cle.json
 ```
+
+## Opportunités
+
+La page « Mes opportunités » affiche les missions Free-Work des 7 derniers jours, filtrées selon les réglages de chaque utilisateur. Elle est alimentée par le watcher career-ops (`cloud/free-work-watcher`, dépôt career-ops), qui appelle le point d'entrée `POST /api/opportunities/ingest`.
+
+- **Authentification** : `Authorization: Bearer <OPPORTUNITIES_INGEST_TOKEN>`. Sans jeton configuré côté Freeclutch, ou avec un jeton incorrect, la requête est refusée.
+- **Lots** : 100 missions au maximum par requête.
+- **Idempotence** : renvoyer une mission déjà reçue ne crée pas de doublon.
+- **Purge** : chaque appel supprime les missions reçues il y a plus de 30 jours.
+
+Générer le jeton une seule fois, avec `openssl rand -hex 32`, puis placer la **même valeur** à deux endroits :
+
+1. la variable d'environnement `OPPORTUNITIES_INGEST_TOKEN` du projet Vercel (et de `.env.local` pour un essai en local) ;
+2. le secret GCP `freeclutch-ingest-token`, lu par le watcher.
+
+Ne jamais coller le jeton dans un fichier suivi par git ni dans une commande qui resterait dans l'historique du shell. Pour le renouveler, générer une nouvelle valeur, la mettre à jour des deux côtés, puis redéployer Vercel. Le déploiement du watcher est documenté dans le dépôt career-ops.
 
 ## Inviter un utilisateur
 
@@ -163,6 +180,7 @@ Le déploiement se fait à la main, dans cet ordre : Supabase, Google Cloud Stor
    | `API_KEY_ENCRYPTION_SECRET` | `openssl rand -base64 32` |
    | `CRON_SECRET` | une valeur aléatoire, par exemple `openssl rand -hex 32` |
    | `GCS_BACKUP_BUCKET`, `GCP_BACKUP_SERVICE_ACCOUNT_KEY_BASE64` | relevées à l'étape 2 |
+   | `OPPORTUNITIES_INGEST_TOKEN` | `openssl rand -hex 32` ; la **même valeur** que le secret GCP `freeclutch-ingest-token` (voir « Opportunités ») |
 
 3. Les pages qui appellent l'IA déclarent un `maxDuration` jusqu'à 300 s, ce qui exige **Fluid compute** : il est activé par défaut sur les nouveaux projets, mais vérifier dans **Settings > Functions**.
 4. `vercel.json` planifie la sauvegarde (`/api/cron/backup`, le lundi et le jeudi à 03:00 UTC). Vercel envoie `Authorization: Bearer <CRON_SECRET>` lui-même. Après le premier déploiement, vérifier dans **Settings > Cron Jobs** que la tâche est présente.
