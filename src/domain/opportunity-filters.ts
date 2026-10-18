@@ -196,3 +196,13 @@ export const validateOpportunityFilters = (candidate: unknown): ActionResult<Opp
   validatedFilters.regions = regionsValidation.data
   return { ok: true, data: validatedFilters }
 }
+
+export const hasActiveOpportunityFilters = (filters: OpportunityFilters): boolean =>
+  filters.includeKeywords.length > 0 ||
+  filters.alwaysExcludeKeywords.length > 0 ||
+  filters.rescuableExcludeKeywords.length > 0 ||
+  filters.rescueKeywords.length > 0 ||
+  filters.rateFloorFullRemote !== null ||
+  filters.rateFloorHybrid !== null ||
+  filters.rateFloorOnsite !== null ||
+  filters.regions.length > 0

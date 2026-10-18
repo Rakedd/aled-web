@@ -5,6 +5,7 @@ import {
   type OpportunityMatchCandidate,
   buildKeywordMatcher,
   createOpportunityMatcher,
+  hasActiveOpportunityFilters,
   normalizeForKeywordMatch,
   validateOpportunityFilters,
 } from './opportunity-filters'
@@ -158,5 +159,19 @@ describe('validateOpportunityFilters', () => {
   it('rejects regions that are not a list of strings or too long', () => {
     expect(validateOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, regions: [42] })).toEqual({ ok: false, errorMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.invalidRegions })
     expect(validateOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, regions: ['a'.repeat(61)] })).toEqual({ ok: false, errorMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.regionTooLong })
+  })
+})
+
+describe('hasActiveOpportunityFilters', () => {
+  it('is false for empty filters', () => {
+    expect(hasActiveOpportunityFilters(EMPTY_OPPORTUNITY_FILTERS)).toBe(false)
+  })
+
+  it.each([
+    filters({ includeKeywords: ['react'] }),
+    filters({ rateFloorOnsite: 400 }),
+    filters({ regions: ['Bretagne'] }),
+  ])('is true when a filter is set (%p)', (activeFilters) => {
+    expect(hasActiveOpportunityFilters(activeFilters)).toBe(true)
   })
 })

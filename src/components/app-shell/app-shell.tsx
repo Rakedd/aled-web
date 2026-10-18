@@ -12,11 +12,17 @@ const NAVIGATION_ITEMS: AppShellNavigationItem[] = [
     href: '/',
     isActiveForPathname: (pathname) => pathname === '/' || pathname.startsWith('/candidatures'),
   },
+  {
+    label: 'Opportunités',
+    href: '/opportunites',
+    isActiveForPathname: (pathname) => pathname.startsWith('/opportunites'),
+    showsOpportunitiesToProcessCount: true,
+  },
   { label: 'Calendrier', href: '/calendar', isActiveForPathname: (pathname) => pathname.startsWith('/calendar') },
   { label: 'Réglages', href: '/settings', isActiveForPathname: (pathname) => pathname.startsWith('/settings') },
 ]
 
-export const AppShell = ({ userEmail, signOut, children }: AppShellProps) => {
+export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, children }: AppShellProps) => {
   const pathname = usePathname()
 
   return (
@@ -41,6 +47,17 @@ export const AppShell = ({ userEmail, signOut, children }: AppShellProps) => {
                       )}
                     >
                       {navigationItem.label}
+                      {navigationItem.showsOpportunitiesToProcessCount && opportunitiesToProcessCount > 0 && (
+                        <>
+                          <span
+                            aria-hidden="true"
+                            className="ml-1.5 rounded-full bg-primary px-1.5 text-xs text-primary-foreground"
+                          >
+                            {opportunitiesToProcessCount}
+                          </span>
+                          <span className="sr-only">, {opportunitiesToProcessCount} à traiter</span>
+                        </>
+                      )}
                     </Link>
                   </li>
                 )
