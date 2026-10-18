@@ -153,6 +153,23 @@ describe('POST /api/opportunities/ingest against local supabase', () => {
     expect(await readOpportunityRows([blankTitleExternalId])).toEqual([])
   })
 
+  it('stores a mission whose texts hold null characters or lone surrogates once cleaned', async () => {
+    const malformedExternalId = randomUUID()
+
+    const ingest = await ingestMissions([
+      buildWatcherMission(malformedExternalId, {
+        title: 'Développeur\u0000 React \uD800Senior',
+        description: 'Mission\u0000 React',
+        skills: ['React\u0000', '\uDC00Next.js'],
+      }),
+    ])
+
+    expect(ingest).toMatchObject({ status: 200, counters: { received: 1, upserted: 1, skippedInvalid: 0 } })
+    expect(await readOpportunityRows([malformedExternalId])).toEqual([
+      expect.objectContaining({ title: 'Développeur React \uFFFDSenior', skills: ['React', '\uFFFDNext.js'] }),
+    ])
+  })
+
   it('purges the missions published more than thirty days ago with their decisions and keeps the recent ones', async () => {
     const serviceRoleClient = createServiceRoleTestClient()
     const user = await createSignedInTestClient(`ingest-purge-${randomUUID()}@test.local`)
