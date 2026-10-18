@@ -12,8 +12,6 @@ export type ContactEditFormValues = {
   linkedinUrl: string
 }
 
-export type ContactEditFormValueName = keyof ContactEditFormValues
-
 export type ContactEditFormControllerParameters = {
   jobApplication: JobApplicationOverview
   contactDetails: ContactDetails | null

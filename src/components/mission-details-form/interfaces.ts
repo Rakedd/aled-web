@@ -11,8 +11,6 @@ export type MissionDetailsFormValues = {
   notes: string
 }
 
-export type MissionDetailsFormValueName = keyof MissionDetailsFormValues
-
 export type MissionDetailsFormControllerParameters = {
   jobApplication: JobApplicationOverview
   updateJobApplication: UpdateJobApplication

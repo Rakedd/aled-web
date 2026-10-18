@@ -34,7 +34,6 @@ export const useController = ({
 
   const isContactNameEdited = formValues.contactName !== baselineFormValues.contactName
 
-
   const planContactSave = (): SavePlan => {
     const changedContactName = findChangedFields(
       { contactName: toNullableText(baselineFormValues.contactName) },
