@@ -1,11 +1,15 @@
 import type { ActionResult } from '@/domain/action-result'
-import type { OpportunityListing, OpportunityListingCursor, OpportunityTab } from '@/domain/opportunities'
+import type {
+  ApplyToOpportunity,
+  OpportunityListing,
+  OpportunityListingCursor,
+  OpportunityTab,
+} from '@/domain/opportunities'
 
 export type ListOpportunities = (
   tab: OpportunityTab,
   cursor: OpportunityListingCursor | null,
 ) => Promise<ActionResult<OpportunityListing>>
-export type ApplyToOpportunity = (opportunityId: string) => Promise<ActionResult<{ jobApplicationId: string }>>
 export type DecideOnOpportunity = (opportunityId: string) => Promise<ActionResult<null>>
 export type MarkOpportunitiesViewed = () => Promise<ActionResult<null>>
 

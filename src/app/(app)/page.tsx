@@ -1,16 +1,8 @@
 import type { Metadata } from 'next'
 import { HomeDashboard } from '@/components/home-dashboard'
-import { addParisCalendarDays } from '@/domain/paris-time'
-import { computeTodoAlerts, type AlertInterview } from '@/domain/todo-alerts'
-import { listUpcomingInterviews } from '@/server/actions/interview-actions'
-import {
-  changeJobApplicationStatus,
-  listAlertSnoozes,
-  listJobApplications,
-  snoozeAlert,
-} from '@/server/actions/job-application-actions'
+import { changeJobApplicationStatus, snoozeAlert } from '@/server/actions/job-application-actions'
 import { applyToOpportunity, listHighlightedOpportunities } from '@/server/actions/opportunity-actions'
-import { getProfileSettings } from '@/server/actions/settings-actions'
+import { loadTodoReminders } from '@/server/todo-reminders/load-todo-reminders'
 
 export const metadata: Metadata = { title: 'Accueil · Freeclutch' }
 
@@ -18,56 +10,33 @@ export const maxDuration = 60
 
 const UPCOMING_INTERVIEWS_LOOKAHEAD_DAYS = 90
 
+const PAGE_LOAD_FAILURE_MESSAGE = 'Impossible de charger ton accueil.'
+
 const HomePage = async () => {
   const now = new Date()
-  const [
-    jobApplicationsResult,
-    profileSettingsResult,
-    alertSnoozesResult,
-    upcomingInterviewsResult,
-    highlightedOpportunitiesResult,
-  ] = await Promise.all([
-    listJobApplications(),
-    getProfileSettings(),
-    listAlertSnoozes(),
-    listUpcomingInterviews(now, addParisCalendarDays(now, UPCOMING_INTERVIEWS_LOOKAHEAD_DAYS)),
+  const [todoRemindersResult, highlightedOpportunitiesResult] = await Promise.all([
+    loadTodoReminders(now, UPCOMING_INTERVIEWS_LOOKAHEAD_DAYS),
     listHighlightedOpportunities(),
   ])
 
-  if (!jobApplicationsResult.ok || !profileSettingsResult.ok || !alertSnoozesResult.ok || !upcomingInterviewsResult.ok) {
-    const failedResult = [jobApplicationsResult, profileSettingsResult, alertSnoozesResult, upcomingInterviewsResult].find(
-      (result) => !result.ok,
-    )
+  if (!todoRemindersResult.ok) {
     return (
       <div className="flex min-w-0 flex-col gap-6">
         <h1 className="text-2xl font-semibold">Bonjour</h1>
         <p role="alert" className="text-sm text-destructive">
-          {failedResult && !failedResult.ok ? failedResult.errorMessage : 'Impossible de charger ton accueil.'}
+          {todoRemindersResult.errorMessage || PAGE_LOAD_FAILURE_MESSAGE}
         </p>
       </div>
     )
   }
 
-  const alertInterviews: AlertInterview[] = upcomingInterviewsResult.data.map(
-    ({ id, jobApplicationId, startsAt, kind }) => ({ id, jobApplicationId, startsAt, kind }),
-  )
-  const jobApplications = jobApplicationsResult.data
-  const initialAlerts = computeTodoAlerts({
-    jobApplications: jobApplications.map((jobApplication) => ({
-      ...jobApplication,
-      hasEndClient: jobApplication.endClientId !== null,
-    })),
-    interviews: alertInterviews,
-    snoozes: alertSnoozesResult.data,
-    now,
-    followUpDelayDays: profileSettingsResult.data.followUpDelayDays,
-  })
+  const { jobApplications, profileSettings, upcomingInterviews, alertInterviews, alerts } = todoRemindersResult.data
 
   return (
     <HomeDashboard
-      firstName={profileSettingsResult.data.firstName}
+      firstName={profileSettings.firstName}
       now={now}
-      initialAlerts={initialAlerts}
+      initialAlerts={alerts}
       jobApplicationSummaries={jobApplications.map(({ id, status, contactName, intermediaryName }) => ({
         id,
         status,
@@ -75,7 +44,7 @@ const HomePage = async () => {
         intermediaryName,
       }))}
       alertInterviews={alertInterviews}
-      upcomingInterviews={upcomingInterviewsResult.data}
+      upcomingInterviews={upcomingInterviews}
       highlightedOpportunities={highlightedOpportunitiesResult.ok ? highlightedOpportunitiesResult.data : []}
       highlightedOpportunitiesErrorMessage={highlightedOpportunitiesResult.ok ? null : highlightedOpportunitiesResult.errorMessage}
       snoozeAlert={snoozeAlert}

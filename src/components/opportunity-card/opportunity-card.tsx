@@ -12,7 +12,7 @@ import type { OpportunityCardProps } from './interfaces'
 export const OpportunityCard = ({
   opportunity,
   tab,
-  isCompact = false,
+  isCompact,
   isNew,
   isPending,
   now,
@@ -89,7 +89,7 @@ export const OpportunityCard = ({
               {isPending ? 'Création…' : <>J&apos;ai postulé</>}
             </Button>
             {!isCompact && (
-              <Button type="button" size="sm" variant="ghost" disabled={isPending} onClick={() => onDismiss?.(opportunity)}>
+              <Button type="button" size="sm" variant="ghost" disabled={isPending} onClick={() => onDismiss(opportunity)}>
                 Pas intéressé
               </Button>
             )}
@@ -102,8 +102,8 @@ export const OpportunityCard = ({
           </>
         )}
         {tab === 'applied' && applicationLink}
-        {tab === 'dismissed' && (
-          <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={() => onRestore?.(opportunity)}>
+        {tab === 'dismissed' && !isCompact && (
+          <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={() => onRestore(opportunity)}>
             Remettre
           </Button>
         )}

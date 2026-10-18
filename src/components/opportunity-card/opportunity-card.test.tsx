@@ -32,7 +32,7 @@ const buildOpportunity = (overrides: Partial<OpportunityListItem> = {}): Opportu
 
 const renderCard = (
   opportunity: OpportunityListItem,
-  properties: Partial<React.ComponentProps<typeof OpportunityCard>> = {},
+  properties: Partial<Extract<React.ComponentProps<typeof OpportunityCard>, { isCompact?: false }>> = {},
 ) => {
   const onApply = jest.fn()
   const onDismiss = jest.fn()

@@ -96,6 +96,16 @@ describe('HomeDashboard', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Bonjour' })).toBeInTheDocument()
   })
 
+  it('trims the first name in the greeting', () => {
+    renderDashboard({ firstName: '  Rayan ' })
+    expect(screen.getByRole('heading', { level: 1, name: 'Bonjour Rayan' })).toBeInTheDocument()
+  })
+
+  it('greets without a name when the first name is only whitespace', () => {
+    renderDashboard({ firstName: '   ' })
+    expect(screen.getByRole('heading', { level: 1, name: 'Bonjour' })).toBeInTheDocument()
+  })
+
   it('shows at most five reminders and a link to see them all', () => {
     renderDashboard({ initialAlerts: [1, 2, 3, 4, 5, 6].map(buildAlert) })
     const banner = screen.getByRole('region', { name: 'À faire' })
@@ -111,7 +121,7 @@ describe('HomeDashboard', () => {
   it('shows at most three upcoming interviews linking to their application', () => {
     renderDashboard({ upcomingInterviews: [1, 2, 3, 4].map(buildInterview) })
     const section = screen.getByRole('region', { name: 'Prochains entretiens' })
-    const links = within(section).getAllByRole('link')
+    const links = within(within(section).getByRole('list')).getAllByRole('link')
     expect(links).toHaveLength(3)
     expect(links[0]).toHaveAttribute('href', '/candidatures/application-1')
     expect(links[0]).toHaveTextContent('Entretien client · Poste 1')
@@ -124,12 +134,14 @@ describe('HomeDashboard', () => {
     expect(screen.getByText('Pas de nouvelle mission intéressante depuis 48 h.')).toBeInTheDocument()
   })
 
-  it('shows the three shortcuts with their destinations', () => {
+  it('places each shortcut under its own section', () => {
     renderDashboard()
-    const shortcuts = screen.getByRole('navigation', { name: 'Raccourcis' })
-    expect(within(shortcuts).getByRole('link', { name: 'Voir mes candidatures' })).toHaveAttribute('href', '/candidatures')
-    expect(within(shortcuts).getByRole('link', { name: 'Voir mon calendrier' })).toHaveAttribute('href', '/calendar')
-    expect(within(shortcuts).getByRole('link', { name: 'Voir mes opportunités' })).toHaveAttribute('href', '/opportunites')
+    const remindersSection = screen.getByRole('region', { name: 'À faire' }).parentElement as HTMLElement
+    const interviewsSection = screen.getByRole('region', { name: 'Prochains entretiens' })
+    const missionsSection = screen.getByRole('region', { name: 'Missions à ne pas manquer' })
+    expect(within(remindersSection).getByRole('link', { name: 'Voir mes candidatures' })).toHaveAttribute('href', '/candidatures')
+    expect(within(interviewsSection).getByRole('link', { name: 'Voir mon calendrier' })).toHaveAttribute('href', '/calendar')
+    expect(within(missionsSection).getByRole('link', { name: 'Voir mes opportunités' })).toHaveAttribute('href', '/opportunites')
   })
 
   it('shows highlighted missions in compact mode without the dismiss button', () => {

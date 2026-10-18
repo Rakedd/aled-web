@@ -15,11 +15,7 @@ import type { HomeDashboardProps } from './interfaces'
 const MAXIMUM_VISIBLE_ALERTS = 5
 const MAXIMUM_VISIBLE_INTERVIEWS = 3
 
-const SHORTCUTS = [
-  { label: 'Voir mes candidatures', href: JOB_APPLICATIONS_ROUTE },
-  { label: 'Voir mon calendrier', href: CALENDAR_ROUTE },
-  { label: 'Voir mes opportunités', href: OPPORTUNITIES_ROUTE },
-]
+const SHORTCUT_LINK_CLASS_NAME = cn(buttonVariants({ variant: 'outline' }), 'self-start')
 
 export const HomeDashboard = ({
   firstName,
@@ -40,28 +36,27 @@ export const HomeDashboard = ({
     applyToOpportunity,
     onDataChanged: router.refresh,
   })
+  const trimmedFirstName = firstName.trim()
   const nextInterviews = upcomingInterviews.slice(0, MAXIMUM_VISIBLE_INTERVIEWS)
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <h1 className="text-2xl font-semibold">{firstName === '' ? 'Bonjour' : `Bonjour ${firstName}`}</h1>
-      <nav aria-label="Raccourcis" className="flex flex-wrap gap-2">
-        {SHORTCUTS.map(({ label, href }) => (
-          <Link key={href} href={href} className={cn(buttonVariants({ variant: 'outline' }))}>
-            {label}
-          </Link>
-        ))}
-      </nav>
-      <TodoBanner
-        initialAlerts={initialAlerts}
-        snoozeAlert={snoozeAlert}
-        changeJobApplicationStatus={changeJobApplicationStatus}
-        jobApplicationSummaries={jobApplicationSummaries}
-        interviews={alertInterviews}
-        now={now}
-        maximumVisibleAlerts={MAXIMUM_VISIBLE_ALERTS}
-        seeAllHref={JOB_APPLICATIONS_ROUTE}
-      />
+      <h1 className="text-2xl font-semibold">{trimmedFirstName === '' ? 'Bonjour' : `Bonjour ${trimmedFirstName}`}</h1>
+      <div className="flex flex-col gap-3">
+        <TodoBanner
+          initialAlerts={initialAlerts}
+          snoozeAlert={snoozeAlert}
+          changeJobApplicationStatus={changeJobApplicationStatus}
+          jobApplicationSummaries={jobApplicationSummaries}
+          interviews={alertInterviews}
+          now={now}
+          maximumVisibleAlerts={MAXIMUM_VISIBLE_ALERTS}
+          seeAllHref={JOB_APPLICATIONS_ROUTE}
+        />
+        <Link href={JOB_APPLICATIONS_ROUTE} className={SHORTCUT_LINK_CLASS_NAME}>
+          Voir mes candidatures
+        </Link>
+      </div>
       <section aria-labelledby="home-interviews-title" className="flex flex-col gap-3">
         <h2 id="home-interviews-title" className="text-lg font-semibold">
           Prochains entretiens
@@ -79,6 +74,9 @@ export const HomeDashboard = ({
             ))}
           </ul>
         )}
+        <Link href={CALENDAR_ROUTE} className={SHORTCUT_LINK_CLASS_NAME}>
+          Voir mon calendrier
+        </Link>
       </section>
       <section aria-labelledby="home-opportunities-title" className="flex flex-col gap-3">
         <h2 id="home-opportunities-title" className="text-lg font-semibold">
@@ -115,6 +113,9 @@ export const HomeDashboard = ({
             ))}
           </ul>
         )}
+        <Link href={OPPORTUNITIES_ROUTE} className={SHORTCUT_LINK_CLASS_NAME}>
+          Voir mes opportunités
+        </Link>
       </section>
     </div>
   )

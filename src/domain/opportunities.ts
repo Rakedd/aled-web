@@ -70,13 +70,13 @@ export type OpportunityListing = {
   lastViewedAt: Date | null
 }
 
+export type ApplyToOpportunity = (opportunityId: string) => Promise<ActionResult<{ jobApplicationId: string }>>
+
 export const OPPORTUNITY_PAGE_SIZE = 50
 export const TO_PROCESS_WINDOW_DAYS = 7
-
-export const HIGHLIGHTED_OPPORTUNITIES_WINDOW_HOURS = 48
-
-export const HIGHLIGHTED_OPPORTUNITIES_COUNT = 2
 export const HISTORY_WINDOW_DAYS = 30
+export const HIGHLIGHTED_OPPORTUNITIES_WINDOW_HOURS = 48
+export const HIGHLIGHTED_OPPORTUNITIES_COUNT = 2
 
 export const OPPORTUNITY_VALIDATION_MESSAGES = {
   notFound: 'Opportunité introuvable',

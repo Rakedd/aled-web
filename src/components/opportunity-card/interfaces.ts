@@ -1,13 +1,24 @@
 import type { OpportunityListItem, OpportunityTab } from '@/domain/opportunities'
 
-export type OpportunityCardProps = {
+type OpportunityCardBaseProps = {
   opportunity: OpportunityListItem
   tab: OpportunityTab
-  isCompact?: boolean
   isNew: boolean
   isPending: boolean
   now: Date
   onApply: (opportunity: OpportunityListItem) => void
-  onDismiss?: (opportunity: OpportunityListItem) => void
-  onRestore?: (opportunity: OpportunityListItem) => void
 }
+
+type FullOpportunityCardProps = OpportunityCardBaseProps & {
+  isCompact?: false
+  onDismiss: (opportunity: OpportunityListItem) => void
+  onRestore: (opportunity: OpportunityListItem) => void
+}
+
+type CompactOpportunityCardProps = OpportunityCardBaseProps & {
+  isCompact: true
+  onDismiss?: never
+  onRestore?: never
+}
+
+export type OpportunityCardProps = FullOpportunityCardProps | CompactOpportunityCardProps
