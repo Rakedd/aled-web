@@ -16,6 +16,7 @@ export const fetchEveryRow = async <Row>(
   const firstRowIndex = alreadyFetchedRows.length
   const { data, error } = await fetchRowPage(firstRowIndex, firstRowIndex + ROW_PAGE_SIZE - 1)
   if (error) throw toRepositoryError(operationName, error)
-  if (data === null || data.length === 0) return alreadyFetchedRows
-  return fetchEveryRow(operationName, fetchRowPage, [...alreadyFetchedRows, ...data])
+  if (data === null) return alreadyFetchedRows
+  const fetchedRows = [...alreadyFetchedRows, ...data]
+  return data.length < ROW_PAGE_SIZE ? fetchedRows : fetchEveryRow(operationName, fetchRowPage, fetchedRows)
 }

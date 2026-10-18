@@ -1,4 +1,5 @@
 import 'server-only'
+import { cache } from 'react'
 import {
   HISTORY_WINDOW_DAYS,
   type Opportunity,
@@ -14,7 +15,7 @@ import {
   TO_PROCESS_WINDOW_DAYS,
 } from '@/domain/opportunities'
 import { createOpportunityMatcher, EMPTY_OPPORTUNITY_FILTERS, type OpportunityFilters } from '@/domain/opportunity-filters'
-import { addParisCalendarDays } from '@/domain/paris-time'
+import { addParisCalendarDays, formatParisCalendarDate } from '@/domain/paris-time'
 import {
   findLastOpportunityReceivedAt,
   listOpportunitiesByIds,
@@ -46,6 +47,20 @@ const loadToProcessContext = async (
     findOpportunityFiltersBySource(supabase, userId),
   ])
   return { recentSummaries, decisions, filtersBySource }
+}
+
+const getRequestScopedToProcessContexts = cache(() => new Map<string, Promise<ToProcessContext>>())
+
+const loadToProcessContextOncePerRequest = (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  now: Date,
+): Promise<ToProcessContext> => {
+  const toProcessContexts = getRequestScopedToProcessContexts()
+  const contextKey = `${userId}:${formatParisCalendarDate(now)}`
+  const loadingContext = toProcessContexts.get(contextKey) ?? loadToProcessContext(supabase, userId, now)
+  toProcessContexts.set(contextKey, loadingContext)
+  return loadingContext
 }
 
 const buildSourceAwareMatcher = (
@@ -134,7 +149,7 @@ export const countOpportunitiesToProcessForUser = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   now: Date,
-): Promise<number> => selectPositionsToProcess(await loadToProcessContext(supabase, userId, now)).length
+): Promise<number> => selectPositionsToProcess(await loadToProcessContextOncePerRequest(supabase, userId, now)).length
 
 export const buildOpportunityListing = async (
   supabase: FreeclutchSupabaseClient,
@@ -143,7 +158,7 @@ export const buildOpportunityListing = async (
   now: Date,
 ): Promise<OpportunityListing> => {
   const [toProcessContext, lastReceivedAt, lastViewedAt] = await Promise.all([
-    loadToProcessContext(supabase, userId, now),
+    loadToProcessContextOncePerRequest(supabase, userId, now),
     findLastOpportunityReceivedAt(supabase),
     findOpportunitiesLastViewedAt(supabase, userId),
   ])
