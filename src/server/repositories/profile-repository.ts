@@ -101,3 +101,31 @@ export const getDecryptedAnthropicApiKeyForUser = async (userId: string): Promis
   if (encryptedApiKey === null) return null
   return decryptApiKey(encryptedApiKey, readApiKeyEncryptionSecret())
 }
+
+export const findOpportunitiesLastViewedAt = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+): Promise<Date | null> => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('opportunities_last_viewed_at')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error) throw toProfileRepositoryError('findOpportunitiesLastViewedAt', error)
+  const lastViewedAt = data?.opportunities_last_viewed_at ?? null
+  return lastViewedAt === null ? null : new Date(lastViewedAt)
+}
+
+export const recordOpportunitiesViewedAt = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  viewedAt: Date,
+): Promise<void> => {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ opportunities_last_viewed_at: viewedAt.toISOString() })
+    .eq('id', userId)
+    .select('id')
+    .single()
+  if (error) throw toProfileRepositoryError('recordOpportunitiesViewedAt', error)
+}

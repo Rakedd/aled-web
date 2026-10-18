@@ -1,4 +1,6 @@
 import { formatInTimeZone } from 'date-fns-tz'
+import type { ActionResult } from './action-result'
+import { rejectWith, validateUuid } from './input-validation'
 import {
   JOB_APPLICATION_TEXT_FIELD_RULES,
   type JobApplicationInput,
@@ -16,7 +18,9 @@ export const OPPORTUNITY_SOURCE_LABELS: Record<OpportunitySource, string> = {
   'free-work': 'Free-Work',
 }
 
-export type RemoteMode = 'full' | 'partial' | 'none'
+export const REMOTE_MODES = ['full', 'partial', 'none'] as const
+
+export type RemoteMode = (typeof REMOTE_MODES)[number]
 
 export const REMOTE_MODE_LABELS: Record<RemoteMode, string> = {
   full: 'Full remote',
@@ -48,7 +52,9 @@ export type Opportunity = {
 
 export type OpportunityDecision = 'applied' | 'dismissed'
 
-export type OpportunityTab = 'to_process' | 'applied' | 'dismissed'
+export const OPPORTUNITY_TABS = ['to_process', 'applied', 'dismissed'] as const
+
+export type OpportunityTab = (typeof OPPORTUNITY_TABS)[number]
 
 export type OpportunityListItem = Opportunity & {
   decision: OpportunityDecision | null
@@ -67,10 +73,43 @@ export const OPPORTUNITY_PAGE_SIZE = 50
 export const TO_PROCESS_WINDOW_DAYS = 7
 export const HISTORY_WINDOW_DAYS = 30
 
+export const OPPORTUNITY_VALIDATION_MESSAGES = {
+  notFound: 'Opportunité introuvable',
+  unknownSource: 'Source inconnue',
+  invalidListingRequest: 'Onglet ou page invalide',
+} as const
+
+export type OpportunityListingRequest = { tab: OpportunityTab; page: number }
+
 const UNDISCLOSED_RATE_LABEL = 'Non communiqué'
 const FEED_WATCH_START_HOUR = 9
 const FEED_WATCH_END_HOUR = 22
 const MAXIMUM_FEED_SILENCE_IN_MILLISECONDS = 4 * 60 * 60 * 1000
+
+export const isOpportunitySource = (candidate: unknown): candidate is OpportunitySource =>
+  OPPORTUNITY_SOURCES.some((opportunitySource) => opportunitySource === candidate)
+
+export const isRemoteMode = (candidate: unknown): candidate is RemoteMode =>
+  REMOTE_MODES.some((remoteMode) => remoteMode === candidate)
+
+export const isOpportunityTab = (candidate: unknown): candidate is OpportunityTab =>
+  OPPORTUNITY_TABS.some((opportunityTab) => opportunityTab === candidate)
+
+export const validateOpportunityId = (candidate: unknown): ActionResult<string> =>
+  validateUuid(candidate, OPPORTUNITY_VALIDATION_MESSAGES.notFound)
+
+export const validateOpportunitySource = (candidate: unknown): ActionResult<OpportunitySource> =>
+  isOpportunitySource(candidate)
+    ? { ok: true, data: candidate }
+    : rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.unknownSource)
+
+export const validateOpportunityListingRequest = (
+  tab: unknown,
+  page: unknown,
+): ActionResult<OpportunityListingRequest> =>
+  isOpportunityTab(tab) && typeof page === 'number' && Number.isSafeInteger(page) && page >= 1
+    ? { ok: true, data: { tab, page } }
+    : rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.invalidListingRequest)
 
 export const getOpportunityEffectiveRate = (opportunity: Pick<Opportunity, 'rateMin' | 'rateMax'>): number | null =>
   opportunity.rateMax ?? opportunity.rateMin

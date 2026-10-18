@@ -5,6 +5,10 @@ import {
   buildJobApplicationInputFromOpportunity,
   formatOpportunityRate,
   isOpportunityFeedStale,
+  isRemoteMode,
+  validateOpportunityId,
+  validateOpportunityListingRequest,
+  validateOpportunitySource,
 } from './opportunities'
 
 const today = new Date('2026-10-17T22:00:00Z')
@@ -187,5 +191,51 @@ describe('formatOpportunityRate', () => {
   })
   it('says the rate is not disclosed otherwise', () => {
     expect(formatOpportunityRate(unknownRate)).toBe('Non communiqué')
+  })
+})
+
+describe('validateOpportunityId', () => {
+  it('accepts a uuid', () => {
+    expect(validateOpportunityId('6f1f4f7e-2f8c-4c55-9f0e-1b2c3d4e5f60')).toEqual({
+      ok: true,
+      data: '6f1f4f7e-2f8c-4c55-9f0e-1b2c3d4e5f60',
+    })
+  })
+
+  it('answers « Opportunité introuvable » for anything else', () => {
+    expect(validateOpportunityId('42')).toEqual({ ok: false, errorMessage: 'Opportunité introuvable' })
+    expect(validateOpportunityId(undefined)).toEqual({ ok: false, errorMessage: 'Opportunité introuvable' })
+  })
+})
+
+describe('validateOpportunitySource', () => {
+  it('accepts free-work only', () => {
+    expect(validateOpportunitySource('free-work')).toEqual({ ok: true, data: 'free-work' })
+    expect(validateOpportunitySource('linkedin')).toEqual({ ok: false, errorMessage: 'Source inconnue' })
+  })
+})
+
+describe('isRemoteMode', () => {
+  it('recognises the three stored remote modes only', () => {
+    expect(['full', 'partial', 'none', 'toString', null].map(isRemoteMode)).toEqual([true, true, true, false, false])
+  })
+})
+
+describe('validateOpportunityListingRequest', () => {
+  it('accepts a known tab with a page from 1', () => {
+    expect(validateOpportunityListingRequest('dismissed', 3)).toEqual({ ok: true, data: { tab: 'dismissed', page: 3 } })
+  })
+
+  it.each([
+    ['an unknown tab', 'archived', 1],
+    ['a page of 0', 'to_process', 0],
+    ['a fractional page', 'applied', 1.5],
+    ['a page given as text', 'applied', '2'],
+    ['an infinite page', 'applied', Number.POSITIVE_INFINITY],
+  ])('rejects %s', (_caseName, tab, page) => {
+    expect(validateOpportunityListingRequest(tab, page)).toEqual({
+      ok: false,
+      errorMessage: 'Onglet ou page invalide',
+    })
   })
 })

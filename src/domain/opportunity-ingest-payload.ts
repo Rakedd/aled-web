@@ -6,7 +6,7 @@ import {
   MAXIMUM_STACK_ITEM_NAME_LENGTH,
   POSTING_URL_ALLOWED_PROTOCOLS,
 } from './job-application'
-import type { OpportunitySource, RemoteMode } from './opportunities'
+import { isRemoteMode, type OpportunitySource, type RemoteMode } from './opportunities'
 
 export const MAX_MISSIONS_PER_INGEST = 100
 
@@ -33,7 +33,6 @@ export type IngestMission = {
 export type ParsedIngestPayload = { missions: IngestMission[]; skippedInvalid: number } | { error: string }
 
 const INGEST_SOURCE: OpportunitySource = 'free-work'
-const REMOTE_MODES: readonly RemoteMode[] = ['full', 'partial', 'none']
 const MAXIMUM_DURATION_MONTHS = 1200
 const MALFORMED_PAYLOAD_ERROR = 'The body must be an object with a missions array'
 const TOO_MANY_MISSIONS_ERROR = `At most ${MAX_MISSIONS_PER_INGEST} missions per request`
@@ -52,7 +51,7 @@ const toBoundedWholeNumber =
   }
 
 const toRemoteMode = (candidate: string | null | undefined): RemoteMode | null =>
-  REMOTE_MODES.find((remoteMode) => remoteMode === candidate) ?? null
+  isRemoteMode(candidate) ? candidate : null
 
 const isAllowedMissionUrl = (candidate: string): boolean => {
   const urlValidation = validateOptionalUrl(candidate, POSTING_URL_ALLOWED_PROTOCOLS, MALFORMED_PAYLOAD_ERROR)
