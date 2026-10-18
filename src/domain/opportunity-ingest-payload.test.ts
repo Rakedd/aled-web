@@ -221,4 +221,48 @@ describe('parseIngestPayload', () => {
     expect(parsedMission.skills[1]).toBe('skill-0')
     expect(parsedMission.skills.at(-1)).toBe('skill-98')
   })
+
+  it('strips null characters and replaces lone surrogates in every text field', () => {
+    const parsedPayload = parseSingleMission({
+      id: '123\u0000456',
+      title: 'Dév\u0000eloppeur \uD800React senior',
+      company: 'Agence\u0000 X',
+      description: 'Mission \uDC00React\u0000',
+      rateLabel: '450-550 €/j\u0000',
+      currency: 'EUR\uD800',
+      locationLabel: '\u0000Paris',
+      region: 'Île-de-France\u0000',
+      country: '\uD83DFrance',
+      skills: ['React\u0000', '\uDFFFTypeScript'],
+    })
+
+    expect(parsedPayload).toEqual({
+      missions: [
+        {
+          ...expectedIngestMission,
+          title: 'Développeur \uFFFDReact senior',
+          company: 'Agence X',
+          description: 'Mission \uFFFDReact',
+          currency: 'EUR\uFFFD',
+          locationLabel: 'Paris',
+          country: '\uFFFDFrance',
+          skills: ['React', '\uFFFDTypeScript'],
+        },
+      ],
+      skippedInvalid: 0,
+    })
+    const serializedMissions = JSON.stringify('missions' in parsedPayload ? parsedPayload.missions : [])
+    expect(serializedMissions).not.toContain('\\u0000')
+  })
+
+  it('keeps a well-formed surrogate pair untouched', () => {
+    expect(parseSingleMission({ title: 'Développeur React senior 🚀' })).toEqual({
+      missions: [{ ...expectedIngestMission, title: 'Développeur React senior 🚀' }],
+      skippedInvalid: 0,
+    })
+  })
+
+  it('counts a mission whose title holds only null characters as invalid', () => {
+    expect(parseSingleMission({ title: '\u0000\u0000' })).toEqual({ missions: [], skippedInvalid: 1 })
+  })
 })

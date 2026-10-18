@@ -37,6 +37,21 @@ const MAXIMUM_DURATION_MONTHS = 1200
 const MALFORMED_PAYLOAD_ERROR = 'The body must be an object with a missions array'
 const TOO_MANY_MISSIONS_ERROR = `At most ${MAX_MISSIONS_PER_INGEST} missions per request`
 
+const NULL_CHARACTER = '\u0000'
+
+const sanitizeText = (text: string): string => text.replaceAll(NULL_CHARACTER, '').toWellFormed()
+
+const sanitizeFieldValue = (fieldValue: unknown): unknown => {
+  if (typeof fieldValue === 'string') return sanitizeText(fieldValue)
+  if (!Array.isArray(fieldValue)) return fieldValue
+  return fieldValue.map((item: unknown) => (typeof item === 'string' ? sanitizeText(item) : item))
+}
+
+const sanitizeMissionTexts = (candidate: unknown): unknown =>
+  isRecord(candidate)
+    ? Object.fromEntries(Object.entries(candidate).map(([fieldName, fieldValue]) => [fieldName, sanitizeFieldValue(fieldValue)]))
+    : candidate
+
 const toNullableTrimmedText = (candidate: string | null | undefined): string | null => {
   const trimmedText = candidate?.trim() ?? ''
   return trimmedText === '' ? null : trimmedText
@@ -90,7 +105,7 @@ const ingestMissionSchema = z
   .transform((mission) => ({ source: INGEST_SOURCE, ...mission }))
 
 const parseMission = (candidate: unknown): IngestMission | null => {
-  const missionParsing = ingestMissionSchema.safeParse(candidate)
+  const missionParsing = ingestMissionSchema.safeParse(sanitizeMissionTexts(candidate))
   return missionParsing.success ? missionParsing.data : null
 }
 
