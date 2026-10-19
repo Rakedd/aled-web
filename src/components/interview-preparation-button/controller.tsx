@@ -2,12 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
 import type { BriefLanguage, InterviewPreparation } from '@/domain/interview-preparation'
 import type { NotesSaveStatus } from '@/components/interview-preparation-modal/interfaces'
-import type { InterviewPreparationButtonControllerParameters } from './interfaces'
+import type { GenerationScope, InterviewPreparationButtonControllerParameters } from './interfaces'
 
 const NOTES_AUTOSAVE_DELAY_IN_MILLISECONDS = 800
 const GENERATE_LABEL = 'Générer le brief'
 const VIEW_LABEL = 'Brief généré · voir mon brief'
-const GENERATING_LABEL = "Génération… (jusqu'à 4 min)"
+const GENERATION_PROGRESS_LABELS: Record<GenerationScope, string> = {
+  brief_and_questions: "Génération… (jusqu'à 4 min)",
+  questions_only: 'Génération des questions…',
+}
 
 const runActionSafely = async <ResultData,>(
   request: () => Promise<ActionResult<ResultData>>,
@@ -22,6 +25,12 @@ const runActionSafely = async <ResultData,>(
 const isPreparationComplete = (preparation: InterviewPreparation): boolean =>
   preparation.questions !== null && (preparation.endClientId === null || preparation.brief !== null)
 
+const hasReadablePreparation = (preparation: InterviewPreparation): boolean =>
+  preparation.brief !== null || preparation.questions !== null
+
+const findGenerationScope = (preparation: InterviewPreparation, regenerate: boolean): GenerationScope =>
+  preparation.endClientId !== null && (regenerate || preparation.brief === null) ? 'brief_and_questions' : 'questions_only'
+
 export const useController = ({
   jobApplicationId,
   initialPreparation,
@@ -33,7 +42,7 @@ export const useController = ({
 }: InterviewPreparationButtonControllerParameters) => {
   const [preparation, setPreparation] = useState(initialPreparation)
   const [language, setLanguage] = useState<BriefLanguage>(initialPreparation.language)
-  const [isGenerating, setIsGenerating] = useState(false)
+  const [generationScope, setGenerationScope] = useState<GenerationScope | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isLoadingLanguage, setIsLoadingLanguage] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -51,6 +60,9 @@ export const useController = ({
   const notesSavingDependenciesRef = useRef({ endClientId: initialPreparation.endClientId, updateEndClientNotes })
 
   const isComplete = isPreparationComplete(preparation)
+  const isReadable = hasReadablePreparation(preparation)
+  const isGenerating = generationScope !== null
+  const generationProgressLabel = generationScope === null ? null : GENERATION_PROGRESS_LABELS[generationScope]
 
   useEffect(() => {
     notesSavingDependenciesRef.current = { endClientId: preparation.endClientId, updateEndClientNotes }
@@ -116,24 +128,25 @@ export const useController = ({
     }
   }, [])
 
-  const generate = async (languageToGenerate: BriefLanguage, regenerate: boolean) => {
+  const generate = async (languageToGenerate: BriefLanguage, regenerate: boolean, shouldOpenModalWhenDone: boolean) => {
     if (!hasAnthropicApiKey || isGenerationInFlightRef.current || isLoadingLanguage) return
     isGenerationInFlightRef.current = true
     latestLanguageChangeNumberRef.current += 1
-    setIsGenerating(true)
+    setGenerationScope(findGenerationScope(preparation, regenerate))
     setErrorMessage(null)
     const generationResult = await runActionSafely(() =>
       generateInterviewPreparation(jobApplicationId, languageToGenerate, regenerate),
     )
     isGenerationInFlightRef.current = false
-    setIsGenerating(false)
+    setGenerationScope(null)
     if (!generationResult.ok) {
       setErrorMessage(generationResult.errorMessage)
+      if (shouldOpenModalWhenDone && isReadable) setIsModalOpen(true)
       return
     }
     setPreparation(generationResult.data)
     setLanguage(languageToGenerate)
-    setIsModalOpen(true)
+    if (shouldOpenModalWhenDone) setIsModalOpen(true)
     onDataChanged()
   }
 
@@ -158,15 +171,15 @@ export const useController = ({
 
   const handleButtonClick = async () => {
     if (isGenerating || isLoadingLanguage) return
-    if (isComplete) {
+    if (isComplete || (!hasAnthropicApiKey && isReadable)) {
       setIsModalOpen(true)
       return
     }
-    await generate(language, false)
+    await generate(language, false, true)
   }
 
   const computeButtonLabel = (): string => {
-    if (isGenerating) return GENERATING_LABEL
+    if (generationProgressLabel !== null) return generationProgressLabel
     return isComplete ? VIEW_LABEL : GENERATE_LABEL
   }
 
@@ -175,11 +188,12 @@ export const useController = ({
     language,
     changeLanguage,
     isGenerating,
+    generationProgressLabel,
     errorMessage,
     buttonLabel: computeButtonLabel(),
-    isButtonDisabled: isGenerating || isLoadingLanguage || (!isComplete && !hasAnthropicApiKey),
+    isButtonDisabled: isGenerating || isLoadingLanguage || (!isComplete && !hasAnthropicApiKey && !isReadable),
     handleButtonClick,
-    regenerate: (languageToGenerate: BriefLanguage) => generate(languageToGenerate, true),
+    regenerate: (languageToGenerate: BriefLanguage) => generate(languageToGenerate, true, false),
     isModalOpen,
     closeModal: () => setIsModalOpen(false),
     notes,

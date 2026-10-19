@@ -7,6 +7,7 @@ const JOB_APPLICATION_ID = '4f1e0a52-1b3c-4d5e-8f60-71829304a5b6'
 const END_CLIENT_ID = '0b7c2d4e-5f60-4a1b-9c2d-3e4f5a6b7c8d'
 const NOTES_AUTOSAVE_DELAY_IN_MILLISECONDS = 800
 const GENERATION_LABEL = "Génération… (jusqu'à 4 min)"
+const QUESTIONS_GENERATION_LABEL = 'Génération des questions…'
 const TIMEOUT_MESSAGE = "Claude n'a pas répondu à temps, réessaie."
 
 const briefOf = (language: BriefLanguage) => ({
@@ -185,6 +186,73 @@ describe('interview-preparation-button useController', () => {
       expect(generateInterviewPreparation).not.toHaveBeenCalled()
     })
 
+    it('shows the short progress label when only the questions are generated', async () => {
+      const { result, generateInterviewPreparation } = renderPreparationController({
+        initialPreparation: buildPreparation({ brief: briefOf('fr') }),
+      })
+      const deferredGeneration = createDeferred<ActionResult<InterviewPreparation>>()
+      generateInterviewPreparation.mockReturnValueOnce(deferredGeneration.promise)
+      let generation: Promise<void> = Promise.resolve()
+      act(() => {
+        generation = result.current.handleButtonClick()
+      })
+      expect(result.current.buttonLabel).toBe(QUESTIONS_GENERATION_LABEL)
+      expect(result.current.generationProgressLabel).toBe(QUESTIONS_GENERATION_LABEL)
+      await act(async () => {
+        deferredGeneration.resolve({ ok: true, data: buildPreparation({ brief: briefOf('fr'), questions: questionsOf('fr') }) })
+        await generation
+      })
+      expect(result.current.generationProgressLabel).toBeNull()
+    })
+
+    it('shows the short progress label when the client is unknown', async () => {
+      const { result, generateInterviewPreparation } = renderPreparationController({
+        initialPreparation: buildPreparation({ endClientId: null, endClientName: null }),
+      })
+      generateInterviewPreparation.mockReturnValueOnce(createDeferred<ActionResult<InterviewPreparation>>().promise)
+      act(() => {
+        void result.current.handleButtonClick()
+      })
+      expect(result.current.buttonLabel).toBe(QUESTIONS_GENERATION_LABEL)
+    })
+
+    it('opens the modal on the existing brief when the generation of the missing questions fails', async () => {
+      const { result, generateInterviewPreparation, onDataChanged } = renderPreparationController({
+        initialPreparation: buildPreparation({ brief: briefOf('fr') }),
+      })
+      generateInterviewPreparation.mockResolvedValueOnce({ ok: false, errorMessage: TIMEOUT_MESSAGE })
+      await act(() => result.current.handleButtonClick())
+      expect(generateInterviewPreparation).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'fr', false)
+      expect(result.current.isModalOpen).toBe(true)
+      expect(result.current.preparation.brief).toEqual(briefOf('fr'))
+      expect(result.current.errorMessage).toBe(TIMEOUT_MESSAGE)
+      expect(result.current.buttonLabel).toBe('Générer le brief')
+      expect(onDataChanged).not.toHaveBeenCalled()
+    })
+
+    it('lets the user read an existing brief without its questions and without a Claude key', async () => {
+      const { result, generateInterviewPreparation } = renderPreparationController({
+        hasAnthropicApiKey: false,
+        initialPreparation: buildPreparation({ brief: briefOf('fr') }),
+      })
+      expect(result.current.buttonLabel).toBe('Générer le brief')
+      expect(result.current.isButtonDisabled).toBe(false)
+      await act(() => result.current.handleButtonClick())
+      expect(result.current.isModalOpen).toBe(true)
+      expect(generateInterviewPreparation).not.toHaveBeenCalled()
+    })
+
+    it('lets the user read existing questions without the brief and without a Claude key', async () => {
+      const { result, generateInterviewPreparation } = renderPreparationController({
+        hasAnthropicApiKey: false,
+        initialPreparation: buildPreparation({ questions: questionsOf('fr') }),
+      })
+      expect(result.current.isButtonDisabled).toBe(false)
+      await act(() => result.current.handleButtonClick())
+      expect(result.current.isModalOpen).toBe(true)
+      expect(generateInterviewPreparation).not.toHaveBeenCalled()
+    })
+
     it('still lets the user view an existing preparation without a Claude key', () => {
       const { result } = renderPreparationController({
         hasAnthropicApiKey: false,
@@ -281,6 +349,50 @@ describe('interview-preparation-button useController', () => {
       expect(generateInterviewPreparation).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'en', true)
       expect(result.current.language).toBe('en')
       expect(result.current.preparation.brief).toEqual(briefOf('en'))
+    })
+
+    it('shows the long progress label while the brief is regenerated', async () => {
+      const { result, generateInterviewPreparation } = renderPreparationController({
+        initialPreparation: buildPreparation({ brief: briefOf('fr'), questions: questionsOf('fr') }),
+      })
+      generateInterviewPreparation.mockReturnValueOnce(createDeferred<ActionResult<InterviewPreparation>>().promise)
+      act(() => {
+        void result.current.regenerate('fr')
+      })
+      expect(result.current.generationProgressLabel).toBe(GENERATION_LABEL)
+    })
+
+    it('does not reopen the modal when the user closed it during the regeneration', async () => {
+      const { result, generateInterviewPreparation, onDataChanged } = renderPreparationController({
+        initialPreparation: buildPreparation({ brief: briefOf('fr'), questions: questionsOf('fr') }),
+      })
+      const deferredRegeneration = createDeferred<ActionResult<InterviewPreparation>>()
+      generateInterviewPreparation.mockReturnValueOnce(deferredRegeneration.promise)
+      await act(() => result.current.handleButtonClick())
+      let regeneration: Promise<void> = Promise.resolve()
+      act(() => {
+        regeneration = result.current.regenerate('en')
+      })
+      act(() => result.current.closeModal())
+      await act(async () => {
+        deferredRegeneration.resolve({
+          ok: true,
+          data: buildPreparation({ language: 'en', brief: briefOf('en'), questions: questionsOf('en') }),
+        })
+        await regeneration
+      })
+      expect(result.current.isModalOpen).toBe(false)
+      expect(result.current.preparation.brief).toEqual(briefOf('en'))
+      expect(onDataChanged).toHaveBeenCalledTimes(1)
+    })
+
+    it('keeps the modal open when the regeneration succeeds while it is open', async () => {
+      const { result } = renderPreparationController({
+        initialPreparation: buildPreparation({ brief: briefOf('fr'), questions: questionsOf('fr') }),
+      })
+      await act(() => result.current.handleButtonClick())
+      await act(() => result.current.regenerate('fr'))
+      expect(result.current.isModalOpen).toBe(true)
     })
 
     it('keeps the current preparation and language when the regeneration fails', async () => {

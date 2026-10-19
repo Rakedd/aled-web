@@ -14,7 +14,6 @@ import type { InterviewPreparationModalContentProps, InterviewPreparationModalPr
 
 const NOTES_TEXTAREA_ID = 'interview-preparation-notes'
 const REGENERATION_LANGUAGE_SELECT_ID = 'interview-preparation-regeneration-language'
-const GENERATION_IN_PROGRESS_LABEL = "Génération… (jusqu'à 4 min)"
 const UNKNOWN_CLIENT_MESSAGE = `${CLIENT_BRIEF_MESSAGES.unknownClient}.`
 
 const NOTES_SAVE_STATUS_LABELS: Record<NotesSaveStatus, string | null> = {
@@ -44,7 +43,7 @@ const SourceItem = ({ source }: { source: ClientBriefSource }) => (
 
 const InterviewPreparationModalContent = ({
   preparation,
-  isGenerating,
+  generationProgressLabel,
   errorMessage,
   hasAnthropicApiKey,
   onRegenerate,
@@ -59,6 +58,7 @@ const InterviewPreparationModalContent = ({
     onRegenerate,
   })
   const { brief, questions } = preparation
+  const isGenerating = generationProgressLabel !== null
   const briefParts = brief === null ? null : splitBriefHighlights(brief.markdown)
 
   return (
@@ -173,7 +173,7 @@ const InterviewPreparationModalContent = ({
             onClick={requestRegeneration}
             disabled={isGenerating || !hasAnthropicApiKey}
           >
-            {isGenerating ? GENERATION_IN_PROGRESS_LABEL : 'Régénérer'}
+            {generationProgressLabel ?? 'Régénérer'}
           </Button>
           <Dialog.Close className={cn(buttonVariants())}>Fermer</Dialog.Close>
         </div>

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { CLIENT_BRIEF_AI_ERROR_MESSAGES, CLIENT_BRIEF_MESSAGES, type ClientBrief } from '@/domain/client-brief'
-import type { BriefLanguage } from '@/domain/interview-preparation'
+import { type BriefLanguage, INTERVIEW_QUESTIONS_AI_ERROR_MESSAGES } from '@/domain/interview-preparation'
 import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from '@/domain/job-application'
 import type { StackItem } from '@/domain/types'
 import { AiError } from '@/server/ai/ai-error'
@@ -316,9 +316,28 @@ describe('generateInterviewPreparationForUser', () => {
       dependencies,
     )
 
-    expect(preparationResult).toEqual({ ok: false, errorMessage: CLIENT_BRIEF_AI_ERROR_MESSAGES.timeout })
+    expect(preparationResult).toEqual({ ok: false, errorMessage: INTERVIEW_QUESTIONS_AI_ERROR_MESSAGES.timeout })
     expect(await readBriefMarkdowns(endClientId)).toEqual([{ language: 'fr', markdown: generatedBrief.markdown }])
     expect(await readStoredQuestions(jobApplicationId)).toEqual([])
+  })
+
+  it.each([
+    ['unknown', 'La génération des questions a échoué, réessaie.'],
+    ['refused', "Claude n'a pas pu générer ces questions. Réessaie plus tard."],
+    ['invalid_api_key', CLIENT_BRIEF_AI_ERROR_MESSAGES.invalid_api_key],
+  ] as const)('talks about the questions, not the brief, when the questions fail with %s', async (aiErrorKind, expectedMessage) => {
+    const user = await createTestUser()
+    const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
+    const dependencies = createDependencies({ generateQuestions: jest.fn().mockRejectedValue(new AiError(aiErrorKind)) })
+
+    const preparationResult = await generateInterviewPreparationForUser(
+      user.client,
+      user.userId,
+      { jobApplicationId, language: 'fr', regenerate: false },
+      dependencies,
+    )
+
+    expect(preparationResult).toEqual({ ok: false, errorMessage: expectedMessage })
   })
 
   it('saves nothing and reports the error of claude when the brief fails', async () => {

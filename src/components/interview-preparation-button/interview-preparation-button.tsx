@@ -20,6 +20,7 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
     language,
     changeLanguage,
     isGenerating,
+    generationProgressLabel,
     errorMessage,
     buttonLabel,
     isButtonDisabled,
@@ -73,7 +74,7 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
         isOpen={isModalOpen}
         onClose={closeModal}
         preparation={preparation}
-        isGenerating={isGenerating}
+        generationProgressLabel={generationProgressLabel}
         errorMessage={errorMessage}
         hasAnthropicApiKey={hasAnthropicApiKey}
         onRegenerate={(regenerationLanguage) => void regenerate(regenerationLanguage)}

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ComponentProps, ReactElement } from 'react'
 import type Markdown from 'react-markdown'
@@ -87,6 +87,27 @@ describe('InterviewPreparationButton', () => {
     expect(screen.getByRole('option', { name: 'Français' })).toBeInTheDocument()
     await userEvent.selectOptions(languageSelect, 'fr')
     expect(getInterviewPreparation).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'fr')
+  })
+
+  it('lets the user read an existing brief without its questions and without a Claude key', async () => {
+    const { generateInterviewPreparation } = renderButton(buildPreparation({ brief: completePreparation.brief }), false)
+    await userEvent.click(screen.getByRole('button', { name: 'Générer le brief' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByTestId('brief-markdown')).toHaveTextContent('Contenu du brief')
+    expect(screen.getByRole('button', { name: 'Régénérer' })).toBeDisabled()
+    expect(generateInterviewPreparation).not.toHaveBeenCalled()
+  })
+
+  it('shows the existing brief and the error in the modal when the missing questions cannot be generated', async () => {
+    const { generateInterviewPreparation } = renderButton(buildPreparation({ brief: completePreparation.brief }))
+    generateInterviewPreparation.mockResolvedValueOnce({
+      ok: false,
+      errorMessage: 'La génération des questions a échoué, réessaie.',
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'Générer le brief' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByTestId('brief-markdown')).toHaveTextContent('Contenu du brief')
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('La génération des questions a échoué, réessaie.')
   })
 
   it('points to the settings and disables the generation without a Claude key', () => {

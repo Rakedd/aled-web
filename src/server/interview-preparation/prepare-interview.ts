@@ -7,7 +7,13 @@ import {
   isBriefableEndClientName,
 } from '@/domain/client-brief'
 import { rejectWith } from '@/domain/input-validation'
-import type { BriefLanguage, InterviewPreparation, LanguageBrief } from '@/domain/interview-preparation'
+import type { AiErrorKind } from '@/domain/ai-errors'
+import {
+  type BriefLanguage,
+  INTERVIEW_QUESTIONS_AI_ERROR_MESSAGES,
+  type InterviewPreparation,
+  type LanguageBrief,
+} from '@/domain/interview-preparation'
 import type { JobApplicationOverview } from '@/domain/job-application'
 import { describeAiErrorForLogs } from '@/server/ai/ai-error'
 import { createAnthropicClient } from '@/server/ai/create-anthropic-client'
@@ -127,6 +133,7 @@ const findEndClientToBrief = (
 
 const runAiGeneration = async <GeneratedContent>(
   generationName: string,
+  aiErrorMessages: Record<AiErrorKind, string>,
   generate: () => Promise<GeneratedContent>,
 ): Promise<ActionResult<GeneratedContent>> => {
   try {
@@ -134,7 +141,7 @@ const runAiGeneration = async <GeneratedContent>(
   } catch (generationError) {
     const aiErrorLogContext = describeAiErrorForLogs(generationError)
     console.error(`${generationName} generation failed`, aiErrorLogContext)
-    return rejectWith(CLIENT_BRIEF_AI_ERROR_MESSAGES[aiErrorLogContext.aiErrorKind])
+    return rejectWith(aiErrorMessages[aiErrorLogContext.aiErrorKind])
   }
 }
 
@@ -142,7 +149,9 @@ const generateAndSaveBrief = async (
   { supabase, userId, apiKey, dependencies }: GenerationSession,
   { endClientId, clientBriefInput }: EndClientToBrief,
 ): Promise<ActionResult<LanguageBrief>> => {
-  const briefResult = await runAiGeneration('Client brief', () => dependencies.generateBrief(apiKey, clientBriefInput))
+  const briefResult = await runAiGeneration('Client brief', CLIENT_BRIEF_AI_ERROR_MESSAGES, () =>
+    dependencies.generateBrief(apiKey, clientBriefInput),
+  )
   if (!briefResult.ok) return briefResult
   const languageBrief: LanguageBrief = {
     language: clientBriefInput.language,
@@ -206,7 +215,7 @@ const generateAndSaveQuestions = async (
   const { supabase, userId, apiKey, dependencies } = generationSession
   const interviewQuestionsInput = await buildInterviewQuestionsInput(generationSession, jobApplication, questionsSubject)
   const requestOptions = toQuestionsRequestOptions(computeRemainingTimeInMilliseconds(dependencies))
-  const questionsResult = await runAiGeneration('Interview questions', () =>
+  const questionsResult = await runAiGeneration('Interview questions', INTERVIEW_QUESTIONS_AI_ERROR_MESSAGES, () =>
     dependencies.generateQuestions(apiKey, interviewQuestionsInput, requestOptions),
   )
   if (!questionsResult.ok) return questionsResult

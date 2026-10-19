@@ -45,7 +45,7 @@ const renderModal = (overrides: Partial<ComponentProps<typeof InterviewPreparati
       isOpen
       onClose={onClose}
       preparation={buildPreparation()}
-      isGenerating={false}
+      generationProgressLabel={null}
       errorMessage={null}
       hasAnthropicApiKey
       onRegenerate={onRegenerate}
@@ -70,7 +70,7 @@ describe('InterviewPreparationModal', () => {
   it('is a titled dialog showing the brief, the notes, the questions and the generation date', () => {
     renderModal()
     expect(screen.getByRole('dialog', { name: "Préparation d'entretien" })).toBeInTheDocument()
-        expect(screen.getByLabelText("Mes notes sur l'entreprise")).toHaveValue('Parler de Kafka')
+    expect(screen.getByLabelText("Mes notes sur l'entreprise")).toHaveValue('Parler de Kafka')
     expect(screen.getByText(/Brief généré le 17\/10\/2026 11:15/)).toBeInTheDocument()
     expect(screen.getByText(/Questions générées le 18\/10\/2026 10:00/)).toBeInTheDocument()
   })
@@ -140,9 +140,13 @@ describe('InterviewPreparationModal', () => {
     expect(screen.getByRole('button', { name: 'Régénérer' })).toBeDisabled()
   })
 
-  it('shows the generation progress and the error message', () => {
-    renderModal({ isGenerating: true, errorMessage: "Claude n'a pas répondu à temps, réessaie." })
-    expect(screen.getByRole('button', { name: "Génération… (jusqu'à 4 min)" })).toBeDisabled()
+  it('shows the generation progress given by the caller and the error message', () => {
+    renderModal({
+      generationProgressLabel: 'Génération des questions…',
+      errorMessage: "Claude n'a pas répondu à temps, réessaie.",
+    })
+    expect(screen.getByRole('button', { name: 'Génération des questions…' })).toBeDisabled()
+    expect(screen.getByLabelText('Langue de la régénération')).toBeDisabled()
     expect(screen.getByRole('alert')).toHaveTextContent("Claude n'a pas répondu à temps, réessaie.")
   })
 })

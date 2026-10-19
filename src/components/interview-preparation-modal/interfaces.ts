@@ -12,7 +12,7 @@ export type InterviewPreparationModalProps = {
   isOpen: boolean
   onClose: () => void
   preparation: InterviewPreparation
-  isGenerating: boolean
+  generationProgressLabel: string | null
   errorMessage: string | null
   hasAnthropicApiKey: boolean
   onRegenerate: (language: BriefLanguage) => void

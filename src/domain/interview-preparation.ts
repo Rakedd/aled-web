@@ -1,5 +1,6 @@
 import type { ActionResult } from './action-result'
-import type { ClientBriefSource } from './client-brief'
+import type { AiErrorKind } from './ai-errors'
+import { CLIENT_BRIEF_AI_ERROR_MESSAGES, type ClientBriefSource } from './client-brief'
 import { rejectWith } from './input-validation'
 
 export const BRIEF_LANGUAGES = ['fr', 'en'] as const
@@ -12,6 +13,12 @@ export const isBriefLanguage = (candidate: unknown): candidate is BriefLanguage 
   typeof candidate === 'string' && (BRIEF_LANGUAGES as readonly string[]).includes(candidate)
 
 export const INTERVIEW_PREPARATION_MESSAGES = { invalidLanguage: 'Langue invalide' } as const
+
+export const INTERVIEW_QUESTIONS_AI_ERROR_MESSAGES: Record<AiErrorKind, string> = {
+  ...CLIENT_BRIEF_AI_ERROR_MESSAGES,
+  refused: "Claude n'a pas pu générer ces questions. Réessaie plus tard.",
+  unknown: 'La génération des questions a échoué, réessaie.',
+}
 
 export const validateBriefLanguage = (candidate: unknown): ActionResult<BriefLanguage> =>
   isBriefLanguage(candidate) ? { ok: true, data: candidate } : rejectWith(INTERVIEW_PREPARATION_MESSAGES.invalidLanguage)
