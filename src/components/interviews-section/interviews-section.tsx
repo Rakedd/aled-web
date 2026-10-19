@@ -77,7 +77,7 @@ export const InterviewsSection = ({
   return (
     <section aria-labelledby="interviews-section-title" className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="interviews-section-title" className="text-lg font-semibold">
+        <h2 id="interviews-section-title" className="font-heading text-xl font-extrabold">
           Entretiens
         </h2>
         {editorTarget === null && (

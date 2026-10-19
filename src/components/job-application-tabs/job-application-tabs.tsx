@@ -15,7 +15,9 @@ const buildTabId = (tab: JobApplicationTab) => `job-application-tab-${tab}`
 const buildPanelId = (tab: JobApplicationTab) => `job-application-panel-${tab}`
 
 const reflectTabInUrl = (tab: JobApplicationTab) => {
-  window.history.replaceState(null, '', `?${JOB_APPLICATION_TAB_SEARCH_PARAMETER}=${tab}`)
+  const searchParameters = new URLSearchParams(window.location.search)
+  searchParameters.set(JOB_APPLICATION_TAB_SEARCH_PARAMETER, tab)
+  window.history.replaceState(null, '', `?${searchParameters.toString()}${window.location.hash}`)
 }
 
 export const JobApplicationTabs = ({ initialTab, interviewCount, activityLogEntryCount, panels }: JobApplicationTabsProps) => {

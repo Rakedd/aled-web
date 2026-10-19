@@ -29,7 +29,7 @@ describe('JobApplicationTabs controller', () => {
   })
 
   it('keeps the selected tab when re-rendered with another initial tab', () => {
-    const { result, rerender } = renderTabsController('apercu')
+    const { result, rerender } = renderTabsController('entretiens')
 
     act(() => result.current.selectTab('journal'))
     rerender({ initialTab: 'apercu' })

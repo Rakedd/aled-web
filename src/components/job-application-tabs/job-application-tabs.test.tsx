@@ -25,11 +25,12 @@ describe('JobApplicationTabs', () => {
   let replaceStateSpy: jest.SpyInstance
 
   beforeEach(() => {
-    replaceStateSpy = jest.spyOn(window.history, 'replaceState')
+    replaceStateSpy = jest.spyOn(window.history, 'replaceState').mockImplementation(() => undefined)
   })
 
   afterEach(() => {
     replaceStateSpy.mockRestore()
+    window.history.pushState(null, '', '/')
   })
 
   it('names the four tabs with their counts', () => {
@@ -66,12 +67,13 @@ describe('JobApplicationTabs', () => {
     expect(getPanelOf(overviewTab)).toBeVisible()
   })
 
-  it('reflects the selected tab in the URL', async () => {
+  it('reflects the selected tab in the URL and keeps the other url parts', async () => {
+    window.history.pushState(null, '', '/?statut=ouvert&onglet=apercu#ancre')
     renderTabs()
 
     await userEvent.click(screen.getByRole('tab', { name: 'Mission' }))
 
-    expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '?onglet=mission')
+    expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '?statut=ouvert&onglet=mission#ancre')
   })
 
   it('keeps a value typed in a panel across tab changes', async () => {

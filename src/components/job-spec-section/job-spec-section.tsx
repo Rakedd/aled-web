@@ -63,7 +63,7 @@ export const JobSpecSection = ({
 
   return (
     <section aria-labelledby="job-spec-section-title" className="flex min-w-0 flex-col gap-4">
-      <h2 id="job-spec-section-title" className="text-lg font-semibold">
+      <h2 id="job-spec-section-title" className="font-heading text-xl font-extrabold">
         Fiche métier
       </h2>
       {!hasAnthropicApiKey && <MissingAnthropicApiKeyNotice featureDescription="l'extraction de la stack" />}
