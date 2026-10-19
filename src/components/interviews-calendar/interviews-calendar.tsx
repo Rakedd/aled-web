@@ -46,7 +46,7 @@ export const InterviewsCalendar = ({ listUpcomingInterviews }: InterviewsCalenda
         ))}
       </ul>
       <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_22rem] lg:items-start">
-        <div ref={calendarContainerRef} tabIndex={-1} className="min-w-0 rounded-2xl bg-card p-4 outline-none">
+        <div ref={calendarContainerRef} tabIndex={-1} className="interviews-calendar min-w-0 rounded-2xl bg-card p-4 outline-none">
           {initialView !== null && (
             <FullCalendar
               plugins={CALENDAR_PLUGINS}
@@ -55,6 +55,13 @@ export const InterviewsCalendar = ({ listUpcomingInterviews }: InterviewsCalenda
               timeZone={PARIS_TIME_ZONE}
               headerToolbar={{ start: 'prev,next today', center: 'title', end: 'dayGridMonth,timeGridWeek,listWeek' }}
               buttons={{ listWeek: { text: 'Liste' } }}
+              buttonClass={({ isSelected }) =>
+                isSelected ? 'fc-atelier-button fc-atelier-button-active' : 'fc-atelier-button'
+              }
+              dayCellClass="fc-atelier-day-cell"
+              dayCellTopInnerClass={({ isToday }) => (isToday ? 'fc-atelier-today' : '')}
+              eventClass="fc-atelier-event"
+              listItemEventClass="fc-atelier-event"
               events={calendarEvents}
               datesSet={({ start, end }) => {
                 void onDatesSet(start, end)

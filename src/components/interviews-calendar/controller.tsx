@@ -1,4 +1,9 @@
 import { useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import type {
+  InterviewRevisionMissionDetail,
+  InterviewRevisionPanelContent,
+} from '@/components/interview-revision-panel/interfaces'
+import type { PillTone } from '@/components/pill/interfaces'
 import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
 import {
   INTERVIEW_FORMAT_LABELS,
@@ -10,11 +15,6 @@ import { formatParisInterviewDateTime } from '@/domain/paris-time'
 import { jobApplicationTabRoute } from '@/domain/job-application-tabs'
 import { jobApplicationRoute } from '@/domain/routes'
 import type { InterviewKind } from '@/domain/types'
-import type { PillTone } from '@/components/pill/interfaces'
-import type {
-  InterviewRevisionMissionDetail,
-  InterviewRevisionPanelContent,
-} from '@/components/interview-revision-panel/interfaces'
 import type { InterviewCalendarEvent, InterviewsCalendarProps, InterviewsCalendarView } from './interfaces'
 
 const NARROW_SCREEN_MAXIMUM_WIDTH_IN_PIXELS = 640

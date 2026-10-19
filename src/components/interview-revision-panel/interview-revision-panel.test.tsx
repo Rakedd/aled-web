@@ -71,6 +71,17 @@ describe('InterviewRevisionPanel', () => {
     expect(screen.getByRole('heading', { name: 'Développeur React senior' })).toHaveFocus()
   })
 
+  it('moves focus to the new title when the content changes while open', () => {
+    const { rerender } = render(<InterviewRevisionPanel content={content} onClose={jest.fn()} />)
+    screen.getByRole('link', { name: 'Ouvrir la fiche' }).focus()
+
+    rerender(
+      <InterviewRevisionPanel content={{ ...content, jobApplicationTitle: 'Lead Vue' }} onClose={jest.fn()} />,
+    )
+
+    expect(screen.getByRole('heading', { name: 'Lead Vue' })).toHaveFocus()
+  })
+
   it('closes with the Fermer button', async () => {
     const onClose = jest.fn()
     render(<InterviewRevisionPanel content={content} onClose={onClose} />)
