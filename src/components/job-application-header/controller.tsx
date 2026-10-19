@@ -15,6 +15,7 @@ export const useController = ({
 }: JobApplicationHeaderControllerParameters) => {
   const [isChangingStatus, setIsChangingStatus] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isStatusControlsOpen, setIsStatusControlsOpen] = useState(false)
   const isChangeInFlightRef = useRef(false)
 
   const nextStatus = isTerminalStatus(jobApplication.status) ? null : getNextPipelineStatus(jobApplication.status)
@@ -39,12 +40,16 @@ export const useController = ({
     await changeStatus(nextStatus)
   }
 
+  const toggleStatusControls = () => setIsStatusControlsOpen((wasOpen) => !wasOpen)
+
   return {
     nextStatus,
     koOptions: getSuggestedKoStatuses(jobApplication.status),
     isChangingStatus,
     errorMessage,
+    isStatusControlsOpen,
     advance,
     changeStatus,
+    toggleStatusControls,
   }
 }

@@ -3,42 +3,45 @@ import type { JobApplicationOverview } from '@/domain/job-application'
 import { buildJobApplicationOverview } from '@/test-fixtures/job-application-overview'
 import { HeaderView } from './header-view'
 
-const NOW = new Date('2026-10-19T10:00:00Z')
+const HAYS_APPLICATION = buildJobApplicationOverview({
+  title: 'Développeur React / Next.js senior',
+  endClientLabel: 'BNP Paribas AM',
+  intermediaryName: 'Hays',
+  intermediaryKind: 'esn',
+  source: 'Free-Work',
+  appliedOn: new Date('2026-10-06T08:00:00Z'),
+  postingUrl: 'https://www.free-work.com/fr/job/123',
+})
 
-const renderHeaderView = (jobApplication: JobApplicationOverview = buildJobApplicationOverview()) =>
-  render(<HeaderView jobApplication={jobApplication} now={NOW} />)
+const renderHeaderView = (jobApplication: JobApplicationOverview = HAYS_APPLICATION) =>
+  render(<HeaderView jobApplication={jobApplication} />)
+
+const getSummaryLine = (expectedText: string) =>
+  screen.getByText((_, element) => element?.tagName === 'P' && element.textContent === expectedText)
 
 describe('HeaderView', () => {
-  it('shows the end client and the intermediary with its kind', () => {
+  it('shows the application title as the page heading', () => {
     renderHeaderView()
-    expect(screen.getByText('Société Générale (Groupe SG)')).toBeInTheDocument()
-    expect(screen.getByText('via Free-Work (Plateforme)')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Développeur React / Next.js senior' })).toBeInTheDocument()
   })
 
-  it('shows the source, the Paris application date and the relative last exchange', () => {
-    renderHeaderView(
-      buildJobApplicationOverview({
-        appliedOn: new Date('2026-10-16T22:30:00Z'),
-        lastActivityAt: new Date('2026-10-16T10:00:00Z'),
-      }),
-    )
-    expect(screen.getByText('Source').nextSibling).toHaveTextContent('Free-Work')
-    expect(screen.getByText('Candidature du').nextSibling).toHaveTextContent('17/10/2026')
-    expect(screen.getByText('Dernier échange').nextSibling).toHaveTextContent('il y a 3 j')
+  it('shows the end client, intermediary, source, Paris date and posting link on one line', () => {
+    renderHeaderView()
+    expect(getSummaryLine("BNP Paribas AM · via Hays (ESN) · Free-Work · 06/10/2026 · Voir l'annonce")).toBeInTheDocument()
   })
 
-  it('shows Client inconnu without an end client and a dash for empty fields', () => {
-    renderHeaderView(
-      buildJobApplicationOverview({ endClientLabel: null, source: null, intermediaryName: null, intermediaryKind: null }),
-    )
-    expect(screen.getByText('Client inconnu')).toBeInTheDocument()
-    expect(screen.getByText('Source').nextSibling).toHaveTextContent('—')
-    expect(screen.getByText('Dernier échange').nextSibling).toHaveTextContent('—')
-    expect(screen.queryByText(/^via /)).not.toBeInTheDocument()
+  it('omits the missing parts and shows Client inconnu without an end client', () => {
+    renderHeaderView({ ...HAYS_APPLICATION, endClientLabel: null, source: null, postingUrl: null })
+    expect(getSummaryLine('Client inconnu · via Hays (ESN) · 06/10/2026')).toBeInTheDocument()
+  })
+
+  it('omits the intermediary when there is none', () => {
+    renderHeaderView({ ...HAYS_APPLICATION, intermediaryName: null, intermediaryKind: null, source: '  ', postingUrl: null })
+    expect(getSummaryLine('BNP Paribas AM · 06/10/2026')).toBeInTheDocument()
   })
 
   it('opens the posting in a new tab without giving it access to the page', () => {
-    renderHeaderView(buildJobApplicationOverview({ postingUrl: 'https://www.free-work.com/fr/job/123' }))
+    renderHeaderView()
     const postingLink = screen.getByRole('link', { name: "Voir l'annonce" })
     expect(postingLink).toHaveAttribute('href', 'https://www.free-work.com/fr/job/123')
     expect(postingLink).toHaveAttribute('target', '_blank')
@@ -46,7 +49,7 @@ describe('HeaderView', () => {
   })
 
   it.each(['javascript:alert(1)', 'pas une adresse'])('shows no posting link for %s', (postingUrl) => {
-    renderHeaderView(buildJobApplicationOverview({ postingUrl }))
+    renderHeaderView({ ...HAYS_APPLICATION, postingUrl })
     expect(screen.queryByRole('link', { name: "Voir l'annonce" })).not.toBeInTheDocument()
   })
 })

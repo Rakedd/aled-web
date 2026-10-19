@@ -1,4 +1,6 @@
+import { ArrowLeft } from 'lucide-react'
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ActivityLog } from '@/components/activity-log'
 import { DeleteJobApplicationButton } from '@/components/delete-job-application-button'
@@ -8,14 +10,16 @@ import { InterviewsSection } from '@/components/interviews-section'
 import { ContactView } from '@/components/contact-view'
 import { JobApplicationBlock } from '@/components/job-application-block'
 import { JobApplicationHeader } from '@/components/job-application-header'
-import { JobApplicationSummary } from '@/components/job-application-summary'
+import { JobApplicationHighlights } from '@/components/job-application-highlights'
 import { JobSpecSection } from '@/components/job-spec-section'
 import { MissionDetailsView } from '@/components/mission-details-view'
 import { StackView } from '@/components/stack-view'
 import type { ActionResult } from '@/domain/action-result'
 import type { ContactDetails } from '@/domain/entities'
 import type { InterviewPreparation } from '@/domain/interview-preparation'
+import { findNextInterview } from '@/domain/interviews'
 import { JOB_APPLICATION_NOT_FOUND_MESSAGE, type JobApplicationOverview } from '@/domain/job-application'
+import { JOB_APPLICATIONS_ROUTE } from '@/domain/routes'
 import { updateEndClientNotes } from '@/server/actions/client-brief-actions'
 import {
   getContactDetails,
@@ -145,32 +149,50 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
 
   return (
     <div className="flex min-w-0 flex-col gap-8">
-      <div className="flex min-w-0 flex-col gap-4">
-        <JobApplicationSummary title={jobApplication.title} interviews={interviewsResult.data} now={now} />
-        <JobApplicationBlock
-          title="En-tête"
-          isTitleHidden
-          view={<HeaderView jobApplication={jobApplication} now={now} />}
-          form={{
-            kind: 'header',
-            props: { jobApplication, updateJobApplication, setEndClientParent, updateIntermediaryKind, searchEntities },
-          }}
-        />
-        <JobApplicationHeader jobApplication={jobApplication} changeJobApplicationStatus={changeJobApplicationStatus} />
+      <div className="grid min-w-0 gap-5 lg:grid-cols-5">
+        <div className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-6 lg:col-span-3">
+          <Link
+            href={JOB_APPLICATIONS_ROUTE}
+            className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-primary hover:underline focus-visible:underline"
+          >
+            <ArrowLeft aria-hidden="true" strokeWidth={1.75} className="size-4" />
+            Mes candidatures
+          </Link>
+          <JobApplicationBlock
+            title="En-tête"
+            isTitleHidden
+            view={<HeaderView jobApplication={jobApplication} />}
+            form={{
+              kind: 'header',
+              props: { jobApplication, updateJobApplication, setEndClientParent, updateIntermediaryKind, searchEntities },
+            }}
+          />
+          <JobApplicationHeader jobApplication={jobApplication} changeJobApplicationStatus={changeJobApplicationStatus} />
+        </div>
+        <div className="min-w-0 lg:col-span-2">
+          <JobApplicationHighlights
+            requestedDailyRate={jobApplication.requestedDailyRate}
+            postedDailyRate={jobApplication.postedDailyRate}
+            nextInterview={findNextInterview(interviewsResult.data, now)}
+            now={now}
+            preparation={
+              <InterviewPreparationButton
+                key={`${jobApplication.id}-${jobApplication.endClientId ?? 'unknown-end-client'}`}
+                jobApplicationId={jobApplication.id}
+                initialPreparation={interviewPreparationResult.data}
+                getInterviewPreparation={getInterviewPreparation}
+                generateInterviewPreparation={generateInterviewPreparation}
+                updateEndClientNotes={updateEndClientNotes}
+                hasAnthropicApiKey={hasAnthropicApiKey}
+              />
+            }
+          />
+        </div>
       </div>
       <JobApplicationBlock
         title="Stack"
         view={<StackView stack={jobApplication.stack} />}
         form={{ kind: 'stack', props: { jobApplication, updateJobApplication } }}
-      />
-      <InterviewPreparationButton
-        key={`${jobApplication.id}-${jobApplication.endClientId ?? 'unknown-end-client'}`}
-        jobApplicationId={jobApplication.id}
-        initialPreparation={interviewPreparationResult.data}
-        getInterviewPreparation={getInterviewPreparation}
-        generateInterviewPreparation={generateInterviewPreparation}
-        updateEndClientNotes={updateEndClientNotes}
-        hasAnthropicApiKey={hasAnthropicApiKey}
       />
       <div className="grid min-w-0 gap-8 lg:grid-cols-2">
         <JobSpecSection

@@ -40,12 +40,19 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
 
   return (
     <section aria-labelledby="interview-preparation-title" className="flex min-w-0 flex-col gap-3">
-      <h2 id="interview-preparation-title" className="text-lg font-semibold">
+      <h2 id="interview-preparation-title" className="text-sm font-bold">
         Préparation d&apos;entretien
       </h2>
       {!hasAnthropicApiKey && <MissingAnthropicApiKeyNotice featureDescription="la génération du brief" />}
       <div className="flex flex-wrap items-center gap-2">
-        <Button ref={openingButtonRef} type="button" onClick={() => void handleButtonClick()} disabled={isButtonDisabled}>
+        <Button
+          ref={openingButtonRef}
+          type="button"
+          size="lg"
+          className="bg-ink font-bold text-on-forest hover:bg-ink/90"
+          onClick={() => void handleButtonClick()}
+          disabled={isButtonDisabled}
+        >
           {buttonLabel}
         </Button>
         <Label htmlFor={LANGUAGE_SELECT_ID} className="sr-only">

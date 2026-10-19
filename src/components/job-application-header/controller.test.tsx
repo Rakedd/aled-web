@@ -1,12 +1,9 @@
-import { act, render, renderHook, screen } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
 import type { ActionResult } from '@/domain/action-result'
 import { getNextPipelineStatus, getSuggestedKoStatuses } from '@/domain/job-application-status'
 import type { JobApplicationStatus } from '@/domain/job-application-status'
 import { useController } from './controller'
 import type { JobApplicationHeaderStatus } from './interfaces'
-import { JobApplicationHeader } from './job-application-header'
-
-jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
 
 const renderHeaderController = ({
   status = 'cv_submitted',
@@ -79,6 +76,15 @@ describe('job-application-header useController', () => {
     expect(result.current.isChangingStatus).toBe(false)
   })
 
+  it('toggles the status controls open and closed', () => {
+    const { result } = renderHeaderController()
+    expect(result.current.isStatusControlsOpen).toBe(false)
+    act(() => result.current.toggleStatusControls())
+    expect(result.current.isStatusControlsOpen).toBe(true)
+    act(() => result.current.toggleStatusControls())
+    expect(result.current.isStatusControlsOpen).toBe(false)
+  })
+
   it('ignores a second status change while one is in flight', async () => {
     const { result, changeJobApplicationStatus } = renderHeaderController()
     let resolveAction: (actionResult: ActionResult<null>) => void = () => undefined
@@ -94,18 +100,5 @@ describe('job-application-header useController', () => {
       await firstChange
     })
     expect(result.current.isChangingStatus).toBe(false)
-  })
-})
-
-describe('JobApplicationHeader', () => {
-  it('shows the status and the pipeline without the summary fields', () => {
-    render(
-      <JobApplicationHeader
-        jobApplication={{ id: 'application-1', status: 'interview_scheduled' }}
-        changeJobApplicationStatus={jest.fn()}
-      />,
-    )
-    expect(screen.getByRole('list', { name: 'Avancement de la candidature' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument()
   })
 })
