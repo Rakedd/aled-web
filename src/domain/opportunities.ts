@@ -91,9 +91,12 @@ export const OPPORTUNITY_VALIDATION_MESSAGES = {
   invalidQuickFilters: 'Filtres rapides invalides',
 } as const
 
-export type OpportunityQuickFilters = { sortByRate: boolean; remoteModes: RemoteMode[] }
+export type OpportunityQuickFilters = { readonly sortByRate: boolean; readonly remoteModes: readonly RemoteMode[] }
 
-export const NO_OPPORTUNITY_QUICK_FILTERS: OpportunityQuickFilters = { sortByRate: false, remoteModes: [] }
+export const NO_OPPORTUNITY_QUICK_FILTERS: OpportunityQuickFilters = Object.freeze({
+  sortByRate: false,
+  remoteModes: Object.freeze([]),
+})
 
 export type OpportunityListingOrder = 'publication' | 'rate'
 
@@ -199,6 +202,14 @@ export const compareOpportunityListingPositions = (
   order: OpportunityListingOrder,
 ): ((firstPosition: OpportunityListingPosition, secondPosition: OpportunityListingPosition) => number) =>
   order === 'rate' ? compareByRateDescendingUndisclosedLast : compareByPublicationDescending
+
+export const toOpportunityListingPosition = (
+  opportunity: Pick<Opportunity, 'id' | 'publishedAt' | 'rateMin' | 'rateMax'>,
+): OpportunityListingPosition => ({
+  id: opportunity.id,
+  publishedAt: opportunity.publishedAt,
+  rate: getOpportunityEffectiveRate(opportunity),
+})
 
 export const matchesRemoteModeQuickFilter = (
   remoteMode: RemoteMode | null,

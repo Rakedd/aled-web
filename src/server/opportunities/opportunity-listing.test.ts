@@ -1,10 +1,16 @@
 /** @jest-environment node */
-import { NO_OPPORTUNITY_QUICK_FILTERS } from '@/domain/opportunities'
+import {
+  NO_OPPORTUNITY_QUICK_FILTERS,
+  type Opportunity,
+  type OpportunityListingPosition,
+  type OpportunityQuickFilters,
+} from '@/domain/opportunities'
 import { EMPTY_OPPORTUNITY_FILTERS } from '@/domain/opportunity-filters'
 import {
   findLastOpportunityReceivedAt,
   listOpportunitiesByIds,
   listOpportunitySummariesPublishedSince,
+  type OpportunitySummary,
 } from '@/server/repositories/opportunities-repository'
 import { listOpportunityDecisions } from '@/server/repositories/opportunity-decisions-repository'
 import { findOpportunityFiltersBySource } from '@/server/repositories/opportunity-filters-repository'
@@ -138,5 +144,108 @@ describe('to-process context loading', () => {
     expect(listOpportunityDecisions).toHaveBeenCalledTimes(2)
     expect(listOpportunityDecisions).toHaveBeenNthCalledWith(1, layoutClient, 'user-2')
     expect(listOpportunityDecisions).toHaveBeenNthCalledWith(2, layoutClient, 'user-3')
+  })
+})
+
+describe('rate sorted pagination', () => {
+  const SORTED_BY_RATE: OpportunityQuickFilters = { sortByRate: true, remoteModes: [] }
+
+  const buildSummary = (id: string, rateMax: number | null, publishedAt: string): OpportunitySummary => ({
+    id,
+    source: 'free-work',
+    title: `Mission ${id}`,
+    company: null,
+    rateMin: null,
+    rateMax,
+    remoteMode: 'partial',
+    region: null,
+    locationLabel: null,
+    publishedAt: new Date(publishedAt),
+  })
+
+  const rateSortedSummaries = [
+    buildSummary('undisclosed-older', null, '2026-10-16T05:00:00Z'),
+    buildSummary('rate-650-tie-b', 650, '2026-10-17T09:00:00Z'),
+    buildSummary('rate-500', 500, '2026-10-17T07:00:00Z'),
+    buildSummary('rate-700', 700, '2026-10-16T09:00:00Z'),
+    buildSummary('rate-650-older', 650, '2026-10-16T08:00:00Z'),
+    buildSummary('undisclosed-newer', null, '2026-10-17T09:30:00Z'),
+    buildSummary('rate-650-tie-c', 650, '2026-10-17T09:00:00Z'),
+  ]
+
+  const toCursorPosition = ({ id, publishedAt, rateMax }: OpportunitySummary): OpportunityListingPosition => ({
+    id,
+    publishedAt,
+    rate: rateMax,
+  })
+
+  const findSummary = (id: string): OpportunitySummary => {
+    const summary = rateSortedSummaries.find((candidate) => candidate.id === id)
+    if (summary === undefined) throw new Error(`Unknown summary ${id}`)
+    return summary
+  }
+
+  const toOpportunity = (summary: OpportunitySummary): Opportunity => ({
+    ...summary,
+    externalId: summary.id,
+    url: `https://www.free-work.com/fr/tech-it/job-mission/${summary.id}`,
+    description: null,
+    rateLabel: null,
+    currency: null,
+    country: null,
+    durationMonths: null,
+    skills: [],
+    receivedAt: summary.publishedAt,
+  })
+
+  const listIdsAfter = async (userId: string, after: OpportunityListingPosition | null): Promise<string[]> => {
+    const listing = await buildOpportunityListing(
+      pageClient,
+      userId,
+      { tab: 'to_process', after, search: '', quickFilters: SORTED_BY_RATE },
+      NOW,
+    )
+    return listing.items.map(({ id }) => id)
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    jest.mocked(listOpportunitySummariesPublishedSince).mockResolvedValue(rateSortedSummaries)
+    jest.mocked(listOpportunityDecisions).mockResolvedValue([])
+    jest.mocked(findOpportunityFiltersBySource).mockResolvedValue(new Map([['free-work', EMPTY_OPPORTUNITY_FILTERS]]))
+    jest.mocked(findLastOpportunityReceivedAt).mockResolvedValue(null)
+    jest.mocked(findOpportunitiesLastViewedAt).mockResolvedValue(null)
+    jest.mocked(listOpportunitiesByIds).mockImplementation(async (_supabase, opportunityIds) =>
+      opportunityIds.map((opportunityId) => toOpportunity(findSummary(opportunityId))),
+    )
+  })
+
+  it('lists every mission by rate, ties by publication then id, undisclosed rates last', async () => {
+    await expect(listIdsAfter('user-rate-1', null)).resolves.toEqual([
+      'rate-700',
+      'rate-650-tie-c',
+      'rate-650-tie-b',
+      'rate-650-older',
+      'rate-500',
+      'undisclosed-newer',
+      'undisclosed-older',
+    ])
+  })
+
+  it('continues right after a rated cursor inside a rate tie, without duplicate nor skip', async () => {
+    await expect(listIdsAfter('user-rate-2', toCursorPosition(findSummary('rate-650-tie-c')))).resolves.toEqual([
+      'rate-650-tie-b',
+      'rate-650-older',
+      'rate-500',
+      'undisclosed-newer',
+      'undisclosed-older',
+    ])
+  })
+
+  it('continues with the first undisclosed rate after a cursor on the last rated mission', async () => {
+    await expect(listIdsAfter('user-rate-3', toCursorPosition(findSummary('rate-500')))).resolves.toEqual([
+      'undisclosed-newer',
+      'undisclosed-older',
+    ])
   })
 })

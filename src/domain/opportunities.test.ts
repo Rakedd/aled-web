@@ -11,6 +11,7 @@ import {
   isRemoteMode,
   matchesRemoteModeQuickFilter,
   mergeStackItems,
+  toOpportunityListingPosition,
   validateOpportunityId,
   validateOpportunityListingRequest,
   validateOpportunitySource,
@@ -331,6 +332,8 @@ describe('validateOpportunityListingRequest', () => {
     ['a cursor with a date given as number', 'applied', { publishedAt: 1760691600000, id: cursorId }],
     ['a cursor with a rate given as text', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, rate: '650' }],
     ['a cursor with a negative rate', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, rate: -1 }],
+    ['a cursor with a rate that is not a number', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, rate: NaN }],
+    ['a cursor with an infinite rate', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, rate: Infinity }],
   ])('rejects %s', (_caseName, tab, cursor) => {
     expect(validateOpportunityListingRequest(tab, cursor, '', NO_OPPORTUNITY_QUICK_FILTERS)).toEqual({
       ok: false,
@@ -471,6 +474,24 @@ describe('compareOpportunityListingPositions', () => {
       'recent-500',
       'old-700',
     ])
+  })
+})
+
+describe('toOpportunityListingPosition', () => {
+  it('keeps the id and the publication date and carries the effective rate', () => {
+    expect(toOpportunityListingPosition(completeOpportunity)).toEqual({
+      id: completeOpportunity.id,
+      publishedAt: completeOpportunity.publishedAt,
+      rate: 550,
+    })
+    expect(toOpportunityListingPosition(bareOpportunity).rate).toBeNull()
+  })
+})
+
+describe('NO_OPPORTUNITY_QUICK_FILTERS', () => {
+  it('cannot be mutated from one request to another', () => {
+    expect(Object.isFrozen(NO_OPPORTUNITY_QUICK_FILTERS)).toBe(true)
+    expect(Object.isFrozen(NO_OPPORTUNITY_QUICK_FILTERS.remoteModes)).toBe(true)
   })
 })
 

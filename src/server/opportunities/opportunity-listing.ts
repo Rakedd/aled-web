@@ -2,7 +2,6 @@ import 'server-only'
 import { cache } from 'react'
 import {
   compareOpportunityListingPositions,
-  getOpportunityEffectiveRate,
   HISTORY_WINDOW_DAYS,
   matchesRemoteModeQuickFilter,
   type Opportunity,
@@ -19,6 +18,7 @@ import {
   type OpportunityTab,
   type RemoteMode,
   TO_PROCESS_WINDOW_DAYS,
+  toOpportunityListingPosition,
 } from '@/domain/opportunities'
 import {
   createOpportunityMatcher,
@@ -109,11 +109,7 @@ const selectPositionsToProcess = (
   order: OpportunityListingOrder,
 ): OpportunityListingPosition[] =>
   toSortedUniquePositions(
-    selectSummariesToProcess(toProcessContext).map((summary) => ({
-      id: summary.id,
-      publishedAt: summary.publishedAt,
-      rate: getOpportunityEffectiveRate(summary),
-    })),
+    selectSummariesToProcess(toProcessContext).map(toOpportunityListingPosition),
     order,
   )
 
@@ -129,14 +125,14 @@ const selectDecidedPositions = (
         (storedDecision) =>
           storedDecision.decision === decision && storedDecision.opportunityPublishedAt >= publishedSince,
       )
-      .map((storedDecision) => ({
-        id: storedDecision.opportunityId,
-        publishedAt: storedDecision.opportunityPublishedAt,
-        rate: getOpportunityEffectiveRate({
+      .map((storedDecision) =>
+        toOpportunityListingPosition({
+          id: storedDecision.opportunityId,
+          publishedAt: storedDecision.opportunityPublishedAt,
           rateMin: storedDecision.opportunityRateMin,
           rateMax: storedDecision.opportunityRateMax,
         }),
-      })),
+      ),
     order,
   )
 

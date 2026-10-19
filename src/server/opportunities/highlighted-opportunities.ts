@@ -1,10 +1,10 @@
 import 'server-only'
 import {
   compareOpportunityListingPositions,
-  getOpportunityEffectiveRate,
   HIGHLIGHTED_OPPORTUNITIES_COUNT,
   HIGHLIGHTED_OPPORTUNITIES_WINDOW_HOURS,
   type HighlightedOpportunities,
+  toOpportunityListingPosition,
 } from '@/domain/opportunities'
 import { listOpportunitiesByIds } from '@/server/repositories/opportunities-repository'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
@@ -21,7 +21,7 @@ export const buildHighlightedOpportunities = async (
   const publishedSince = new Date(now.getTime() - HIGHLIGHTED_OPPORTUNITIES_WINDOW_HOURS * MILLISECONDS_PER_HOUR)
   const recentSummaries = summaries.filter(({ publishedAt }) => publishedAt >= publishedSince)
   const highlightedOpportunityIds = recentSummaries
-    .map((summary) => ({ id: summary.id, publishedAt: summary.publishedAt, rate: getOpportunityEffectiveRate(summary) }))
+    .map(toOpportunityListingPosition)
     .sort(compareOpportunityListingPositions('rate'))
     .slice(0, HIGHLIGHTED_OPPORTUNITIES_COUNT)
     .map(({ id }) => id)
