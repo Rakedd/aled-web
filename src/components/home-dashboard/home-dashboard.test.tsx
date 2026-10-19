@@ -63,23 +63,24 @@ const buildOpportunity = (index: number): OpportunityListItem => ({
   jobApplicationId: null,
 })
 
-const renderDashboard = (overrides: Partial<HomeDashboardProps> = {}) =>
-  render(
-    <HomeDashboard
-      firstName="Rayan"
-      now={NOW}
-      initialAlerts={[]}
-      jobApplicationSummaries={[]}
-      alertInterviews={[]}
-      upcomingInterviews={[]}
-      highlightedOpportunities={[]}
-      highlightedOpportunitiesErrorMessage={null}
-      snoozeAlert={jest.fn()}
-      changeJobApplicationStatus={jest.fn()}
-      applyToOpportunity={jest.fn()}
-      {...overrides}
-    />,
-  )
+const buildDashboard = (overrides: Partial<HomeDashboardProps> = {}) => (
+  <HomeDashboard
+    firstName="Rayan"
+    now={NOW}
+    initialAlerts={[]}
+    jobApplicationSummaries={[]}
+    alertInterviews={[]}
+    upcomingInterviews={[]}
+    highlightedOpportunities={[]}
+    highlightedOpportunitiesErrorMessage={null}
+    snoozeAlert={jest.fn()}
+    changeJobApplicationStatus={jest.fn()}
+    applyToOpportunity={jest.fn()}
+    {...overrides}
+  />
+)
+
+const renderDashboard = (overrides: Partial<HomeDashboardProps> = {}) => render(buildDashboard(overrides))
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -159,6 +160,34 @@ describe('HomeDashboard', () => {
     expect(applyToOpportunity).toHaveBeenCalledWith('opportunity-1')
     expect(mockRefresh).toHaveBeenCalledTimes(1)
     expect(await screen.findByRole('link', { name: 'Voir la candidature' })).toHaveAttribute('href', '/candidatures/created-1')
+  })
+
+  it('keeps the applied mission with its link when the refreshed data no longer contains it', async () => {
+    const applyToOpportunity = jest.fn().mockResolvedValue({ ok: true, data: { jobApplicationId: 'created-1' } })
+    const { rerender } = renderDashboard({
+      highlightedOpportunities: [buildOpportunity(1), buildOpportunity(2)],
+      applyToOpportunity,
+    })
+    await userEvent.click(screen.getAllByRole('button', { name: "J'ai postulé" })[0])
+    await screen.findByRole('link', { name: 'Voir la candidature' })
+
+    rerender(buildDashboard({ highlightedOpportunities: [buildOpportunity(2)], applyToOpportunity }))
+
+    const missionTitles = screen.getAllByText(/^Mission vedette/).map((title) => title.textContent)
+    expect(missionTitles).toEqual(['Mission vedette 1', 'Mission vedette 2'])
+    expect(screen.getByRole('link', { name: 'Voir la candidature' })).toHaveAttribute('href', '/candidatures/created-1')
+  })
+
+  it('does not show the empty state while an applied mission is still visible', async () => {
+    const applyToOpportunity = jest.fn().mockResolvedValue({ ok: true, data: { jobApplicationId: 'created-1' } })
+    const { rerender } = renderDashboard({ highlightedOpportunities: [buildOpportunity(1)], applyToOpportunity })
+    await userEvent.click(screen.getByRole('button', { name: "J'ai postulé" }))
+    await screen.findByRole('link', { name: 'Voir la candidature' })
+
+    rerender(buildDashboard({ highlightedOpportunities: [], applyToOpportunity }))
+
+    expect(screen.getByRole('link', { name: 'Voir la candidature' })).toHaveAttribute('href', '/candidatures/created-1')
+    expect(screen.queryByText('Pas de nouvelle mission intéressante depuis 48 h.')).not.toBeInTheDocument()
   })
 
   it('shows the error and does not refresh when applying fails', async () => {

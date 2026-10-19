@@ -3,6 +3,8 @@ import type { InterviewWithJobApplication } from '@/domain/interviews'
 import type { ApplyToOpportunity, OpportunityListItem } from '@/domain/opportunities'
 import type { AlertInterview, TodoAlert } from '@/domain/todo-alerts'
 
+export type AppliedOpportunity = { opportunity: OpportunityListItem; position: number }
+
 export type HomeDashboardControllerParameters = {
   highlightedOpportunities: OpportunityListItem[]
   applyToOpportunity: ApplyToOpportunity
