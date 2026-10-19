@@ -2,10 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
 import {
   getOpportunityEffectiveRate,
+  NO_OPPORTUNITY_QUICK_FILTERS,
+  REMOTE_MODES,
   type OpportunityListingCursor,
   type OpportunityListItem,
   type OpportunityListing,
+  type OpportunityQuickFilters,
   type OpportunityTab,
+  type RemoteMode,
 } from '@/domain/opportunities'
 import type { OpportunitiesBoardControllerParameters } from './interfaces'
 
@@ -51,9 +55,13 @@ export const useController = ({
   const hasMarkedViewed = useRef(false)
   const [searchInput, setSearchInput] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
+  const [quickFilters, setQuickFilters] = useState(NO_OPPORTUNITY_QUICK_FILTERS)
   const currentTabRef = useRef(initialTab)
   const requestedTabRef = useRef(initialTab)
   const appliedSearchRef = useRef('')
+  const requestedQuickFiltersRef = useRef(NO_OPPORTUNITY_QUICK_FILTERS)
+  const appliedQuickFiltersRef = useRef(NO_OPPORTUNITY_QUICK_FILTERS)
+  const inFlightQuickFilterCount = useRef(0)
   const latestListingRequestId = useRef(0)
   const inFlightSearchCount = useRef(0)
   const searchDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -150,6 +158,7 @@ export const useController = ({
     requestedTab: OpportunityTab,
     cursor: OpportunityListingCursor | null,
     requestedSearch: string,
+    requestedQuickFilters: OpportunityQuickFilters,
     supersedesInFlightRequest = false,
   ): Promise<ActionResult<OpportunityListing> | null> => {
     if (isListingRequestInFlight.current && !supersedesInFlightRequest) return null
@@ -159,7 +168,7 @@ export const useController = ({
     setIsLoadingListing(true)
     setErrorMessage(null)
     try {
-      const actionResult = await listOpportunities(requestedTab, cursor, requestedSearch)
+      const actionResult = await listOpportunities(requestedTab, cursor, requestedSearch, requestedQuickFilters)
       return requestId === latestListingRequestId.current ? actionResult : null
     } catch {
       return requestId === latestListingRequestId.current
@@ -189,7 +198,7 @@ export const useController = ({
   const selectTab = async (nextTab: OpportunityTab) => {
     if (nextTab === tab || inFlightOpportunityIds.current.size > 0) return
     requestedTabRef.current = nextTab
-    const actionResult = await fetchListing(nextTab, null, appliedSearchRef.current)
+    const actionResult = await fetchListing(nextTab, null, appliedSearchRef.current, appliedQuickFiltersRef.current)
     if (actionResult === null) return
     if (!actionResult.ok) {
       requestedTabRef.current = currentTabRef.current
@@ -202,8 +211,9 @@ export const useController = ({
 
   const applySearch = async (search: string) => {
     const searchedTab = requestedTabRef.current
+    const requestedQuickFilters = requestedQuickFiltersRef.current
     inFlightSearchCount.current += 1
-    const actionResult = await fetchListing(searchedTab, null, search, true)
+    const actionResult = await fetchListing(searchedTab, null, search, requestedQuickFilters, true)
     inFlightSearchCount.current -= 1
     if (actionResult === null) return
     if (!actionResult.ok) {
@@ -212,9 +222,45 @@ export const useController = ({
       return
     }
     if (searchedTab !== currentTabRef.current) commitTab(searchedTab)
+    appliedQuickFiltersRef.current = requestedQuickFilters
     appliedSearchRef.current = search
     setAppliedSearch(search)
     replaceListing(actionResult.data)
+  }
+
+  const applyQuickFilters = async (nextQuickFilters: OpportunityQuickFilters) => {
+    if (inFlightOpportunityIds.current.size > 0) return
+    const filteredTab = requestedTabRef.current
+    requestedQuickFiltersRef.current = nextQuickFilters
+    setQuickFilters(nextQuickFilters)
+    inFlightQuickFilterCount.current += 1
+    const actionResult = await fetchListing(filteredTab, null, appliedSearchRef.current, nextQuickFilters, true)
+    inFlightQuickFilterCount.current -= 1
+    if (actionResult === null) return
+    if (!actionResult.ok) {
+      requestedTabRef.current = currentTabRef.current
+      requestedQuickFiltersRef.current = appliedQuickFiltersRef.current
+      setQuickFilters(appliedQuickFiltersRef.current)
+      setErrorMessage(actionResult.errorMessage)
+      return
+    }
+    if (filteredTab !== currentTabRef.current) commitTab(filteredTab)
+    appliedQuickFiltersRef.current = nextQuickFilters
+    replaceListing(actionResult.data)
+  }
+
+  const toggleSortByRate = () =>
+    applyQuickFilters({ ...requestedQuickFiltersRef.current, sortByRate: !requestedQuickFiltersRef.current.sortByRate })
+
+  const toggleRemoteMode = (remoteMode: RemoteMode) => {
+    const { remoteModes } = requestedQuickFiltersRef.current
+    const selectedRemoteModes = remoteModes.includes(remoteMode)
+      ? remoteModes.filter((selectedRemoteMode) => selectedRemoteMode !== remoteMode)
+      : [...remoteModes, remoteMode]
+    return applyQuickFilters({
+      ...requestedQuickFiltersRef.current,
+      remoteModes: REMOTE_MODES.filter((candidate) => selectedRemoteModes.includes(candidate)),
+    })
   }
 
   const cancelInFlightListingRequest = () => {
@@ -228,7 +274,7 @@ export const useController = ({
     clearSearchDebounceTimer()
     const trimmedSearch = nextSearchInput.trim()
     if (trimmedSearch === appliedSearchRef.current) {
-      if (inFlightSearchCount.current > 0) cancelInFlightListingRequest()
+      if (inFlightSearchCount.current > 0 && inFlightQuickFilterCount.current === 0) cancelInFlightListingRequest()
       return
     }
     if (trimmedSearch === '') {
@@ -242,7 +288,7 @@ export const useController = ({
   }
 
   const loadMore = async () => {
-    const actionResult = await fetchListing(tab, toListingCursor(loadedItems), appliedSearchRef.current)
+    const actionResult = await fetchListing(tab, toListingCursor(loadedItems), appliedSearchRef.current, appliedQuickFiltersRef.current)
     if (actionResult === null) return
     if (!actionResult.ok) {
       setErrorMessage(actionResult.errorMessage)
@@ -256,6 +302,7 @@ export const useController = ({
     tab,
     searchInput,
     hasActiveSearch: appliedSearch !== '',
+    quickFilters,
     items,
     hasMore,
     counts,
@@ -269,6 +316,8 @@ export const useController = ({
     restore,
     selectTab,
     changeSearch,
+    toggleSortByRate,
+    toggleRemoteMode,
     loadMore,
   }
 }

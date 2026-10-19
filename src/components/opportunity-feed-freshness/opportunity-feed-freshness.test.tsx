@@ -11,7 +11,7 @@ describe('OpportunityFeedFreshness', () => {
         now={new Date('2026-10-18T13:00:00Z')}
       />,
     )
-    expect(screen.getByText(/Dernière réception il y a/)).toBeInTheDocument()
+    expect(screen.getByText(/Free-Work · mis à jour il y a/)).toBeInTheDocument()
     expect(screen.getByText(STALE_MESSAGE)).toBeInTheDocument()
   })
 
@@ -22,7 +22,7 @@ describe('OpportunityFeedFreshness', () => {
         now={new Date('2026-10-18T13:00:00Z')}
       />,
     )
-    expect(screen.getByText(/Dernière réception il y a/)).toBeInTheDocument()
+    expect(screen.getByText(/Free-Work · mis à jour il y a/)).toBeInTheDocument()
     expect(screen.queryByText(STALE_MESSAGE)).not.toBeInTheDocument()
   })
 
@@ -39,5 +39,15 @@ describe('OpportunityFeedFreshness', () => {
   it('says nothing was received yet', () => {
     render(<OpportunityFeedFreshness lastReceivedAt={null} now={new Date('2026-10-18T13:00:00Z')} />)
     expect(screen.getByText("Aucune mission reçue pour l'instant.")).toBeInTheDocument()
+  })
+
+  it('formats the distance in French', () => {
+    render(
+      <OpportunityFeedFreshness
+        lastReceivedAt={new Date('2026-10-18T12:35:00Z')}
+        now={new Date('2026-10-18T13:00:00Z')}
+      />,
+    )
+    expect(screen.getByText('Free-Work · mis à jour il y a 25 minutes')).toBeInTheDocument()
   })
 })

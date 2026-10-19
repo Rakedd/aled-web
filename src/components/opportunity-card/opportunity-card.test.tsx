@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { OpportunityListItem } from '@/domain/opportunities'
 import { OpportunityCard } from './opportunity-card'
@@ -135,5 +135,25 @@ describe('OpportunityCard', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
     await userEvent.click(toggle)
     expect(screen.getByRole('button', { name: 'Réduire' })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('tones the new badge lilac', () => {
+    renderCard(buildOpportunity(), { isNew: true })
+    expect(screen.getByText('nouveau')).toHaveAttribute('data-tone', 'lilac')
+  })
+
+  it('shows the rate apart from the facts list', () => {
+    renderCard(buildOpportunity({ rateMax: 650 }))
+    expect(screen.getByText('650 €/j')).toBeInTheDocument()
+    expect(within(screen.getByRole('list')).queryByText('650 €/j')).not.toBeInTheDocument()
+  })
+
+  it('orders the buttons apply, Free-Work, then dismiss', () => {
+    renderCard(buildOpportunity())
+    const applyButton = screen.getByRole('button', { name: "J'ai postulé" })
+    const freeWorkLink = screen.getByRole('link', { name: 'Voir sur Free-Work' })
+    const dismissButton = screen.getByRole('button', { name: 'Pas intéressé' })
+    expect(applyButton.compareDocumentPosition(freeWorkLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(freeWorkLink.compareDocumentPosition(dismissButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })

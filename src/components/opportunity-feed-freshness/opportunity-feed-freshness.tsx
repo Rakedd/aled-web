@@ -13,7 +13,7 @@ export const OpportunityFeedFreshness = ({ lastReceivedAt, now }: OpportunityFee
   return (
     <div className="flex flex-col gap-1 text-sm">
       <p className="text-muted-foreground">
-        Dernière réception il y a {formatDistance(lastReceivedAt, now, { locale: fr })}
+        Free-Work · mis à jour il y a {formatDistance(lastReceivedAt, now, { locale: fr })}
       </p>
       {isOpportunityFeedStale(lastReceivedAt, now) && (
         <p role="status" className="rounded-lg bg-peach-tint px-3 py-2 text-ink">

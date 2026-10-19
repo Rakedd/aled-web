@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { Pill } from '@/components/pill'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { isExternalLinkUrl } from '@/domain/client-brief'
 import { formatOpportunityRate, REMOTE_MODE_LABELS } from '@/domain/opportunities'
@@ -25,7 +26,6 @@ export const OpportunityCard = ({
   const descriptionId = `opportunity-description-${opportunity.id}`
   const facts = [
     opportunity.company,
-    formatOpportunityRate(opportunity),
     opportunity.remoteMode === null ? null : REMOTE_MODE_LABELS[opportunity.remoteMode],
     opportunity.locationLabel,
     opportunity.durationMonths === null || opportunity.durationMonths <= 0 ? null : `${opportunity.durationMonths} mois`,
@@ -41,15 +41,25 @@ export const OpportunityCard = ({
       </Link>
     )
 
+  const externalLink = isExternalLinkUrl(opportunity.url) && (
+    <a
+      href={opportunity.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+    >
+      Voir sur Free-Work
+    </a>
+  )
+
   return (
-    <article className="flex flex-col gap-3 rounded-2xl bg-card p-4">
-      <header className="flex flex-wrap items-start gap-2">
-        <h3 className="min-w-0 flex-1 break-words text-base font-semibold">{opportunity.title}</h3>
-        {isNew && (
-          <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
-            nouveau
-          </span>
-        )}
+    <article className={'flex flex-col gap-3 rounded-2xl bg-card p-4'}>
+      <header className="flex items-start gap-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <h3 className="min-w-0 break-words text-base font-semibold">{opportunity.title}</h3>
+          {isNew && <Pill tone="lilac">nouveau</Pill>}
+        </div>
+        <p className="shrink-0 font-heading text-base text-forest">{formatOpportunityRate(opportunity)}</p>
       </header>
       <ul className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
         {facts.map((fact, factIndex) => (
@@ -74,27 +84,10 @@ export const OpportunityCard = ({
         </div>
       )}
       <div className="flex flex-wrap items-center gap-2">
-        {isExternalLinkUrl(opportunity.url) && (
-          <a
-            href={opportunity.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
-          >
-            Voir sur Free-Work
-          </a>
-        )}
         {tab === 'to_process' && opportunity.jobApplicationId === null && (
-          <>
-            <Button type="button" size="sm" disabled={isPending} onClick={() => onApply(opportunity)}>
-              {isPending ? 'Création…' : <>J&apos;ai postulé</>}
-            </Button>
-            {!isCompact && (
-              <Button type="button" size="sm" variant="ghost" disabled={isPending} onClick={() => onDismiss(opportunity)}>
-                Pas intéressé
-              </Button>
-            )}
-          </>
+          <Button type="button" size="sm" disabled={isPending} onClick={() => onApply(opportunity)}>
+            {isPending ? 'Création…' : <>J&apos;ai postulé</>}
+          </Button>
         )}
         {tab === 'to_process' && opportunity.jobApplicationId !== null && (
           <>
@@ -103,6 +96,12 @@ export const OpportunityCard = ({
           </>
         )}
         {tab === 'applied' && applicationLink}
+        {externalLink}
+        {tab === 'to_process' && opportunity.jobApplicationId === null && !isCompact && (
+          <Button type="button" size="sm" variant="ghost" className="ml-auto" disabled={isPending} onClick={() => onDismiss(opportunity)}>
+            Pas intéressé
+          </Button>
+        )}
         {tab === 'dismissed' && !isCompact && (
           <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={() => onRestore(opportunity)}>
             Remettre

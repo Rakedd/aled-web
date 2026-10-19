@@ -3,6 +3,7 @@ import type {
   ApplyToOpportunity,
   OpportunityListing,
   OpportunityListingCursor,
+  OpportunityQuickFilters,
   OpportunityTab,
 } from '@/domain/opportunities'
 
@@ -10,6 +11,7 @@ export type ListOpportunities = (
   tab: OpportunityTab,
   cursor: OpportunityListingCursor | null,
   search: string,
+  quickFilters: OpportunityQuickFilters,
 ) => Promise<ActionResult<OpportunityListing>>
 export type DecideOnOpportunity = (opportunityId: string) => Promise<ActionResult<null>>
 export type MarkOpportunitiesViewed = () => Promise<ActionResult<null>>

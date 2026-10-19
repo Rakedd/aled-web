@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { OpportunityListing, OpportunityListItem } from '@/domain/opportunities'
 import { OpportunitiesBoard } from './opportunities-board'
@@ -81,7 +81,7 @@ describe('OpportunitiesBoard', () => {
   it('shows the filters empty state with a link to the Free-Work settings', () => {
     renderBoard({}, true)
     expect(screen.getByText(/Rien de nouveau qui correspond à tes filtres/)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /filtres Free-Work/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Ajuster mes filtres Free-Work' })).toHaveAttribute(
       'href',
       '/preferences/opportunites/free-work',
     )
@@ -138,7 +138,7 @@ describe('OpportunitiesBoard', () => {
 
     await userEvent.keyboard('{ArrowRight}')
 
-    expect(listOpportunities).toHaveBeenCalledWith('applied', null, '')
+    expect(listOpportunities).toHaveBeenCalledWith('applied', null, '', { sortByRate: false, remoteModes: [] })
   })
 
   it('keeps the focus on the tab while the next tab loads and ignores further keys', async () => {
@@ -155,5 +155,59 @@ describe('OpportunitiesBoard', () => {
 
     expect(appliedTab).toHaveFocus()
     expect(listOpportunities).toHaveBeenCalledTimes(1)
+  })
+
+  it('exposes the rate sort as a toggle button', async () => {
+    const listOpportunities = jest.fn().mockResolvedValue({
+      ok: true,
+      data: {
+        items: [],
+        hasMore: false,
+        counts: { to_process: 0, applied: 0, dismissed: 0 },
+        lastReceivedAt: new Date('2026-10-18T12:30:00Z'),
+        lastViewedAt: null,
+      },
+    })
+    renderBoard({}, false, 'to_process', jest.fn(), listOpportunities)
+    const sortToggle = screen.getByRole('button', { name: 'Trier par TJM' })
+    expect(sortToggle).toHaveAttribute('aria-pressed', 'false')
+
+    await userEvent.click(sortToggle)
+
+    expect(screen.getByRole('button', { name: 'Trier par TJM' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('groups the three remote mode toggles under « Présentiel »', () => {
+    renderBoard({})
+    const remoteGroup = screen.getByRole('group', { name: 'Présentiel' })
+    const toggles = within(remoteGroup).getAllByRole('button')
+    expect(toggles.map((toggle) => toggle.textContent)).toEqual(['Full remote', 'Hybride', 'Sur site'])
+    toggles.forEach((toggle) => expect(toggle).toHaveAttribute('aria-pressed', 'false'))
+  })
+
+  it('links to the Free-Work filters from the header', () => {
+    renderBoard({})
+    expect(screen.getByRole('link', { name: 'Mes filtres Free-Work' })).toHaveAttribute(
+      'href',
+      '/preferences/opportunites/free-work',
+    )
+  })
+
+  it('shows the filtered empty state once a remote mode is selected', async () => {
+    const listOpportunities = jest.fn().mockResolvedValue({
+      ok: true,
+      data: {
+        items: [],
+        hasMore: false,
+        counts: { to_process: 0, applied: 0, dismissed: 0 },
+        lastReceivedAt: new Date('2026-10-18T12:30:00Z'),
+        lastViewedAt: null,
+      },
+    })
+    renderBoard({}, false, 'to_process', jest.fn(), listOpportunities)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Hybride' }))
+
+    expect(await screen.findByText('Aucune mission ne correspond à ces filtres.')).toBeInTheDocument()
   })
 })

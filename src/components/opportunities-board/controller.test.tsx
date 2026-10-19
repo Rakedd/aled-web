@@ -1,6 +1,11 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
-import type { OpportunityListing, OpportunityListingCursor, OpportunityListItem } from '@/domain/opportunities'
+import {
+  NO_OPPORTUNITY_QUICK_FILTERS,
+  type OpportunityListing,
+  type OpportunityListingCursor,
+  type OpportunityListItem,
+} from '@/domain/opportunities'
 import { useController } from './controller'
 
 const buildOpportunity = (id: string, overrides: Partial<OpportunityListItem> = {}): OpportunityListItem => ({
@@ -172,12 +177,12 @@ describe('opportunities-board useController', () => {
       publishedAt: serverItems[49].publishedAt.toISOString(),
       id: 'item-049',
       rate: null,
-    }, '')
+    }, '', NO_OPPORTUNITY_QUICK_FILTERS)
     expect(listOpportunities).toHaveBeenNthCalledWith(2, 'to_process', {
       publishedAt: serverItems[99].publishedAt.toISOString(),
       id: 'item-099',
       rate: null,
-    }, '')
+    }, '', NO_OPPORTUNITY_QUICK_FILTERS)
     const remainingIds = serverItems.map(({ id }) => id).filter((id) => !dismissedIds.has(id))
     expect(dismissedIds.size).toBe(90)
     expect(result.current.items.map(({ id }) => id)).toEqual(remainingIds)
@@ -257,7 +262,7 @@ describe('opportunities-board useController', () => {
       publishedAt: '2026-10-18T08:00:00.000Z',
       id: 'second',
       rate: null,
-    }, '')
+    }, '', NO_OPPORTUNITY_QUICK_FILTERS)
     expect(result.current.items.map(({ id }) => id)).toEqual(['first', 'second', 'third'])
     expect(result.current.hasMore).toBe(false)
   })
@@ -270,7 +275,7 @@ describe('opportunities-board useController', () => {
 
     await act(() => result.current.loadMore())
 
-    expect(listOpportunities).toHaveBeenCalledWith('to_process', expect.objectContaining({ id: 'rated', rate: 650 }), '')
+    expect(listOpportunities).toHaveBeenCalledWith('to_process', expect.objectContaining({ id: 'rated', rate: 650 }), '', NO_OPPORTUNITY_QUICK_FILTERS)
   })
 
   it('reloads the first page when the tab changes', async () => {
@@ -285,7 +290,7 @@ describe('opportunities-board useController', () => {
       ),
     )
     await act(() => result.current.selectTab('applied'))
-    expect(listOpportunities).toHaveBeenCalledWith('applied', null, '')
+    expect(listOpportunities).toHaveBeenCalledWith('applied', null, '', NO_OPPORTUNITY_QUICK_FILTERS)
     expect(result.current.tab).toBe('applied')
     expect(result.current.items.map(({ id }) => id)).toEqual(['done'])
     expect(onTabChanged).toHaveBeenCalledWith('applied')
@@ -351,7 +356,7 @@ describe('opportunities-board useController', () => {
       await advanceDebounce(1)
 
       expect(listOpportunities).toHaveBeenCalledTimes(1)
-      expect(listOpportunities).toHaveBeenCalledWith('to_process', null, 'react')
+      expect(listOpportunities).toHaveBeenCalledWith('to_process', null, 'react', NO_OPPORTUNITY_QUICK_FILTERS)
     })
 
     it('trims the search and replaces the list from the start', async () => {
@@ -369,7 +374,7 @@ describe('opportunities-board useController', () => {
       typeSearch(result, '  react  ')
       await advanceDebounce()
 
-      expect(listOpportunities).toHaveBeenCalledWith('to_process', null, 'react')
+      expect(listOpportunities).toHaveBeenCalledWith('to_process', null, 'react', NO_OPPORTUNITY_QUICK_FILTERS)
       expect(result.current.items.map(({ id }) => id)).toEqual(['found'])
       expect(result.current.counts).toEqual({ to_process: 1, applied: 0, dismissed: 0 })
       expect(result.current.hasMore).toBe(false)
@@ -402,8 +407,8 @@ describe('opportunities-board useController', () => {
         resolveFirstSearch(succeeded(buildListing({ items: [buildOpportunity('outdated')], hasMore: false })))
       })
 
-      expect(listOpportunities).toHaveBeenNthCalledWith(1, 'to_process', null, 'java')
-      expect(listOpportunities).toHaveBeenNthCalledWith(2, 'to_process', null, 'react')
+      expect(listOpportunities).toHaveBeenNthCalledWith(1, 'to_process', null, 'java', NO_OPPORTUNITY_QUICK_FILTERS)
+      expect(listOpportunities).toHaveBeenNthCalledWith(2, 'to_process', null, 'react', NO_OPPORTUNITY_QUICK_FILTERS)
       expect(result.current.items.map(({ id }) => id)).toEqual(['latest'])
       expect(result.current.isLoadingListing).toBe(false)
     })
@@ -436,7 +441,7 @@ describe('opportunities-board useController', () => {
       typeSearch(result, '')
       await advanceDebounce(0)
 
-      expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, '')
+      expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, '', NO_OPPORTUNITY_QUICK_FILTERS)
       expect(result.current.items.map(({ id }) => id)).toEqual(['first', 'second'])
       expect(result.current.hasActiveSearch).toBe(false)
     })
@@ -449,12 +454,13 @@ describe('opportunities-board useController', () => {
       await act(() => result.current.selectTab('applied'))
       await act(() => result.current.loadMore())
 
-      expect(listOpportunities).toHaveBeenNthCalledWith(2, 'applied', null, 'react')
+      expect(listOpportunities).toHaveBeenNthCalledWith(2, 'applied', null, 'react', NO_OPPORTUNITY_QUICK_FILTERS)
       expect(listOpportunities).toHaveBeenNthCalledWith(
         3,
         'applied',
         { publishedAt: '2026-10-18T08:00:00.000Z', id: 'second', rate: null },
         'react',
+        NO_OPPORTUNITY_QUICK_FILTERS,
       )
     })
 
@@ -464,7 +470,7 @@ describe('opportunities-board useController', () => {
       await act(() => result.current.selectTab('dismissed'))
       await advanceDebounce()
 
-      expect(listOpportunities).toHaveBeenLastCalledWith('dismissed', null, 'react')
+      expect(listOpportunities).toHaveBeenLastCalledWith('dismissed', null, 'react', NO_OPPORTUNITY_QUICK_FILTERS)
     })
 
     it('ends on the requested tab with the search applied when the debounce fires during the tab request', async () => {
@@ -485,7 +491,7 @@ describe('opportunities-board useController', () => {
         await selectingTab
       })
 
-      expect(listOpportunities).toHaveBeenNthCalledWith(2, 'applied', null, 'react')
+      expect(listOpportunities).toHaveBeenNthCalledWith(2, 'applied', null, 'react', NO_OPPORTUNITY_QUICK_FILTERS)
       expect(result.current.tab).toBe('applied')
       expect(result.current.items.map(({ id }) => id)).toEqual(['searched'])
       expect(onTabChanged).toHaveBeenCalledWith('applied')
@@ -521,6 +527,121 @@ describe('opportunities-board useController', () => {
       await advanceDebounce()
 
       expect(listOpportunities).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('quick filters', () => {
+    it('starts without quick filters', () => {
+      const { result } = renderBoardController()
+      expect(result.current.quickFilters).toEqual(NO_OPPORTUNITY_QUICK_FILTERS)
+    })
+
+    it('reloads the current tab from the start when the rate sort is toggled', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      listOpportunities.mockResolvedValue(succeeded(buildListing({ items: [buildOpportunity('rated')], hasMore: false })))
+
+      await act(() => result.current.toggleSortByRate())
+
+      expect(listOpportunities).toHaveBeenCalledWith('to_process', null, '', { sortByRate: true, remoteModes: [] })
+      expect(result.current.quickFilters.sortByRate).toBe(true)
+      expect(result.current.items.map(({ id }) => id)).toEqual(['rated'])
+    })
+
+    it('keeps the remote modes in canonical order and removes a mode toggled twice', async () => {
+      const { result, listOpportunities } = renderBoardController()
+
+      await act(() => result.current.toggleRemoteMode('none'))
+      await act(() => result.current.toggleRemoteMode('full'))
+      expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, '', {
+        sortByRate: false,
+        remoteModes: ['full', 'none'],
+      })
+
+      await act(() => result.current.toggleRemoteMode('full'))
+      expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, '', {
+        sortByRate: false,
+        remoteModes: ['none'],
+      })
+    })
+
+    it('sends the applied search with the filters', async () => {
+      jest.useFakeTimers()
+      const { result, listOpportunities } = renderBoardController()
+      act(() => result.current.changeSearch('react'))
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(300)
+      })
+      jest.useRealTimers()
+
+      await act(() => result.current.toggleSortByRate())
+
+      expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, 'react', {
+        sortByRate: true,
+        remoteModes: [],
+      })
+    })
+
+    it('loads more with the rated cursor and the current filters', async () => {
+      const { result, listOpportunities } = renderBoardController({
+        items: [buildOpportunity('rated', { rateMax: 650 })],
+      })
+      listOpportunities.mockResolvedValue(
+        succeeded(buildListing({ items: [buildOpportunity('rated', { rateMax: 650 })], hasMore: true })),
+      )
+      await act(() => result.current.toggleSortByRate())
+      listOpportunities.mockResolvedValue(succeeded(buildListing({ items: [], hasMore: false })))
+
+      await act(() => result.current.loadMore())
+
+      expect(listOpportunities).toHaveBeenLastCalledWith(
+        'to_process',
+        { publishedAt: '2026-10-18T08:00:00.000Z', id: 'rated', rate: 650 },
+        '',
+        { sortByRate: true, remoteModes: [] },
+      )
+    })
+
+    it('keeps the filters when the tab changes', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      await act(() => result.current.toggleRemoteMode('partial'))
+
+      await act(() => result.current.selectTab('applied'))
+
+      expect(listOpportunities).toHaveBeenLastCalledWith('applied', null, '', {
+        sortByRate: false,
+        remoteModes: ['partial'],
+      })
+    })
+
+    it('ignores a response that arrives after a more recent one', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      let resolveFirstRequest: (actionResult: ActionResult<OpportunityListing>) => void = () => undefined
+      listOpportunities
+        .mockReturnValueOnce(new Promise((resolve) => (resolveFirstRequest = resolve)))
+        .mockResolvedValueOnce(succeeded(buildListing({ items: [buildOpportunity('latest')], hasMore: false })))
+
+      act(() => {
+        void result.current.toggleSortByRate()
+      })
+      await act(() => result.current.toggleRemoteMode('full'))
+      await act(async () => {
+        resolveFirstRequest(succeeded(buildListing({ items: [buildOpportunity('outdated')], hasMore: false })))
+      })
+
+      expect(result.current.items.map(({ id }) => id)).toEqual(['latest'])
+      expect(result.current.quickFilters).toEqual({ sortByRate: true, remoteModes: ['full'] })
+      expect(result.current.isLoadingListing).toBe(false)
+    })
+
+    it('restores the applied filters and shows the error when the reload fails', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      listOpportunities.mockResolvedValue({ ok: false, errorMessage: 'Chargement impossible' })
+
+      await act(() => result.current.toggleSortByRate())
+
+      expect(result.current.errorMessage).toBe('Chargement impossible')
+      expect(result.current.quickFilters).toEqual(NO_OPPORTUNITY_QUICK_FILTERS)
+      expect(result.current.items.map(({ id }) => id)).toEqual(['first', 'second'])
     })
   })
 })
