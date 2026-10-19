@@ -36,6 +36,7 @@ const renderBoard = (
   hasActiveFilters = false,
   initialTab: 'to_process' | 'applied' | 'dismissed' = 'to_process',
   applyToOpportunity: jest.Mock = jest.fn(),
+  listOpportunities: jest.Mock = jest.fn(),
 ) => {
   const succeeded = { ok: true, data: null }
   render(
@@ -51,7 +52,7 @@ const renderBoard = (
       }}
       hasActiveFilters={hasActiveFilters}
       now={NOW}
-      listOpportunities={jest.fn()}
+      listOpportunities={listOpportunities}
       applyToOpportunity={applyToOpportunity}
       dismissOpportunity={jest.fn()}
       restoreOpportunity={jest.fn()}
@@ -114,7 +115,7 @@ describe('OpportunitiesBoard', () => {
       lastViewedAt: new Date('2026-10-18T10:00:00Z'),
     })
     expect(screen.getAllByText('nouveau')).toHaveLength(1)
-    expect(screen.getByRole('tab', { name: 'À traiter (2)' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'À traiter · 2' })).toBeInTheDocument()
   })
 
   it('renders a labelled search input capped at 100 characters above the tabs', () => {
@@ -123,5 +124,20 @@ describe('OpportunitiesBoard', () => {
     expect(searchInput).toHaveAttribute('placeholder', 'Rechercher une mission…')
     expect(searchInput).toHaveAttribute('maxlength', '100')
     expect(searchInput.compareDocumentPosition(screen.getByRole('tablist')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('names each tab with its count', () => {
+    renderBoard({ counts: { to_process: 3, applied: 0, dismissed: 0 } })
+    expect(screen.getByRole('tab', { name: 'À traiter · 3' })).toBeInTheDocument()
+  })
+
+  it('loads the next tab when ArrowRight is pressed on the selected tab', async () => {
+    const listOpportunities = jest.fn().mockReturnValue(new Promise(() => undefined))
+    renderBoard({ counts: { to_process: 3, applied: 0, dismissed: 0 } }, false, 'to_process', jest.fn(), listOpportunities)
+    screen.getByRole('tab', { name: 'À traiter · 3' }).focus()
+
+    await userEvent.keyboard('{ArrowRight}')
+
+    expect(listOpportunities).toHaveBeenCalledWith('applied', null, '')
   })
 })

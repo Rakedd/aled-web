@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { OpportunityCard } from '@/components/opportunity-card'
 import { OpportunityFeedFreshness } from '@/components/opportunity-feed-freshness'
+import { PillTabs } from '@/components/pill-tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { OPPORTUNITY_SEARCH_MAX_LENGTH, OPPORTUNITY_TABS, type OpportunityTab } from '@/domain/opportunities'
 import { FREE_WORK_PREFERENCES_ROUTE } from '@/domain/routes'
-import { cn } from '@/lib/utils'
 import { useController } from './controller'
 import type { OpportunitiesBoardProps } from './interfaces'
 
@@ -75,26 +75,19 @@ export const OpportunitiesBoard = ({
         aria-label="Rechercher une mission"
         onChange={(event) => changeSearch(event.target.value)}
       />
-      <div role="tablist" aria-label="Opportunités" className="flex gap-1 overflow-x-auto border-b">
-        {OPPORTUNITY_TABS.map((tabKey) => (
-          <button
-            key={tabKey}
-            type="button"
-            role="tab"
-            id={`opportunities-tab-${tabKey}`}
-            aria-selected={tab === tabKey}
-            aria-controls="opportunities-panel"
-            disabled={isLoadingListing || isAnyOpportunityPending}
-            onClick={() => void selectTab(tabKey)}
-            className={cn(
-              'h-9 shrink-0 border-b-2 border-transparent px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50',
-              tab === tabKey && 'border-primary text-foreground',
-            )}
-          >
-            {TAB_LABELS[tabKey]} ({counts[tabKey]})
-          </button>
-        ))}
-      </div>
+      <PillTabs
+        label="Opportunités"
+        tabs={OPPORTUNITY_TABS.map((tabKey) => ({
+          key: tabKey,
+          label: TAB_LABELS[tabKey],
+          count: counts[tabKey],
+          tabId: `opportunities-tab-${tabKey}`,
+          panelId: 'opportunities-panel',
+        }))}
+        selectedTab={tab}
+        onSelect={(tabKey) => void selectTab(tabKey)}
+        isDisabled={isLoadingListing || isAnyOpportunityPending}
+      />
       {errorMessage && (
         <p role="alert" className="text-sm text-destructive">
           {errorMessage}
