@@ -1,6 +1,7 @@
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Suspense, use, useEffect, useState } from 'react'
+import { HeaderView } from '@/components/header-view'
 import type { JobApplicationOverview } from '@/domain/job-application'
 import { buildJobApplicationOverview } from '@/test-fixtures/job-application-overview'
 import { JobApplicationBlock } from './job-application-block'
@@ -92,5 +93,33 @@ describe('JobApplicationBlock', () => {
     expect(mockedRefresh).not.toHaveBeenCalled()
     expect(screen.getByText('Lieu : Paris')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Modifier Infos mission' })).toHaveFocus()
+  })
+
+  it('keeps the page title rendered beside the header block while the header is being edited', async () => {
+    const jobApplication = buildJobApplicationOverview()
+    render(
+      <>
+        <h1>{jobApplication.title}</h1>
+        <JobApplicationBlock
+          title="En-tête"
+          isTitleHidden
+          view={<HeaderView jobApplication={jobApplication} />}
+          form={{
+            kind: 'header',
+            props: {
+              jobApplication,
+              updateJobApplication: jest.fn(),
+              setEndClientParent: jest.fn(),
+              updateIntermediaryKind: jest.fn(),
+              searchEntities: jest.fn(),
+            },
+          }}
+        />
+      </>,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Modifier En-tête' }))
+    expect(screen.getByRole('textbox', { name: 'Titre de la mission *' })).toBeInTheDocument()
+    expect(screen.queryByText(/Société Générale \(Groupe SG\) · via Free-Work/)).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Développeur React' })).toBeInTheDocument()
   })
 })

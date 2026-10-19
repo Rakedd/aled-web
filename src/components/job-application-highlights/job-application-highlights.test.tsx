@@ -30,7 +30,7 @@ const renderHighlights = (overrides: Partial<JobApplicationHighlightsProps> = {}
 describe('JobApplicationHighlights', () => {
   it('shows the requested daily rate before the posted one', () => {
     renderHighlights({ requestedDailyRate: 650, postedDailyRate: 600 })
-    expect(screen.getByText('TJM demandé')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'TJM demandé' })).toBeInTheDocument()
     expect(screen.getByText(/650\s€\/j/)).toBeInTheDocument()
     expect(screen.queryByText('TJM annoncé')).not.toBeInTheDocument()
   })

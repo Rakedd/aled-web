@@ -1,12 +1,10 @@
-import { Fragment, type ReactNode } from 'react'
+import { Fragment } from 'react'
 import { isExternalLinkUrl } from '@/domain/client-brief'
 import { INTERMEDIARY_KIND_LABELS } from '@/domain/entities'
 import { toNullableText } from '@/domain/form-values'
 import { UNKNOWN_END_CLIENT_LABEL } from '@/domain/job-application-display'
 import { formatParisDate } from '@/domain/paris-time'
-import type { HeaderViewData, HeaderViewProps } from './interfaces'
-
-type SummaryPart = { key: string; content: ReactNode }
+import type { HeaderViewData, HeaderViewProps, SummaryPart } from './interfaces'
 
 const formatIntermediary = ({ intermediaryName, intermediaryKind }: HeaderViewData): string | null => {
   if (intermediaryName === null) return null
@@ -45,17 +43,12 @@ const buildSummaryParts = (jobApplication: HeaderViewData): SummaryPart[] => {
 }
 
 export const HeaderView = ({ jobApplication }: HeaderViewProps) => (
-  <div className="flex min-w-0 flex-col gap-2">
-    <h1 className="font-heading text-3xl leading-tight font-extrabold tracking-tight break-words md:text-4xl">
-      {jobApplication.title}
-    </h1>
-    <p className="text-base break-words text-ink-secondary">
-      {buildSummaryParts(jobApplication).map((summaryPart, index) => (
-        <Fragment key={summaryPart.key}>
-          {index > 0 && ' · '}
-          {summaryPart.content}
-        </Fragment>
-      ))}
-    </p>
-  </div>
+  <p className="min-w-0 text-base break-words text-ink-secondary">
+    {buildSummaryParts(jobApplication).map((summaryPart, index) => (
+      <Fragment key={summaryPart.key}>
+        {index > 0 && ' · '}
+        {summaryPart.content}
+      </Fragment>
+    ))}
+  </p>
 )

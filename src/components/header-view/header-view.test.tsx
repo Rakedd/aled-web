@@ -4,7 +4,6 @@ import { buildJobApplicationOverview } from '@/test-fixtures/job-application-ove
 import { HeaderView } from './header-view'
 
 const HAYS_APPLICATION = buildJobApplicationOverview({
-  title: 'Développeur React / Next.js senior',
   endClientLabel: 'BNP Paribas AM',
   intermediaryName: 'Hays',
   intermediaryKind: 'esn',
@@ -20,9 +19,10 @@ const getSummaryLine = (expectedText: string) =>
   screen.getByText((_, element) => element?.tagName === 'P' && element.textContent === expectedText)
 
 describe('HeaderView', () => {
-  it('shows the application title as the page heading', () => {
+  it('renders only the summary line, without the application title', () => {
     renderHeaderView()
-    expect(screen.getByRole('heading', { level: 1, name: 'Développeur React / Next.js senior' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+    expect(screen.queryByText('Développeur React')).not.toBeInTheDocument()
   })
 
   it('shows the end client, intermediary, source, Paris date and posting link on one line', () => {
