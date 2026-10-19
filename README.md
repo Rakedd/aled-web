@@ -59,9 +59,26 @@ base64 -i ~/Downloads/cle.json | tr -d '\n' | pbcopy
 rm ~/Downloads/cle.json
 ```
 
+## Navigation et fonctionnalités
+
+Menu : « Mes candidatures », « Mon calendrier », « Mes opportunités », « Préférences ».
+
+| Route | Contenu |
+| --- | --- |
+| `/` | accueil : rappels, prochains entretiens et missions mises en avant |
+| `/candidatures` | tableau des candidatures |
+| `/calendar` | « Mon calendrier » |
+| `/candidatures/<id>` | page de la candidature, en lecture d'abord, avec un crayon pour modifier chaque bloc (en-tête, infos mission, contact, stack) |
+| `/opportunites` | « Mes opportunités », avec recherche par titre, entreprise ou lieu |
+| `/preferences` | préférences, clé API Claude, export des données (`/settings` redirige définitivement vers `/preferences`) |
+
+- **Stack** : sur « J'ai postulé », la stack de la mission est extraite par l'IA.
+- **Brief d'entretien** : « Générer le brief » devient « Brief généré · voir mon brief » et ouvre une fenêtre avec le brief dans chaque langue (fr/en), les callouts « Chiffres clés » et « Dates clés », « Mes notes sur l'entreprise », « Questions à poser en entretien » et « Voir les sources (N) » repliées. « Régénérer » relance la génération.
+- **Suppression** : le bouton rouge « Supprimer la candidature » demande confirmation, puis supprime le journal, les entretiens, la fiche métier et son PDF. L'opportunité d'origine revient dans « À traiter ».
+
 ## Opportunités
 
-La page « Mes opportunités » affiche les missions Free-Work des 7 derniers jours, filtrées selon les réglages de chaque utilisateur. Elle est alimentée par le watcher career-ops (`cloud/free-work-watcher`, dépôt career-ops), qui appelle le point d'entrée `POST /api/opportunities/ingest`.
+La page « Mes opportunités » affiche les missions Free-Work des 7 derniers jours, filtrées selon les préférences de chaque utilisateur. Elle est alimentée par le watcher career-ops (`cloud/free-work-watcher`, dépôt career-ops), qui appelle le point d'entrée `POST /api/opportunities/ingest`.
 
 - **Authentification** : `Authorization: Bearer <OPPORTUNITIES_INGEST_TOKEN>`. Sans jeton configuré côté Freeclutch, ou avec un jeton incorrect, la requête est refusée.
 - **Lots** : 100 missions au maximum par requête.
@@ -89,7 +106,7 @@ Un profil est créé automatiquement pour chaque nouveau compte.
 
 ## Export et sauvegardes
 
-- **Export manuel** : Réglages → « Exporter mes données » télécharge `freeclutch-export-<AAAA-MM-JJ>.json` avec toutes les données de l'utilisateur connecté, PDF de fiches métier inclus (en base64). La clé API Claude n'y figure jamais.
+- **Export manuel** : Préférences (`/preferences`) → « Exporter mes données » télécharge `freeclutch-export-<AAAA-MM-JJ>.json` avec toutes les données de l'utilisateur connecté, PDF de fiches métier inclus (en base64). La clé API Claude n'y figure jamais.
 - **Sauvegarde automatique** : le cron Vercel (`vercel.json`) appelle `/api/cron/backup` le lundi et le jeudi à 3 h UTC. Pour chaque utilisateur, un fichier au même format est créé dans `gs://<GCS_BACKUP_BUCKET>/backups/<AAAA-MM-JJ>/<userId>.json` (date de Paris). L'échec d'un utilisateur n'arrête pas les autres ; il apparaît dans les logs (`User data backup failed`, avec l'identifiant de l'utilisateur). Ces appels réguliers évitent aussi la mise en pause du projet Supabase gratuit.
 
 Un objet déjà présent n'est jamais écrasé : relancer la sauvegarde le même jour échoue pour les utilisateurs déjà sauvegardés ce jour-là. Pour garder un historique borné, configurer une règle de cycle de vie sur le bucket (par exemple, suppression après 90 jours).
@@ -122,7 +139,7 @@ Ce que fait le script :
 - il fait un upsert (insertion, ou mise à jour par identifiant) du profil, des intermédiaires, contacts, clients finaux, candidatures, journal d'activité, entretiens, fiches métier et reports d'alerte, dans l'ordre des dépendances, puis remet chaque PDF à son chemin de stockage ;
 - les lignes absentes de la sauvegarde ne sont pas supprimées : pour revenir exactement à l'état sauvegardé, supprimer d'abord les données actuelles de l'utilisateur.
 
-La clé API Claude n'étant jamais sauvegardée, l'utilisateur doit la ressaisir dans les réglages si son profil a été recréé.
+La clé API Claude n'étant jamais sauvegardée, l'utilisateur doit la ressaisir dans les préférences si son profil a été recréé.
 
 ## Déploiement
 
@@ -191,5 +208,5 @@ Le déploiement se fait à la main, dans cet ordre : Supabase, Google Cloud Stor
 
 1. Dans le tableau de bord Supabase, **Authentication > Users > Invite user** : s'inviter avec sa propre adresse.
 2. Ouvrir le lien reçu par e-mail pour se connecter.
-3. Dans **Réglages**, enregistrer sa clé API Claude.
+3. Dans **Préférences**, enregistrer sa clé API Claude.
 4. Dans la console Anthropic, définir une limite de dépense mensuelle pour cette clé.
