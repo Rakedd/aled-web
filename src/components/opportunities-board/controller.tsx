@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
-import type {
-  OpportunityListingCursor,
-  OpportunityListItem,
-  OpportunityListing,
-  OpportunityTab,
+import {
+  getOpportunityEffectiveRate,
+  type OpportunityListingCursor,
+  type OpportunityListItem,
+  type OpportunityListing,
+  type OpportunityTab,
 } from '@/domain/opportunities'
 import type { OpportunitiesBoardControllerParameters } from './interfaces'
 
@@ -20,7 +21,9 @@ const shiftCount = (counts: OpportunityCounts, from: OpportunityTab, to: Opportu
 
 const toListingCursor = (items: OpportunityListItem[]): OpportunityListingCursor | null => {
   const lastItem = items.at(-1)
-  return lastItem === undefined ? null : { publishedAt: lastItem.publishedAt.toISOString(), id: lastItem.id }
+  return lastItem === undefined
+    ? null
+    : { publishedAt: lastItem.publishedAt.toISOString(), id: lastItem.id, rate: getOpportunityEffectiveRate(lastItem) }
 }
 
 export const useController = ({

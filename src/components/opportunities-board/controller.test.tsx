@@ -171,10 +171,12 @@ describe('opportunities-board useController', () => {
     expect(listOpportunities).toHaveBeenNthCalledWith(1, 'to_process', {
       publishedAt: serverItems[49].publishedAt.toISOString(),
       id: 'item-049',
+      rate: null,
     }, '')
     expect(listOpportunities).toHaveBeenNthCalledWith(2, 'to_process', {
       publishedAt: serverItems[99].publishedAt.toISOString(),
       id: 'item-099',
+      rate: null,
     }, '')
     const remainingIds = serverItems.map(({ id }) => id).filter((id) => !dismissedIds.has(id))
     expect(dismissedIds.size).toBe(90)
@@ -254,9 +256,21 @@ describe('opportunities-board useController', () => {
     expect(listOpportunities).toHaveBeenCalledWith('to_process', {
       publishedAt: '2026-10-18T08:00:00.000Z',
       id: 'second',
+      rate: null,
     }, '')
     expect(result.current.items.map(({ id }) => id)).toEqual(['first', 'second', 'third'])
     expect(result.current.hasMore).toBe(false)
+  })
+
+  it('carries the effective rate of the last loaded item in the cursor', async () => {
+    const { result, listOpportunities } = renderBoardController({
+      items: [buildOpportunity('rated', { rateMin: 600, rateMax: 650 })],
+    })
+    listOpportunities.mockResolvedValue(succeeded(buildListing({ items: [], hasMore: false })))
+
+    await act(() => result.current.loadMore())
+
+    expect(listOpportunities).toHaveBeenCalledWith('to_process', expect.objectContaining({ id: 'rated', rate: 650 }), '')
   })
 
   it('reloads the first page when the tab changes', async () => {
@@ -439,7 +453,7 @@ describe('opportunities-board useController', () => {
       expect(listOpportunities).toHaveBeenNthCalledWith(
         3,
         'applied',
-        { publishedAt: '2026-10-18T08:00:00.000Z', id: 'second' },
+        { publishedAt: '2026-10-18T08:00:00.000Z', id: 'second', rate: null },
         'react',
       )
     })

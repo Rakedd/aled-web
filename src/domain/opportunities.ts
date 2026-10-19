@@ -88,16 +88,24 @@ export const OPPORTUNITY_VALIDATION_MESSAGES = {
   searchTooLong: `La recherche ne peut pas dépasser ${OPPORTUNITY_SEARCH_MAX_LENGTH} caractères`,
   notDismissed: "Cette mission n'est pas ignorée",
   alreadyApplied: 'Tu as déjà postulé à cette mission',
+  invalidQuickFilters: 'Filtres rapides invalides',
 } as const
 
-export type OpportunityListingCursor = { publishedAt: string; id: string }
+export type OpportunityQuickFilters = { sortByRate: boolean; remoteModes: RemoteMode[] }
 
-export type OpportunityListingPosition = { publishedAt: Date; id: string }
+export const NO_OPPORTUNITY_QUICK_FILTERS: OpportunityQuickFilters = { sortByRate: false, remoteModes: [] }
+
+export type OpportunityListingOrder = 'publication' | 'rate'
+
+export type OpportunityListingCursor = { publishedAt: string; id: string; rate: number | null }
+
+export type OpportunityListingPosition = { publishedAt: Date; id: string; rate: number | null }
 
 export type OpportunityListingRequest = {
   tab: OpportunityTab
   after: OpportunityListingPosition | null
   search: string
+  quickFilters: OpportunityQuickFilters
 }
 
 const UNDISCLOSED_RATE_LABEL = 'Non communiqué'
@@ -122,16 +130,35 @@ export const validateOpportunitySource = (candidate: unknown): ActionResult<Oppo
     ? { ok: true, data: candidate }
     : rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.unknownSource)
 
+const isValidCursorRate = (candidate: unknown): candidate is number | null | undefined =>
+  candidate === undefined ||
+  candidate === null ||
+  (typeof candidate === 'number' && Number.isFinite(candidate) && candidate >= 0)
+
 const toListingPosition = (cursor: unknown): OpportunityListingPosition | null => {
   if (!isRecord(cursor) || typeof cursor.publishedAt !== 'string' || !isUuid(cursor.id)) return null
+  if (!isValidCursorRate(cursor.rate)) return null
   const publishedAt = new Date(cursor.publishedAt)
-  return Number.isNaN(publishedAt.getTime()) ? null : { publishedAt, id: cursor.id.toLowerCase() }
+  return Number.isNaN(publishedAt.getTime())
+    ? null
+    : { publishedAt, id: cursor.id.toLowerCase(), rate: cursor.rate ?? null }
+}
+
+const toQuickFilters = (candidate: unknown): OpportunityQuickFilters | null => {
+  if (!isRecord(candidate) || typeof candidate.sortByRate !== 'boolean') return null
+  const { remoteModes } = candidate
+  if (!Array.isArray(remoteModes) || !remoteModes.every(isRemoteMode)) return null
+  return {
+    sortByRate: candidate.sortByRate,
+    remoteModes: REMOTE_MODES.filter((remoteMode) => remoteModes.includes(remoteMode)),
+  }
 }
 
 export const validateOpportunityListingRequest = (
   tab: unknown,
   cursor: unknown,
   search: unknown,
+  quickFilters: unknown,
 ): ActionResult<OpportunityListingRequest> => {
   if (!isOpportunityTab(tab) || typeof search !== 'string') {
     return rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.invalidListingRequest)
@@ -140,12 +167,43 @@ export const validateOpportunityListingRequest = (
   if (trimmedSearch.length > OPPORTUNITY_SEARCH_MAX_LENGTH) {
     return rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.searchTooLong)
   }
-  if (cursor === null) return { ok: true, data: { tab, after: null, search: trimmedSearch } }
-  const after = toListingPosition(cursor)
-  return after === null
-    ? rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.invalidListingRequest)
-    : { ok: true, data: { tab, after, search: trimmedSearch } }
+  const after = cursor === null ? null : toListingPosition(cursor)
+  if (cursor !== null && after === null) return rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.invalidListingRequest)
+  const validatedQuickFilters = toQuickFilters(quickFilters)
+  return validatedQuickFilters === null
+    ? rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.invalidQuickFilters)
+    : { ok: true, data: { tab, after, search: trimmedSearch, quickFilters: validatedQuickFilters } }
 }
+
+const compareByPublicationDescending = (
+  firstPosition: OpportunityListingPosition,
+  secondPosition: OpportunityListingPosition,
+): number => {
+  const publicationDifference = secondPosition.publishedAt.getTime() - firstPosition.publishedAt.getTime()
+  if (publicationDifference !== 0) return publicationDifference
+  if (firstPosition.id === secondPosition.id) return 0
+  return firstPosition.id < secondPosition.id ? 1 : -1
+}
+
+const compareByRateDescendingUndisclosedLast = (
+  firstPosition: OpportunityListingPosition,
+  secondPosition: OpportunityListingPosition,
+): number => {
+  if (firstPosition.rate === secondPosition.rate) return compareByPublicationDescending(firstPosition, secondPosition)
+  if (firstPosition.rate === null) return 1
+  if (secondPosition.rate === null) return -1
+  return secondPosition.rate - firstPosition.rate
+}
+
+export const compareOpportunityListingPositions = (
+  order: OpportunityListingOrder,
+): ((firstPosition: OpportunityListingPosition, secondPosition: OpportunityListingPosition) => number) =>
+  order === 'rate' ? compareByRateDescendingUndisclosedLast : compareByPublicationDescending
+
+export const matchesRemoteModeQuickFilter = (
+  remoteMode: RemoteMode | null,
+  remoteModes: readonly RemoteMode[],
+): boolean => remoteModes.length === 0 || (remoteMode !== null && remoteModes.includes(remoteMode))
 
 export const getOpportunityEffectiveRate = (opportunity: Pick<Opportunity, 'rateMin' | 'rateMax'>): number | null =>
   opportunity.rateMax ?? opportunity.rateMin

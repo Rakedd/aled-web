@@ -6,9 +6,11 @@ import { rejectWith } from '@/domain/input-validation'
 import {
   HISTORY_WINDOW_DAYS,
   type HighlightedOpportunities,
+  NO_OPPORTUNITY_QUICK_FILTERS,
   OPPORTUNITY_VALIDATION_MESSAGES,
   type OpportunityListing,
   type OpportunityListingCursor,
+  type OpportunityQuickFilters,
   type OpportunitySource,
   type OpportunityTab,
   validateOpportunityId,
@@ -40,11 +42,12 @@ export const listOpportunities = async (
   tab: OpportunityTab,
   cursor: OpportunityListingCursor | null,
   search: string,
+  quickFilters: OpportunityQuickFilters = NO_OPPORTUNITY_QUICK_FILTERS,
 ): Promise<ActionResult<OpportunityListing>> =>
   runAuthenticatedOperation({
     operationName: 'listOpportunities',
     failureMessage: LOAD_FAILURE_MESSAGE,
-    validateArguments: () => validateOpportunityListingRequest(tab, cursor, search),
+    validateArguments: () => validateOpportunityListingRequest(tab, cursor, search, quickFilters),
     operation: async (supabase, userId, listingRequest) => ({
       ok: true,
       data: await buildOpportunityListing(supabase, userId, listingRequest, new Date()),

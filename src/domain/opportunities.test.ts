@@ -1,11 +1,15 @@
 import { MAXIMUM_STACK_ITEM_COUNT, validateJobApplicationInput } from './job-application'
 import {
+  NO_OPPORTUNITY_QUICK_FILTERS,
   type Opportunity,
+  type OpportunityListingPosition,
   REMOTE_MODE_LABELS,
   buildJobApplicationInputFromOpportunity,
+  compareOpportunityListingPositions,
   formatOpportunityRate,
   isOpportunityFeedStale,
   isRemoteMode,
+  matchesRemoteModeQuickFilter,
   mergeStackItems,
   validateOpportunityId,
   validateOpportunityListingRequest,
@@ -293,21 +297,27 @@ describe('validateOpportunityListingRequest', () => {
   const cursorId = '6f1f4f7e-2f8c-4c55-9f0e-1b2c3d4e5f60'
 
   it('accepts a known tab without cursor', () => {
-    expect(validateOpportunityListingRequest('dismissed', null, '')).toEqual({
+    expect(validateOpportunityListingRequest('dismissed', null, '', NO_OPPORTUNITY_QUICK_FILTERS)).toEqual({
       ok: true,
-      data: { tab: 'dismissed', after: null, search: '' },
+      data: { tab: 'dismissed', after: null, search: '', quickFilters: NO_OPPORTUNITY_QUICK_FILTERS },
     })
   })
 
   it('accepts a known tab with the position of the last loaded item', () => {
     expect(
-      validateOpportunityListingRequest('applied', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId }, ''),
+      validateOpportunityListingRequest(
+        'applied',
+        { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, rate: 650 },
+        '',
+        NO_OPPORTUNITY_QUICK_FILTERS,
+      ),
     ).toEqual({
       ok: true,
       data: {
         tab: 'applied',
-        after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: cursorId },
+        after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: cursorId, rate: 650 },
         search: '',
+        quickFilters: NO_OPPORTUNITY_QUICK_FILTERS,
       },
     })
   })
@@ -319,46 +329,160 @@ describe('validateOpportunityListingRequest', () => {
     ['a cursor with an id that is not a uuid', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: '42' }],
     ['a cursor with an invalid date', 'applied', { publishedAt: 'hier', id: cursorId }],
     ['a cursor with a date given as number', 'applied', { publishedAt: 1760691600000, id: cursorId }],
+    ['a cursor with a rate given as text', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, rate: '650' }],
+    ['a cursor with a negative rate', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, rate: -1 }],
   ])('rejects %s', (_caseName, tab, cursor) => {
-    expect(validateOpportunityListingRequest(tab, cursor, '')).toEqual({
+    expect(validateOpportunityListingRequest(tab, cursor, '', NO_OPPORTUNITY_QUICK_FILTERS)).toEqual({
       ok: false,
       errorMessage: 'Onglet ou page invalide',
     })
   })
 
   it('rejects a search that is not a string', () => {
-    expect(validateOpportunityListingRequest('to_process', null, 42)).toEqual({
+    expect(validateOpportunityListingRequest('to_process', null, 42, NO_OPPORTUNITY_QUICK_FILTERS)).toEqual({
       ok: false,
       errorMessage: 'Onglet ou page invalide',
     })
   })
 
   it('trims the search', () => {
-    expect(validateOpportunityListingRequest('to_process', null, '  react  ')).toEqual({
+    expect(validateOpportunityListingRequest('to_process', null, '  react  ', NO_OPPORTUNITY_QUICK_FILTERS)).toEqual({
       ok: true,
-      data: { tab: 'to_process', after: null, search: 'react' },
+      data: { tab: 'to_process', after: null, search: 'react', quickFilters: NO_OPPORTUNITY_QUICK_FILTERS },
     })
   })
 
   it('treats a whitespace-only search as no search', () => {
-    expect(validateOpportunityListingRequest('to_process', null, '   ')).toEqual({
+    expect(validateOpportunityListingRequest('to_process', null, '   ', NO_OPPORTUNITY_QUICK_FILTERS)).toEqual({
       ok: true,
-      data: { tab: 'to_process', after: null, search: '' },
+      data: { tab: 'to_process', after: null, search: '', quickFilters: NO_OPPORTUNITY_QUICK_FILTERS },
     })
   })
 
   it('accepts a search of exactly 100 characters', () => {
     const search = 'a'.repeat(100)
-    expect(validateOpportunityListingRequest('to_process', null, search)).toEqual({
+    expect(validateOpportunityListingRequest('to_process', null, search, NO_OPPORTUNITY_QUICK_FILTERS)).toEqual({
       ok: true,
-      data: { tab: 'to_process', after: null, search },
+      data: { tab: 'to_process', after: null, search, quickFilters: NO_OPPORTUNITY_QUICK_FILTERS },
     })
   })
 
   it('rejects a search longer than 100 characters', () => {
-    expect(validateOpportunityListingRequest('to_process', null, 'a'.repeat(101))).toEqual({
+    expect(validateOpportunityListingRequest('to_process', null, 'a'.repeat(101), NO_OPPORTUNITY_QUICK_FILTERS)).toEqual({
       ok: false,
       errorMessage: 'La recherche ne peut pas dépasser 100 caractères',
     })
+  })
+
+  it('accepts a cursor without rate as a cursor with an undisclosed rate', () => {
+    expect(
+      validateOpportunityListingRequest(
+        'to_process',
+        { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId },
+        '',
+        NO_OPPORTUNITY_QUICK_FILTERS,
+      ),
+    ).toEqual({
+      ok: true,
+      data: {
+        tab: 'to_process',
+        after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: cursorId, rate: null },
+        search: '',
+        quickFilters: NO_OPPORTUNITY_QUICK_FILTERS,
+      },
+    })
+  })
+
+  it('deduplicates the remote modes and orders them like the stored remote modes', () => {
+    expect(
+      validateOpportunityListingRequest('to_process', null, '', { sortByRate: true, remoteModes: ['none', 'full', 'full'] }),
+    ).toEqual({
+      ok: true,
+      data: {
+        tab: 'to_process',
+        after: null,
+        search: '',
+        quickFilters: { sortByRate: true, remoteModes: ['full', 'none'] },
+      },
+    })
+  })
+
+  it.each([
+    ['an unknown remote mode', { sortByRate: false, remoteModes: ['moon'] }],
+    ['a rate sort that is not a boolean', { sortByRate: 'yes', remoteModes: [] }],
+    ['remote modes that are not a list', { sortByRate: false, remoteModes: 'full' }],
+    ['missing quick filters', undefined],
+  ])('rejects %s', (_caseName, quickFilters) => {
+    expect(validateOpportunityListingRequest('to_process', null, '', quickFilters)).toEqual({
+      ok: false,
+      errorMessage: 'Filtres rapides invalides',
+    })
+  })
+})
+
+describe('compareOpportunityListingPositions', () => {
+  const buildPosition = (id: string, rate: number | null, publishedAt: string): OpportunityListingPosition => ({
+    id,
+    rate,
+    publishedAt: new Date(publishedAt),
+  })
+
+  it('ranks by rate descending with undisclosed rates last, then by publication descending', () => {
+    const positions = [
+      buildPosition('undisclosed-old', null, '2026-10-15T09:00:00Z'),
+      buildPosition('rate-500', 500, '2026-10-17T09:00:00Z'),
+      buildPosition('rate-700-old', 700, '2026-10-15T09:00:00Z'),
+      buildPosition('undisclosed-recent', null, '2026-10-17T09:00:00Z'),
+      buildPosition('rate-650', 650, '2026-10-16T09:00:00Z'),
+      buildPosition('rate-700-recent', 700, '2026-10-17T09:00:00Z'),
+    ]
+
+    expect([...positions].sort(compareOpportunityListingPositions('rate')).map(({ id }) => id)).toEqual([
+      'rate-700-recent',
+      'rate-700-old',
+      'rate-650',
+      'rate-500',
+      'undisclosed-recent',
+      'undisclosed-old',
+    ])
+  })
+
+  it('breaks complete ties by id descending', () => {
+    const positions = [
+      buildPosition('a-first', 700, '2026-10-17T09:00:00Z'),
+      buildPosition('c-third', 700, '2026-10-17T09:00:00Z'),
+      buildPosition('b-second', 700, '2026-10-17T09:00:00Z'),
+    ]
+
+    expect([...positions].sort(compareOpportunityListingPositions('rate')).map(({ id }) => id)).toEqual([
+      'c-third',
+      'b-second',
+      'a-first',
+    ])
+  })
+
+  it('keeps the publication order without looking at the rate', () => {
+    const positions = [
+      buildPosition('old-700', 700, '2026-10-15T09:00:00Z'),
+      buildPosition('recent-500', 500, '2026-10-17T09:00:00Z'),
+    ]
+
+    expect([...positions].sort(compareOpportunityListingPositions('publication')).map(({ id }) => id)).toEqual([
+      'recent-500',
+      'old-700',
+    ])
+  })
+})
+
+describe('matchesRemoteModeQuickFilter', () => {
+  it('accepts every mission, even without known remote mode, when no remote mode is selected', () => {
+    expect(matchesRemoteModeQuickFilter(null, [])).toBe(true)
+    expect(matchesRemoteModeQuickFilter('partial', [])).toBe(true)
+  })
+
+  it('only accepts the selected remote modes otherwise', () => {
+    expect(matchesRemoteModeQuickFilter(null, ['full'])).toBe(false)
+    expect(matchesRemoteModeQuickFilter('none', ['full', 'none'])).toBe(true)
+    expect(matchesRemoteModeQuickFilter('partial', ['full', 'none'])).toBe(false)
   })
 })

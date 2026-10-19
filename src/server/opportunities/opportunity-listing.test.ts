@@ -1,4 +1,5 @@
 /** @jest-environment node */
+import { NO_OPPORTUNITY_QUICK_FILTERS } from '@/domain/opportunities'
 import { EMPTY_OPPORTUNITY_FILTERS } from '@/domain/opportunity-filters'
 import {
   findLastOpportunityReceivedAt,
@@ -63,7 +64,12 @@ describe('to-process context loading', () => {
   it('loads the summaries, decisions and filters once per request for the layout count and the listing', async () => {
     const [toProcessCount, listing] = await Promise.all([
       countOpportunitiesToProcessForUser(layoutClient, 'user-1', NOW),
-      buildOpportunityListing(pageClient, 'user-1', { tab: 'to_process', after: null, search: '' }, NOW),
+      buildOpportunityListing(
+        pageClient,
+        'user-1',
+        { tab: 'to_process', after: null, search: '', quickFilters: NO_OPPORTUNITY_QUICK_FILTERS },
+        NOW,
+      ),
     ])
 
     expect(toProcessCount).toBe(1)
@@ -83,13 +89,16 @@ describe('to-process context loading', () => {
         opportunityTitle: 'Architecte Cloud',
         opportunityCompany: 'Société Générale',
         opportunityLocationLabel: null,
+        opportunityRateMin: null,
+        opportunityRateMax: 600,
+        opportunityRemoteMode: 'full',
       },
     ])
 
     const listing = await buildOpportunityListing(
       pageClient,
       'user-4',
-      { tab: 'dismissed', after: null, search: 'societe generale' },
+      { tab: 'dismissed', after: null, search: 'societe generale', quickFilters: NO_OPPORTUNITY_QUICK_FILTERS },
       NOW,
     )
 
@@ -100,10 +109,23 @@ describe('to-process context loading', () => {
     const listing = await buildOpportunityListing(
       pageClient,
       'user-1',
-      { tab: 'to_process', after: null, search: 'java' },
+      { tab: 'to_process', after: null, search: 'java', quickFilters: NO_OPPORTUNITY_QUICK_FILTERS },
       NOW,
     )
     const toProcessCount = await countOpportunitiesToProcessForUser(pageClient, 'user-1', NOW)
+
+    expect(listing.counts.to_process).toBe(0)
+    expect(toProcessCount).toBe(1)
+  })
+
+  it('narrows the listing and its counts to the selected remote modes while the to-process count stays unfiltered', async () => {
+    const listing = await buildOpportunityListing(
+      pageClient,
+      'user-5',
+      { tab: 'to_process', after: null, search: '', quickFilters: { sortByRate: false, remoteModes: ['full'] } },
+      NOW,
+    )
+    const toProcessCount = await countOpportunitiesToProcessForUser(pageClient, 'user-5', NOW)
 
     expect(listing.counts.to_process).toBe(0)
     expect(toProcessCount).toBe(1)

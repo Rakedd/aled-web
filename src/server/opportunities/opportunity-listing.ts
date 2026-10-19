@@ -1,17 +1,23 @@
 import 'server-only'
 import { cache } from 'react'
 import {
+  compareOpportunityListingPositions,
+  getOpportunityEffectiveRate,
   HISTORY_WINDOW_DAYS,
+  matchesRemoteModeQuickFilter,
   type Opportunity,
   OPPORTUNITY_PAGE_SIZE,
   OPPORTUNITY_SOURCES,
   type OpportunityDecision,
   type OpportunityListing,
+  type OpportunityListingOrder,
   type OpportunityListingPosition,
   type OpportunityListingRequest,
   type OpportunityListItem,
+  type OpportunityQuickFilters,
   type OpportunitySource,
   type OpportunityTab,
+  type RemoteMode,
   TO_PROCESS_WINDOW_DAYS,
 } from '@/domain/opportunities'
 import {
@@ -80,18 +86,13 @@ const buildSourceAwareMatcher = (
   return (summary) => matcherBySource.get(summary.source)?.(summary) ?? false
 }
 
-const compareByPublicationDescending = (
-  firstPosition: OpportunityListingPosition,
-  secondPosition: OpportunityListingPosition,
-): number => {
-  const publicationDifference = secondPosition.publishedAt.getTime() - firstPosition.publishedAt.getTime()
-  if (publicationDifference !== 0) return publicationDifference
-  if (firstPosition.id === secondPosition.id) return 0
-  return firstPosition.id < secondPosition.id ? 1 : -1
-}
-
-const toSortedUniquePositions = (positions: OpportunityListingPosition[]): OpportunityListingPosition[] =>
-  [...new Map(positions.map((position) => [position.id, position])).values()].sort(compareByPublicationDescending)
+const toSortedUniquePositions = (
+  positions: OpportunityListingPosition[],
+  order: OpportunityListingOrder,
+): OpportunityListingPosition[] =>
+  [...new Map(positions.map((position) => [position.id, position])).values()].sort(
+    compareOpportunityListingPositions(order),
+  )
 
 const selectSummariesToProcess = ({
   recentSummaries,
@@ -103,15 +104,24 @@ const selectSummariesToProcess = ({
   return recentSummaries.filter((summary) => !decidedOpportunityIds.has(summary.id) && matchesUserFilters(summary))
 }
 
-const selectPositionsToProcess = (toProcessContext: ToProcessContext): OpportunityListingPosition[] =>
+const selectPositionsToProcess = (
+  toProcessContext: ToProcessContext,
+  order: OpportunityListingOrder,
+): OpportunityListingPosition[] =>
   toSortedUniquePositions(
-    selectSummariesToProcess(toProcessContext).map(({ id, publishedAt }) => ({ id, publishedAt })),
+    selectSummariesToProcess(toProcessContext).map((summary) => ({
+      id: summary.id,
+      publishedAt: summary.publishedAt,
+      rate: getOpportunityEffectiveRate(summary),
+    })),
+    order,
   )
 
 const selectDecidedPositions = (
   decisions: StoredOpportunityDecision[],
   decision: OpportunityDecision,
   publishedSince: Date,
+  order: OpportunityListingOrder,
 ): OpportunityListingPosition[] =>
   toSortedUniquePositions(
     decisions
@@ -119,38 +129,69 @@ const selectDecidedPositions = (
         (storedDecision) =>
           storedDecision.decision === decision && storedDecision.opportunityPublishedAt >= publishedSince,
       )
-      .map((storedDecision) => ({ id: storedDecision.opportunityId, publishedAt: storedDecision.opportunityPublishedAt })),
+      .map((storedDecision) => ({
+        id: storedDecision.opportunityId,
+        publishedAt: storedDecision.opportunityPublishedAt,
+        rate: getOpportunityEffectiveRate({
+          rateMin: storedDecision.opportunityRateMin,
+          rateMax: storedDecision.opportunityRateMax,
+        }),
+      })),
+    order,
   )
 
 const selectPositionsAfter = (
   positions: OpportunityListingPosition[],
   after: OpportunityListingPosition | null,
-): OpportunityListingPosition[] =>
-  after === null ? positions : positions.filter((position) => compareByPublicationDescending(position, after) > 0)
+  order: OpportunityListingOrder,
+): OpportunityListingPosition[] => {
+  if (after === null) return positions
+  const comparePositions = compareOpportunityListingPositions(order)
+  return positions.filter((position) => comparePositions(position, after) > 0)
+}
 
-type SearchableFields = { title: string; company: string | null; locationLabel: string | null }
+type OpportunityFacts = {
+  title: string
+  company: string | null
+  locationLabel: string | null
+  rateMin: number | null
+  rateMax: number | null
+  remoteMode: RemoteMode | null
+}
 
-const buildSearchPredicate = (
-  { recentSummaries, decisions }: ToProcessContext,
-  search: string,
-): ((position: OpportunityListingPosition) => boolean) => {
-  if (search === '') return () => true
-  const normalizedSearch = normalizeForKeywordMatch(search)
-  const searchableFieldsById = new Map<string, SearchableFields>([
-    ...decisions.map(
-      ({ opportunityId, opportunityTitle, opportunityCompany, opportunityLocationLabel }): [string, SearchableFields] => [
-        opportunityId,
-        { title: opportunityTitle, company: opportunityCompany, locationLabel: opportunityLocationLabel },
-      ],
-    ),
-    ...recentSummaries.map((summary): [string, SearchableFields] => [summary.id, summary]),
+const buildOpportunityFactsById = ({ recentSummaries, decisions }: ToProcessContext): Map<string, OpportunityFacts> =>
+  new Map<string, OpportunityFacts>([
+    ...decisions.map((storedDecision): [string, OpportunityFacts] => [
+      storedDecision.opportunityId,
+      {
+        title: storedDecision.opportunityTitle,
+        company: storedDecision.opportunityCompany,
+        locationLabel: storedDecision.opportunityLocationLabel,
+        rateMin: storedDecision.opportunityRateMin,
+        rateMax: storedDecision.opportunityRateMax,
+        remoteMode: storedDecision.opportunityRemoteMode,
+      },
+    ]),
+    ...recentSummaries.map((summary): [string, OpportunityFacts] => [summary.id, summary]),
   ])
+
+const matchesSearch = ({ title, company, locationLabel }: OpportunityFacts, normalizedSearch: string): boolean =>
+  [title, company, locationLabel].some((field) => normalizeForKeywordMatch(field ?? '').includes(normalizedSearch))
+
+const buildListingPredicate = (
+  toProcessContext: ToProcessContext,
+  search: string,
+  { remoteModes }: OpportunityQuickFilters,
+): ((position: OpportunityListingPosition) => boolean) => {
+  if (search === '' && remoteModes.length === 0) return () => true
+  const normalizedSearch = normalizeForKeywordMatch(search)
+  const opportunityFactsById = buildOpportunityFactsById(toProcessContext)
   return ({ id }) => {
-    const searchableFields = searchableFieldsById.get(id)
-    if (searchableFields === undefined) return false
-    const { title, company, locationLabel } = searchableFields
-    return [title, company, locationLabel].some((field) =>
-      normalizeForKeywordMatch(field ?? '').includes(normalizedSearch),
+    const opportunityFacts = opportunityFactsById.get(id)
+    if (opportunityFacts === undefined) return false
+    return (
+      matchesSearch(opportunityFacts, normalizedSearch) &&
+      matchesRemoteModeQuickFilter(opportunityFacts.remoteMode, remoteModes)
     )
   }
 }
@@ -191,12 +232,13 @@ export const countOpportunitiesToProcessForUser = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   now: Date,
-): Promise<number> => selectPositionsToProcess(await loadToProcessContextOncePerRequest(supabase, userId, now)).length
+): Promise<number> =>
+  selectPositionsToProcess(await loadToProcessContextOncePerRequest(supabase, userId, now), 'publication').length
 
 export const buildOpportunityListing = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
-  { tab, after, search }: OpportunityListingRequest,
+  { tab, after, search, quickFilters }: OpportunityListingRequest,
   now: Date,
 ): Promise<OpportunityListing> => {
   const historyStart = addParisCalendarDays(now, -HISTORY_WINDOW_DAYS)
@@ -205,13 +247,18 @@ export const buildOpportunityListing = async (
     findLastOpportunityReceivedAt(supabase),
     findOpportunitiesLastViewedAt(supabase, userId),
   ])
-  const matchesSearch = buildSearchPredicate(toProcessContext, search)
+  const order: OpportunityListingOrder = quickFilters.sortByRate ? 'rate' : 'publication'
+  const matchesListingFilters = buildListingPredicate(toProcessContext, search, quickFilters)
   const positionsByTab: Record<OpportunityTab, OpportunityListingPosition[]> = {
-    to_process: selectPositionsToProcess(toProcessContext).filter(matchesSearch),
-    applied: selectDecidedPositions(toProcessContext.decisions, 'applied', historyStart).filter(matchesSearch),
-    dismissed: selectDecidedPositions(toProcessContext.decisions, 'dismissed', historyStart).filter(matchesSearch),
+    to_process: selectPositionsToProcess(toProcessContext, order).filter(matchesListingFilters),
+    applied: selectDecidedPositions(toProcessContext.decisions, 'applied', historyStart, order).filter(
+      matchesListingFilters,
+    ),
+    dismissed: selectDecidedPositions(toProcessContext.decisions, 'dismissed', historyStart, order).filter(
+      matchesListingFilters,
+    ),
   }
-  const positionsAfterCursor = selectPositionsAfter(positionsByTab[tab], after)
+  const positionsAfterCursor = selectPositionsAfter(positionsByTab[tab], after, order)
   const pageOpportunityIds = positionsAfterCursor.slice(0, OPPORTUNITY_PAGE_SIZE).map(({ id }) => id)
   const pageOpportunities = await listOpportunitiesByIds(supabase, pageOpportunityIds)
   return {

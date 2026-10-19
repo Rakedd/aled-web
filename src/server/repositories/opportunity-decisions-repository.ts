@@ -1,7 +1,12 @@
 import 'server-only'
 import type { ActionResult } from '@/domain/action-result'
 import { rejectWith } from '@/domain/input-validation'
-import { OPPORTUNITY_VALIDATION_MESSAGES, type OpportunityDecision } from '@/domain/opportunities'
+import {
+  isRemoteMode,
+  OPPORTUNITY_VALIDATION_MESSAGES,
+  type OpportunityDecision,
+  type RemoteMode,
+} from '@/domain/opportunities'
 import { fetchEveryRow } from '@/server/data-snapshot/fetch-every-row'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 import { POSTGRES_FOREIGN_KEY_VIOLATION_CODE, toRepositoryError } from './repository-error'
@@ -17,6 +22,9 @@ export type StoredOpportunityDecision = OpportunityDecisionInput & {
   opportunityTitle: string
   opportunityCompany: string | null
   opportunityLocationLabel: string | null
+  opportunityRateMin: number | null
+  opportunityRateMax: number | null
+  opportunityRemoteMode: RemoteMode | null
 }
 
 const DECISION_UNIQUE_KEY_COLUMNS = 'user_id,opportunity_id'
@@ -31,7 +39,9 @@ export const listOpportunityDecisions = async (
   const decisionRows = await fetchEveryRow('listOpportunityDecisions', (firstRowIndex, lastRowIndex) =>
     supabase
       .from('opportunity_decisions')
-      .select('id, opportunity_id, decision, job_application_id, opportunities(published_at, title, company, location_label)')
+      .select(
+        'id, opportunity_id, decision, job_application_id, opportunities(published_at, title, company, location_label, rate_min, rate_max, remote_mode)',
+      )
       .eq('user_id', userId)
       .order('id')
       .range(firstRowIndex, lastRowIndex),
@@ -48,6 +58,9 @@ export const listOpportunityDecisions = async (
         opportunityTitle: decidedOpportunity.title,
         opportunityCompany: decidedOpportunity.company,
         opportunityLocationLabel: decidedOpportunity.location_label,
+        opportunityRateMin: decidedOpportunity.rate_min,
+        opportunityRateMax: decidedOpportunity.rate_max,
+        opportunityRemoteMode: isRemoteMode(decidedOpportunity.remote_mode) ? decidedOpportunity.remote_mode : null,
       },
     ]
   })

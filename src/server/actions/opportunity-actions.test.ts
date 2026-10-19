@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 import { EMPTY_OPPORTUNITY_FILTERS } from '@/domain/opportunity-filters'
-import type { OpportunitySource } from '@/domain/opportunities'
+import type { OpportunityQuickFilters, OpportunitySource } from '@/domain/opportunities'
 import { applyToOpportunityForUser } from '@/server/opportunities/apply-to-opportunity'
 import { buildOpportunityListing } from '@/server/opportunities/opportunity-listing'
 import {
@@ -125,7 +125,7 @@ describe('listOpportunities', () => {
     ['a cursor with an invalid id', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: '42' }],
   ])('rejects %s without querying the database', async (_caseName, tab, cursor) => {
     await expect(
-      listOpportunities(tab as 'to_process', cursor as { publishedAt: string; id: string } | null, ''),
+      listOpportunities(tab as 'to_process', cursor as { publishedAt: string; id: string; rate: null } | null, ''),
     ).resolves.toEqual({
       ok: false,
       errorMessage: 'Onglet ou page invalide',
@@ -152,18 +152,45 @@ describe('listOpportunities', () => {
     jest.mocked(buildOpportunityListing).mockResolvedValue(listing)
 
     await expect(
-      listOpportunities('to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: opportunityId }, '  react '),
+      listOpportunities('to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: opportunityId, rate: null }, '  react '),
     ).resolves.toEqual({ ok: true, data: listing })
     expect(buildOpportunityListing).toHaveBeenCalledWith(
       fakeSupabaseClient,
       'user-1',
       {
         tab: 'to_process',
-        after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: opportunityId },
+        after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: opportunityId, rate: null },
         search: 'react',
+        quickFilters: { sortByRate: false, remoteModes: [] },
       },
       expect.any(Date),
     )
+  })
+
+  it('passes the validated quick filters to the listing', async () => {
+    jest.mocked(buildOpportunityListing).mockResolvedValue({
+      items: [],
+      hasMore: false,
+      counts: { to_process: 0, applied: 0, dismissed: 0 },
+      lastReceivedAt: null,
+      lastViewedAt: null,
+    })
+
+    await listOpportunities('applied', null, '', { sortByRate: true, remoteModes: ['none', 'full'] })
+
+    expect(buildOpportunityListing).toHaveBeenCalledWith(
+      fakeSupabaseClient,
+      'user-1',
+      { tab: 'applied', after: null, search: '', quickFilters: { sortByRate: true, remoteModes: ['full', 'none'] } },
+      expect.any(Date),
+    )
+  })
+
+  it('rejects invalid quick filters without querying the database', async () => {
+    await expect(
+      listOpportunities('to_process', null, '', { sortByRate: false, remoteModes: ['moon'] } as unknown as OpportunityQuickFilters),
+    ).resolves.toEqual({ ok: false, errorMessage: 'Filtres rapides invalides' })
+    expect(buildOpportunityListing).not.toHaveBeenCalled()
   })
 })
 
