@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
+import { guardActionCall } from '@/domain/action-result'
 import { JOB_APPLICATION_DELETED_ROUTE } from '@/domain/routes'
 import type { DeleteJobApplicationButtonControllerParameters } from './interfaces'
 
@@ -26,20 +26,12 @@ export const useController = ({
     setIsConfirmationOpen(false)
   }
 
-  const requestDeletion = async (): Promise<ActionResult<null>> => {
-    try {
-      return await deleteJobApplication(jobApplicationId)
-    } catch {
-      return { ok: false, errorMessage: GENERIC_ACTION_ERROR_MESSAGE }
-    }
-  }
-
   const confirmDeletion = async () => {
     if (isDeletionInFlightRef.current) return
     isDeletionInFlightRef.current = true
     setIsDeleting(true)
     setErrorMessage(null)
-    const deletionResult = await requestDeletion()
+    const deletionResult = await guardActionCall(() => deleteJobApplication(jobApplicationId))
     if (deletionResult.ok) {
       navigate(JOB_APPLICATION_DELETED_ROUTE)
       return

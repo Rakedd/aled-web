@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
+import { guardActionCall } from '@/domain/action-result'
 import type { OpportunityListItem } from '@/domain/opportunities'
 import type { AppliedOpportunity, HomeDashboardControllerParameters } from './interfaces'
 
@@ -36,26 +36,21 @@ export const useController = ({
     setPendingOpportunityId(opportunity.id)
     setErrorMessage(null)
     const position = opportunities.findIndex((visibleOpportunity) => visibleOpportunity.id === opportunity.id)
-    try {
-      const actionResult = await applyToOpportunity(opportunity.id)
-      if (!actionResult.ok) {
-        setErrorMessage(actionResult.errorMessage)
-        return
-      }
-      const appliedOpportunity: AppliedOpportunity = {
-        opportunity: { ...opportunity, jobApplicationId: actionResult.data.jobApplicationId },
-        position,
-      }
-      setAppliedOpportunities((currentAppliedOpportunities) =>
-        [...currentAppliedOpportunities, appliedOpportunity].sort((first, second) => first.position - second.position),
-      )
-      onDataChanged()
-    } catch {
-      setErrorMessage(GENERIC_ACTION_ERROR_MESSAGE)
-    } finally {
-      isApplyInFlight.current = false
-      setPendingOpportunityId(null)
+    const actionResult = await guardActionCall(() => applyToOpportunity(opportunity.id))
+    isApplyInFlight.current = false
+    setPendingOpportunityId(null)
+    if (!actionResult.ok) {
+      setErrorMessage(actionResult.errorMessage)
+      return
     }
+    const appliedOpportunity: AppliedOpportunity = {
+      opportunity: { ...opportunity, jobApplicationId: actionResult.data.jobApplicationId },
+      position,
+    }
+    setAppliedOpportunities((currentAppliedOpportunities) =>
+      [...currentAppliedOpportunities, appliedOpportunity].sort((first, second) => first.position - second.position),
+    )
+    onDataChanged()
   }
 
   return { opportunities, pendingOpportunityId, errorMessage, applyTo }

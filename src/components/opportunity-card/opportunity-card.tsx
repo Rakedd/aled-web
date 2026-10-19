@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { isExternalLinkUrl } from '@/domain/client-brief'
 import { formatOpportunityRate, REMOTE_MODE_LABELS } from '@/domain/opportunities'
+import { jobApplicationRoute } from '@/domain/routes'
 import { cn } from '@/lib/utils'
 import { formatOpportunityPublication } from './format-opportunity-publication'
 import type { OpportunityCardProps } from './interfaces'
@@ -33,7 +34,7 @@ export const OpportunityCard = ({
   const applicationLink =
     opportunity.jobApplicationId === null ? null : (
       <Link
-        href={`/candidatures/${opportunity.jobApplicationId}`}
+        href={jobApplicationRoute(opportunity.jobApplicationId)}
         className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
       >
         Voir la candidature

@@ -14,6 +14,7 @@ import {
 } from '@/domain/job-application-status'
 import type { JobApplicationsSortKey } from '@/domain/job-applications-filters'
 import { PARIS_TIME_ZONE, formatRelativeDaysAgo } from '@/domain/paris-time'
+import { jobApplicationRoute } from '@/domain/routes'
 import { useController } from './controller'
 import type { JobApplicationsTableProps } from './interfaces'
 
@@ -48,7 +49,7 @@ export const JobApplicationsTable = ({ jobApplications, now }: JobApplicationsTa
 
   const openJobApplicationFromRow = (clickEvent: MouseEvent<HTMLTableRowElement>, jobApplicationId: string) => {
     if (clickEvent.target instanceof Element && clickEvent.target.closest('a')) return
-    router.push(`/candidatures/${jobApplicationId}`)
+    router.push(jobApplicationRoute(jobApplicationId))
   }
 
   const getAriaSort = (sortKey: JobApplicationsSortKey) =>
@@ -123,7 +124,7 @@ export const JobApplicationsTable = ({ jobApplications, now }: JobApplicationsTa
                   className="cursor-pointer border-b last:border-b-0 hover:bg-muted/50"
                 >
                   <td className="px-3 py-2 font-medium">
-                    <Link href={`/candidatures/${jobApplication.id}`} className="hover:underline focus-visible:underline">
+                    <Link href={jobApplicationRoute(jobApplication.id)} className="hover:underline focus-visible:underline">
                       {jobApplication.title}
                     </Link>
                   </td>

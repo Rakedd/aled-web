@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { SNOOZE_DURATIONS_IN_DAYS, isSnoozableAlertKind } from '@/domain/alert-snoozes'
+import { jobApplicationRoute } from '@/domain/routes'
 import { useController } from './controller'
 import { formatTodoAlertMessage, getTodoAlertKey } from './format-todo-alert'
 import type { TodoBannerProps } from './interfaces'
@@ -45,7 +46,7 @@ export const TodoBanner = ({
             return (
               <li key={getTodoAlertKey(alert)} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                 <Link
-                  href={`/candidatures/${alert.jobApplicationId}`}
+                  href={jobApplicationRoute(alert.jobApplicationId)}
                   className="min-w-0 flex-1 text-sm hover:underline focus-visible:underline"
                 >
                   {formatTodoAlertMessage(alert, summary, interviews, now)}

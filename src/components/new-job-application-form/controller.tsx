@@ -5,6 +5,7 @@ import { AI_ERROR_MESSAGES } from '@/domain/ai-errors'
 import { type JobApplicationInput, validateJobApplicationInput } from '@/domain/job-application'
 import type { JobApplicationStatus } from '@/domain/job-application-status'
 import { formatParisCalendarDate, parseParisCalendarDate } from '@/domain/paris-time'
+import { jobApplicationRoute } from '@/domain/routes'
 import type { StackItem } from '@/domain/types'
 import type {
   JobApplicationFormValues,
@@ -177,7 +178,7 @@ export const useController = ({
       isSubmissionInFlightRef.current = false
       return
     }
-    navigateTo(`/candidatures/${creationResult.data.id}`)
+    navigateTo(jobApplicationRoute(creationResult.data.id))
   }
 
   return {

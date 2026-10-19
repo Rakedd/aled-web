@@ -2,6 +2,10 @@ export const HOME_ROUTE = '/'
 
 export const JOB_APPLICATIONS_ROUTE = '/candidatures'
 
+export const NEW_JOB_APPLICATION_ROUTE = `${JOB_APPLICATIONS_ROUTE}/new`
+
+export const jobApplicationRoute = (jobApplicationId: string): string => `${JOB_APPLICATIONS_ROUTE}/${jobApplicationId}`
+
 export const CALENDAR_ROUTE = '/calendar'
 
 export const OPPORTUNITIES_ROUTE = '/opportunites'

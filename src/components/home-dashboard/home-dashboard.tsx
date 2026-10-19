@@ -7,7 +7,7 @@ import { TodoBanner } from '@/components/todo-banner'
 import { buttonVariants } from '@/components/ui/button'
 import { INTERVIEW_KIND_LABELS } from '@/domain/interviews'
 import { formatParisInterviewDateTime } from '@/domain/paris-time'
-import { CALENDAR_ROUTE, JOB_APPLICATIONS_ROUTE, OPPORTUNITIES_ROUTE } from '@/domain/routes'
+import { CALENDAR_ROUTE, JOB_APPLICATIONS_ROUTE, OPPORTUNITIES_ROUTE, jobApplicationRoute } from '@/domain/routes'
 import { cn } from '@/lib/utils'
 import { useController } from './controller'
 import type { HomeDashboardProps } from './interfaces'
@@ -67,7 +67,7 @@ export const HomeDashboard = ({
           <ul className="flex flex-col gap-2">
             {nextInterviews.map((interview) => (
               <li key={interview.id}>
-                <Link href={`${JOB_APPLICATIONS_ROUTE}/${interview.jobApplicationId}`} className="text-sm hover:underline focus-visible:underline">
+                <Link href={jobApplicationRoute(interview.jobApplicationId)} className="text-sm hover:underline focus-visible:underline">
                   {formatParisInterviewDateTime(interview.startsAt)} · {INTERVIEW_KIND_LABELS[interview.kind]} · {interview.jobApplicationTitle}
                 </Link>
               </li>

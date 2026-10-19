@@ -7,6 +7,7 @@ import {
 } from '@/domain/interviews'
 import { formatDailyRate, groupStackByCategory } from '@/domain/job-application-display'
 import { formatParisInterviewDateTime } from '@/domain/paris-time'
+import { jobApplicationRoute } from '@/domain/routes'
 import type { InterviewKind } from '@/domain/types'
 import type {
   InterviewRevisionMissionDetail,
@@ -69,7 +70,7 @@ const toRevisionPanelContent = (interview: InterviewWithJobApplication): Intervi
   })),
   missionDetails: toMissionDetails(interview),
   postingRawText: interview.postingRawText,
-  jobApplicationHref: `/candidatures/${interview.jobApplicationId}`,
+  jobApplicationHref: jobApplicationRoute(interview.jobApplicationId),
 })
 
 const subscribeToNothing = () => () => undefined

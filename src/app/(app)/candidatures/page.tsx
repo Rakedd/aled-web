@@ -4,7 +4,7 @@ import { JobApplicationDeletedNotice } from '@/components/job-application-delete
 import { JobApplicationsTable } from '@/components/job-applications-table'
 import { TodoBanner } from '@/components/todo-banner'
 import { buttonVariants } from '@/components/ui/button'
-import { JOB_APPLICATION_DELETED_SEARCH_PARAMETER } from '@/domain/routes'
+import { JOB_APPLICATION_DELETED_SEARCH_PARAMETER, NEW_JOB_APPLICATION_ROUTE } from '@/domain/routes'
 import { changeJobApplicationStatus, snoozeAlert } from '@/server/actions/job-application-actions'
 import { loadTodoReminders } from '@/server/todo-reminders/load-todo-reminders'
 
@@ -21,7 +21,7 @@ const JobApplicationsPage = async ({ searchParams }: PageProps<'/candidatures'>)
   const header = (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <h1 className="text-2xl font-semibold">Mes candidatures</h1>
-      <Link href="/candidatures/new" className={buttonVariants()}>
+      <Link href={NEW_JOB_APPLICATION_ROUTE} className={buttonVariants()}>
         Nouvelle candidature
       </Link>
     </div>

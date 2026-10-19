@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
+import { type ActionResult, guardActionCall } from '@/domain/action-result'
 import type { BriefLanguage, InterviewPreparation } from '@/domain/interview-preparation'
 import type { NotesSaveStatus } from '@/components/interview-preparation-modal/interfaces'
 import type { GenerationScope, InterviewPreparationButtonControllerParameters } from './interfaces'
@@ -10,16 +10,6 @@ const VIEW_LABEL = 'Brief généré · voir mon brief'
 const GENERATION_PROGRESS_LABELS: Record<GenerationScope, string> = {
   brief_and_questions: "Génération… (jusqu'à 4 min)",
   questions_only: 'Génération des questions…',
-}
-
-const runActionSafely = async <ResultData,>(
-  request: () => Promise<ActionResult<ResultData>>,
-): Promise<ActionResult<ResultData>> => {
-  try {
-    return await request()
-  } catch {
-    return { ok: false, errorMessage: GENERIC_ACTION_ERROR_MESSAGE }
-  }
 }
 
 const isPreparationComplete = (preparation: InterviewPreparation): boolean =>
@@ -85,7 +75,7 @@ export const useController = ({
     const requestNumber = latestNotesSaveRequestNumberRef.current
     notesSaveQueueRef.current = notesSaveQueueRef.current.then(async () => {
       if (isMountedRef.current && requestNumber === latestNotesSaveRequestNumberRef.current) setNotesSaveStatus('saving')
-      const notesSaveResult = await runActionSafely(() => savingDependencies.updateEndClientNotes(endClientId, notesToSave))
+      const notesSaveResult = await guardActionCall(() => savingDependencies.updateEndClientNotes(endClientId, notesToSave))
       unsavedNotesRequestCountRef.current -= 1
       showNotesSaveResult(notesSaveResult, requestNumber, notesToSave)
     })
@@ -134,7 +124,7 @@ export const useController = ({
     latestLanguageChangeNumberRef.current += 1
     setGenerationScope(findGenerationScope(preparation, regenerate))
     setErrorMessage(null)
-    const generationResult = await runActionSafely(() =>
+    const generationResult = await guardActionCall(() =>
       generateInterviewPreparation(jobApplicationId, languageToGenerate, regenerate),
     )
     isGenerationInFlightRef.current = false
@@ -158,7 +148,7 @@ export const useController = ({
     setLanguage(chosenLanguage)
     setErrorMessage(null)
     setIsLoadingLanguage(true)
-    const loadResult = await runActionSafely(() => getInterviewPreparation(jobApplicationId, chosenLanguage))
+    const loadResult = await guardActionCall(() => getInterviewPreparation(jobApplicationId, chosenLanguage))
     if (changeNumber !== latestLanguageChangeNumberRef.current) return
     setIsLoadingLanguage(false)
     if (!loadResult.ok) {
