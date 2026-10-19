@@ -45,7 +45,7 @@ export const TodoBanner = ({
   return (
     <section aria-labelledby="todo-banner-title" className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-6">
       <h2 id="todo-banner-title" className="font-heading text-xl font-extrabold">
-        À faire
+        Tous les rappels
       </h2>
       {errorMessage && (
         <p role="alert" className="text-sm text-destructive">

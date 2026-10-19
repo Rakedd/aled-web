@@ -1,0 +1,62 @@
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { TodoSummaryBar } from './todo-summary-bar'
+import type { TodoSummaryBarProps } from './interfaces'
+
+const buildProps = (overrides: Partial<TodoSummaryBarProps> = {}): TodoSummaryBarProps => ({
+  kindCounts: [
+    { kind: 'follow_up_due', count: 8 },
+    { kind: 'no_news_suggestion', count: 6 },
+    { kind: 'job_spec_missing', count: 5 },
+    { kind: 'end_client_unknown', count: 4 },
+  ],
+  selectedAlertKind: null,
+  onToggleAlertKind: jest.fn(),
+  isExpanded: false,
+  onToggleExpanded: jest.fn(),
+  detailsId: 'todo-details',
+  ...overrides,
+})
+
+describe('TodoSummaryBar', () => {
+  it('shows the total and one unpressed pill per kind', () => {
+    render(<TodoSummaryBar {...buildProps()} />)
+    expect(screen.getByRole('heading', { name: 'À faire · 23' })).toBeInTheDocument()
+    for (const name of ['8 relances', '6 sans nouvelles', '5 fiches métier', '4 clients inconnus']) {
+      expect(screen.getByRole('button', { name })).toHaveAttribute('aria-pressed', 'false')
+    }
+  })
+
+  it('reports the clicked kind', async () => {
+    const props = buildProps()
+    render(<TodoSummaryBar {...props} />)
+    await userEvent.click(screen.getByRole('button', { name: '8 relances' }))
+    expect(props.onToggleAlertKind).toHaveBeenCalledWith('follow_up_due')
+  })
+
+  it('presses the selected kind with the forest tone', () => {
+    render(<TodoSummaryBar {...buildProps({ selectedAlertKind: 'follow_up_due' })} />)
+    const selectedPill = screen.getByRole('button', { name: '8 relances' })
+    expect(selectedPill).toHaveAttribute('aria-pressed', 'true')
+    expect(selectedPill).toHaveAttribute('data-tone', 'forest')
+  })
+
+  it('exposes the expansion state of the details', async () => {
+    const props = buildProps()
+    const { rerender } = render(<TodoSummaryBar {...props} />)
+    const expandButton = screen.getByRole('button', { name: 'Tout déplier' })
+    expect(expandButton).toHaveAttribute('aria-expanded', 'false')
+    expect(expandButton).toHaveAttribute('aria-controls', 'todo-details')
+    await userEvent.click(expandButton)
+    expect(props.onToggleExpanded).toHaveBeenCalled()
+    rerender(<TodoSummaryBar {...props} isExpanded />)
+    expect(screen.getByRole('button', { name: 'Tout replier' })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('shows an empty message without pills or expand button', () => {
+    render(<TodoSummaryBar {...buildProps({ kindCounts: [] })} />)
+    expect(screen.getByText("Rien à faire pour l'instant")).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Tout déplier' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+})

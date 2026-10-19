@@ -2,17 +2,22 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { MouseEvent } from 'react'
+import { useId, type MouseEvent } from 'react'
 import { formatInTimeZone } from 'date-fns-tz'
+import { Pill } from '@/components/pill'
+import type { PillTone } from '@/components/pill/interfaces'
 import { StatusBadge } from '@/components/status-badge'
+import { TodoSummaryBar } from '@/components/todo-summary-bar'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import type { JobApplicationListItem } from '@/domain/job-application'
 import {
   ALL_JOB_APPLICATION_STATUSES,
   JOB_APPLICATION_STATUS_LABELS,
   isTerminalStatus,
 } from '@/domain/job-application-status'
 import type { JobApplicationsSortKey } from '@/domain/job-applications-filters'
+import { getLastActivityAging, type LastActivityAging } from '@/domain/last-activity-aging'
 import { PARIS_TIME_ZONE, formatRelativeDaysAgo } from '@/domain/paris-time'
 import { jobApplicationRoute } from '@/domain/routes'
 import { useController } from './controller'
@@ -31,19 +36,44 @@ const COLUMNS: { sortKey: JobApplicationsSortKey; label: string }[] = [
 
 const EMPTY_CELL = '—'
 
-export const JobApplicationsTable = ({ jobApplications, now }: JobApplicationsTableProps) => {
+const LAST_ACTIVITY_AGING_TONES: Record<LastActivityAging, PillTone> = {
+  recent: 'forest-soft',
+  aging: 'peach-soft',
+  stale: 'clay',
+}
+
+const LAST_ACTIVITY_LEGEND: { aging: LastActivityAging; label: string }[] = [
+  { aging: 'recent', label: 'moins de 7 j' },
+  { aging: 'aging', label: '7 à 14 j' },
+  { aging: 'stale', label: 'plus de 14 j' },
+]
+
+const LastActivityCell = ({ jobApplication, now }: { jobApplication: JobApplicationListItem; now: Date }) => {
+  if (jobApplication.lastActivityAt === null) return EMPTY_CELL
+  const relativeDaysAgo = formatRelativeDaysAgo(jobApplication.lastActivityAt, now)
+  const aging = getLastActivityAging(jobApplication, now)
+  return aging === null ? relativeDaysAgo : <Pill tone={LAST_ACTIVITY_AGING_TONES[aging]}>{relativeDaysAgo}</Pill>
+}
+
+export const JobApplicationsTable = ({ jobApplications, alerts, todoDetails, now }: JobApplicationsTableProps) => {
   const router = useRouter()
+  const todoDetailsId = useId()
   const {
     filters,
     sort,
     availableSources,
     visibleJobApplications,
+    kindCounts,
+    selectedAlertKind,
+    isTodoListExpanded,
+    toggleAlertKind,
+    toggleTodoListExpanded,
     setSearchText,
     setShowTerminal,
     toggleStatus,
     toggleSource,
     toggleSort,
-  } = useController({ jobApplications })
+  } = useController({ jobApplications, alerts })
 
   const selectableStatuses = ALL_JOB_APPLICATION_STATUSES.filter((status) => filters.showTerminal || !isTerminalStatus(status))
 
@@ -57,6 +87,17 @@ export const JobApplicationsTable = ({ jobApplications, now }: JobApplicationsTa
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
+      <TodoSummaryBar
+        kindCounts={kindCounts}
+        selectedAlertKind={selectedAlertKind}
+        onToggleAlertKind={toggleAlertKind}
+        isExpanded={isTodoListExpanded}
+        onToggleExpanded={toggleTodoListExpanded}
+        detailsId={todoDetailsId}
+      />
+      <div id={todoDetailsId} hidden={!isTodoListExpanded}>
+        {todoDetails}
+      </div>
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex w-full flex-col gap-2 sm:w-72">
           <Label htmlFor="job-applications-search">Rechercher</Label>
@@ -98,6 +139,14 @@ export const JobApplicationsTable = ({ jobApplications, now }: JobApplicationsTa
           <input type="checkbox" checked={filters.showTerminal} onChange={(changeEvent) => setShowTerminal(changeEvent.target.checked)} />
           Afficher les candidatures terminées
         </label>
+        <div className="flex flex-wrap items-center gap-2 pb-2 text-sm">
+          <span>Dernier échange :</span>
+          {LAST_ACTIVITY_LEGEND.map(({ aging, label }) => (
+            <Pill key={aging} tone={LAST_ACTIVITY_AGING_TONES[aging]}>
+              {label}
+            </Pill>
+          ))}
+        </div>
       </div>
       {visibleJobApplications.length === 0 ? (
         <p className="text-sm text-muted-foreground">Aucune candidature ne correspond.</p>
@@ -139,7 +188,7 @@ export const JobApplicationsTable = ({ jobApplications, now }: JobApplicationsTa
                     {formatInTimeZone(jobApplication.appliedOn, PARIS_TIME_ZONE, 'dd/MM/yyyy')}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
-                    {jobApplication.lastActivityAt ? formatRelativeDaysAgo(jobApplication.lastActivityAt, now) : EMPTY_CELL}
+                    <LastActivityCell jobApplication={jobApplication} now={now} />
                   </td>
                 </tr>
               ))}

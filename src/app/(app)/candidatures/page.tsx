@@ -22,7 +22,7 @@ const JobApplicationsPage = async ({ searchParams }: PageProps<'/candidatures'>)
     <div className="flex flex-wrap items-center justify-between gap-3">
       <h1 className="text-2xl font-semibold">Mes candidatures</h1>
       <Link href={NEW_JOB_APPLICATION_ROUTE} className={buttonVariants()}>
-        Nouvelle candidature
+        + Nouvelle candidature
       </Link>
     </div>
   )
@@ -43,24 +43,27 @@ const JobApplicationsPage = async ({ searchParams }: PageProps<'/candidatures'>)
 
   const { jobApplications, alertInterviews, alerts } = todoRemindersResult.data
 
+  const todoDetails = (
+    <TodoBanner
+      initialAlerts={alerts}
+      snoozeAlert={snoozeAlert}
+      changeJobApplicationStatus={changeJobApplicationStatus}
+      jobApplicationSummaries={jobApplications.map(({ id, status, contactName, intermediaryName }) => ({
+        id,
+        status,
+        contactName,
+        intermediaryName,
+      }))}
+      interviews={alertInterviews}
+      now={now}
+    />
+  )
+
   return (
     <div className="flex min-w-0 flex-col gap-6">
       {header}
       {deletionNotice}
-      <TodoBanner
-        initialAlerts={alerts}
-        snoozeAlert={snoozeAlert}
-        changeJobApplicationStatus={changeJobApplicationStatus}
-        jobApplicationSummaries={jobApplications.map(({ id, status, contactName, intermediaryName }) => ({
-          id,
-          status,
-          contactName,
-          intermediaryName,
-        }))}
-        interviews={alertInterviews}
-        now={now}
-      />
-      <JobApplicationsTable jobApplications={jobApplications} now={now} />
+      <JobApplicationsTable jobApplications={jobApplications} alerts={alerts} todoDetails={todoDetails} now={now} />
     </div>
   )
 }
