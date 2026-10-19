@@ -73,7 +73,7 @@ Menu : « Mes candidatures », « Mon calendrier », « Mes opportunités », «
 | `/preferences` | préférences, clé API Claude, export des données (`/settings` redirige définitivement vers `/preferences`) |
 
 - **Stack** : sur « J'ai postulé », la stack de la mission est extraite par l'IA.
-- **Brief d'entretien** : « Générer le brief » devient « Brief généré · voir mon brief » et ouvre une fenêtre avec le brief dans chaque langue (fr/en), les callouts « Chiffres clés » et « Dates clés », « Mes notes sur l'entreprise », « Questions à poser en entretien » et « Voir les sources (N) » repliées. « Régénérer » relance la génération.
+- **Brief d'entretien** : « Générer le brief » devient « Brief généré · voir mon brief » et ouvre une fenêtre avec le brief par langue (fr/en) : une langue à la fois, choisie avant de générer, avec les callouts « Chiffres clés » et « Dates clés », « Mes notes sur l'entreprise », « Questions à poser en entretien » et « Voir les sources (N) » repliées. « Régénérer » relance la génération.
 - **Suppression** : le bouton rouge « Supprimer la candidature » demande confirmation, puis supprime le journal, les entretiens, la fiche métier et son PDF. L'opportunité d'origine revient dans « À traiter ».
 
 ## Opportunités
@@ -136,7 +136,7 @@ Ce que fait le script :
 
 - il refuse, sans rien écrire, un fichier qui n'est pas un export Freeclutch (`formatVersion: 1`), qui contient une ligne d'un autre utilisateur, dont un identifiant de ligne appartient déjà à un autre utilisateur en base, ou dont un PDF sort du dossier de l'utilisateur ou dépasse 4 Mo ;
 - si le compte n'existe plus (projet recréé, utilisateur supprimé), il le recrée avec le même identifiant et l'adresse e-mail du profil ; l'utilisateur se reconnecte ensuite par lien magique ;
-- il fait un upsert (insertion, ou mise à jour par identifiant) du profil, des intermédiaires, contacts, clients finaux, candidatures, journal d'activité, entretiens, fiches métier et reports d'alerte, dans l'ordre des dépendances, puis remet chaque PDF à son chemin de stockage ;
+- il fait un upsert (insertion, ou mise à jour par identifiant) du profil, des intermédiaires, contacts, clients finaux, candidatures, journal d'activité, entretiens, fiches métier, reports d'alerte, briefs par langue, questions d'entretien, filtres et décisions des opportunités, dans l'ordre des dépendances, puis remet chaque PDF à son chemin de stockage ;
 - les lignes absentes de la sauvegarde ne sont pas supprimées : pour revenir exactement à l'état sauvegardé, supprimer d'abord les données actuelles de l'utilisateur.
 
 La clé API Claude n'étant jamais sauvegardée, l'utilisateur doit la ressaisir dans les préférences si son profil a été recréé.
