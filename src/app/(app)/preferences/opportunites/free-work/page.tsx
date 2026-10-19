@@ -8,7 +8,7 @@ import {
 } from '@/server/actions/opportunity-actions'
 
 export const metadata: Metadata = {
-  title: 'Opportunités Free-Work · Préférences · Freeclutch',
+  title: 'Opportunités Free-Work · Préférences · Aled',
 }
 
 const FreeWorkOpportunitySettingsPage = async () => {

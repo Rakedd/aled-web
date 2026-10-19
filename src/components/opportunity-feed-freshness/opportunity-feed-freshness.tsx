@@ -16,7 +16,7 @@ export const OpportunityFeedFreshness = ({ lastReceivedAt, now }: OpportunityFee
         Dernière réception il y a {formatDistance(lastReceivedAt, now, { locale: fr })}
       </p>
       {isOpportunityFeedStale(lastReceivedAt, now) && (
-        <p role="status" className="rounded-lg border border-peach bg-peach-tint px-3 py-2 text-peach-ink">
+        <p role="status" className="rounded-lg bg-peach-tint px-3 py-2 text-ink">
           {STALE_FEED_MESSAGE}
         </p>
       )}

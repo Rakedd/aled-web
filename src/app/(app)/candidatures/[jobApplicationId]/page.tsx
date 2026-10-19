@@ -48,7 +48,7 @@ import {
 } from '@/server/actions/job-spec-actions'
 import { hasAnthropicApiKeyConfigured } from '@/server/actions/settings-actions'
 
-export const metadata: Metadata = { title: 'Candidature · Freeclutch' }
+export const metadata: Metadata = { title: 'Candidature · Aled' }
 
 export const maxDuration = 300
 

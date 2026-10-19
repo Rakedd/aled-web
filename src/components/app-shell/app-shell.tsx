@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { Pill } from '@/components/pill'
 import { Button } from '@/components/ui/button'
 import { CALENDAR_ROUTE, HOME_ROUTE, JOB_APPLICATIONS_ROUTE, OPPORTUNITIES_ROUTE, PREFERENCES_ROUTE } from '@/domain/routes'
 import { cn } from '@/lib/utils'
@@ -35,10 +36,10 @@ export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, chil
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="border-b">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-          <Link href={HOME_ROUTE} className="text-lg font-semibold">
-            Freeclutch
+      <header className="px-4 pt-4">
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 rounded-3xl bg-card px-4 py-2 sm:rounded-full sm:px-6">
+          <Link href={HOME_ROUTE} className="font-heading text-lg font-extrabold">
+            Aled
           </Link>
           <nav aria-label="Navigation principale" className="order-last w-full sm:order-none sm:w-auto">
             <ul className="flex gap-1">
@@ -50,18 +51,15 @@ export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, chil
                       href={navigationItem.href}
                       aria-current={isActive ? 'page' : undefined}
                       className={cn(
-                        'inline-flex h-8 items-center rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
-                        isActive && 'bg-muted text-foreground',
+                        'inline-flex h-9 items-center rounded-full px-3 text-sm font-medium text-ink-muted transition-colors hover:bg-muted hover:text-ink motion-reduce:transition-none',
+                        isActive && 'bg-forest text-primary-foreground hover:bg-forest hover:text-primary-foreground',
                       )}
                     >
                       {navigationItem.label}
                       {navigationItem.showsOpportunitiesToProcessCount && opportunitiesToProcessCount > 0 && (
                         <>
-                          <span
-                            aria-hidden="true"
-                            className="ml-1.5 rounded-full bg-primary px-1.5 text-xs text-primary-foreground"
-                          >
-                            {opportunitiesToProcessCount}
+                          <span aria-hidden="true" className="ml-1.5">
+                            <Pill tone="peach">{opportunitiesToProcessCount}</Pill>
                           </span>
                           <span className="sr-only">, {opportunitiesToProcessCount} à traiter</span>
                         </>
@@ -73,7 +71,7 @@ export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, chil
             </ul>
           </nav>
           <div className="ml-auto flex min-w-0 items-center gap-3">
-            <span className="hidden truncate text-sm text-muted-foreground md:inline">{userEmail}</span>
+            <span className="hidden truncate text-sm text-ink-muted md:inline">{userEmail}</span>
             <form action={signOut}>
               <Button type="submit" variant="outline">
                 Se déconnecter
@@ -82,7 +80,7 @@ export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, chil
           </div>
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6">{children}</main>
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-6">{children}</main>
     </div>
   )
 }

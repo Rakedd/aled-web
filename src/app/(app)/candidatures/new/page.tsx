@@ -5,7 +5,7 @@ import { searchEntities } from '@/server/actions/entity-actions'
 import { createJobApplication } from '@/server/actions/job-application-actions'
 import { hasAnthropicApiKeyConfigured } from '@/server/actions/settings-actions'
 
-export const metadata: Metadata = { title: 'Nouvelle candidature · Freeclutch' }
+export const metadata: Metadata = { title: 'Nouvelle candidature · Aled' }
 
 export const maxDuration = 120
 

@@ -42,7 +42,7 @@ export const OpportunityCard = ({
     )
 
   return (
-    <article className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+    <article className="flex flex-col gap-3 rounded-2xl bg-card p-4">
       <header className="flex flex-wrap items-start gap-2">
         <h3 className="min-w-0 flex-1 break-words text-base font-semibold">{opportunity.title}</h3>
         {isNew && (

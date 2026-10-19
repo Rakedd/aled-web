@@ -28,7 +28,7 @@ export const TodoBanner = ({
   })
 
   return (
-    <section aria-labelledby="todo-banner-title" className="flex flex-col gap-3 rounded-xl border bg-muted/40 p-4">
+    <section aria-labelledby="todo-banner-title" className="flex flex-col gap-3 rounded-2xl bg-card p-4">
       <h2 id="todo-banner-title" className="text-lg font-semibold">
         À faire
       </h2>

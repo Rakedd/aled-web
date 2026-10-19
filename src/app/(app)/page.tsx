@@ -4,7 +4,7 @@ import { changeJobApplicationStatus, snoozeAlert } from '@/server/actions/job-ap
 import { applyToOpportunity, listHighlightedOpportunities } from '@/server/actions/opportunity-actions'
 import { loadTodoReminders } from '@/server/todo-reminders/load-todo-reminders'
 
-export const metadata: Metadata = { title: 'Accueil · Freeclutch' }
+export const metadata: Metadata = { title: 'Accueil · Aled' }
 
 export const maxDuration = 60
 

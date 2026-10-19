@@ -29,12 +29,23 @@ describe('AppShell', () => {
 
   it('points the logo to the home page', () => {
     renderShell(0)
-    expect(screen.getByRole('link', { name: 'Freeclutch' })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('link', { name: 'Aled' })).toHaveAttribute('href', '/')
   })
 
   it('shows the to-process count on Mes opportunités', () => {
     renderShell(3)
     expect(screen.getByRole('link', { name: /Mes opportunités.*3 à traiter/ })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('renders the count in a peach pill while keeping the accessible name', () => {
+    renderShell(3)
+    expect(screen.getByText('3')).toHaveAttribute('data-tone', 'peach')
+    expect(screen.getByRole('link', { name: /^Mes opportunités\s*, 3 à traiter$/ })).toBeInTheDocument()
+  })
+
+  it('offers the sign-out button', () => {
+    renderShell(0)
+    expect(screen.getByRole('button', { name: 'Se déconnecter' })).toBeInTheDocument()
   })
 
   it('hides the count when nothing is to process', () => {

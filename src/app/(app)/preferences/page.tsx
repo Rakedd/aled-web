@@ -10,7 +10,7 @@ import {
   updateProfileSettings,
 } from '@/server/actions/settings-actions'
 
-export const metadata: Metadata = { title: 'Préférences · Freeclutch' }
+export const metadata: Metadata = { title: 'Préférences · Aled' }
 
 const SettingsPage = async () => {
   const profileSettingsResult = await getProfileSettings()

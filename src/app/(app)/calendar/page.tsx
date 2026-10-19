@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { InterviewsCalendar } from '@/components/interviews-calendar'
 import { listUpcomingInterviews } from '@/server/actions/interview-actions'
 
-export const metadata: Metadata = { title: 'Calendrier · Freeclutch' }
+export const metadata: Metadata = { title: 'Calendrier · Aled' }
 
 const CalendarPage = () => (
   <div className="flex min-w-0 flex-col gap-6">

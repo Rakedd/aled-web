@@ -102,9 +102,9 @@ export const JobApplicationsTable = ({ jobApplications, now }: JobApplicationsTa
       {visibleJobApplications.length === 0 ? (
         <p className="text-sm text-muted-foreground">Aucune candidature ne correspond.</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="overflow-x-auto rounded-2xl bg-card">
           <table className="w-full min-w-[56rem] text-left text-sm">
-            <thead className="border-b bg-muted/40">
+            <thead className="border-b bg-muted">
               <tr>
                 {COLUMNS.map(({ sortKey, label }) => (
                   <th key={sortKey} scope="col" aria-sort={getAriaSort(sortKey)} className="px-3 py-2 font-medium whitespace-nowrap">

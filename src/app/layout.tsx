@@ -15,8 +15,8 @@ const figtree = Figtree({
 });
 
 export const metadata: Metadata = {
-  title: "Freeclutch",
-  description: "Suivi des candidatures freelance",
+  title: "Aled",
+  description: "Trouver du travail sans traverser la rue.",
 };
 
 const RootLayout = ({ children }: LayoutProps<"/">) => (

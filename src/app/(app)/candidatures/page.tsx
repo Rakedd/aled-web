@@ -8,7 +8,7 @@ import { JOB_APPLICATION_DELETED_SEARCH_PARAMETER, NEW_JOB_APPLICATION_ROUTE } f
 import { changeJobApplicationStatus, snoozeAlert } from '@/server/actions/job-application-actions'
 import { loadTodoReminders } from '@/server/todo-reminders/load-todo-reminders'
 
-export const metadata: Metadata = { title: 'Mes candidatures · Freeclutch' }
+export const metadata: Metadata = { title: 'Mes candidatures · Aled' }
 
 const PAGE_LOAD_FAILURE_MESSAGE = 'Impossible de charger tes candidatures.'
 const UPCOMING_INTERVIEWS_LOOKAHEAD_DAYS = 8

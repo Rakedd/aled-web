@@ -11,7 +11,7 @@ import {
   restoreOpportunity,
 } from '@/server/actions/opportunity-actions'
 
-export const metadata: Metadata = { title: 'Mes opportunités · Freeclutch' }
+export const metadata: Metadata = { title: 'Mes opportunités · Aled' }
 
 export const maxDuration = 60
 
