@@ -11,6 +11,7 @@ import { ContactView } from '@/components/contact-view'
 import { JobApplicationBlock } from '@/components/job-application-block'
 import { JobApplicationHeader } from '@/components/job-application-header'
 import { JobApplicationHighlights } from '@/components/job-application-highlights'
+import { JobApplicationTabs } from '@/components/job-application-tabs'
 import { JobSpecSection } from '@/components/job-spec-section'
 import { MissionDetailsView } from '@/components/mission-details-view'
 import { StackView } from '@/components/stack-view'
@@ -19,6 +20,7 @@ import type { ContactDetails } from '@/domain/entities'
 import type { InterviewPreparation } from '@/domain/interview-preparation'
 import { findNextInterview } from '@/domain/interviews'
 import { JOB_APPLICATION_NOT_FOUND_MESSAGE, type JobApplicationOverview } from '@/domain/job-application'
+import { JOB_APPLICATION_TAB_SEARCH_PARAMETER, resolveJobApplicationTab } from '@/domain/job-application-tabs'
 import { JOB_APPLICATIONS_ROUTE } from '@/domain/routes'
 import { updateEndClientNotes } from '@/server/actions/client-brief-actions'
 import {
@@ -58,6 +60,8 @@ export const maxDuration = 300
 
 const DEFAULT_BRIEF_LANGUAGE = 'fr'
 
+const PANEL_CARD_CLASS_NAME = 'min-w-0 rounded-2xl bg-card p-6'
+
 const loadInitialInterviewPreparation = async (jobApplicationId: string): Promise<ActionResult<InterviewPreparation>> => {
   const defaultLanguagePreparationResult = await getInterviewPreparation(jobApplicationId, DEFAULT_BRIEF_LANGUAGE)
   if (!defaultLanguagePreparationResult.ok) return defaultLanguagePreparationResult
@@ -81,8 +85,11 @@ const loadJobApplicationWithContactDetails = async (
   return { jobApplicationResult, contactDetailsResult: await getContactDetails(jobApplicationResult.data.contactId) }
 }
 
-const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobApplicationId: string }> }) => {
-  const { jobApplicationId } = await params
+const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/candidatures/[jobApplicationId]'>) => {
+  const [{ jobApplicationId }, { [JOB_APPLICATION_TAB_SEARCH_PARAMETER]: requestedTab }] = await Promise.all([
+    params,
+    searchParams,
+  ])
   const [
     { jobApplicationResult, contactDetailsResult },
     activityLogEntriesResult,
@@ -192,61 +199,87 @@ const JobApplicationDetailPage = async ({ params }: { params: Promise<{ jobAppli
           />
         </div>
       </div>
-      <JobApplicationBlock
-        title="Stack"
-        view={<StackView stack={jobApplication.stack} />}
-        form={{ kind: 'stack', props: { jobApplication, updateJobApplication } }}
-      />
-      <div className="grid min-w-0 gap-8 lg:grid-cols-2">
-        <JobSpecSection
-          key={jobApplication.id}
-          jobApplicationId={jobApplication.id}
-          jobSpec={jobSpecResult.data}
-          uploadJobSpecPdf={uploadJobSpecPdf}
-          saveJobSpecText={saveJobSpecText}
-          confirmJobSpecStack={confirmJobSpecStack}
-          discardPendingJobSpecStack={discardPendingJobSpecStack}
-          hasAnthropicApiKey={hasAnthropicApiKey}
-        />
-        <div className="flex min-w-0 flex-col gap-8">
-          <JobApplicationBlock
-            title="Infos mission"
-            view={<MissionDetailsView jobApplication={jobApplication} />}
-            form={{ kind: 'missionDetails', props: { jobApplication, updateJobApplication } }}
-          />
-          <JobApplicationBlock
-            title="Contact"
-            view={
-              <ContactView
-                contactName={jobApplication.contactName}
-                contactDetails={contactDetails}
-                loadErrorMessage={contactDetailsErrorMessage}
-              />
-            }
-            form={{
-              kind: 'contact',
-              props: { jobApplication, contactDetails, updateJobApplication, updateContactDetails, searchEntities },
-            }}
-          />
-        </div>
-      </div>
-      <InterviewsSection
+      <JobApplicationTabs
         key={jobApplication.id}
-        jobApplicationId={jobApplication.id}
-        initialInterviews={interviewsResult.data}
-        createInterview={createInterview}
-        updateInterview={updateInterview}
-        deleteInterview={deleteInterview}
-        listInterviewsForJobApplication={listInterviewsForJobApplication}
+        initialTab={resolveJobApplicationTab(requestedTab, interviewsResult.data, now)}
+        interviewCount={interviewsResult.data.length}
+        activityLogEntryCount={activityLogEntriesResult.data.length}
+        panels={{
+          apercu: (
+            <div className="flex min-w-0 flex-col gap-5">
+              <div className="grid min-w-0 items-start gap-5 lg:grid-cols-2">
+                <div className={PANEL_CARD_CLASS_NAME}>
+                  <JobApplicationBlock
+                    title="Infos mission"
+                    view={<MissionDetailsView jobApplication={jobApplication} />}
+                    form={{ kind: 'missionDetails', props: { jobApplication, updateJobApplication } }}
+                  />
+                </div>
+                <div className={PANEL_CARD_CLASS_NAME}>
+                  <JobApplicationBlock
+                    title="Contact"
+                    view={
+                      <ContactView
+                        contactName={jobApplication.contactName}
+                        contactDetails={contactDetails}
+                        loadErrorMessage={contactDetailsErrorMessage}
+                      />
+                    }
+                    form={{
+                      kind: 'contact',
+                      props: { jobApplication, contactDetails, updateJobApplication, updateContactDetails, searchEntities },
+                    }}
+                  />
+                </div>
+              </div>
+              <DeleteJobApplicationButton jobApplicationId={jobApplication.id} deleteJobApplication={deleteJobApplication} />
+            </div>
+          ),
+          mission: (
+            <div className="flex min-w-0 flex-col gap-5">
+              <div className={PANEL_CARD_CLASS_NAME}>
+                <JobApplicationBlock
+                  title="Stack"
+                  view={<StackView stack={jobApplication.stack} />}
+                  form={{ kind: 'stack', props: { jobApplication, updateJobApplication } }}
+                />
+              </div>
+              <div className={PANEL_CARD_CLASS_NAME}>
+                <JobSpecSection
+                  jobApplicationId={jobApplication.id}
+                  jobSpec={jobSpecResult.data}
+                  uploadJobSpecPdf={uploadJobSpecPdf}
+                  saveJobSpecText={saveJobSpecText}
+                  confirmJobSpecStack={confirmJobSpecStack}
+                  discardPendingJobSpecStack={discardPendingJobSpecStack}
+                  hasAnthropicApiKey={hasAnthropicApiKey}
+                />
+              </div>
+            </div>
+          ),
+          entretiens: (
+            <div className={PANEL_CARD_CLASS_NAME}>
+              <InterviewsSection
+                jobApplicationId={jobApplication.id}
+                initialInterviews={interviewsResult.data}
+                createInterview={createInterview}
+                updateInterview={updateInterview}
+                deleteInterview={deleteInterview}
+                listInterviewsForJobApplication={listInterviewsForJobApplication}
+              />
+            </div>
+          ),
+          journal: (
+            <ActivityLog
+              jobApplicationId={jobApplication.id}
+              initialEntries={activityLogEntriesResult.data}
+              addActivityLogEntry={addActivityLogEntry}
+              listActivityLogEntries={listActivityLogEntries}
+              now={now}
+            />
+          ),
+        }}
       />
-      <ActivityLog
-        jobApplicationId={jobApplication.id}
-        initialEntries={activityLogEntriesResult.data}
-        addActivityLogEntry={addActivityLogEntry}
-        listActivityLogEntries={listActivityLogEntries}
-        now={now}
-      />
-      <DeleteJobApplicationButton jobApplicationId={jobApplication.id} deleteJobApplication={deleteJobApplication} />
     </div>
   )
 }

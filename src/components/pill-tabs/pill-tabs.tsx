@@ -37,7 +37,7 @@ export const PillTabs = <TabKey extends string>({ label, tabs, selectedTab, onSe
   }
 
   return (
-    <div role="tablist" aria-label={label} className="flex max-w-full gap-1 self-start overflow-x-auto rounded-full bg-background p-1">
+    <div role="tablist" aria-label={label} className="flex max-w-full gap-1 self-start overflow-x-auto rounded-full bg-card p-1">
       {tabs.map((tab, index) => {
         const isSelected = tab.key === selectedTab
         return (

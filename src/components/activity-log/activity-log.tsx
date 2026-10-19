@@ -56,72 +56,83 @@ export const ActivityLog = ({
   }
 
   return (
-    <section aria-labelledby="activity-log-title" className="flex flex-col gap-4">
-      <h2 id="activity-log-title" className="text-lg font-semibold">
-        Journal des échanges
-      </h2>
-      <form noValidate onSubmit={handleSubmit} className="flex flex-wrap items-end gap-2">
-        <div className="flex flex-col gap-1">
-          <Label htmlFor={KIND_SELECT_ID}>Type</Label>
-          <select
-            id={KIND_SELECT_ID}
-            className={NATIVE_SELECT_CLASS_NAME}
-            value={kind}
-            onChange={(changeEvent) => handleKindChange(changeEvent.target.value)}
-            disabled={isAdding}
-          >
-            {kindOptions.map((kindOption) => (
-              <option key={kindOption} value={kindOption}>
-                {ACTIVITY_KIND_LABELS[kindOption]}
-              </option>
+    <div className="grid min-w-0 items-start gap-5 lg:grid-cols-5">
+      <section aria-labelledby="activity-log-title" className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-6 lg:col-span-3">
+        <h2 id="activity-log-title" className="font-heading text-xl font-extrabold">
+          Journal des échanges
+        </h2>
+        {entries.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Aucun échange pour l&apos;instant.</p>
+        ) : (
+          <ol className="flex flex-col">
+            {entries.map((entry) => (
+              <li key={entry.id} className="group flex gap-4">
+                <span aria-hidden="true" className="flex flex-col items-center pt-1">
+                  <span className="size-3.5 shrink-0 rounded-full bg-forest" />
+                  <span className="w-0.5 grow bg-hairline group-last:hidden" />
+                </span>
+                <div className="flex min-w-0 flex-col gap-0.5 pb-5 group-last:pb-0">
+                  <span className="text-xs font-semibold text-ink-muted">
+                    {formatParisDateTime(entry.occurredAt)} · {ACTIVITY_KIND_LABELS[entry.kind]}
+                  </span>
+                  <span className="text-sm break-words">{entry.summary}</span>
+                </div>
+              </li>
             ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label htmlFor={OCCURRED_AT_INPUT_ID}>Date et heure</Label>
-          <Input
-            id={OCCURRED_AT_INPUT_ID}
-            type="datetime-local"
-            className="w-auto"
-            value={occurredAtLocalDateTime}
-            onChange={(changeEvent) => setOccurredAtLocalDateTime(changeEvent.target.value)}
-            disabled={isAdding}
-          />
-        </div>
-        <div className="flex min-w-48 flex-1 flex-col gap-1">
-          <Label htmlFor={SUMMARY_INPUT_ID}>Résumé</Label>
-          <Input
-            id={SUMMARY_INPUT_ID}
-            value={summary}
-            onChange={(changeEvent) => setSummary(changeEvent.target.value)}
-            placeholder="Ex. : appel de qualification, rappeler jeudi"
-            disabled={isAdding}
-          />
-        </div>
-        <Button type="submit" disabled={isAdding}>
-          Ajouter
-        </Button>
-      </form>
-      {errorMessage && (
-        <p role="alert" className="text-sm text-destructive">
-          {errorMessage}
-        </p>
-      )}
-      {entries.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucun échange pour l&apos;instant.</p>
-      ) : (
-        <ul className="flex flex-col divide-y divide-border">
-          {entries.map((entry) => (
-            <li key={entry.id} className="flex flex-col gap-0.5 py-2 sm:flex-row sm:gap-4">
-              <span className="shrink-0 text-xs text-muted-foreground sm:w-36 sm:pt-0.5">
-                {formatParisDateTime(entry.occurredAt)}
-              </span>
-              <span className="shrink-0 text-sm font-medium sm:w-40">{ACTIVITY_KIND_LABELS[entry.kind]}</span>
-              <span className="min-w-0 text-sm break-words">{entry.summary}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+          </ol>
+        )}
+      </section>
+      <section aria-labelledby="activity-log-form-title" className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-6 lg:col-span-2">
+        <h2 id="activity-log-form-title" className="font-heading text-xl font-extrabold">
+          Noter un échange
+        </h2>
+        <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor={KIND_SELECT_ID}>Type</Label>
+            <select
+              id={KIND_SELECT_ID}
+              className={NATIVE_SELECT_CLASS_NAME}
+              value={kind}
+              onChange={(changeEvent) => handleKindChange(changeEvent.target.value)}
+              disabled={isAdding}
+            >
+              {kindOptions.map((kindOption) => (
+                <option key={kindOption} value={kindOption}>
+                  {ACTIVITY_KIND_LABELS[kindOption]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor={OCCURRED_AT_INPUT_ID}>Date et heure</Label>
+            <Input
+              id={OCCURRED_AT_INPUT_ID}
+              type="datetime-local"
+              value={occurredAtLocalDateTime}
+              onChange={(changeEvent) => setOccurredAtLocalDateTime(changeEvent.target.value)}
+              disabled={isAdding}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor={SUMMARY_INPUT_ID}>Résumé</Label>
+            <Input
+              id={SUMMARY_INPUT_ID}
+              value={summary}
+              onChange={(changeEvent) => setSummary(changeEvent.target.value)}
+              placeholder="Ex. : appel de qualification, rappeler jeudi"
+              disabled={isAdding}
+            />
+          </div>
+          <Button type="submit" className="self-start" disabled={isAdding}>
+            Ajouter
+          </Button>
+        </form>
+        {errorMessage && (
+          <p role="alert" className="text-sm text-destructive">
+            {errorMessage}
+          </p>
+        )}
+      </section>
+    </div>
   )
 }
