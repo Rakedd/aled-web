@@ -54,6 +54,7 @@ export const useController = ({
   const isListingRequestInFlight = useRef(false)
   const hasMarkedViewed = useRef(false)
   const [searchInput, setSearchInput] = useState('')
+  const searchInputRef = useRef('')
   const [appliedSearch, setAppliedSearch] = useState('')
   const [quickFilters, setQuickFilters] = useState(NO_OPPORTUNITY_QUICK_FILTERS)
   const currentTabRef = useRef(initialTab)
@@ -218,6 +219,8 @@ export const useController = ({
     if (actionResult === null) return
     if (!actionResult.ok) {
       requestedTabRef.current = currentTabRef.current
+      requestedQuickFiltersRef.current = appliedQuickFiltersRef.current
+      setQuickFilters(appliedQuickFiltersRef.current)
       setErrorMessage(actionResult.errorMessage)
       return
     }
@@ -230,11 +233,13 @@ export const useController = ({
 
   const applyQuickFilters = async (nextQuickFilters: OpportunityQuickFilters) => {
     if (inFlightOpportunityIds.current.size > 0) return
+    clearSearchDebounceTimer()
     const filteredTab = requestedTabRef.current
+    const filteredSearch = searchInputRef.current.trim()
     requestedQuickFiltersRef.current = nextQuickFilters
     setQuickFilters(nextQuickFilters)
     inFlightQuickFilterCount.current += 1
-    const actionResult = await fetchListing(filteredTab, null, appliedSearchRef.current, nextQuickFilters, true)
+    const actionResult = await fetchListing(filteredTab, null, filteredSearch, nextQuickFilters, true)
     inFlightQuickFilterCount.current -= 1
     if (actionResult === null) return
     if (!actionResult.ok) {
@@ -246,6 +251,8 @@ export const useController = ({
     }
     if (filteredTab !== currentTabRef.current) commitTab(filteredTab)
     appliedQuickFiltersRef.current = nextQuickFilters
+    appliedSearchRef.current = filteredSearch
+    setAppliedSearch(filteredSearch)
     replaceListing(actionResult.data)
   }
 
@@ -271,6 +278,7 @@ export const useController = ({
 
   const changeSearch = (nextSearchInput: string) => {
     setSearchInput(nextSearchInput)
+    searchInputRef.current = nextSearchInput
     clearSearchDebounceTimer()
     const trimmedSearch = nextSearchInput.trim()
     if (trimmedSearch === appliedSearchRef.current) {
@@ -288,7 +296,12 @@ export const useController = ({
   }
 
   const loadMore = async () => {
-    const actionResult = await fetchListing(tab, toListingCursor(loadedItems), appliedSearchRef.current, appliedQuickFiltersRef.current)
+    const actionResult = await fetchListing(
+      tab,
+      toListingCursor(loadedItems),
+      appliedSearchRef.current,
+      appliedQuickFiltersRef.current,
+    )
     if (actionResult === null) return
     if (!actionResult.ok) {
       setErrorMessage(actionResult.errorMessage)

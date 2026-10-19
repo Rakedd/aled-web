@@ -564,20 +564,72 @@ describe('opportunities-board useController', () => {
       })
     })
 
-    it('sends the applied search with the filters', async () => {
-      jest.useFakeTimers()
-      const { result, listOpportunities } = renderBoardController()
-      act(() => result.current.changeSearch('react'))
-      await act(async () => {
-        await jest.advanceTimersByTimeAsync(300)
+    describe('with fake timers', () => {
+      beforeEach(() => {
+        jest.useFakeTimers()
       })
-      jest.useRealTimers()
 
-      await act(() => result.current.toggleSortByRate())
+      afterEach(() => {
+        jest.useRealTimers()
+      })
 
-      expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, 'react', {
-        sortByRate: true,
-        remoteModes: [],
+      const typeAndFireSearch = async (result: ReturnType<typeof renderBoardController>['result'], value: string) => {
+        act(() => result.current.changeSearch(value))
+        await act(async () => {
+          await jest.advanceTimersByTimeAsync(300)
+        })
+      }
+
+      it('sends the applied search with the filters', async () => {
+        const { result, listOpportunities } = renderBoardController()
+        await typeAndFireSearch(result, 'react')
+
+        await act(() => result.current.toggleSortByRate())
+
+        expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, 'react', {
+          sortByRate: true,
+          remoteModes: [],
+        })
+      })
+
+      it('toggling a filter while a search is in flight ends with both search and filter applied', async () => {
+        const { result, listOpportunities } = renderBoardController()
+        let resolveSearch: (actionResult: ActionResult<OpportunityListing>) => void = () => undefined
+        listOpportunities
+          .mockReturnValueOnce(new Promise((resolve) => (resolveSearch = resolve)))
+          .mockResolvedValueOnce(succeeded(buildListing({ items: [buildOpportunity('both')], hasMore: false })))
+        await typeAndFireSearch(result, 'react')
+
+        await act(() => result.current.toggleSortByRate())
+        await act(async () => {
+          resolveSearch(succeeded(buildListing({ items: [buildOpportunity('outdated')], hasMore: false })))
+        })
+
+        expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, 'react', {
+          sortByRate: true,
+          remoteModes: [],
+        })
+        expect(result.current.hasActiveSearch).toBe(true)
+        expect(result.current.items.map(({ id }) => id)).toEqual(['both'])
+      })
+
+      it('restores the applied filters when a search that superseded a filter request fails', async () => {
+        const { result, listOpportunities } = renderBoardController()
+        let resolveFilter: (actionResult: ActionResult<OpportunityListing>) => void = () => undefined
+        listOpportunities
+          .mockReturnValueOnce(new Promise((resolve) => (resolveFilter = resolve)))
+          .mockResolvedValueOnce({ ok: false, errorMessage: 'Recherche impossible' })
+        act(() => {
+          void result.current.toggleSortByRate()
+        })
+
+        await typeAndFireSearch(result, 'react')
+        await act(async () => {
+          resolveFilter(succeeded(buildListing()))
+        })
+
+        expect(result.current.errorMessage).toBe('Recherche impossible')
+        expect(result.current.quickFilters).toEqual(NO_OPPORTUNITY_QUICK_FILTERS)
       })
     })
 
