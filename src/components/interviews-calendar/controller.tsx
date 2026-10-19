@@ -7,8 +7,10 @@ import {
 } from '@/domain/interviews'
 import { formatDailyRate, groupStackByCategory } from '@/domain/job-application-display'
 import { formatParisInterviewDateTime } from '@/domain/paris-time'
+import { jobApplicationTabRoute } from '@/domain/job-application-tabs'
 import { jobApplicationRoute } from '@/domain/routes'
 import type { InterviewKind } from '@/domain/types'
+import type { PillTone } from '@/components/pill/interfaces'
 import type {
   InterviewRevisionMissionDetail,
   InterviewRevisionPanelContent,
@@ -18,9 +20,15 @@ import type { InterviewCalendarEvent, InterviewsCalendarProps, InterviewsCalenda
 const NARROW_SCREEN_MAXIMUM_WIDTH_IN_PIXELS = 640
 
 export const EVENT_STYLES_BY_KIND: Record<InterviewKind, { className: string; color: string; contrastColor: string }> = {
-  client: { className: 'interview-client', color: '#1d4ed8', contrastColor: '#ffffff' },
-  mock: { className: 'interview-mock', color: '#7e22ce', contrastColor: '#ffffff' },
-  other: { className: 'interview-other', color: '#475569', contrastColor: '#ffffff' },
+  client: { className: 'interview-client', color: 'var(--peach)', contrastColor: 'var(--ink)' },
+  mock: { className: 'interview-mock', color: 'var(--lilac)', contrastColor: 'var(--ink)' },
+  other: { className: 'interview-other', color: 'var(--hairline)', contrastColor: 'var(--ink)' },
+}
+
+export const INTERVIEW_KIND_TONES: Record<InterviewKind, PillTone> = {
+  client: 'peach',
+  mock: 'lilac',
+  other: 'sage',
 }
 
 const toEventTitle = ({ kind, jobApplicationTitle }: InterviewWithJobApplication): string =>
@@ -71,6 +79,7 @@ const toRevisionPanelContent = (interview: InterviewWithJobApplication): Intervi
   missionDetails: toMissionDetails(interview),
   postingRawText: interview.postingRawText,
   jobApplicationHref: jobApplicationRoute(interview.jobApplicationId),
+  briefHref: jobApplicationTabRoute(interview.jobApplicationId, 'entretiens'),
 })
 
 const subscribeToNothing = () => () => undefined
@@ -86,6 +95,7 @@ export const useController = ({ listUpcomingInterviews }: Pick<InterviewsCalenda
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const initialView = useSyncExternalStore(subscribeToNothing, readInitialViewForScreenWidth, readInitialViewOnServer)
   const calendarEvents = useMemo(() => toCalendarEvents(interviews), [interviews])
+  const calendarContainerRef = useRef<HTMLDivElement>(null)
   const latestRangeRequestIdRef = useRef(0)
 
   const onDatesSet = async (rangeStart: Date, rangeEnd: Date) => {
@@ -109,9 +119,13 @@ export const useController = ({ listUpcomingInterviews }: Pick<InterviewsCalenda
     setSelectedInterview(interviews.find((interview) => interview.id === interviewId) ?? null)
   }
 
-  const closePanel = () => setSelectedInterview(null)
+  const closePanel = () => {
+    setSelectedInterview(null)
+    calendarContainerRef.current?.focus()
+  }
 
   return {
+    calendarContainerRef,
     calendarEvents,
     revisionPanelContent: selectedInterview === null ? null : toRevisionPanelContent(selectedInterview),
     errorMessage,

@@ -18,6 +18,7 @@ export type InterviewRevisionPanelContent = {
   missionDetails: InterviewRevisionMissionDetail[]
   postingRawText: string | null
   jobApplicationHref: string
+  briefHref: string
 }
 
 export type InterviewRevisionPanelProps = {

@@ -15,23 +15,29 @@ const content: InterviewRevisionPanelContent = {
     { label: 'TJM annoncé', value: '650\u00a0€' },
   ],
   postingRawText: 'Mission React pour une foncière',
-  jobApplicationHref: '/candidatures/abc',
+  jobApplicationHref: '/candidatures/a1',
+  briefHref: '/candidatures/a1?onglet=entretiens',
 }
 
 describe('InterviewRevisionPanel', () => {
   it('renders nothing when there is no content', () => {
     render(<InterviewRevisionPanel content={null} onClose={jest.fn()} />)
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
   })
 
-  it('renders a labelled dialog with the mission and its stack, and links to the application', () => {
+  it('renders a complementary named by the mission title, with its stack and links', () => {
     render(<InterviewRevisionPanel content={content} onClose={jest.fn()} />)
 
-    expect(screen.getByRole('dialog', { name: 'Développeur React senior' })).toBeInTheDocument()
+    expect(screen.getByRole('complementary', { name: 'Développeur React senior' })).toBeInTheDocument()
     expect(screen.getByText('Acme')).toBeInTheDocument()
     expect(screen.getByText('React')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Ouvrir la candidature' })).toHaveAttribute('href', '/candidatures/abc')
+    expect(screen.getByRole('link', { name: 'Ouvrir la fiche' })).toHaveAttribute('href', '/candidatures/a1')
+    expect(screen.getByRole('link', { name: 'Voir mon brief' })).toHaveAttribute(
+      'href',
+      '/candidatures/a1?onglet=entretiens',
+    )
+    expect(screen.getByText('React')).toHaveAttribute('data-tone', 'sage')
   })
 
   it('describes the mission with its details and the original posting in a collapsible block', async () => {
@@ -59,12 +65,27 @@ describe('InterviewRevisionPanel', () => {
     expect(screen.queryByText("Texte original de l'annonce")).not.toBeInTheDocument()
   })
 
+  it('moves focus to its title when it opens', () => {
+    render(<InterviewRevisionPanel content={content} onClose={jest.fn()} />)
+
+    expect(screen.getByRole('heading', { name: 'Développeur React senior' })).toHaveFocus()
+  })
+
+  it('closes with the Fermer button', async () => {
+    const onClose = jest.fn()
+    render(<InterviewRevisionPanel content={content} onClose={onClose} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fermer' }))
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
   it('closes on Escape', async () => {
     const onClose = jest.fn()
     render(<InterviewRevisionPanel content={content} onClose={onClose} />)
 
     await userEvent.keyboard('{Escape}')
 
-    expect(onClose).toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 })

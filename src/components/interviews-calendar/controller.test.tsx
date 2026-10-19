@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
 import type { InterviewWithJobApplication } from '@/domain/interviews'
-import { toCalendarEvents, useController } from './controller'
+import { EVENT_STYLES_BY_KIND, toCalendarEvents, useController } from './controller'
 
 const JOB_APPLICATION_ID = '6f1c2a9e-1b2d-4c3e-8f4a-5b6c7d8e9f00'
 
@@ -40,6 +40,16 @@ const createDeferred = <Value,>() => {
 
 const RANGE_START = new Date('2026-09-28T00:00:00Z')
 const RANGE_END = new Date('2026-11-09T00:00:00Z')
+
+describe('EVENT_STYLES_BY_KIND', () => {
+  it('colours each interview kind with the atelier tokens', () => {
+    expect(EVENT_STYLES_BY_KIND).toEqual({
+      client: { className: 'interview-client', color: 'var(--peach)', contrastColor: 'var(--ink)' },
+      mock: { className: 'interview-mock', color: 'var(--lilac)', contrastColor: 'var(--ink)' },
+      other: { className: 'interview-other', color: 'var(--hairline)', contrastColor: 'var(--ink)' },
+    })
+  })
+})
 
 describe('toCalendarEvents', () => {
   it('gives distinct class names to client and mock interviews', () => {
@@ -137,6 +147,7 @@ describe('useController', () => {
       ],
       postingRawText: 'Mission React pour une foncière',
       jobApplicationHref: `/candidatures/${JOB_APPLICATION_ID}`,
+      briefHref: `/candidatures/${JOB_APPLICATION_ID}?onglet=entretiens`,
     })
 
     act(() => result.current.closePanel())

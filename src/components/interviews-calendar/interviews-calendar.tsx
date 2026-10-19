@@ -7,19 +7,29 @@ import frenchLocale from '@fullcalendar/react/locales/fr'
 import themePlugin from '@fullcalendar/react/themes/classic'
 import timeGridPlugin from '@fullcalendar/react/timegrid'
 import { InterviewRevisionPanel } from '@/components/interview-revision-panel'
+import { Pill } from '@/components/pill'
 import { INTERVIEW_KIND_LABELS, INTERVIEW_KINDS } from '@/domain/interviews'
 import { PARIS_TIME_ZONE } from '@/domain/paris-time'
-import { EVENT_STYLES_BY_KIND, useController } from './controller'
+import { INTERVIEW_KIND_TONES, useController } from './controller'
 import type { InterviewsCalendarProps } from './interfaces'
 import '@fullcalendar/react/skeleton.css'
 import '@fullcalendar/react/themes/classic/theme.css'
 import '@fullcalendar/react/themes/classic/palette.css'
+import './interviews-calendar.css'
 
 const CALENDAR_PLUGINS = [themePlugin, dayGridPlugin, timeGridPlugin, listPlugin]
 
 export const InterviewsCalendar = ({ listUpcomingInterviews }: InterviewsCalendarProps) => {
-  const { calendarEvents, revisionPanelContent, errorMessage, initialView, onDatesSet, selectInterview, closePanel } =
-    useController({ listUpcomingInterviews })
+  const {
+    calendarContainerRef,
+    calendarEvents,
+    revisionPanelContent,
+    errorMessage,
+    initialView,
+    onDatesSet,
+    selectInterview,
+    closePanel,
+  } = useController({ listUpcomingInterviews })
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -28,34 +38,33 @@ export const InterviewsCalendar = ({ listUpcomingInterviews }: InterviewsCalenda
           {errorMessage}
         </p>
       )}
-      <ul aria-label="Légende" className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+      <ul aria-label="Légende" className="flex flex-wrap gap-2">
         {INTERVIEW_KINDS.map((interviewKind) => (
-          <li key={interviewKind} className="flex items-center gap-1.5">
-            <span
-              aria-hidden
-              className="size-2.5 rounded-sm"
-              style={{ backgroundColor: EVENT_STYLES_BY_KIND[interviewKind].color }}
-            />
-            {INTERVIEW_KIND_LABELS[interviewKind]}
+          <li key={interviewKind}>
+            <Pill tone={INTERVIEW_KIND_TONES[interviewKind]}>{INTERVIEW_KIND_LABELS[interviewKind]}</Pill>
           </li>
         ))}
       </ul>
-      {initialView !== null && (
-        <FullCalendar
-          plugins={CALENDAR_PLUGINS}
-          initialView={initialView}
-          locale={frenchLocale}
-          timeZone={PARIS_TIME_ZONE}
-          headerToolbar={{ start: 'prev,next today', center: 'title', end: 'dayGridMonth,timeGridWeek,listWeek' }}
-          buttons={{ listWeek: { text: 'Liste' } }}
-          events={calendarEvents}
-          datesSet={({ start, end }) => {
-            void onDatesSet(start, end)
-          }}
-          eventClick={({ event }) => selectInterview(event.id)}
-        />
-      )}
-      <InterviewRevisionPanel content={revisionPanelContent} onClose={closePanel} />
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_22rem] lg:items-start">
+        <div ref={calendarContainerRef} tabIndex={-1} className="min-w-0 rounded-2xl bg-card p-4 outline-none">
+          {initialView !== null && (
+            <FullCalendar
+              plugins={CALENDAR_PLUGINS}
+              initialView={initialView}
+              locale={frenchLocale}
+              timeZone={PARIS_TIME_ZONE}
+              headerToolbar={{ start: 'prev,next today', center: 'title', end: 'dayGridMonth,timeGridWeek,listWeek' }}
+              buttons={{ listWeek: { text: 'Liste' } }}
+              events={calendarEvents}
+              datesSet={({ start, end }) => {
+                void onDatesSet(start, end)
+              }}
+              eventClick={({ event }) => selectInterview(event.id)}
+            />
+          )}
+        </div>
+        <InterviewRevisionPanel content={revisionPanelContent} onClose={closePanel} />
+      </div>
     </div>
   )
 }

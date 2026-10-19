@@ -1,0 +1,83 @@
+.fc {
+  --fc-border-color: var(--hairline);
+  --fc-today-bg-color: transparent;
+  --fc-event-border-color: transparent;
+  --fc-page-bg-color: var(--card);
+  color: var(--ink);
+}
+
+.fc .fc-toolbar {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.fc .fc-toolbar-title {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1.125rem;
+}
+
+.fc .fc-button {
+  border: 1px solid var(--hairline-strong);
+  border-radius: 9999px;
+  background: var(--card);
+  color: var(--ink);
+  font-weight: 500;
+  padding: 0.375rem 0.875rem;
+  box-shadow: none;
+  text-transform: none;
+}
+
+.fc .fc-button:hover {
+  background: var(--sage);
+  color: var(--ink);
+}
+
+.fc .fc-button:focus-visible {
+  outline: 2px solid var(--forest);
+  outline-offset: 2px;
+}
+
+.fc .fc-button-active,
+.fc .fc-button-active:hover {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: var(--primary-foreground);
+}
+
+.fc .fc-button-group {
+  gap: 0.25rem;
+}
+
+.fc .fc-button-group > .fc-button {
+  border-radius: 9999px;
+}
+
+.fc .fc-scrollgrid,
+.fc .fc-scrollgrid td,
+.fc .fc-scrollgrid th {
+  border-color: var(--hairline);
+}
+
+.fc .fc-daygrid-day {
+  border-radius: 0.875rem;
+}
+
+.fc .fc-day-today .fc-daygrid-day-number {
+  border: 2px solid var(--forest);
+  border-radius: 9999px;
+  color: var(--forest);
+  font-weight: 700;
+}
+
+.fc .fc-event {
+  border-radius: 9999px;
+  padding: 0 0.5rem;
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc * {
+    transition: none;
+  }
+}
