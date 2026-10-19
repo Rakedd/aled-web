@@ -54,3 +54,25 @@ export const parisLocalDateTimeToUtc = (parisLocalDateTime: string): Date => {
 
 export const formatParisInterviewDateTime = (date: Date): string =>
   formatInTimeZone(date, PARIS_TIME_ZONE, "EEE dd/MM '·' HH'h'mm", { locale: fr })
+
+const capitalizeFirstLetter = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1)
+
+export const formatInterviewCountdown = (startsAt: Date, now: Date): string => {
+  const daysUntilInterview = countParisCalendarDaysBetween(now, startsAt)
+  if (daysUntilInterview <= 0) return "aujourd'hui"
+  if (daysUntilInterview === 1) return 'demain'
+  return `dans ${daysUntilInterview} jours`
+}
+
+export const formatParisLongDate = (date: Date): string =>
+  capitalizeFirstLetter(formatInTimeZone(date, PARIS_TIME_ZONE, 'EEEE d MMMM', { locale: fr }))
+
+export const formatParisDayBlock = (date: Date): { weekday: string; day: string } => ({
+  weekday: formatInTimeZone(date, PARIS_TIME_ZONE, 'EEE', { locale: fr }).replace('.', '').toUpperCase(),
+  day: formatInTimeZone(date, PARIS_TIME_ZONE, 'd'),
+})
+
+export const formatParisTime = (date: Date): string => formatInTimeZone(date, PARIS_TIME_ZONE, "HH'h'mm")
+
+export const formatParisWeekdayName = (date: Date): string =>
+  formatInTimeZone(date, PARIS_TIME_ZONE, 'EEEE', { locale: fr })

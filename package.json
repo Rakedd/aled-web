@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "jest",
-    "test:tz": "TZ=UTC jest paris-time interviews opportunities opportunity-filters && TZ=America/New_York jest paris-time interviews opportunities opportunity-filters",
+    "test:tz": "TZ=UTC jest paris-time interviews opportunities opportunity-filters home-summary && TZ=America/New_York jest paris-time interviews opportunities opportunity-filters home-summary",
     "test:integration": "jest -c jest.integration.config.ts --passWithNoTests",
     "db:types": "supabase gen types --lang typescript --local --schema public > src/server/supabase/database-types.ts"
   },

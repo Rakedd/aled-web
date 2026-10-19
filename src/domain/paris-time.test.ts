@@ -5,7 +5,11 @@ import {
   formatParisCalendarDate,
   formatParisDate,
   formatParisDateTime,
+  formatInterviewCountdown,
+  formatParisDayBlock,
   formatParisInterviewDateTime,
+  formatParisLongDate,
+  formatParisTime,
   formatParisLocalDateTime,
   formatRelativeDaysAgo,
   parisLocalDateTimeToUtc,
@@ -115,5 +119,34 @@ describe('formatParisLocalDateTime', () => {
 
   it('round-trips with parisLocalDateTimeToUtc', () => {
     expect(formatParisLocalDateTime(parisLocalDateTimeToUtc('2026-07-01T09:30'))).toBe('2026-07-01T09:30')
+  })
+})
+
+describe('formatInterviewCountdown', () => {
+  const NOW = new Date('2026-10-19T08:00:00Z')
+
+  it.each([
+    [NOW, '2026-10-19T14:00:00Z', "aujourd'hui"],
+    [NOW, '2026-10-22T08:00:00Z', 'dans 3 jours'],
+    [new Date('2026-10-19T21:30:00Z'), '2026-10-19T22:30:00Z', 'demain'],
+    [new Date('2026-10-24T22:30:00Z'), '2026-10-25T23:30:00Z', 'demain'],
+    [new Date('2026-10-24T21:30:00Z'), '2026-10-25T23:30:00Z', 'dans 2 jours'],
+  ])('counts Paris calendar days from %s to %s', (now, startsAt, expectedCountdown) => {
+    expect(formatInterviewCountdown(new Date(startsAt), now)).toBe(expectedCountdown)
+  })
+})
+
+describe('Paris date formatters', () => {
+  it('formats a capitalised long date in Paris time', () => {
+    expect(formatParisLongDate(new Date('2026-10-19T08:00:00Z'))).toBe('Lundi 19 octobre')
+    expect(formatParisLongDate(new Date('2026-10-19T22:30:00Z'))).toBe('Mardi 20 octobre')
+  })
+
+  it('formats the weekday and day block', () => {
+    expect(formatParisDayBlock(new Date('2026-10-22T08:00:00Z'))).toEqual({ weekday: 'JEU', day: '22' })
+  })
+
+  it('formats the time of day', () => {
+    expect(formatParisTime(new Date('2026-10-22T08:00:00Z'))).toBe('10h00')
   })
 })

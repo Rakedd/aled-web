@@ -1,6 +1,7 @@
 import {
   ALL_JOB_APPLICATION_STATUSES,
   JOB_APPLICATION_STATUS_LABELS,
+  countActiveJobApplications,
   getNextPipelineStatus,
   getSuggestedKoStatuses,
   isActiveStatus,
@@ -69,5 +70,13 @@ describe('isJobApplicationStatus', () => {
 
   it.each(['hired', 'toString', '', null, 3])('rejects %p', (candidate) => {
     expect(isJobApplicationStatus(candidate)).toBe(false)
+  })
+})
+
+describe('countActiveJobApplications', () => {
+  it('counts only the non terminal statuses', () => {
+    const oneApplicationPerStatus = ALL_JOB_APPLICATION_STATUSES.map((status) => ({ status }))
+    expect(countActiveJobApplications(oneApplicationPerStatus)).toBe(6)
+    expect(countActiveJobApplications([])).toBe(0)
   })
 })

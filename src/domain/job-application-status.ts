@@ -74,3 +74,6 @@ export const getNextPipelineStatus = (status: JobApplicationStatus): JobApplicat
 export const getSuggestedKoStatuses = (status: JobApplicationStatus): JobApplicationStatus[] => [
   ...(SUGGESTED_KO_STATUSES_BY_STATUS[status] ?? []),
 ]
+
+export const countActiveJobApplications = (jobApplications: { status: JobApplicationStatus }[]): number =>
+  jobApplications.filter((jobApplication) => isActiveStatus(jobApplication.status)).length
