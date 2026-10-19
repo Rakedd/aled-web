@@ -140,4 +140,20 @@ describe('OpportunitiesBoard', () => {
 
     expect(listOpportunities).toHaveBeenCalledWith('applied', null, '')
   })
+
+  it('keeps the focus on the tab while the next tab loads and ignores further keys', async () => {
+    const listOpportunities = jest.fn().mockReturnValue(new Promise(() => undefined))
+    renderBoard({ counts: { to_process: 3, applied: 0, dismissed: 0 } }, false, 'to_process', jest.fn(), listOpportunities)
+    screen.getByRole('tab', { name: 'À traiter · 3' }).focus()
+
+    await userEvent.keyboard('{ArrowRight}')
+    const appliedTab = screen.getByRole('tab', { name: 'Postulées · 0' })
+    expect(appliedTab).toHaveFocus()
+    expect(appliedTab).toHaveAttribute('aria-disabled', 'true')
+
+    await userEvent.keyboard('{ArrowRight}')
+
+    expect(appliedTab).toHaveFocus()
+    expect(listOpportunities).toHaveBeenCalledTimes(1)
+  })
 })

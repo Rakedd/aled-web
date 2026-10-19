@@ -11,17 +11,28 @@ export const PillTabs = <TabKey extends string>({ label, tabs, selectedTab, onSe
     onSelect(tabs[targetIndex].key)
   }
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+  const getTargetIndex = (key: string, currentIndex: number) => {
     const lastIndex = tabs.length - 1
-    const targetIndexByKey: Record<string, number> = {
-      ArrowRight: currentIndex === lastIndex ? 0 : currentIndex + 1,
-      ArrowLeft: currentIndex === 0 ? lastIndex : currentIndex - 1,
-      Home: 0,
-      End: lastIndex,
+    switch (key) {
+      case 'ArrowRight':
+        return currentIndex === lastIndex ? 0 : currentIndex + 1
+      case 'ArrowLeft':
+        return currentIndex === 0 ? lastIndex : currentIndex - 1
+      case 'Home':
+        return 0
+      case 'End':
+        return lastIndex
+      default:
+        return null
     }
-    const targetIndex = targetIndexByKey[event.key]
-    if (targetIndex === undefined) return
+  }
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return
+    const targetIndex = getTargetIndex(event.key, currentIndex)
+    if (targetIndex === null) return
     event.preventDefault()
+    if (isDisabled) return
     moveToTab(targetIndex)
   }
 
@@ -41,11 +52,11 @@ export const PillTabs = <TabKey extends string>({ label, tabs, selectedTab, onSe
             aria-selected={isSelected}
             aria-controls={tab.panelId}
             tabIndex={isSelected ? 0 : -1}
-            disabled={isDisabled}
-            onClick={() => onSelect(tab.key)}
+            aria-disabled={isDisabled || undefined}
+            onClick={() => !isDisabled && onSelect(tab.key)}
             onKeyDown={(event) => handleKeyDown(event, index)}
             className={cn(
-              'h-9 shrink-0 cursor-pointer rounded-full px-4 text-sm font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/40 disabled:opacity-50 motion-reduce:transition-none',
+              'h-9 shrink-0 cursor-pointer rounded-full px-4 text-sm font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/40 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 motion-reduce:transition-none',
               isSelected ? 'bg-forest text-primary-foreground' : 'text-ink hover:bg-hairline',
             )}
           >

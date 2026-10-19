@@ -11,7 +11,7 @@ const TABS = [
   { key: 'c' as const, label: 'C', tabId: 'tab-c', panelId: 'panel' },
 ]
 
-const TabsHarness = ({ initialTab, onSelect }: { initialTab: TestTab; onSelect: (tab: TestTab) => void }) => {
+const TabsHarness = ({ initialTab, onSelect, isDisabled = false }: { initialTab: TestTab; onSelect: (tab: TestTab) => void; isDisabled?: boolean }) => {
   const [selectedTab, setSelectedTab] = useState<TestTab>(initialTab)
 
   return (
@@ -19,6 +19,7 @@ const TabsHarness = ({ initialTab, onSelect }: { initialTab: TestTab; onSelect: 
       label="Test"
       tabs={TABS}
       selectedTab={selectedTab}
+      isDisabled={isDisabled}
       onSelect={(tab) => {
         setSelectedTab(tab)
         onSelect(tab)
@@ -86,5 +87,33 @@ describe('PillTabs', () => {
     await userEvent.click(screen.getByRole('tab', { name: 'B · 2' }))
 
     expect(onSelect).toHaveBeenCalledWith('b')
+  })
+
+  it('ignores arrow keys combined with Alt, Ctrl or Meta', async () => {
+    const onSelect = jest.fn()
+    render(<TabsHarness initialTab="a" onSelect={onSelect} />)
+    screen.getByRole('tab', { name: 'A' }).focus()
+
+    await userEvent.keyboard('{Alt>}{ArrowLeft}{/Alt}')
+    await userEvent.keyboard('{Meta>}{ArrowRight}{/Meta}')
+
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  it('stays focusable but selects nothing while disabled', async () => {
+    const onSelect = jest.fn()
+    render(<TabsHarness initialTab="a" onSelect={onSelect} isDisabled />)
+    const tabA = screen.getByRole('tab', { name: 'A' })
+    tabA.focus()
+
+    await userEvent.keyboard('{ArrowRight}')
+
+    expect(tabA).toHaveAttribute('aria-disabled', 'true')
+    expect(tabA).not.toBeDisabled()
+    expect(tabA).toHaveFocus()
+
+    await userEvent.click(screen.getByRole('tab', { name: 'B · 2' }))
+
+    expect(onSelect).not.toHaveBeenCalled()
   })
 })

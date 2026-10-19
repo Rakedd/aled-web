@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
-import { JOB_APPLICATION_STATUS_LABELS, type JobApplicationStatus } from '@/domain/job-application-status'
 import type { PillTone } from '@/components/pill/interfaces'
+import { JOB_APPLICATION_STATUS_LABELS, type JobApplicationStatus } from '@/domain/job-application-status'
 import { StatusBadge } from './status-badge'
 
 const EXPECTED_TONES: Record<JobApplicationStatus, PillTone> = {

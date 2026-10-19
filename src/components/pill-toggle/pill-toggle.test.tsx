@@ -34,4 +34,18 @@ describe('PillToggle', () => {
     expect(toggle).toHaveAttribute('aria-pressed', 'true')
     expect(toggle).toHaveAttribute('data-tone', 'forest')
   })
+
+  it('does not toggle while disabled', async () => {
+    const onPressedChange = jest.fn()
+    render(
+      <PillToggle isPressed={false} onPressedChange={onPressedChange} disabled>
+        Remote
+      </PillToggle>,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remote' }))
+
+    expect(screen.getByRole('button', { name: 'Remote' })).toBeDisabled()
+    expect(onPressedChange).not.toHaveBeenCalled()
+  })
 })
