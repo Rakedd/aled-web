@@ -45,6 +45,7 @@ const JobApplicationsPage = async ({ searchParams }: PageProps<'/candidatures'>)
 
   const todoDetails = (
     <TodoBanner
+      title="Tous les rappels"
       initialAlerts={alerts}
       snoozeAlert={snoozeAlert}
       changeJobApplicationStatus={changeJobApplicationStatus}

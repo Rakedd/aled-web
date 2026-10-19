@@ -80,15 +80,34 @@ describe('JobApplicationsTable', () => {
     renderTable([buildJobApplication({})])
     expect(screen.getByText('Dernier échange :')).toBeInTheDocument()
     const legend = screen.getByText('Dernier échange :').parentElement as HTMLElement
-    for (const label of ['moins de 7 j', '7 à 14 j', 'plus de 14 j']) {
-      expect(within(legend).getByText(label)).toBeInTheDocument()
+    const expectedTones = { 'moins de 7 j': 'forest-soft', '7 à 14 j': 'peach-soft', 'plus de 14 j': 'clay' }
+    for (const [label, tone] of Object.entries(expectedTones)) {
+      expect(within(legend).getByText(label)).toHaveAttribute('data-tone', tone)
     }
   })
 
   it('reveals the to-do details once expanded', async () => {
     renderTable([buildJobApplication({ id: 'a' })], [FOLLOW_UP_ALERT])
-    expect(screen.getByText('Détails des rappels')).not.toBeVisible()
-    await userEvent.click(screen.getByRole('button', { name: 'Tout déplier' }))
+    const expandButton = screen.getByRole('button', { name: 'Tout déplier' })
+    const detailsRegion = screen.getByText('Détails des rappels').parentElement as HTMLElement
+    expect(expandButton).toHaveAttribute('aria-expanded', 'false')
+    expect(expandButton).toHaveAttribute('aria-controls', detailsRegion.id)
+    expect(detailsRegion).toHaveAttribute('hidden')
+    await userEvent.click(expandButton)
+    expect(screen.getByRole('button', { name: 'Tout replier' })).toHaveAttribute('aria-expanded', 'true')
+    expect(detailsRegion).not.toHaveAttribute('hidden')
     expect(screen.getByText('Détails des rappels')).toBeVisible()
+  })
+
+  it('keeps only the applications with a follow-up alert when the pill is clicked', async () => {
+    renderTable(
+      [buildJobApplication({ id: 'a', title: 'Alpha' }), buildJobApplication({ id: 'b', title: 'Bravo' })],
+      [FOLLOW_UP_ALERT],
+    )
+    await userEvent.click(screen.getByRole('button', { name: '1 relance' }))
+    expect(screen.getByRole('link', { name: 'Alpha' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Bravo' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '1 relance' }))
+    expect(screen.getByRole('link', { name: 'Bravo' })).toBeInTheDocument()
   })
 })

@@ -145,7 +145,7 @@ describe('HomeDashboard', () => {
 
   it('shows at most five reminders as tagged links to their application', () => {
     renderDashboard({ initialAlerts: [1, 2, 3, 4, 5, 6].map(buildAlert) })
-    const remindersSection = screen.getByRole('region', { name: 'Tous les rappels' })
+    const remindersSection = screen.getByRole('region', { name: 'À faire' })
     const reminderLinks = within(remindersSection).getAllByRole('link', { name: /Relance/ })
     expect(reminderLinks).toHaveLength(5)
     expect(reminderLinks[0]).toHaveAttribute('href', '/candidatures/application-1')
@@ -166,7 +166,7 @@ describe('HomeDashboard', () => {
 
   it('shows the empty reminders state and the empty missions state', () => {
     renderDashboard()
-    expect(within(screen.getByRole('region', { name: 'Tous les rappels' })).getByText("Rien d'urgent aujourd'hui.")).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: 'À faire' })).getByText("Rien d'urgent aujourd'hui.")).toBeInTheDocument()
     expect(screen.getByText('Pas de nouvelle mission intéressante depuis 48 h.')).toBeInTheDocument()
   })
 

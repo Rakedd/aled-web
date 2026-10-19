@@ -110,6 +110,7 @@ export const HomeDashboard = ({
       <div className={BENTO_ROW_CLASS_NAME}>
         <div className="flex min-w-0 flex-col md:flex-[2_1_26rem]">
           <TodoBanner
+            title="À faire"
             initialAlerts={initialAlerts.slice(0, MAXIMUM_VISIBLE_ALERTS)}
             snoozeAlert={snoozeAlert}
             changeJobApplicationStatus={changeJobApplicationStatus}

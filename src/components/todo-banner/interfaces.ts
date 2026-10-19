@@ -30,6 +30,7 @@ export type TodoBannerControllerParameters = {
 }
 
 export type TodoBannerProps = Omit<TodoBannerControllerParameters, 'onDataChanged'> & {
+  title: string
   jobApplicationSummaries: TodoBannerJobApplicationSummary[]
   interviews: AlertInterview[]
   now: Date

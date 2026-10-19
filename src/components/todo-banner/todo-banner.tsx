@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useId } from 'react'
 import { Pill } from '@/components/pill'
 import { Button } from '@/components/ui/button'
 import { SNOOZE_DURATIONS_IN_DAYS, isSnoozableAlertKind } from '@/domain/alert-snoozes'
@@ -26,6 +27,7 @@ const TODO_ALERT_CARD_CLASS_NAMES: Record<AlertKind, string> = {
 }
 
 export const TodoBanner = ({
+  title,
   initialAlerts,
   snoozeAlert,
   changeJobApplicationStatus,
@@ -35,6 +37,7 @@ export const TodoBanner = ({
   children,
 }: TodoBannerProps) => {
   const router = useRouter()
+  const titleId = useId()
   const { alerts, errorMessage, isAlertPending, snooze, closeAsNoNews } = useController({
     initialAlerts,
     snoozeAlert,
@@ -43,9 +46,9 @@ export const TodoBanner = ({
   })
 
   return (
-    <section aria-labelledby="todo-banner-title" className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-6">
-      <h2 id="todo-banner-title" className="font-heading text-xl font-extrabold">
-        Tous les rappels
+    <section aria-labelledby={titleId} className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-6">
+      <h2 id={titleId} className="font-heading text-xl font-extrabold">
+        {title}
       </h2>
       {errorMessage && (
         <p role="alert" className="text-sm text-destructive">
