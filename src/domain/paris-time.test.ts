@@ -4,13 +4,14 @@ import {
   countParisCalendarDaysBetween,
   formatParisCalendarDate,
   formatParisDate,
-  formatParisDateTime,
   formatInterviewCountdown,
+  formatParisDateTime,
   formatParisDayBlock,
   formatParisInterviewDateTime,
+  formatParisLocalDateTime,
   formatParisLongDate,
   formatParisTime,
-  formatParisLocalDateTime,
+  formatParisWeekdayName,
   formatRelativeDaysAgo,
   parisLocalDateTimeToUtc,
   parseParisCalendarDate,
@@ -148,5 +149,11 @@ describe('Paris date formatters', () => {
 
   it('formats the time of day', () => {
     expect(formatParisTime(new Date('2026-10-22T08:00:00Z'))).toBe('10h00')
+  })
+})
+
+describe('formatParisWeekdayName', () => {
+  it('returns the lowercase French weekday in Paris', () => {
+    expect(formatParisWeekdayName(new Date('2026-10-22T08:00:00Z'))).toBe('jeudi')
   })
 })

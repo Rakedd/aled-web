@@ -22,7 +22,7 @@ describe('buildHomeSummarySentence', () => {
     [
       'a mock interview today',
       { nextInterview: { startsAt: new Date('2026-10-19T14:00:00Z'), kind: 'mock' }, recentOpportunityCount: 2 },
-      'Un entretien blanc aujourd\'hui.',
+      "Un entretien blanc aujourd'hui.",
     ],
     [
       'an other interview on friday',
