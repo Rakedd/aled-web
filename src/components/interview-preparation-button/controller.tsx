@@ -184,6 +184,7 @@ export const useController = ({
     isButtonDisabled: isGenerating || isLoadingLanguage || (!isComplete && !hasAnthropicApiKey && !isReadable),
     handleButtonClick,
     regenerate: (languageToGenerate: BriefLanguage) => generate(languageToGenerate, true, false),
+    generateMissingPart: () => generate(language, false, false),
     isModalOpen,
     closeModal: () => setIsModalOpen(false),
     notes,

@@ -142,6 +142,46 @@ describe('interview-preparation-button useController', () => {
       expect(result.current.isGenerating).toBe(false)
     })
 
+    it('generates the missing questions from the open modal once, keeping it open and updating the preparation', async () => {
+      const completePreparation = buildPreparation({ brief: briefOf('fr'), questions: questionsOf('fr') })
+      const { result, generateInterviewPreparation, onDataChanged } = renderPreparationController({
+        initialPreparation: buildPreparation({ brief: briefOf('fr') }),
+      })
+      generateInterviewPreparation.mockResolvedValueOnce({ ok: true, data: buildPreparation({ brief: briefOf('fr') }) })
+      await act(() => result.current.handleButtonClick())
+      expect(result.current.isModalOpen).toBe(true)
+      generateInterviewPreparation.mockClear()
+      onDataChanged.mockClear()
+      const deferredGeneration = createDeferred<ActionResult<InterviewPreparation>>()
+      generateInterviewPreparation.mockReturnValueOnce(deferredGeneration.promise)
+
+      let firstClick: Promise<void> = Promise.resolve()
+      act(() => {
+        firstClick = result.current.generateMissingPart()
+      })
+      expect(result.current.generationProgressLabel).toBe(QUESTIONS_GENERATION_LABEL)
+      await act(() => result.current.generateMissingPart())
+
+      await act(async () => {
+        deferredGeneration.resolve({ ok: true, data: completePreparation })
+        await firstClick
+      })
+      expect(generateInterviewPreparation).toHaveBeenCalledTimes(1)
+      expect(generateInterviewPreparation).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'fr', false)
+      expect(result.current.isModalOpen).toBe(true)
+      expect(result.current.preparation.questions).toEqual(questionsOf('fr'))
+      expect(onDataChanged).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not generate the missing part from the modal without a Claude key', async () => {
+      const { result, generateInterviewPreparation } = renderPreparationController({
+        initialPreparation: buildPreparation({ brief: briefOf('fr') }),
+        hasAnthropicApiKey: false,
+      })
+      await act(() => result.current.generateMissingPart())
+      expect(generateInterviewPreparation).not.toHaveBeenCalled()
+    })
+
     it('shows the generated preparation, opens the modal and refreshes the page data', async () => {
       const { result, onDataChanged } = renderPreparationController()
       await act(() => result.current.handleButtonClick())

@@ -47,6 +47,7 @@ const InterviewPreparationModalContent = ({
   errorMessage,
   hasAnthropicApiKey,
   onRegenerate,
+  onGenerateMissingPart,
   notes,
   changeNotes,
   notesSaveStatus,
@@ -83,7 +84,16 @@ const InterviewPreparationModalContent = ({
           <MarkdownContent markdown={briefParts.rest} />
         </>
       ) : (
-        preparation.endClientId === null && <p className="text-sm text-muted-foreground">{UNKNOWN_CLIENT_MESSAGE}</p>
+        <>
+          {preparation.endClientId === null && <p className="text-sm text-muted-foreground">{UNKNOWN_CLIENT_MESSAGE}</p>}
+          {preparation.endClientId !== null && hasAnthropicApiKey && (
+            <div>
+              <Button type="button" variant="outline" onClick={onGenerateMissingPart} disabled={isGenerating}>
+                {generationProgressLabel ?? 'Générer le brief'}
+              </Button>
+            </div>
+          )}
+        </>
       )}
       {preparation.endClientId !== null && (
         <div className="flex flex-col gap-2">
@@ -109,6 +119,13 @@ const InterviewPreparationModalContent = ({
               </Button>
             </div>
           )}
+        </div>
+      )}
+      {questions === null && hasAnthropicApiKey && (
+        <div>
+          <Button type="button" variant="outline" onClick={onGenerateMissingPart} disabled={isGenerating}>
+            {generationProgressLabel ?? 'Générer les questions'}
+          </Button>
         </div>
       )}
       {questions !== null && (

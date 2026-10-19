@@ -16,6 +16,7 @@ export type InterviewPreparationModalProps = {
   errorMessage: string | null
   hasAnthropicApiKey: boolean
   onRegenerate: (language: BriefLanguage) => void
+  onGenerateMissingPart: () => void
   notes: string
   changeNotes: (notes: string) => void
   notesSaveStatus: NotesSaveStatus

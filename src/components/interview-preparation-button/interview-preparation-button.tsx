@@ -26,6 +26,7 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
     isButtonDisabled,
     handleButtonClick,
     regenerate,
+    generateMissingPart,
     isModalOpen,
     closeModal,
     notes,
@@ -78,6 +79,7 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
         errorMessage={errorMessage}
         hasAnthropicApiKey={hasAnthropicApiKey}
         onRegenerate={(regenerationLanguage) => void regenerate(regenerationLanguage)}
+        onGenerateMissingPart={() => void generateMissingPart()}
         notes={notes}
         changeNotes={changeNotes}
         notesSaveStatus={notesSaveStatus}

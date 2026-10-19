@@ -40,6 +40,7 @@ const buildPreparation = (overrides: Partial<InterviewPreparation> = {}): Interv
 const renderModal = (overrides: Partial<ComponentProps<typeof InterviewPreparationModal>> = {}) => {
   const onClose = jest.fn()
   const onRegenerate = jest.fn()
+  const onGenerateMissingPart = jest.fn()
   render(
     <InterviewPreparationModal
       isOpen
@@ -49,6 +50,7 @@ const renderModal = (overrides: Partial<ComponentProps<typeof InterviewPreparati
       errorMessage={null}
       hasAnthropicApiKey
       onRegenerate={onRegenerate}
+      onGenerateMissingPart={onGenerateMissingPart}
       notes="Parler de Kafka"
       changeNotes={jest.fn()}
       notesSaveStatus="idle"
@@ -58,7 +60,7 @@ const renderModal = (overrides: Partial<ComponentProps<typeof InterviewPreparati
       {...overrides}
     />,
   )
-  return { onClose, onRegenerate }
+  return { onClose, onRegenerate, onGenerateMissingPart }
 }
 
 describe('InterviewPreparationModal', () => {
@@ -140,6 +142,42 @@ describe('InterviewPreparationModal', () => {
     expect(screen.getByText("Client inconnu, demande-le à l'intermédiaire.")).toBeInTheDocument()
     expect(screen.queryByLabelText("Mes notes sur l'entreprise")).not.toBeInTheDocument()
     expect(screen.getByRole('list', { name: 'Questions à poser en entretien' })).toBeInTheDocument()
+  })
+
+  it('offers to generate the missing questions when a Claude key exists', async () => {
+    const { onGenerateMissingPart } = renderModal({ preparation: buildPreparation({ questions: null }) })
+    expect(screen.queryByRole('heading', { name: 'Questions à poser en entretien' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Générer les questions' }))
+    expect(onGenerateMissingPart).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not offer to generate the questions when they exist', () => {
+    renderModal()
+    expect(screen.queryByRole('button', { name: 'Générer les questions' })).not.toBeInTheDocument()
+  })
+
+  it('does not offer to generate the questions without a Claude key', () => {
+    renderModal({ preparation: buildPreparation({ questions: null }), hasAnthropicApiKey: false })
+    expect(screen.queryByRole('button', { name: 'Générer les questions' })).not.toBeInTheDocument()
+  })
+
+  it('offers to generate the missing brief only when the client is known', async () => {
+    const { onGenerateMissingPart } = renderModal({ preparation: buildPreparation({ brief: null }) })
+    await userEvent.click(screen.getByRole('button', { name: 'Générer le brief' }))
+    expect(onGenerateMissingPart).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not offer to generate the brief when the client is unknown or the brief exists', () => {
+    renderModal({ preparation: buildPreparation({ endClientId: null, endClientName: null, brief: null }) })
+    expect(screen.queryByRole('button', { name: 'Générer le brief' })).not.toBeInTheDocument()
+  })
+
+  it('shows the progress label on the generation button and disables it while generating', () => {
+    renderModal({
+      preparation: buildPreparation({ questions: null }),
+      generationProgressLabel: 'Génération des questions…',
+    })
+    expect(screen.getAllByRole('button', { name: 'Génération des questions…' })[0]).toBeDisabled()
   })
 
   it('asks the language before regenerating', async () => {
