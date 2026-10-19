@@ -48,3 +48,11 @@ export type InterviewPreparation = {
   notes: string | null
   lastUsedLanguage: BriefLanguage | null
 }
+
+export type GenerationScope = 'brief_and_questions' | 'questions_only'
+
+export const hasReadablePreparation = (preparation: InterviewPreparation): boolean =>
+  preparation.brief !== null || preparation.questions !== null
+
+export const findGenerationScope = (preparation: InterviewPreparation, regenerate: boolean): GenerationScope =>
+  preparation.endClientId !== null && (regenerate || preparation.brief === null) ? 'brief_and_questions' : 'questions_only'

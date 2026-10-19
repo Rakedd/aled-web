@@ -1,8 +1,6 @@
 import type { ActionResult } from '@/domain/action-result'
 import type { BriefLanguage, InterviewPreparation } from '@/domain/interview-preparation'
 
-export type GenerationScope = 'brief_and_questions' | 'questions_only'
-
 export type UpdateEndClientNotes = (endClientId: string, notes: string) => Promise<ActionResult<null>>
 
 export type GetInterviewPreparation = (

@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { type ActionResult, guardActionCall } from '@/domain/action-result'
-import type { BriefLanguage, InterviewPreparation } from '@/domain/interview-preparation'
+import {
+  type BriefLanguage,
+  findGenerationScope,
+  type GenerationScope,
+  hasReadablePreparation,
+  type InterviewPreparation,
+} from '@/domain/interview-preparation'
 import type { NotesSaveStatus } from '@/components/interview-preparation-modal/interfaces'
-import type { GenerationScope, InterviewPreparationButtonControllerParameters } from './interfaces'
+import type { InterviewPreparationButtonControllerParameters } from './interfaces'
 
 const NOTES_AUTOSAVE_DELAY_IN_MILLISECONDS = 800
 const GENERATE_LABEL = 'Générer le brief'
@@ -14,12 +20,6 @@ const GENERATION_PROGRESS_LABELS: Record<GenerationScope, string> = {
 
 const isPreparationComplete = (preparation: InterviewPreparation): boolean =>
   preparation.questions !== null && (preparation.endClientId === null || preparation.brief !== null)
-
-const hasReadablePreparation = (preparation: InterviewPreparation): boolean =>
-  preparation.brief !== null || preparation.questions !== null
-
-const findGenerationScope = (preparation: InterviewPreparation, regenerate: boolean): GenerationScope =>
-  preparation.endClientId !== null && (regenerate || preparation.brief === null) ? 'brief_and_questions' : 'questions_only'
 
 export const useController = ({
   jobApplicationId,
