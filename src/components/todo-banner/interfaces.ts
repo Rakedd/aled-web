@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { ActionResult } from '@/domain/action-result'
 import type { JobApplicationListItem } from '@/domain/job-application'
 import type { JobApplicationStatus } from '@/domain/job-application-status'
@@ -32,6 +33,5 @@ export type TodoBannerProps = Omit<TodoBannerControllerParameters, 'onDataChange
   jobApplicationSummaries: TodoBannerJobApplicationSummary[]
   interviews: AlertInterview[]
   now: Date
-  maximumVisibleAlerts?: number
-  seeAllHref?: string
+  children?: ReactNode
 }

@@ -19,6 +19,9 @@ export type HomeDashboardProps = Omit<HomeDashboardControllerParameters, 'onData
   alertInterviews: AlertInterview[]
   upcomingInterviews: InterviewWithJobApplication[]
   highlightedOpportunitiesErrorMessage: string | null
+  activeJobApplicationCount: number
+  opportunitiesToProcessCount: number
+  recentOpportunityCount: number
   snoozeAlert: SnoozeAlert
   changeJobApplicationStatus: ChangeJobApplicationStatus
 }

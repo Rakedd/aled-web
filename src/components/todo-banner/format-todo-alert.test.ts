@@ -1,5 +1,10 @@
 import type { TodoAlert } from '@/domain/todo-alerts'
-import { formatTodoAlertMessage, getTodoAlertKey } from './format-todo-alert'
+import {
+  TODO_ALERT_KIND_TAG_LABELS,
+  TODO_ALERT_KIND_TONES,
+  formatTodoAlertMessage,
+  getTodoAlertKey,
+} from './format-todo-alert'
 
 const now = new Date('2026-10-17T10:00:00Z')
 
@@ -71,5 +76,29 @@ describe('formatTodoAlertMessage', () => {
 
   it('builds a distinct key per alert', () => {
     expect(getTodoAlertKey(buildAlert({}))).not.toBe(getTodoAlertKey(buildAlert({ kind: 'end_client_unknown' })))
+  })
+})
+
+describe('TODO_ALERT_KIND_TAG_LABELS', () => {
+  it.each([
+    ['follow_up_due', 'Relance'],
+    ['job_spec_missing', 'Fiche métier'],
+    ['end_client_unknown', 'Client inconnu'],
+    ['no_news_suggestion', 'Sans nouvelles'],
+    ['upcoming_interview', 'Entretien à venir'],
+  ] as const)('labels %s as %s', (alertKind, label) => {
+    expect(TODO_ALERT_KIND_TAG_LABELS[alertKind]).toBe(label)
+  })
+})
+
+describe('TODO_ALERT_KIND_TONES', () => {
+  it.each([
+    ['follow_up_due', 'peach'],
+    ['job_spec_missing', 'lilac'],
+    ['end_client_unknown', 'lilac'],
+    ['no_news_suggestion', 'clay'],
+    ['upcoming_interview', 'sage'],
+  ] as const)('gives %s the %s tone', (alertKind, tone) => {
+    expect(TODO_ALERT_KIND_TONES[alertKind]).toBe(tone)
   })
 })

@@ -5,9 +5,9 @@ import type { ActionResult } from '@/domain/action-result'
 import { rejectWith } from '@/domain/input-validation'
 import {
   HISTORY_WINDOW_DAYS,
+  type HighlightedOpportunities,
   OPPORTUNITY_VALIDATION_MESSAGES,
   type OpportunityListing,
-  type OpportunityListItem,
   type OpportunityListingCursor,
   type OpportunitySource,
   type OpportunityTab,
@@ -51,7 +51,7 @@ export const listOpportunities = async (
     }),
   })
 
-export const listHighlightedOpportunities = async (): Promise<ActionResult<OpportunityListItem[]>> =>
+export const listHighlightedOpportunities = async (): Promise<ActionResult<HighlightedOpportunities>> =>
   runAuthenticatedOperation({
     operationName: 'listHighlightedOpportunities',
     failureMessage: LOAD_FAILURE_MESSAGE,

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { HomeDashboard } from '@/components/home-dashboard'
+import { countActiveJobApplications } from '@/domain/job-application-status'
 import { changeJobApplicationStatus, snoozeAlert } from '@/server/actions/job-application-actions'
-import { applyToOpportunity, listHighlightedOpportunities } from '@/server/actions/opportunity-actions'
+import { applyToOpportunity, countOpportunitiesToProcess, listHighlightedOpportunities } from '@/server/actions/opportunity-actions'
 import { loadTodoReminders } from '@/server/todo-reminders/load-todo-reminders'
 
 export const metadata: Metadata = { title: 'Accueil · Aled' }
@@ -14,9 +15,10 @@ const PAGE_LOAD_FAILURE_MESSAGE = 'Impossible de charger ton accueil.'
 
 const HomePage = async () => {
   const now = new Date()
-  const [todoRemindersResult, highlightedOpportunitiesResult] = await Promise.all([
+  const [todoRemindersResult, highlightedOpportunitiesResult, opportunitiesToProcessCountResult] = await Promise.all([
     loadTodoReminders(now, UPCOMING_INTERVIEWS_LOOKAHEAD_DAYS),
     listHighlightedOpportunities(),
+    countOpportunitiesToProcess(),
   ])
 
   if (!todoRemindersResult.ok) {
@@ -45,8 +47,11 @@ const HomePage = async () => {
       }))}
       alertInterviews={alertInterviews}
       upcomingInterviews={upcomingInterviews}
-      highlightedOpportunities={highlightedOpportunitiesResult.ok ? highlightedOpportunitiesResult.data : []}
+      highlightedOpportunities={highlightedOpportunitiesResult.ok ? highlightedOpportunitiesResult.data.opportunities : []}
       highlightedOpportunitiesErrorMessage={highlightedOpportunitiesResult.ok ? null : highlightedOpportunitiesResult.errorMessage}
+      activeJobApplicationCount={countActiveJobApplications(jobApplications)}
+      opportunitiesToProcessCount={opportunitiesToProcessCountResult.ok ? opportunitiesToProcessCountResult.data : 0}
+      recentOpportunityCount={highlightedOpportunitiesResult.ok ? highlightedOpportunitiesResult.data.recentOpportunityCount : 0}
       snoozeAlert={snoozeAlert}
       changeJobApplicationStatus={changeJobApplicationStatus}
       applyToOpportunity={applyToOpportunity}

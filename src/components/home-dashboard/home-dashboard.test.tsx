@@ -73,6 +73,9 @@ const buildDashboard = (overrides: Partial<HomeDashboardProps> = {}) => (
     upcomingInterviews={[]}
     highlightedOpportunities={[]}
     highlightedOpportunitiesErrorMessage={null}
+    activeJobApplicationCount={0}
+    opportunitiesToProcessCount={0}
+    recentOpportunityCount={0}
     snoozeAlert={jest.fn()}
     changeJobApplicationStatus={jest.fn()}
     applyToOpportunity={jest.fn()}
@@ -107,41 +110,69 @@ describe('HomeDashboard', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Bonjour' })).toBeInTheDocument()
   })
 
-  it('shows at most five reminders and a link to see them all', () => {
-    renderDashboard({ initialAlerts: [1, 2, 3, 4, 5, 6].map(buildAlert) })
-    const banner = screen.getByRole('region', { name: 'À faire' })
-    expect(within(banner).getAllByRole('listitem')).toHaveLength(5)
-    expect(within(banner).getByRole('link', { name: 'Voir tout' })).toHaveAttribute('href', '/candidatures')
-  })
-
-  it('does not offer to see all reminders when there are five or fewer', () => {
-    renderDashboard({ initialAlerts: [1, 2, 3, 4, 5].map(buildAlert) })
-    expect(screen.queryByRole('link', { name: 'Voir tout' })).not.toBeInTheDocument()
-  })
-
-  it('shows at most three upcoming interviews linking to their application', () => {
-    renderDashboard({ upcomingInterviews: [1, 2, 3, 4].map(buildInterview) })
-    const section = screen.getByRole('region', { name: 'Prochains entretiens' })
-    const links = within(within(section).getByRole('list')).getAllByRole('link')
-    expect(links).toHaveLength(3)
-    expect(links[0]).toHaveAttribute('href', '/candidatures/application-1')
-    expect(links[0]).toHaveTextContent('Entretien client · Poste 1')
-  })
-
-  it('shows the three empty states', () => {
+  it('shows the long Paris date of the day', () => {
     renderDashboard()
-    expect(screen.getByText("Rien d'urgent aujourd'hui.")).toBeInTheDocument()
+    expect(screen.getByText('Lundi 19 octobre')).toBeInTheDocument()
+  })
+
+  it('summarises the reminders and the next interview and presents it with a countdown', () => {
+    renderDashboard({
+      initialAlerts: [1, 2, 3, 4].map(buildAlert),
+      upcomingInterviews: [{ ...buildInterview(1), startsAt: new Date('2026-10-22T08:00:00Z') }],
+    })
+    expect(screen.getByText('4 choses à faire et un entretien client jeudi.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Prochain entretien · dans 3 jours' })).toBeInTheDocument()
+    expect(screen.getByText('jeu. 22/10 · 10h00')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Voir mon calendrier' })).toHaveAttribute('href', '/calendar')
+  })
+
+  it('says there is no interview and hides the following ones', () => {
+    renderDashboard()
+    expect(screen.getByRole('heading', { level: 2, name: 'Prochain entretien' })).toBeInTheDocument()
     expect(screen.getByText('Aucun entretien prévu.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Voir mon calendrier' })).toHaveAttribute('href', '/calendar')
+    expect(screen.queryByRole('heading', { name: 'Ensuite' })).not.toBeInTheDocument()
+  })
+
+  it('lists the second and third interviews under Ensuite', () => {
+    renderDashboard({ upcomingInterviews: [1, 2, 3, 4].map(buildInterview) })
+    const followingSection = screen.getByRole('region', { name: 'Ensuite' })
+    expect(within(followingSection).getAllByRole('listitem')).toHaveLength(2)
+    expect(within(followingSection).getByText('Poste 2')).toBeInTheDocument()
+    expect(within(followingSection).getByText('Poste 3')).toBeInTheDocument()
+    expect(within(followingSection).queryByText('Poste 4')).not.toBeInTheDocument()
+  })
+
+  it('shows at most five reminders as tagged links to their application', () => {
+    renderDashboard({ initialAlerts: [1, 2, 3, 4, 5, 6].map(buildAlert) })
+    const remindersSection = screen.getByRole('region', { name: 'À faire' })
+    const reminderLinks = within(remindersSection).getAllByRole('link', { name: /Relance/ })
+    expect(reminderLinks).toHaveLength(5)
+    expect(reminderLinks[0]).toHaveAttribute('href', '/candidatures/application-1')
+    expect(within(reminderLinks[0]).getByText('Relance')).toHaveAttribute('data-tone', 'peach')
+    expect(within(remindersSection).getByRole('link', { name: 'Voir mes candidatures' })).toHaveAttribute('href', '/candidatures')
+  })
+
+  it.each([
+    [6, 'candidatures en cours', { activeJobApplicationCount: 6 }],
+    [1, 'candidature en cours', { activeJobApplicationCount: 1 }],
+    [12, 'missions à traiter', { opportunitiesToProcessCount: 12 }],
+    [1, 'mission à traiter', { opportunitiesToProcessCount: 1 }],
+  ])('shows the counter %s with its label %s', (count, label, overrides) => {
+    renderDashboard(overrides)
+    expect(screen.getByText(String(count))).toBeInTheDocument()
+    expect(screen.getByText(label)).toBeInTheDocument()
+  })
+
+  it('shows the empty reminders state and the empty missions state', () => {
+    renderDashboard()
+    expect(within(screen.getByRole('region', { name: 'À faire' })).getByText("Rien d'urgent aujourd'hui.")).toBeInTheDocument()
     expect(screen.getByText('Pas de nouvelle mission intéressante depuis 48 h.')).toBeInTheDocument()
   })
 
-  it('places each shortcut under its own section', () => {
+  it('titles the missions section and links to all opportunities', () => {
     renderDashboard()
-    const remindersSection = screen.getByRole('region', { name: 'À faire' }).parentElement as HTMLElement
-    const interviewsSection = screen.getByRole('region', { name: 'Prochains entretiens' })
-    const missionsSection = screen.getByRole('region', { name: 'Missions à ne pas manquer' })
-    expect(within(remindersSection).getByRole('link', { name: 'Voir mes candidatures' })).toHaveAttribute('href', '/candidatures')
-    expect(within(interviewsSection).getByRole('link', { name: 'Voir mon calendrier' })).toHaveAttribute('href', '/calendar')
+    const missionsSection = screen.getByRole('region', { name: 'Missions intéressantes · moins de 48 h' })
     expect(within(missionsSection).getByRole('link', { name: 'Voir mes opportunités' })).toHaveAttribute('href', '/opportunites')
   })
 

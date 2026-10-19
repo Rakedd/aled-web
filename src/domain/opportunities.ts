@@ -70,6 +70,8 @@ export type OpportunityListing = {
   lastViewedAt: Date | null
 }
 
+export type HighlightedOpportunities = { opportunities: OpportunityListItem[]; recentOpportunityCount: number }
+
 export type ApplyToOpportunity = (opportunityId: string) => Promise<ActionResult<{ jobApplicationId: string }>>
 
 export const OPPORTUNITY_PAGE_SIZE = 50

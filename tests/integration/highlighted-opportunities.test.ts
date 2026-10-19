@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { HighlightedOpportunities } from '@/domain/opportunities'
 import { EMPTY_OPPORTUNITY_FILTERS } from '@/domain/opportunity-filters'
 import {
   dismissOpportunity,
@@ -43,11 +44,14 @@ const seedMissionOrFail = async ({ title, hoursAgo, rateMax }: SeededMission): P
   return data.id
 }
 
-const listHighlightedTitlesOrFail = async (): Promise<string[]> => {
+const listHighlightedOrFail = async (): Promise<HighlightedOpportunities> => {
   const highlightedResult = await listHighlightedOpportunities()
   if (!highlightedResult.ok) throw new Error(highlightedResult.errorMessage)
-  return highlightedResult.data.map(({ title }) => title)
+  return highlightedResult.data
 }
+
+const listHighlightedTitlesOrFail = async (): Promise<string[]> =>
+  (await listHighlightedOrFail()).opportunities.map(({ title }) => title)
 
 describe('listHighlightedOpportunities', () => {
   it('keeps the missions published within 48 hours and ranks them by rate, undisclosed rates last', async () => {
@@ -60,7 +64,10 @@ describe('listHighlightedOpportunities', () => {
     await seedMissionOrFail({ title: `Top ${keyword}`, hoursAgo: 20, rateMax: 650 })
     await saveOpportunityFilters('free-work', { ...EMPTY_OPPORTUNITY_FILTERS, includeKeywords: [keyword] })
 
-    expect(await listHighlightedTitlesOrFail()).toEqual([`Top ${keyword}`, `Mid ${keyword}`])
+    const highlighted = await listHighlightedOrFail()
+
+    expect(highlighted.opportunities.map(({ title }) => title)).toEqual([`Top ${keyword}`, `Mid ${keyword}`])
+    expect(highlighted.recentOpportunityCount).toBe(3)
   })
 
   it('breaks rate ties with the most recent publication and puts undisclosed rates after known ones', async () => {
@@ -102,13 +109,16 @@ describe('listHighlightedOpportunities', () => {
     expect(await listHighlightedTitlesOrFail()).toEqual([`React ${keyword}`])
   })
 
-  it('returns at most two missions', async () => {
+  it('returns at most two missions but counts every recent one', async () => {
     const user = await createSignedInTestClient(`highlighted-${randomUUID()}@test.local`)
     actAs(user)
     const keyword = `tok${randomUUID().replaceAll('-', '').slice(0, 12)}`
     await Promise.all([1, 2, 3].map((index) => seedMissionOrFail({ title: `M${index} ${keyword}`, hoursAgo: index, rateMax: 500 + index })))
     await saveOpportunityFilters('free-work', { ...EMPTY_OPPORTUNITY_FILTERS, includeKeywords: [keyword] })
 
-    expect(await listHighlightedTitlesOrFail()).toHaveLength(2)
+    const highlighted = await listHighlightedOrFail()
+
+    expect(highlighted.opportunities).toHaveLength(2)
+    expect(highlighted.recentOpportunityCount).toBe(3)
   })
 })

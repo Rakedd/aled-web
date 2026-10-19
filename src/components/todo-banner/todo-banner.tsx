@@ -2,12 +2,28 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Pill } from '@/components/pill'
 import { Button } from '@/components/ui/button'
 import { SNOOZE_DURATIONS_IN_DAYS, isSnoozableAlertKind } from '@/domain/alert-snoozes'
+import { cn } from '@/lib/utils'
 import { jobApplicationRoute } from '@/domain/routes'
+import type { AlertKind } from '@/domain/types'
 import { useController } from './controller'
-import { formatTodoAlertMessage, getTodoAlertKey } from './format-todo-alert'
+import {
+  TODO_ALERT_KIND_TAG_LABELS,
+  TODO_ALERT_KIND_TONES,
+  formatTodoAlertMessage,
+  getTodoAlertKey,
+} from './format-todo-alert'
 import type { TodoBannerProps } from './interfaces'
+
+const TODO_ALERT_CARD_CLASS_NAMES: Record<AlertKind, string> = {
+  follow_up_due: 'bg-peach-tint',
+  job_spec_missing: 'bg-lilac-tint',
+  end_client_unknown: 'bg-lilac-tint',
+  no_news_suggestion: 'bg-clay-tint',
+  upcoming_interview: 'bg-hairline',
+}
 
 export const TodoBanner = ({
   initialAlerts,
@@ -16,8 +32,7 @@ export const TodoBanner = ({
   jobApplicationSummaries,
   interviews,
   now,
-  maximumVisibleAlerts = Number.POSITIVE_INFINITY,
-  seeAllHref,
+  children,
 }: TodoBannerProps) => {
   const router = useRouter()
   const { alerts, errorMessage, isAlertPending, snooze, closeAsNoNews } = useController({
@@ -28,8 +43,8 @@ export const TodoBanner = ({
   })
 
   return (
-    <section aria-labelledby="todo-banner-title" className="flex flex-col gap-3 rounded-2xl bg-card p-4">
-      <h2 id="todo-banner-title" className="text-lg font-semibold">
+    <section aria-labelledby="todo-banner-title" className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-6">
+      <h2 id="todo-banner-title" className="font-heading text-xl font-extrabold">
         À faire
       </h2>
       {errorMessage && (
@@ -38,17 +53,21 @@ export const TodoBanner = ({
         </p>
       )}
       {alerts.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Rien d&apos;urgent aujourd&apos;hui.</p>
+        <p className="text-sm text-ink-secondary">Rien d&apos;urgent aujourd&apos;hui.</p>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {alerts.slice(0, maximumVisibleAlerts).map((alert) => {
+        <ul className="flex flex-wrap gap-2.5">
+          {alerts.map((alert) => {
             const summary = jobApplicationSummaries.find(({ id }) => id === alert.jobApplicationId)
             return (
-              <li key={getTodoAlertKey(alert)} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <li
+                key={getTodoAlertKey(alert)}
+                className={cn('flex min-w-0 flex-[1_1_14rem] flex-col gap-3 rounded-xl p-3.5', TODO_ALERT_CARD_CLASS_NAMES[alert.kind])}
+              >
                 <Link
                   href={jobApplicationRoute(alert.jobApplicationId)}
-                  className="min-w-0 flex-1 text-sm hover:underline focus-visible:underline"
+                  className="flex flex-col items-start gap-1.5 text-sm hover:underline focus-visible:underline"
                 >
+                  <Pill tone={TODO_ALERT_KIND_TONES[alert.kind]}>{TODO_ALERT_KIND_TAG_LABELS[alert.kind]}</Pill>
                   {formatTodoAlertMessage(alert, summary, interviews, now)}
                 </Link>
                 {isSnoozableAlertKind(alert.kind) && (
@@ -70,11 +89,7 @@ export const TodoBanner = ({
           })}
         </ul>
       )}
-      {seeAllHref !== undefined && alerts.length > maximumVisibleAlerts && (
-        <Link href={seeAllHref} className="self-start text-sm underline underline-offset-4">
-          Voir tout
-        </Link>
-      )}
+      {children}
     </section>
   )
 }

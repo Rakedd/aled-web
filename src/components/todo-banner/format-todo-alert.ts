@@ -3,13 +3,30 @@ import { fr } from 'date-fns/locale'
 import { JOB_APPLICATION_STATUS_LABELS } from '@/domain/job-application-status'
 import { PARIS_TIME_ZONE, countParisCalendarDaysBetween } from '@/domain/paris-time'
 import type { AlertInterview, TodoAlert } from '@/domain/todo-alerts'
-import type { InterviewKind } from '@/domain/types'
+import type { PillTone } from '@/components/pill/interfaces'
+import type { AlertKind, InterviewKind } from '@/domain/types'
 import type { TodoBannerJobApplicationSummary } from './interfaces'
 
 const INTERVIEW_KIND_LABELS: Record<InterviewKind, string> = {
   client: 'Entretien client',
   mock: 'Entretien blanc',
   other: 'Entretien',
+}
+
+export const TODO_ALERT_KIND_TAG_LABELS: Record<AlertKind, string> = {
+  follow_up_due: 'Relance',
+  job_spec_missing: 'Fiche métier',
+  end_client_unknown: 'Client inconnu',
+  no_news_suggestion: 'Sans nouvelles',
+  upcoming_interview: 'Entretien à venir',
+}
+
+export const TODO_ALERT_KIND_TONES: Record<AlertKind, PillTone> = {
+  follow_up_due: 'peach',
+  job_spec_missing: 'lilac',
+  end_client_unknown: 'lilac',
+  no_news_suggestion: 'clay',
+  upcoming_interview: 'sage',
 }
 
 export const getTodoAlertKey = (alert: TodoAlert): string =>

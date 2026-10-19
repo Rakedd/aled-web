@@ -3,7 +3,7 @@ import {
   getOpportunityEffectiveRate,
   HIGHLIGHTED_OPPORTUNITIES_COUNT,
   HIGHLIGHTED_OPPORTUNITIES_WINDOW_HOURS,
-  type OpportunityListItem,
+  type HighlightedOpportunities,
 } from '@/domain/opportunities'
 import { listOpportunitiesByIds, type OpportunitySummary } from '@/server/repositories/opportunities-repository'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
@@ -28,14 +28,17 @@ export const buildHighlightedOpportunities = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   now: Date,
-): Promise<OpportunityListItem[]> => {
+): Promise<HighlightedOpportunities> => {
   const { summaries, decisions } = await listSummariesToProcessForUser(supabase, userId, now)
   const publishedSince = new Date(now.getTime() - HIGHLIGHTED_OPPORTUNITIES_WINDOW_HOURS * MILLISECONDS_PER_HOUR)
-  const highlightedOpportunityIds = summaries
-    .filter(({ publishedAt }) => publishedAt >= publishedSince)
+  const recentSummaries = summaries.filter(({ publishedAt }) => publishedAt >= publishedSince)
+  const highlightedOpportunityIds = recentSummaries
     .sort(compareByEffectiveRateThenPublication)
     .slice(0, HIGHLIGHTED_OPPORTUNITIES_COUNT)
     .map(({ id }) => id)
   const highlightedOpportunities = await listOpportunitiesByIds(supabase, highlightedOpportunityIds)
-  return toListItems(highlightedOpportunityIds, highlightedOpportunities, decisions)
+  return {
+    opportunities: toListItems(highlightedOpportunityIds, highlightedOpportunities, decisions),
+    recentOpportunityCount: recentSummaries.length,
+  }
 }
