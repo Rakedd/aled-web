@@ -71,9 +71,9 @@ const InterviewPreparationModalContent = ({
       </div>
       {briefParts !== null ? (
         <>
-          {briefParts.highlights.map((highlight) => (
+          {briefParts.highlights.map((highlight, highlightIndex) => (
             <section
-              key={highlight.title}
+              key={`${highlightIndex}-${highlight.title}`}
               aria-label={highlight.title}
               className="rounded-lg border border-primary/30 bg-muted/50 p-3"
             >

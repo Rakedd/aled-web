@@ -39,6 +39,13 @@ describe('splitBriefHighlights', () => {
     expect(splitBriefHighlights('## Enjeux\nTexte')).toEqual({ highlights: [], rest: '## Enjeux\nTexte' })
   })
 
+  it('keeps both sections when a highlight heading is repeated', () => {
+    const { highlights } = splitBriefHighlights('## Chiffres clés\n- CA\n\n## Chiffres clés\n- Effectif')
+    expect(highlights.map((highlight) => highlight.title)).toEqual(['Chiffres clés', 'Chiffres clés'])
+    expect(highlights[0].markdown).toContain('CA')
+    expect(highlights[1].markdown).toContain('Effectif')
+  })
+
   it('does not treat a sub heading as a section boundary', () => {
     const { highlights } = splitBriefHighlights('## Chiffres clés\n### Détail\n- a')
     expect(highlights).toHaveLength(1)

@@ -86,6 +86,20 @@ describe('InterviewPreparationModal', () => {
     expect(restOfBrief.textContent).not.toContain('CA : 1 Md€')
   })
 
+  it('boxes every highlight when a heading is repeated, without a duplicate key warning', () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    const preparation = buildPreparation()
+    renderModal({
+      preparation: {
+        ...preparation,
+        brief: preparation.brief && { ...preparation.brief, markdown: '## Chiffres clés\n\nCA\n\n## Chiffres clés\n\nEffectif' },
+      },
+    })
+    expect(screen.getAllByRole('region', { name: 'Chiffres clés' })).toHaveLength(2)
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
+    consoleErrorSpy.mockRestore()
+  })
+
   it('numbers the interview questions', () => {
     renderModal()
     const questionList = screen.getByRole('list', { name: 'Questions à poser en entretien' })

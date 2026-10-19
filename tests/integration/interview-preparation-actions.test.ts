@@ -472,6 +472,31 @@ describe('generateInterviewPreparationForUser', () => {
     })
   })
 
+  it('measures the remaining time once, after reading the job spec, and never asks with less than ten seconds', async () => {
+    const user = await createTestUser()
+    const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
+    let clockReadCount = 0
+    const dependencies = createDependencies({
+      startedAtInMilliseconds: NOW_IN_MILLISECONDS - 274_000,
+      nowInMilliseconds: () => {
+        clockReadCount += 1
+        return NOW_IN_MILLISECONDS + (clockReadCount - 1) * 2_000
+      },
+    })
+
+    await generateInterviewPreparationForUser(
+      user.client,
+      user.userId,
+      { jobApplicationId, language: 'fr', regenerate: false },
+      dependencies,
+    )
+
+    expect(dependencies.generateQuestions).toHaveBeenCalledWith('sk-ant-test-key', expect.anything(), {
+      maxRetries: 0,
+      timeout: 11_000,
+    })
+  })
+
   it('keeps the saved brief and skips the questions when less than ten seconds remain', async () => {
     const user = await createTestUser()
     const { jobApplicationId, endClientId } = await createJobApplicationWithEndClient(user)

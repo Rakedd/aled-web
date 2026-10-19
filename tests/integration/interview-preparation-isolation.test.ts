@@ -33,6 +33,10 @@ const createEndClientOrFail = async (
   return data.id
 }
 
+const failOnError = ({ error }: { error: { message: string } | null }): void => {
+  if (error) throw new Error(error.message)
+}
+
 const buildBriefRow = (userId: string, endClientId: string) => ({
   user_id: userId,
   end_client_id: endClientId,
@@ -181,7 +185,9 @@ describe('interview preparation isolation', () => {
   it('deletes the interview questions of a job application when the job application is deleted', async () => {
     const user = await createSignedInTestClient(`a-${randomUUID()}@test.local`)
     const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
-    await user.client.from('interview_questions').insert(buildInterviewQuestionsRow(user.userId, jobApplicationId))
+    failOnError(
+      await user.client.from('interview_questions').insert(buildInterviewQuestionsRow(user.userId, jobApplicationId)),
+    )
 
     const { error: deletionError } = await user.client.from('job_applications').delete().eq('id', jobApplicationId)
     expect(deletionError).toBeNull()
@@ -196,7 +202,7 @@ describe('interview preparation isolation', () => {
   it('deletes the briefs of an end client when the end client is deleted', async () => {
     const user = await createSignedInTestClient(`a-${randomUUID()}@test.local`)
     const endClientId = await createEndClientOrFail(user.client, user.userId)
-    await user.client.from('end_client_briefs').insert(buildBriefRow(user.userId, endClientId))
+    failOnError(await user.client.from('end_client_briefs').insert(buildBriefRow(user.userId, endClientId)))
 
     const { error: deletionError } = await user.client.from('end_clients').delete().eq('id', endClientId)
     expect(deletionError).toBeNull()

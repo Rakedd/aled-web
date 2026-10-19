@@ -180,13 +180,18 @@ const computeRemainingTimeInMilliseconds = ({
   PREPARATION_SAFETY_MARGIN_IN_MILLISECONDS -
   nowInMilliseconds()
 
-const toQuestionsRequestOptions = (remainingTimeInMilliseconds: number): InterviewQuestionsRequestOptions => ({
-  maxRetries:
-    remainingTimeInMilliseconds < MINIMUM_TIME_FOR_QUESTIONS_RETRY_IN_MILLISECONDS
-      ? 0
-      : DEFAULT_INTERVIEW_QUESTIONS_REQUEST_OPTIONS.maxRetries,
-  timeout: Math.min(DEFAULT_INTERVIEW_QUESTIONS_REQUEST_OPTIONS.timeout, remainingTimeInMilliseconds),
-})
+export const toQuestionsRequestOptions = (
+  remainingTimeInMilliseconds: number,
+): InterviewQuestionsRequestOptions | null => {
+  if (remainingTimeInMilliseconds < MINIMUM_QUESTIONS_TIME_IN_MILLISECONDS) return null
+  return {
+    maxRetries:
+      remainingTimeInMilliseconds < MINIMUM_TIME_FOR_QUESTIONS_RETRY_IN_MILLISECONDS
+        ? 0
+        : DEFAULT_INTERVIEW_QUESTIONS_REQUEST_OPTIONS.maxRetries,
+    timeout: Math.min(DEFAULT_INTERVIEW_QUESTIONS_REQUEST_OPTIONS.timeout, remainingTimeInMilliseconds),
+  }
+}
 
 type QuestionsSubject = { language: BriefLanguage; briefMarkdown: string | null }
 
@@ -215,6 +220,7 @@ const generateAndSaveQuestions = async (
   const { supabase, userId, apiKey, dependencies } = generationSession
   const interviewQuestionsInput = await buildInterviewQuestionsInput(generationSession, jobApplication, questionsSubject)
   const requestOptions = toQuestionsRequestOptions(computeRemainingTimeInMilliseconds(dependencies))
+  if (requestOptions === null) return { ok: true, data: null }
   const questionsResult = await runAiGeneration('Interview questions', INTERVIEW_QUESTIONS_AI_ERROR_MESSAGES, () =>
     dependencies.generateQuestions(apiKey, interviewQuestionsInput, requestOptions),
   )
@@ -247,9 +253,7 @@ export const generateInterviewPreparationForUser = async (
   const generationSession: GenerationSession = { supabase, userId, apiKey, dependencies }
   const briefResult = await findOrGenerateBrief(generationSession, endClientToBrief, preparation.brief)
   if (!briefResult.ok) return briefResult
-  const hasTimeLeftForQuestions =
-    computeRemainingTimeInMilliseconds(dependencies) >= MINIMUM_QUESTIONS_TIME_IN_MILLISECONDS
-  if (shouldGenerateQuestions && hasTimeLeftForQuestions) {
+  if (shouldGenerateQuestions) {
     const questionsResult = await generateAndSaveQuestions(generationSession, jobApplication, {
       language,
       briefMarkdown: briefResult.data?.markdown ?? null,
