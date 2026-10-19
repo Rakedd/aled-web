@@ -141,9 +141,31 @@ Ce que fait le script :
 
 La clé API Claude n'étant jamais sauvegardée, l'utilisateur doit la ressaisir dans les préférences si son profil a été recréé.
 
+## CI/CD
+
+Le workflow `.github/workflows/ci-cd.yml` tourne à chaque push, sur toutes les branches :
+
+1. **checks** : lint, typecheck, tests unitaires, tests de fuseau horaire, build ;
+2. **integration** : tests d'intégration sur un Supabase local démarré dans le runner ;
+3. **deploy** (seulement sur `main`, et seulement si les deux jobs précédents passent) : `supabase db push` applique les migrations en attente sur la base de production, puis la CLI Vercel construit et déploie la production. Les migrations passent donc toujours avant le code qui en dépend.
+
+`vercel.json` désactive le déploiement automatique de Vercel sur `main` (`git.deploymentEnabled`) : la production ne se déploie que par ce workflow. Les autres branches gardent leurs déploiements de prévisualisation Vercel.
+
+Secrets à créer dans GitHub (**Settings > Secrets and variables > Actions**) :
+
+| Secret | Valeur |
+| --- | --- |
+| `VERCEL_TOKEN` | un jeton créé sur [vercel.com/account/tokens](https://vercel.com/account/tokens) |
+| `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | `orgId` et `projectId` de `.vercel/project.json` (après `npx vercel link`) |
+| `SUPABASE_ACCESS_TOKEN` | un jeton créé sur [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens) |
+| `SUPABASE_DB_PASSWORD` | le mot de passe de la base de production |
+| `SUPABASE_PROJECT_ID` | la référence du projet Supabase |
+
+Le watcher Free-Work (career-ops) se déploie à part, avec son propre `deploy.sh`.
+
 ## Déploiement
 
-Le déploiement se fait à la main, dans cet ordre : Supabase, Google Cloud Storage, Vercel, puis le premier utilisateur. Vercel n'est configuré qu'à la fin car il a besoin des valeurs des deux premières étapes.
+La première mise en place se fait à la main, dans cet ordre : Supabase, Google Cloud Storage, Vercel, puis le premier utilisateur. Vercel n'est configuré qu'à la fin car il a besoin des valeurs des deux premières étapes. Ensuite, les migrations et les déploiements passent par la CI/CD.
 
 ### 1. Projet Supabase hébergé (formule gratuite)
 
