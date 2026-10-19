@@ -11,6 +11,7 @@ import { formatParisDateTime } from '@/domain/paris-time'
 import { cn } from '@/lib/utils'
 import { useController } from './controller'
 import type { InterviewPreparationModalContentProps, InterviewPreparationModalProps, NotesSaveStatus } from './interfaces'
+import { NATIVE_SELECT_CLASS_NAME, TEXTAREA_CLASS_NAME } from '@/lib/control-class-names'
 
 const NOTES_TEXTAREA_ID = 'interview-preparation-notes'
 const REGENERATION_LANGUAGE_SELECT_ID = 'interview-preparation-regeneration-language'
@@ -101,7 +102,7 @@ const InterviewPreparationModalContent = ({
           <textarea
             id={NOTES_TEXTAREA_ID}
             rows={5}
-            className="min-h-24 w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+            className={cn(TEXTAREA_CLASS_NAME, 'min-h-24 w-full resize-y')}
             placeholder="Partagées avec toutes les candidatures chez ce client"
             value={notes}
             onChange={(changeEvent) => changeNotes(changeEvent.target.value)}
@@ -176,7 +177,7 @@ const InterviewPreparationModalContent = ({
             onChange={(changeEvent) => {
               if (isBriefLanguage(changeEvent.target.value)) changeRegenerationLanguage(changeEvent.target.value)
             }}
-            className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm dark:bg-input/30"
+            className={NATIVE_SELECT_CLASS_NAME}
           >
             {BRIEF_LANGUAGES.map((language) => (
               <option key={language} value={language}>

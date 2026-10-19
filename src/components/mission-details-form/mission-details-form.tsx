@@ -5,6 +5,8 @@ import { FormField } from '@/components/form-field'
 import { TextField } from '@/components/text-field'
 import { useController } from './controller'
 import type { MissionDetailsFormProps } from './interfaces'
+import { TEXTAREA_CLASS_NAME } from '@/lib/control-class-names'
+import { cn } from '@/lib/utils'
 
 const NOTES_TEXTAREA_ID = 'mission-details-notes'
 
@@ -64,7 +66,7 @@ export const MissionDetailsForm = (props: MissionDetailsFormProps) => {
         <textarea
           id={NOTES_TEXTAREA_ID}
           rows={4}
-          className="min-h-24 w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+          className={cn(TEXTAREA_CLASS_NAME, 'min-h-24 w-full resize-y')}
           value={formValues.notes}
           onChange={(changeEvent) => setFormValue('notes', changeEvent.target.value)}
         />

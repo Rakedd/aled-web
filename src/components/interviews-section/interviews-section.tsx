@@ -14,6 +14,8 @@ import {
 import { formatParisInterviewDateTime } from '@/domain/paris-time'
 import { useController } from './controller'
 import type { InterviewsSectionProps } from './interfaces'
+import { NATIVE_SELECT_CLASS_NAME, TEXTAREA_CLASS_NAME } from '@/lib/control-class-names'
+import { cn } from '@/lib/utils'
 
 const DATE_TIME_INPUT_ID = 'interview-date-time'
 const KIND_SELECT_ID = 'interview-kind'
@@ -21,9 +23,6 @@ const FORMAT_SELECT_ID = 'interview-format'
 const PARTICIPANTS_INPUT_ID = 'interview-participants'
 const NOTES_TEXTAREA_ID = 'interview-notes'
 const DELETE_CONFIRMATION_MESSAGE = 'Supprimer cet entretien ?'
-
-const SELECT_CLASS_NAME =
-  'h-8 rounded-lg border border-input bg-transparent px-2 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30'
 
 export const InterviewsSection = ({
   jobApplicationId,
@@ -153,7 +152,7 @@ export const InterviewsSection = ({
               <Label htmlFor={KIND_SELECT_ID}>Type</Label>
               <select
                 id={KIND_SELECT_ID}
-                className={SELECT_CLASS_NAME}
+                className={NATIVE_SELECT_CLASS_NAME}
                 value={formValues.kind}
                 onChange={(changeEvent) => handleKindChange(changeEvent.target.value)}
                 disabled={isSubmitting}
@@ -169,7 +168,7 @@ export const InterviewsSection = ({
               <Label htmlFor={FORMAT_SELECT_ID}>Modalité</Label>
               <select
                 id={FORMAT_SELECT_ID}
-                className={SELECT_CLASS_NAME}
+                className={NATIVE_SELECT_CLASS_NAME}
                 value={formValues.format}
                 onChange={(changeEvent) => handleFormatChange(changeEvent.target.value)}
                 disabled={isSubmitting}
@@ -197,7 +196,7 @@ export const InterviewsSection = ({
             <textarea
               id={NOTES_TEXTAREA_ID}
               rows={3}
-              className="min-h-20 w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+              className={cn(TEXTAREA_CLASS_NAME, 'min-h-20 w-full resize-y')}
               value={formValues.notes}
               onChange={(changeEvent) => setFormValue('notes', changeEvent.target.value)}
               disabled={isSubmitting}

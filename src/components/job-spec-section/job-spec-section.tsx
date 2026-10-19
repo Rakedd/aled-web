@@ -10,6 +10,8 @@ import { buildJobSpecPdfPath, JOB_SPEC_PDF_MIME_TYPE, MAX_JOB_SPEC_PDF_MEGABYTES
 import { formatParisDate } from '@/domain/paris-time'
 import { useController } from './controller'
 import type { JobSpecSectionProps } from './interfaces'
+import { TEXTAREA_CLASS_NAME } from '@/lib/control-class-names'
+import { cn } from '@/lib/utils'
 
 const PDF_INPUT_ID = 'job-spec-pdf'
 const PASTED_TEXT_ID = 'job-spec-pasted-text'
@@ -156,7 +158,7 @@ export const JobSpecSection = ({
         <textarea
           id={PASTED_TEXT_ID}
           rows={6}
-          className="min-h-32 w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+          className={cn(TEXTAREA_CLASS_NAME, 'min-h-32 w-full resize-y')}
           placeholder="Colle ici la fiche métier ou le mail reçu"
           value={pastedText}
           onChange={(changeEvent) => setPastedText(changeEvent.target.value)}

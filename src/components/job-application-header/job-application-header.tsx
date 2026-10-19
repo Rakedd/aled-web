@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { StatusBadge } from '@/components/status-badge'
 import { useController } from './controller'
 import type { JobApplicationHeaderProps } from './interfaces'
+import { NATIVE_SELECT_CLASS_NAME } from '@/lib/control-class-names'
 
 const STATUS_SELECT_ID = 'job-application-header-status'
 
@@ -80,7 +81,7 @@ export const JobApplicationHeader = ({ jobApplication, changeJobApplicationStatu
           </Label>
           <select
             id={STATUS_SELECT_ID}
-            className="h-8 rounded-lg border border-input bg-transparent px-2 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+            className={NATIVE_SELECT_CLASS_NAME}
             value={jobApplication.status}
             disabled={isChangingStatus}
             onChange={(changeEvent) => {

@@ -17,11 +17,11 @@ import {
 } from '@/domain/job-application-status'
 import { useController } from './controller'
 import type { NewJobApplicationFormProps, TextFormValueName } from './interfaces'
+import { NATIVE_SELECT_CLASS_NAME, TEXTAREA_CLASS_NAME } from '@/lib/control-class-names'
+import { cn } from '@/lib/utils'
 
 const SOURCE_SUGGESTIONS = ['Free-Work', 'Collective', 'LeHibou', 'Malt', 'LinkedIn', 'Bouche-à-oreille', 'Autre']
 const SOURCE_SUGGESTIONS_LIST_ID = 'new-job-application-source-suggestions'
-const CONTROL_CLASS_NAME =
-  'rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30'
 
 export const NewJobApplicationForm = ({
   extractJobPosting,
@@ -104,7 +104,7 @@ export const NewJobApplicationForm = ({
             id="new-job-application-pasted-text"
             rows={12}
             maxLength={MAX_PASTED_TEXT_LENGTH + 1}
-            className={`${CONTROL_CLASS_NAME} min-h-48 w-full resize-y`}
+            className={cn(TEXTAREA_CLASS_NAME, 'min-h-48 w-full resize-y')}
             placeholder="Colle ici l'annonce ou le message reçu"
             value={pastedText}
             onChange={(changeEvent) => setPastedText(changeEvent.target.value)}
@@ -161,7 +161,7 @@ export const NewJobApplicationForm = ({
         <FormField htmlFor="new-job-application-status" label="Statut">
           <select
             id="new-job-application-status"
-            className={`${CONTROL_CLASS_NAME} h-8 py-0`}
+            className={NATIVE_SELECT_CLASS_NAME}
             value={formValues.status}
             onChange={(changeEvent) => {
               if (isJobApplicationStatus(changeEvent.target.value)) setStatus(changeEvent.target.value)
@@ -186,7 +186,7 @@ export const NewJobApplicationForm = ({
           aria-label="Texte de l'annonce"
           rows={8}
           maxLength={MAX_PASTED_TEXT_LENGTH + 1}
-          className={`${CONTROL_CLASS_NAME} min-h-32 w-full resize-y`}
+          className={cn(TEXTAREA_CLASS_NAME, 'min-h-32 w-full resize-y')}
           value={formValues.postingRawText}
           onChange={(changeEvent) => setTextFormValue('postingRawText', changeEvent.target.value)}
           disabled={isExtracting}

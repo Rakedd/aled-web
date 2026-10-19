@@ -10,6 +10,7 @@ import { formatParisDateTime } from '@/domain/paris-time'
 import type { ActivityKind } from '@/domain/types'
 import { useController } from './controller'
 import type { ActivityLogProps } from './interfaces'
+import { NATIVE_SELECT_CLASS_NAME } from '@/lib/control-class-names'
 
 const KIND_SELECT_ID = 'activity-log-kind'
 const SUMMARY_INPUT_ID = 'activity-log-summary'
@@ -64,7 +65,7 @@ export const ActivityLog = ({
           <Label htmlFor={KIND_SELECT_ID}>Type</Label>
           <select
             id={KIND_SELECT_ID}
-            className="h-8 rounded-lg border border-input bg-transparent px-2 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+            className={NATIVE_SELECT_CLASS_NAME}
             value={kind}
             onChange={(changeEvent) => handleKindChange(changeEvent.target.value)}
             disabled={isAdding}

@@ -7,9 +7,7 @@ import { Label } from '@/components/ui/label'
 import { STACK_CATEGORIES, STACK_CATEGORY_LABELS, type StackCategory } from '@/domain/types'
 import { useController } from './controller'
 import type { StackChipsEditorProps } from './interfaces'
-
-const SELECT_CLASS_NAME =
-  'h-8 rounded-lg border border-input bg-transparent px-2 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30'
+import { NATIVE_SELECT_CLASS_NAME } from '@/lib/control-class-names'
 
 const isStackCategory = (candidate: string): candidate is StackCategory =>
   STACK_CATEGORIES.some((stackCategory) => stackCategory === candidate)
@@ -79,7 +77,7 @@ export const StackChipsEditor = ({ stack, origin, onChange }: StackChipsEditorPr
           <Label htmlFor={draftCategorySelectId}>Catégorie</Label>
           <select
             id={draftCategorySelectId}
-            className={SELECT_CLASS_NAME}
+            className={NATIVE_SELECT_CLASS_NAME}
             value={draftCategory}
             onChange={(changeEvent) => {
               if (isStackCategory(changeEvent.target.value)) setDraftCategory(changeEvent.target.value)

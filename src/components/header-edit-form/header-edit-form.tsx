@@ -7,6 +7,8 @@ import { TextField } from '@/components/text-field'
 import { INTERMEDIARY_KIND_LABELS, INTERMEDIARY_KINDS } from '@/domain/entities'
 import { useController } from './controller'
 import type { HeaderEditFormProps } from './interfaces'
+import { NATIVE_SELECT_CLASS_NAME } from '@/lib/control-class-names'
+import { cn } from '@/lib/utils'
 
 const INTERMEDIARY_NAME_INPUT_ID = 'header-edit-intermediaryName'
 const INTERMEDIARY_KIND_SELECT_ID = 'header-edit-intermediaryKind'
@@ -73,7 +75,7 @@ export const HeaderEditForm = ({ searchEntities, ...controllerParameters }: Head
         >
           <select
             id={INTERMEDIARY_KIND_SELECT_ID}
-            className="h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30"
+            className={cn(NATIVE_SELECT_CLASS_NAME, 'w-full min-w-0')}
             value={formValues.intermediaryKind}
             disabled={isIntermediaryKindDisabled}
             onChange={(changeEvent) => setFormValue('intermediaryKind', changeEvent.target.value)}
