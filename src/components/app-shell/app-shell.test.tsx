@@ -41,6 +41,7 @@ describe('AppShell', () => {
     renderShell(3)
     expect(screen.getByText('3')).toHaveAttribute('data-tone', 'peach')
     expect(screen.getByRole('link', { name: /^Mes opportunités\s*, 3 à traiter$/ })).toBeInTheDocument()
+    expect(screen.getByText(', 3 à traiter')).toHaveClass('sr-only')
   })
 
   it('offers the sign-out button', () => {

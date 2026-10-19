@@ -41,8 +41,8 @@ export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, chil
           <Link href={HOME_ROUTE} className="font-heading text-lg font-extrabold">
             Aled
           </Link>
-          <nav aria-label="Navigation principale" className="order-last w-full sm:order-none sm:w-auto">
-            <ul className="flex gap-1">
+          <nav aria-label="Navigation principale" className="order-last w-full min-w-0 sm:order-none sm:w-auto">
+            <ul className="flex flex-wrap gap-1">
               {NAVIGATION_ITEMS.map((navigationItem) => {
                 const isActive = navigationItem.isActiveForPathname(pathname)
                 return (
@@ -51,7 +51,7 @@ export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, chil
                       href={navigationItem.href}
                       aria-current={isActive ? 'page' : undefined}
                       className={cn(
-                        'inline-flex h-9 items-center rounded-full px-3 text-sm font-medium text-ink-muted transition-colors hover:bg-muted hover:text-ink motion-reduce:transition-none',
+                        'inline-flex h-9 items-center rounded-full px-3 text-sm whitespace-nowrap font-medium text-ink-muted transition-colors hover:bg-muted hover:text-ink motion-reduce:transition-none',
                         isActive && 'bg-forest text-primary-foreground hover:bg-forest hover:text-primary-foreground',
                       )}
                     >
