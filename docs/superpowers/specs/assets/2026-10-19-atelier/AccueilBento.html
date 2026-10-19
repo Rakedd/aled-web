@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Accueil D · Bento</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1F5C46}a:hover{color:#16231D}
+</style>
+</helmet>
+<div style="min-height: 1080px; background: #F2F4F1; color: #16231D; font-family: 'Figtree', sans-serif; padding: 24px 32px 56px; box-sizing: border-box">
+  <div style="max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+    <nav aria-label="Menu principal" style="background: #FFFFFF; border-radius: 999px; padding: 8px 8px 8px 24px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 15px; font-weight: 600">
+      <a href="#" style="font-family: 'Manrope', sans-serif; font-size: 21px; font-weight: 800; color: #16231D; text-decoration: none; margin-right: auto">Freeclutch</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mes candidatures</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mon calendrier</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px; display: flex; gap: 8px; align-items: center">Mes opportunités <span style="background: #FFB48A; border-radius: 999px; padding: 1px 9px; font-size: 13px; font-weight: 700">12</span></a>
+      <a href="#" style="color: #FFFFFF; background: #16231D; text-decoration: none; padding: 10px 18px; border-radius: 999px">Préférences</a>
+    </nav>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px">
+      <section aria-label="Bienvenue" style="flex: 2 1 520px; min-width: 0; background: #1F5C46; color: #FFFFFF; border-radius: 28px; padding: 32px; display: flex; flex-direction: column; justify-content: space-between; gap: 24px; min-height: 220px; box-sizing: border-box">
+        <span style="font-size: 15px; font-weight: 600; color: #CFE3D8">Lundi 19 octobre</span>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <h1 style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 60px; font-weight: 800; letter-spacing: -0.035em; line-height: 1">Bonjour Rayan</h1>
+          <p style="margin: 0; font-size: 18px; color: #E4F0E9">4 choses à faire et un entretien client mardi. On s'y met ?</p>
+        </div>
+      </section>
+      <section aria-labelledby="prochain-d" style="flex: 1 1 300px; min-width: 0; background: #FFB48A; border-radius: 28px; padding: 28px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box">
+        <h2 id="prochain-d" style="margin: 0; font-size: 15px; font-weight: 700">Prochain entretien · dans 2 jours</h2>
+        <div style="font-family: 'Manrope', sans-serif; font-size: 44px; font-weight: 800; letter-spacing: -0.03em; line-height: 1">Mar. 21 · 10:00</div>
+        <div style="font-size: 16px"><strong>Entretien client</strong><br>Dev React · BNP AM via Hays</div>
+        <a href="#" style="margin-top: auto; align-self: flex-start; font-size: 15px; font-weight: 700; text-decoration: none; padding: 11px 18px; border-radius: 999px; background: #16231D; color: #FFFFFF">Voir mon calendrier</a>
+      </section>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px">
+      <section aria-labelledby="rappels-d" style="flex: 2 1 420px; min-width: 0; background: #FFFFFF; border-radius: 28px; padding: 26px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box">
+        <h2 id="rappels-d" style="margin: 0 0 4px; font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800">À faire</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px">
+          <div style="flex: 1 1 220px; padding: 14px; border-radius: 18px; background: #FFF1E8; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12px; font-weight: 700; align-self: flex-start; padding: 2px 9px; border-radius: 999px; background: #FFB48A">Relance</span><span style="font-size: 15px"><strong>Hays</strong> · Dev React · BNP AM</span></div>
+          <div style="flex: 1 1 220px; padding: 14px; border-radius: 18px; background: #F2F0FC; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12px; font-weight: 700; align-self: flex-start; padding: 2px 9px; border-radius: 999px; background: #DCD6F7">Fiche métier</span><span style="font-size: 15px"><strong>Lead front</strong> · Decathlon</span></div>
+          <div style="flex: 1 1 220px; padding: 14px; border-radius: 18px; background: #F2F0FC; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12px; font-weight: 700; align-self: flex-start; padding: 2px 9px; border-radius: 999px; background: #DCD6F7">Client inconnu</span><span style="font-size: 15px"><strong>Mission Next.js</strong></span></div>
+          <div style="flex: 1 1 220px; padding: 14px; border-radius: 18px; background: #FBF1EF; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12px; font-weight: 700; align-self: flex-start; padding: 2px 9px; border-radius: 999px; background: #F1E3E1; color: #8A3B32">Sans nouvelles</span><span style="font-size: 15px"><strong>Dev Angular</strong> · Malt</span></div>
+        </div>
+        <a href="#" style="align-self: flex-start; margin-top: 4px; font-size: 15px; font-weight: 700; text-decoration: none; padding: 11px 18px; border-radius: 999px; border: 1px solid #C9D3CC; color: #16231D">Voir mes candidatures</a>
+      </section>
+      <section aria-labelledby="ensuite-d" style="flex: 1 1 260px; min-width: 0; background: #FFFFFF; border-radius: 28px; padding: 26px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
+        <h2 id="ensuite-d" style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800">Ensuite</h2>
+        <div style="display: flex; gap: 12px; align-items: center"><div style="width: 54px; height: 54px; border-radius: 16px; background: #DCD6F7; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0"><span style="font-size: 11px; font-weight: 700">JEU</span><span style="font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800; line-height: 1">23</span></div><div style="font-size: 15px; line-height: 1.4"><strong>14:30 · Blanc</strong><br><span style="color: #55625B">Lead front</span></div></div>
+        <div style="display: flex; gap: 12px; align-items: center"><div style="width: 54px; height: 54px; border-radius: 16px; background: #E6ECE8; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0"><span style="font-size: 11px; font-weight: 700">LUN</span><span style="font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800; line-height: 1">27</span></div><div style="font-size: 15px; line-height: 1.4"><strong>11:00 · Client</strong><br><span style="color: #55625B">Mission Next.js</span></div></div>
+      </section>
+      <section aria-label="En chiffres" style="flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+        <div style="flex-grow: 1; background: #DCD6F7; border-radius: 28px; padding: 22px; display: flex; flex-direction: column; justify-content: flex-end"><div style="font-family: 'Manrope', sans-serif; font-size: 44px; font-weight: 800; line-height: 1">8</div><div style="font-size: 15px; font-weight: 600">candidatures en cours</div></div>
+        <div style="flex-grow: 1; background: #16231D; color: #FFFFFF; border-radius: 28px; padding: 22px; display: flex; flex-direction: column; justify-content: flex-end"><div style="font-family: 'Manrope', sans-serif; font-size: 44px; font-weight: 800; line-height: 1; color: #FFB48A">12</div><div style="font-size: 15px; font-weight: 600">missions à traiter</div></div>
+      </section>
+    </div>
+
+    <section aria-labelledby="missions-d" style="background: #FFFFFF; border-radius: 28px; padding: 26px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+        <h2 id="missions-d" style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800">Missions intéressantes · moins de 48 h</h2>
+        <a href="#" style="font-size: 15px; font-weight: 700; text-decoration: none; padding: 11px 18px; border-radius: 999px; border: 1px solid #C9D3CC; color: #16231D">Voir mes opportunités</a>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 16px">
+        <article style="flex: 1 1 360px; min-width: 0; border-radius: 22px; background: #F2F4F1; padding: 18px 20px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between">
+          <div style="display: flex; flex-direction: column; gap: 4px"><h3 style="margin: 0; font-size: 17px; font-weight: 700">Développeur React / Next.js senior</h3><span style="font-size: 14px; color: #55625B">Société Générale · Paris · Hybride · il y a 5 h</span></div>
+          <div style="display: flex; gap: 12px; align-items: center"><span style="font-family: 'Manrope', sans-serif; font-size: 24px; font-weight: 800; color: #1F5C46">650 €/j</span><button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 11px 16px; background: #1F5C46; color: #FFFFFF; border: 0; border-radius: 999px; cursor: pointer">J'ai postulé</button><a href="#" aria-label="Voir sur Free-Work" style="font-size: 14px; font-weight: 700; padding: 10px 14px; border-radius: 999px; border: 1px solid #C9D3CC; color: #16231D; text-decoration: none">Free-Work</a></div>
+        </article>
+        <article style="flex: 1 1 360px; min-width: 0; border-radius: 22px; background: #F2F4F1; padding: 18px 20px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between">
+          <div style="display: flex; flex-direction: column; gap: 4px"><h3 style="margin: 0; font-size: 17px; font-weight: 700">Lead front-end Vue</h3><span style="font-size: 14px; color: #55625B">Groupe bancaire · Lyon · Full remote · il y a 20 h</span></div>
+          <div style="display: flex; gap: 12px; align-items: center"><span style="font-family: 'Manrope', sans-serif; font-size: 24px; font-weight: 800; color: #1F5C46">620 €/j</span><button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 11px 16px; background: #1F5C46; color: #FFFFFF; border: 0; border-radius: 999px; cursor: pointer">J'ai postulé</button><a href="#" aria-label="Voir sur Free-Work" style="font-size: 14px; font-weight: 700; padding: 10px 14px; border-radius: 999px; border: 1px solid #C9D3CC; color: #16231D; text-decoration: none">Free-Work</a></div>
+        </article>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

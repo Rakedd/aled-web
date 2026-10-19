@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Nouvelle candidature</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1F5C46}a:hover{color:#16231D}
+</style>
+</helmet>
+<div style="min-height: 1000px; background: #F2F4F1; color: #16231D; font-family: 'Figtree', sans-serif; padding: 24px 32px 48px; box-sizing: border-box">
+  <div style="max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+    <nav aria-label="Menu principal" style="background: #FFFFFF; border-radius: 999px; padding: 8px 8px 8px 24px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 15px; font-weight: 600">
+      <a href="#" style="font-family: 'Manrope', sans-serif; font-size: 21px; font-weight: 800; color: #16231D; text-decoration: none; margin-right: auto">Freeclutch</a>
+      <a href="#" style="color: #FFFFFF; background: #1F5C46; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mes candidatures</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mon calendrier</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px; display: flex; gap: 8px; align-items: center">Mes opportunités <span style="background: #FFB48A; border-radius: 999px; padding: 1px 9px; font-size: 13px; font-weight: 700">12</span></a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Préférences</a>
+    </nav>
+
+    <div style="display: flex; flex-direction: column; gap: 4px"><a href="#" style="font-size: 14px; font-weight: 600; text-decoration: none">← Mes candidatures</a><h1 style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 40px; font-weight: 800; letter-spacing: -0.03em">Nouvelle candidature</h1></div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+      <section aria-labelledby="annonce-n" style="flex: 2 1 360px; min-width: 0; background: #DCD6F7; border-radius: 28px; padding: 26px; display: flex; flex-direction: column; gap: 12px">
+        <h2 id="annonce-n" style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800">1 · Colle l'annonce</h2>
+        <span style="font-size: 14px">Claude remplit le formulaire pour toi. Tu vérifies, puis tu crées.</span>
+        <label for="annonce-texte" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Annonce</label>
+        <textarea id="annonce-texte" rows="12" style="font-family: 'Figtree', sans-serif; font-size: 14px; line-height: 1.5; padding: 14px; border-radius: 18px; border: 0; background: #FFFFFF; resize: vertical">Développeur React / Next.js senior — Hays recrute pour un grand groupe de gestion d'actifs. Paris 8e, hybride 2 j sur site. TJM 600 à 650 €. Démarrage début novembre, 6 mois renouvelables…</textarea>
+        <button type="button" style="align-self: flex-start; font-family: 'Figtree', sans-serif; font-size: 15px; font-weight: 700; padding: 12px 20px; border-radius: 999px; border: 0; background: #16231D; color: #FFFFFF; cursor: pointer">Pré-remplir avec l'IA</button>
+      </section>
+
+      <section aria-labelledby="verif-n" style="flex: 3 1 520px; min-width: 0; background: #FFFFFF; border-radius: 28px; padding: 28px; display: flex; flex-direction: column; gap: 20px">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap"><h2 id="verif-n" style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800">2 · Vérifie</h2><span style="font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #F2F0FC">Pré-rempli par Claude</span></div>
+
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px">
+          <legend style="font-size: 13px; font-weight: 700; color: #55625B; margin-bottom: 8px">LA MISSION</legend>
+          <div style="display: flex; flex-direction: column; gap: 6px"><label for="titre-n" style="font-size: 14px; font-weight: 600">Titre</label><input id="titre-n" value="Développeur React / Next.js senior" style="font-family: 'Figtree', sans-serif; font-size: 15px; padding: 12px 14px; border-radius: 14px; border: 1px solid #C9D3CC; background: #F7F9F7"></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; font-weight: 600">Source</span><div style="display: flex; gap: 6px; flex-wrap: wrap"><button type="button" aria-pressed="true" style="font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 700; padding: 7px 12px; border-radius: 999px; border: 0; background: #1F5C46; color: #FFFFFF; cursor: pointer">Free-Work</button><button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Collective</button><button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">LeHibou</button><button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">LinkedIn</button><button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Bouche-à-oreille</button><button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Autre</button></div></div>
+        </fieldset>
+
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px">
+          <legend style="font-size: 13px; font-weight: 700; color: #55625B; margin-bottom: 8px">LES PERSONNES</legend>
+          <div style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 6px"><label for="inter-n" style="font-size: 14px; font-weight: 600">Intermédiaire</label><input id="inter-n" value="Hays" style="font-family: 'Figtree', sans-serif; font-size: 15px; padding: 12px 14px; border-radius: 14px; border: 1px solid #C9D3CC; background: #F7F9F7"></div>
+          <div style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 6px"><label for="contact-n" style="font-size: 14px; font-weight: 600">Contact</label><input id="contact-n" value="Jeanne Martin" style="font-family: 'Figtree', sans-serif; font-size: 15px; padding: 12px 14px; border-radius: 14px; border: 1px solid #C9D3CC; background: #F7F9F7"></div>
+          <div style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 6px"><label for="client-n" style="font-size: 14px; font-weight: 600">Client final</label><input id="client-n" placeholder="Inconnu pour l'instant" style="font-family: 'Figtree', sans-serif; font-size: 15px; padding: 12px 14px; border-radius: 14px; border: 1px solid #C9D3CC; background: #F7F9F7"></div>
+        </fieldset>
+
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px">
+          <legend style="font-size: 13px; font-weight: 700; color: #55625B; margin-bottom: 8px">LES CONDITIONS</legend>
+          <div style="flex: 1 1 130px; display: flex; flex-direction: column; gap: 6px"><label for="tjm-n" style="font-size: 14px; font-weight: 600">TJM annoncé</label><input id="tjm-n" value="650 €" style="font-family: 'Manrope', sans-serif; font-size: 16px; font-weight: 800; padding: 12px 14px; border-radius: 14px; border: 1px solid #C9D3CC; background: #F7F9F7"></div>
+          <div style="flex: 1 1 130px; display: flex; flex-direction: column; gap: 6px"><label for="lieu-n" style="font-size: 14px; font-weight: 600">Lieu</label><input id="lieu-n" value="Paris 8e" style="font-family: 'Figtree', sans-serif; font-size: 15px; padding: 12px 14px; border-radius: 14px; border: 1px solid #C9D3CC; background: #F7F9F7"></div>
+          <div style="flex: 1 1 130px; display: flex; flex-direction: column; gap: 6px"><label for="demarrage-n" style="font-size: 14px; font-weight: 600">Démarrage</label><input id="demarrage-n" value="Début novembre" style="font-family: 'Figtree', sans-serif; font-size: 15px; padding: 12px 14px; border-radius: 14px; border: 1px solid #C9D3CC; background: #F7F9F7"></div>
+          <div style="flex: 1 1 130px; display: flex; flex-direction: column; gap: 6px"><label for="duree-n" style="font-size: 14px; font-weight: 600">Durée</label><input id="duree-n" value="6 mois" style="font-family: 'Figtree', sans-serif; font-size: 15px; padding: 12px 14px; border-radius: 14px; border: 1px solid #C9D3CC; background: #F7F9F7"></div>
+        </fieldset>
+
+        <button type="button" style="align-self: flex-start; font-family: 'Figtree', sans-serif; font-size: 16px; font-weight: 700; padding: 14px 26px; border-radius: 999px; border: 0; background: #1F5C46; color: #FFFFFF; cursor: pointer">Créer la candidature</button>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

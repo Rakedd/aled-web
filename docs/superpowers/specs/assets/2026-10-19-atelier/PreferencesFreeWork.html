@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Préférences · Free-Work</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1F5C46}a:hover{color:#16231D}
+</style>
+</helmet>
+<div style="min-height: 1000px; background: #F2F4F1; color: #16231D; font-family: 'Figtree', sans-serif; padding: 24px 32px 48px; box-sizing: border-box">
+  <div style="max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+    <nav aria-label="Menu principal" style="background: #FFFFFF; border-radius: 999px; padding: 8px 8px 8px 24px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 15px; font-weight: 600">
+      <a href="#" style="font-family: 'Manrope', sans-serif; font-size: 21px; font-weight: 800; color: #16231D; text-decoration: none; margin-right: auto">Freeclutch</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mes candidatures</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mon calendrier</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px; display: flex; gap: 8px; align-items: center">Mes opportunités <span style="background: #FFB48A; border-radius: 999px; padding: 1px 9px; font-size: 13px; font-weight: 700">12</span></a>
+      <a href="#" style="color: #FFFFFF; background: #1F5C46; text-decoration: none; padding: 10px 16px; border-radius: 999px">Préférences</a>
+    </nav>
+
+    <h1 style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 40px; font-weight: 800; letter-spacing: -0.03em">Préférences</h1>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+      <nav aria-label="Navigation des préférences" style="flex: 1 1 220px; max-width: 100%; background: #FFFFFF; border-radius: 24px; padding: 10px; display: flex; flex-direction: column; gap: 4px; font-size: 15px; font-weight: 700">
+        <a href="#" style="text-decoration: none; padding: 12px 14px; border-radius: 16px; color: #16231D">Profil</a>
+        <a href="#" aria-current="page" style="text-decoration: none; padding: 12px 14px; border-radius: 16px; background: #1F5C46; color: #FFFFFF">Opportunités · Free-Work</a>
+      </nav>
+
+      <div style="flex: 4 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+        <section aria-labelledby="mots-f" style="background: #FFFFFF; border-radius: 28px; padding: 28px; display: flex; flex-direction: column; gap: 20px">
+          <div><h2 id="mots-f" style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 21px; font-weight: 800">Mots-clés</h2><span style="font-size: 14px; color: #55625B">Sans filtre, toutes les missions s'affichent.</span></div>
+          <div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px; font-weight: 700">Doit contenir au moins un de</span><div style="display: flex; gap: 8px; flex-wrap: wrap; padding: 10px; border-radius: 18px; border: 1px solid #C9D3CC; background: #F7F9F7"><span style="font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: #E6ECE8">react ×</span><span style="font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: #E6ECE8">next.js ×</span><span style="font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: #E6ECE8">vue ×</span><span style="font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: #E6ECE8">typescript ×</span><span style="font-size: 14px; color: #55625B; padding: 6px 4px">Ajouter un mot…</span></div></div>
+          <div style="display: flex; flex-wrap: wrap; gap: 16px">
+            <div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px; font-weight: 700">Exclure toujours</span><div style="display: flex; gap: 8px; flex-wrap: wrap; padding: 10px; border-radius: 18px; border: 1px solid #C9D3CC; background: #F7F9F7; align-content: flex-start"><span style="font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: #F1E3E1; color: #8A3B32">stage ×</span><span style="font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: #F1E3E1; color: #8A3B32">alternance ×</span></div></div>
+            <div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px; font-weight: 700">Exclure, sauf si rattrapé</span><div style="display: flex; gap: 8px; flex-wrap: wrap; padding: 10px; border-radius: 18px; border: 1px solid #C9D3CC; background: #F7F9F7; align-content: flex-start"><span style="font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: #FFF1E8">java ×</span><span style="font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: #FFF1E8">php ×</span></div></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px; font-weight: 700">Mots de rattrapage</span><span style="font-size: 13px; color: #55625B">Garde une mission exclue ci-dessus si elle contient un de ces mots (ex. react).</span><div style="display: flex; gap: 8px; flex-wrap: wrap; padding: 10px; border-radius: 18px; border: 1px solid #C9D3CC; background: #F7F9F7"><span style="font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: #DCD6F7">react ×</span></div></div>
+        </section>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 20px">
+          <section aria-labelledby="tjm-f" style="flex: 1 1 320px; min-width: 0; background: #FFFFFF; border-radius: 28px; padding: 26px; display: flex; flex-direction: column; gap: 14px">
+            <h2 id="tjm-f" style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 19px; font-weight: 800">TJM minimum</h2>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap">
+              <div style="flex: 1 1 110px; display: flex; flex-direction: column; gap: 6px"><label for="tjm-full" style="font-size: 13px; font-weight: 600">Full remote</label><input id="tjm-full" value="550 €" style="font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 800; padding: 10px 12px; border-radius: 14px; border: 1px solid #C9D3CC; background: #F7F9F7; width: 100%; box-sizing: border-box"></div>
+              <div style="flex: 1 1 110px; display: flex; flex-direction: column; gap: 6px"><label for="tjm-hyb" style="font-size: 13px; font-weight: 600">Hybride</label><input id="tjm-hyb" value="600 €" style="font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 800; padding: 10px 12px; border-radius: 14px; border: 1px solid #C9D3CC; background: #F7F9F7; width: 100%; box-sizing: border-box"></div>
+              <div style="flex: 1 1 110px; display: flex; flex-direction: column; gap: 6px"><label for="tjm-site" style="font-size: 13px; font-weight: 600">Sur site</label><input id="tjm-site" value="650 €" style="font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 800; padding: 10px 12px; border-radius: 14px; border: 1px solid #C9D3CC; background: #F7F9F7; width: 100%; box-sizing: border-box"></div>
+            </div>
+          </section>
+          <section aria-labelledby="regions-f" style="flex: 1 1 320px; min-width: 0; background: #FFFFFF; border-radius: 28px; padding: 26px; display: flex; flex-direction: column; gap: 14px">
+            <h2 id="regions-f" style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 19px; font-weight: 800">Régions</h2>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap">
+              <button type="button" aria-pressed="true" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 8px 14px; border-radius: 999px; border: 0; background: #1F5C46; color: #FFFFFF; cursor: pointer">Île-de-France</button>
+              <button type="button" aria-pressed="true" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 8px 14px; border-radius: 999px; border: 0; background: #1F5C46; color: #FFFFFF; cursor: pointer">Auvergne-Rhône-Alpes</button>
+              <button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Hauts-de-France</button>
+              <button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Pays de la Loire</button>
+              <button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">+ 9 autres</button>
+            </div>
+          </section>
+        </div>
+        <button type="button" style="align-self: flex-start; font-family: 'Figtree', sans-serif; font-size: 15px; font-weight: 700; padding: 13px 24px; border-radius: 999px; border: 0; background: #1F5C46; color: #FFFFFF; cursor: pointer">Enregistrer les filtres</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

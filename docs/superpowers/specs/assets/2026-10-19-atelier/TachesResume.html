@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>À faire 1 · Une ligne de résumé</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1F5C46}a:hover{color:#16231D}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F2F4F1; color: #16231D; font-family: 'Figtree', sans-serif; padding: 24px 32px 48px; box-sizing: border-box">
+  <div style="max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+    <nav aria-label="Menu principal" style="background: #FFFFFF; border-radius: 999px; padding: 8px 8px 8px 24px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 15px; font-weight: 600">
+      <a href="#" style="font-family: 'Manrope', sans-serif; font-size: 21px; font-weight: 800; color: #16231D; text-decoration: none; margin-right: auto">Freeclutch</a>
+      <a href="#" style="color: #FFFFFF; background: #1F5C46; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mes candidatures</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mon calendrier</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px; display: flex; gap: 8px; align-items: center">Mes opportunités <span style="background: #FFB48A; border-radius: 999px; padding: 1px 9px; font-size: 13px; font-weight: 700">12</span></a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Préférences</a>
+    </nav>
+
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+      <h1 style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 40px; font-weight: 800; letter-spacing: -0.03em">Mes candidatures</h1>
+      <a href="#" style="font-size: 15px; font-weight: 700; text-decoration: none; padding: 12px 20px; border-radius: 999px; background: #1F5C46; color: #FFFFFF">+ Nouvelle candidature</a>
+    </div>
+
+    <section aria-label="À faire" style="background: #FFFFFF; border-radius: 999px; padding: 10px 10px 10px 22px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+      <h2 style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 800; margin-right: 6px">À faire · 23</h2>
+      <button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 8px 14px; border-radius: 999px; border: 0; background: #FFB48A; color: #16231D; cursor: pointer">8 relances</button>
+      <button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 8px 14px; border-radius: 999px; border: 0; background: #F1E3E1; color: #8A3B32; cursor: pointer">6 sans nouvelles</button>
+      <button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 8px 14px; border-radius: 999px; border: 0; background: #DCD6F7; color: #16231D; cursor: pointer">5 fiches métier</button>
+      <button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 8px 14px; border-radius: 999px; border: 0; background: #DCD6F7; color: #16231D; cursor: pointer">4 clients inconnus</button>
+      <button type="button" style="margin-left: auto; font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 10px 16px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Tout déplier</button>
+    </section>
+    <p style="margin: -8px 0 0 22px; font-size: 13px; color: #55625B">Un clic sur une pastille filtre le tableau sur ces candidatures.</p>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+      <label for="recherche-t1" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Rechercher</label>
+      <input id="recherche-t1" type="search" placeholder="Mission, client, contact…" style="flex: 1 1 280px; font-family: 'Figtree', sans-serif; font-size: 15px; padding: 12px 16px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF">
+      <button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Statut</button>
+      <button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Source</button>
+      <span style="font-size: 13px; color: #55625B; display: flex; gap: 10px; align-items: center; flex-wrap: wrap">Dernier échange : <span style="padding: 2px 9px; border-radius: 999px; background: #E6ECE8; color: #1F5C46; font-weight: 700">moins de 7 j</span><span style="padding: 2px 9px; border-radius: 999px; background: #FFF1E8; color: #8A4B1F; font-weight: 700">7 à 14 j</span><span style="padding: 2px 9px; border-radius: 999px; background: #F1E3E1; color: #8A3B32; font-weight: 700">plus de 14 j</span></span>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; overflow-x: auto">
+      <table style="width: 100%; border-collapse: collapse; font-size: 15px; min-width: 860px">
+        <thead><tr style="text-align: left; font-size: 13px; color: #55625B"><th scope="col" style="padding: 16px 20px; font-weight: 600">Mission</th><th scope="col" style="padding: 16px 12px; font-weight: 600">Intermédiaire</th><th scope="col" style="padding: 16px 12px; font-weight: 600">Client final</th><th scope="col" style="padding: 16px 12px; font-weight: 600">Statut</th><th scope="col" style="padding: 16px 12px; font-weight: 600">Candidature</th><th scope="col" style="padding: 16px 20px; font-weight: 600">Dernier échange</th></tr></thead>
+        <tbody>
+          <tr style="border-top: 1px solid #E6ECE8"><td style="padding: 14px 20px; font-weight: 700"><a href="#" style="color: #16231D; text-decoration: none">Dev React / Next.js senior</a></td><td style="padding: 14px 12px">Hays</td><td style="padding: 14px 12px">BNP Paribas AM</td><td style="padding: 14px 12px"><span style="font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #FFB48A">Entretien planifié</span></td><td style="padding: 14px 12px">6 oct.</td><td style="padding: 14px 20px"><span style="font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #E6ECE8; color: #1F5C46">il y a 3 j</span></td></tr>
+          <tr style="border-top: 1px solid #E6ECE8"><td style="padding: 14px 20px; font-weight: 700"><a href="#" style="color: #16231D; text-decoration: none">Dev fullstack Node</a></td><td style="padding: 14px 12px">Michael Page</td><td style="padding: 14px 12px">Leroy Merlin</td><td style="padding: 14px 12px"><span style="font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #1F5C46; color: #FFFFFF">Contrat reçu</span></td><td style="padding: 14px 12px">1 oct.</td><td style="padding: 14px 20px"><span style="font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #E6ECE8; color: #1F5C46">hier</span></td></tr>
+          <tr style="border-top: 1px solid #E6ECE8"><td style="padding: 14px 20px; font-weight: 700"><a href="#" style="color: #16231D; text-decoration: none">Lead front-end</a></td><td style="padding: 14px 12px">Malt</td><td style="padding: 14px 12px">Decathlon</td><td style="padding: 14px 12px"><span style="font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #DCD6F7">CV positionné</span></td><td style="padding: 14px 12px">2 oct.</td><td style="padding: 14px 20px"><span style="font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #FFF1E8; color: #8A4B1F">il y a 9 j</span></td></tr>
+          <tr style="border-top: 1px solid #E6ECE8"><td style="padding: 14px 20px; font-weight: 700"><a href="#" style="color: #16231D; text-decoration: none">Mission Next.js</a></td><td style="padding: 14px 12px">Freelance Republik</td><td style="padding: 14px 12px; color: #55625B">Inconnu</td><td style="padding: 14px 12px"><span style="font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #E6ECE8">Échange intermédiaire</span></td><td style="padding: 14px 12px">29 sept.</td><td style="padding: 14px 20px"><span style="font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #FFF1E8; color: #8A4B1F">il y a 12 j</span></td></tr>
+          <tr style="border-top: 1px solid #E6ECE8"><td style="padding: 14px 20px; font-weight: 700"><a href="#" style="color: #16231D; text-decoration: none">Dev Angular</a></td><td style="padding: 14px 12px">Malt</td><td style="padding: 14px 12px">Société Générale</td><td style="padding: 14px 12px"><span style="font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #F2F4F1; border: 1px solid #DDE3DE">Postulé</span></td><td style="padding: 14px 12px">22 sept.</td><td style="padding: 14px 20px"><span style="font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #F1E3E1; color: #8A3B32">il y a 21 j</span></td></tr>
+          <tr style="border-top: 1px solid #E6ECE8"><td style="padding: 14px 20px; font-weight: 700"><a href="#" style="color: #16231D; text-decoration: none">Tech lead Vue</a></td><td style="padding: 14px 12px">En direct</td><td style="padding: 14px 12px">Groupe bancaire</td><td style="padding: 14px 12px"><span style="font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #F2F4F1; border: 1px solid #DDE3DE">Postulé</span></td><td style="padding: 14px 12px">20 sept.</td><td style="padding: 14px 20px"><span style="font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #F1E3E1; color: #8A3B32">il y a 25 j</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mon calendrier</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1F5C46}a:hover{color:#16231D}
+</style>
+</helmet>
+<div style="min-height: 1000px; background: #F2F4F1; color: #16231D; font-family: 'Figtree', sans-serif; padding: 24px 32px 48px; box-sizing: border-box">
+  <div style="max-width: 1320px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+    <nav aria-label="Menu principal" style="background: #FFFFFF; border-radius: 999px; padding: 8px 8px 8px 24px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 15px; font-weight: 600">
+      <a href="#" style="font-family: 'Manrope', sans-serif; font-size: 21px; font-weight: 800; color: #16231D; text-decoration: none; margin-right: auto">Freeclutch</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mes candidatures</a>
+      <a href="#" style="color: #FFFFFF; background: #1F5C46; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mon calendrier</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px; display: flex; gap: 8px; align-items: center">Mes opportunités <span style="background: #FFB48A; border-radius: 999px; padding: 1px 9px; font-size: 13px; font-weight: 700">12</span></a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Préférences</a>
+    </nav>
+
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 12px"><h1 style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 36px; font-weight: 800; letter-spacing: -0.03em">Octobre 2026</h1><button type="button" aria-label="Mois précédent" style="width: 40px; height: 40px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; cursor: pointer; font-size: 16px">‹</button><button type="button" aria-label="Mois suivant" style="width: 40px; height: 40px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; cursor: pointer; font-size: 16px">›</button><button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 9px 14px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Aujourd'hui</button></div>
+      <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap">
+        <span style="font-size: 13px; display: flex; gap: 8px; align-items: center"><span style="padding: 2px 9px; border-radius: 999px; background: #FFB48A; font-weight: 700">Client</span><span style="padding: 2px 9px; border-radius: 999px; background: #DCD6F7; font-weight: 700">Blanc</span></span>
+        <div aria-label="Vue" style="display: flex; gap: 4px; background: #FFFFFF; border-radius: 999px; padding: 5px"><button type="button" aria-pressed="true" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 8px 14px; border: 0; border-radius: 999px; background: #1F5C46; color: #FFFFFF; cursor: pointer">Mois</button><button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; padding: 8px 14px; border: 0; border-radius: 999px; background: transparent; color: #16231D; cursor: pointer">Semaine</button><button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; padding: 8px 14px; border: 0; border-radius: 999px; background: transparent; color: #16231D; cursor: pointer">Liste</button></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <div style="flex: 3 1 640px; min-width: 0; background: #FFFFFF; border-radius: 28px; padding: 16px; overflow-x: auto">
+        <div style="min-width: 620px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px">
+          <div style="font-size: 12px; font-weight: 700; color: #55625B; padding: 6px 8px">LUN</div><div style="font-size: 12px; font-weight: 700; color: #55625B; padding: 6px 8px">MAR</div><div style="font-size: 12px; font-weight: 700; color: #55625B; padding: 6px 8px">MER</div><div style="font-size: 12px; font-weight: 700; color: #55625B; padding: 6px 8px">JEU</div><div style="font-size: 12px; font-weight: 700; color: #55625B; padding: 6px 8px">VEN</div><div style="font-size: 12px; font-weight: 700; color: #55625B; padding: 6px 8px">SAM</div><div style="font-size: 12px; font-weight: 700; color: #55625B; padding: 6px 8px">DIM</div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B">12</div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B">13</div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B">14</div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B">15</div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B; display: flex; flex-direction: column; gap: 4px">16<span style="font-size: 12px; font-weight: 700; padding: 4px 6px; border-radius: 8px; background: #DCD6F7; color: #16231D">18:00 Blanc · React</span></div>
+          <div style="height: 104px; border-radius: 14px; background: #FBFCFB; padding: 8px; font-size: 13px; font-weight: 600; color: #6B7770">17</div>
+          <div style="height: 104px; border-radius: 14px; background: #FBFCFB; padding: 8px; font-size: 13px; font-weight: 600; color: #6B7770">18</div>
+          <div style="height: 104px; border-radius: 14px; background: #FFFFFF; border: 2px solid #1F5C46; padding: 7px; font-size: 13px; font-weight: 800; color: #1F5C46">19 · auj.</div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B">20</div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B; display: flex; flex-direction: column; gap: 4px">21<button type="button" style="text-align: left; font-family: 'Figtree', sans-serif; font-size: 12px; font-weight: 700; padding: 4px 6px; border-radius: 8px; border: 2px solid #16231D; background: #FFB48A; color: #16231D; cursor: pointer">10:00 Client · BNP AM</button></div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B">22</div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B; display: flex; flex-direction: column; gap: 4px">23<span style="font-size: 12px; font-weight: 700; padding: 4px 6px; border-radius: 8px; background: #DCD6F7; color: #16231D">14:30 Blanc · Lead front</span></div>
+          <div style="height: 104px; border-radius: 14px; background: #FBFCFB; padding: 8px; font-size: 13px; font-weight: 600; color: #6B7770">24</div>
+          <div style="height: 104px; border-radius: 14px; background: #FBFCFB; padding: 8px; font-size: 13px; font-weight: 600; color: #6B7770">25</div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B">26</div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B; display: flex; flex-direction: column; gap: 4px">27<span style="font-size: 12px; font-weight: 700; padding: 4px 6px; border-radius: 8px; background: #FFB48A; color: #16231D">11:00 Client · Next.js</span></div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B">28</div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B">29</div>
+          <div style="height: 104px; border-radius: 14px; background: #F7F9F7; padding: 8px; font-size: 13px; font-weight: 600; color: #55625B">30</div>
+          <div style="height: 104px; border-radius: 14px; background: #FBFCFB; padding: 8px; font-size: 13px; font-weight: 600; color: #6B7770">31</div>
+          <div style="height: 104px; border-radius: 14px; background: #FBFCFB; padding: 8px; font-size: 13px; font-weight: 600; color: #6B7770">1</div>
+        </div>
+      </div>
+
+      <aside aria-labelledby="detail-cal" style="flex: 1 1 320px; min-width: 0; background: #FFFFFF; border-radius: 28px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+        <span style="align-self: flex-start; font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: #FFB48A">Entretien client · visio</span>
+        <h2 id="detail-cal" style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 24px; font-weight: 800; line-height: 1.2">Mer. 21 oct. · 10:00</h2>
+        <div style="font-size: 15px; color: #3B4A42"><strong style="color: #16231D">Dev React / Next.js senior</strong><br>BNP Paribas AM · via Hays</div>
+        <dl style="margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; font-size: 14px"><div><dt style="font-size: 12px; font-weight: 600; color: #55625B">TJM demandé</dt><dd style="margin: 0; font-weight: 700">650 €/j</dd></div><div><dt style="font-size: 12px; font-weight: 600; color: #55625B">Lieu</dt><dd style="margin: 0; font-weight: 700">Paris · hybride</dd></div><div><dt style="font-size: 12px; font-weight: 600; color: #55625B">Démarrage</dt><dd style="margin: 0; font-weight: 700">3 nov.</dd></div><div><dt style="font-size: 12px; font-weight: 600; color: #55625B">Durée</dt><dd style="margin: 0; font-weight: 700">6 mois</dd></div></dl>
+        <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12px; font-weight: 600; color: #55625B">Stack</span><div style="display: flex; gap: 6px; flex-wrap: wrap"><span style="padding: 4px 10px; border-radius: 999px; background: #DCD6F7; font-size: 13px; font-weight: 600">TypeScript</span><span style="padding: 4px 10px; border-radius: 999px; background: #E6ECE8; font-size: 13px; font-weight: 600">React</span><span style="padding: 4px 10px; border-radius: 999px; background: #E6ECE8; font-size: 13px; font-weight: 600">Next.js</span><span style="padding: 4px 10px; border-radius: 999px; background: #FFF1E8; font-size: 13px; font-weight: 600">Kafka</span></div></div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap"><a href="#" style="font-size: 14px; font-weight: 700; text-decoration: none; padding: 10px 16px; border-radius: 999px; background: #1F5C46; color: #FFFFFF">Ouvrir la fiche</a><a href="#" style="font-size: 14px; font-weight: 700; text-decoration: none; padding: 10px 16px; border-radius: 999px; background: #DCD6F7; color: #16231D">Voir mon brief</a></div>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Opportunités E · Par jour</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1F5C46}a:hover{color:#16231D}
+</style>
+</helmet>
+<div style="min-height: 1100px; background: #F2F4F1; color: #16231D; font-family: 'Figtree', sans-serif; padding: 24px 32px 48px; box-sizing: border-box">
+  <div style="max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+    <nav aria-label="Menu principal" style="background: #FFFFFF; border-radius: 999px; padding: 8px 8px 8px 24px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 15px; font-weight: 600">
+      <a href="#" style="font-family: 'Manrope', sans-serif; font-size: 21px; font-weight: 800; color: #16231D; text-decoration: none; margin-right: auto">Freeclutch</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mes candidatures</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mon calendrier</a>
+      <a href="#" style="color: #FFFFFF; background: #1F5C46; text-decoration: none; padding: 10px 16px; border-radius: 999px; display: flex; gap: 8px; align-items: center">Mes opportunités <span style="background: #FFB48A; color: #16231D; border-radius: 999px; padding: 1px 9px; font-size: 13px; font-weight: 700">12</span></a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Préférences</a>
+    </nav>
+
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+      <div><h1 style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 36px; font-weight: 800; letter-spacing: -0.03em">Mes opportunités</h1><span style="font-size: 14px; color: #55625B">Free-Work · mis à jour il y a 25 min</span></div>
+      <div aria-label="Onglets" style="display: flex; gap: 4px; background: #FFFFFF; border-radius: 999px; padding: 5px">
+        <button type="button" aria-pressed="true" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 9px 16px; border: 0; border-radius: 999px; background: #1F5C46; color: #FFFFFF; cursor: pointer">À traiter · 12</button>
+        <button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; padding: 9px 16px; border: 0; border-radius: 999px; background: transparent; color: #16231D; cursor: pointer">Postulées · 7</button>
+        <button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; padding: 9px 16px; border: 0; border-radius: 999px; background: transparent; color: #16231D; cursor: pointer">Ignorées · 41</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+      <label for="recherche-oe" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Rechercher une mission</label>
+      <input id="recherche-oe" type="search" placeholder="Rechercher une mission…" style="flex: 1 1 280px; font-family: 'Figtree', sans-serif; font-size: 15px; padding: 12px 18px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF">
+      <button type="button" aria-pressed="true" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 10px 14px; border-radius: 999px; border: 0; background: #16231D; color: #FFFFFF; cursor: pointer">Full remote</button>
+      <button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; padding: 10px 14px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">600 €/j et plus</button>
+      <button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; padding: 10px 14px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Trier par TJM</button>
+    </div>
+
+    <section aria-labelledby="jour-auj" style="display: flex; flex-direction: column; gap: 8px">
+      <h2 id="jour-auj" style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 800">Aujourd'hui <span style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; color: #55625B">· 2</span></h2>
+      <div style="background: #FFFFFF; border-radius: 22px; padding: 4px 18px">
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 14px 0; border-bottom: 1px solid #E6ECE8"><div style="flex: 1 1 340px; min-width: 0"><div style="font-weight: 700; font-size: 16px">Développeur React / Next.js senior <span style="font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #DCD6F7; margin-left: 4px">nouveau</span></div><div style="font-size: 14px; color: #55625B">Société Générale · Hybride · Paris · 6 mois · 5 h</div></div><span style="font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800; color: #1F5C46; width: 120px; text-align: right">650 €/j</span><div style="display: flex; gap: 6px"><button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 9px 14px; border-radius: 999px; border: 0; background: #1F5C46; color: #FFFFFF; cursor: pointer">J'ai postulé</button><a href="#" aria-label="Voir sur Free-Work" style="font-size: 14px; font-weight: 700; padding: 8px 12px; border-radius: 999px; border: 1px solid #C9D3CC; color: #16231D; text-decoration: none">Free-Work</a><button type="button" aria-label="Pas intéressé" style="width: 40px; height: 40px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#55625B" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></button></div></div>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 14px 0"><div style="flex: 1 1 340px; min-width: 0"><div style="font-weight: 700; font-size: 16px">Lead front-end Vue <span style="font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #DCD6F7; margin-left: 4px">nouveau</span></div><div style="font-size: 14px; color: #55625B">Groupe bancaire · Full remote · Lyon · 12 mois · 20 h</div></div><span style="font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800; color: #1F5C46; width: 120px; text-align: right">620 €/j</span><div style="display: flex; gap: 6px"><button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 9px 14px; border-radius: 999px; border: 0; background: #1F5C46; color: #FFFFFF; cursor: pointer">J'ai postulé</button><a href="#" aria-label="Voir sur Free-Work" style="font-size: 14px; font-weight: 700; padding: 8px 12px; border-radius: 999px; border: 1px solid #C9D3CC; color: #16231D; text-decoration: none">Free-Work</a><button type="button" aria-label="Pas intéressé" style="width: 40px; height: 40px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#55625B" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></button></div></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="jour-hier" style="display: flex; flex-direction: column; gap: 8px">
+      <h2 id="jour-hier" style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 800">Hier <span style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; color: #55625B">· 1</span></h2>
+      <div style="background: #FFFFFF; border-radius: 22px; padding: 4px 18px">
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 14px 0"><div style="flex: 1 1 340px; min-width: 0"><div style="font-weight: 700; font-size: 16px">Dev fullstack TypeScript / NestJS</div><div style="font-size: 14px; color: #55625B">ESN · Hybride · Nantes · 6 mois</div></div><span style="font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800; color: #1F5C46; width: 120px; text-align: right">550 – 600 €</span><div style="display: flex; gap: 6px"><button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 9px 14px; border-radius: 999px; border: 0; background: #1F5C46; color: #FFFFFF; cursor: pointer">J'ai postulé</button><a href="#" aria-label="Voir sur Free-Work" style="font-size: 14px; font-weight: 700; padding: 8px 12px; border-radius: 999px; border: 1px solid #C9D3CC; color: #16231D; text-decoration: none">Free-Work</a><button type="button" aria-label="Pas intéressé" style="width: 40px; height: 40px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#55625B" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></button></div></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="jour-semaine" style="display: flex; flex-direction: column; gap: 8px">
+      <h2 id="jour-semaine" style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 800">Plus tôt cette semaine <span style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 600; color: #55625B">· 9</span></h2>
+      <div style="background: #FFFFFF; border-radius: 22px; padding: 4px 18px">
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 14px 0; border-bottom: 1px solid #E6ECE8"><div style="flex: 1 1 340px; min-width: 0"><div style="font-weight: 700; font-size: 16px">Ingénieur front Angular</div><div style="font-size: 14px; color: #55625B">Assurance · Sur site · La Défense · 9 mois · 2 j</div></div><span style="font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800; color: #1F5C46; width: 120px; text-align: right">580 €/j</span><div style="display: flex; gap: 6px"><button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 9px 14px; border-radius: 999px; border: 0; background: #1F5C46; color: #FFFFFF; cursor: pointer">J'ai postulé</button><a href="#" aria-label="Voir sur Free-Work" style="font-size: 14px; font-weight: 700; padding: 8px 12px; border-radius: 999px; border: 1px solid #C9D3CC; color: #16231D; text-decoration: none">Free-Work</a><button type="button" aria-label="Pas intéressé" style="width: 40px; height: 40px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#55625B" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></button></div></div>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 14px 0"><div style="flex: 1 1 340px; min-width: 0"><div style="font-weight: 700; font-size: 16px">Tech lead React Native</div><div style="font-size: 14px; color: #55625B">Start-up mobilité · Full remote · 3 mois · 3 j</div></div><span style="font-size: 14px; font-weight: 700; color: #55625B; width: 120px; text-align: right">TJM NC</span><div style="display: flex; gap: 6px"><button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 9px 14px; border-radius: 999px; border: 0; background: #1F5C46; color: #FFFFFF; cursor: pointer">J'ai postulé</button><a href="#" aria-label="Voir sur Free-Work" style="font-size: 14px; font-weight: 700; padding: 8px 12px; border-radius: 999px; border: 1px solid #C9D3CC; color: #16231D; text-decoration: none">Free-Work</a><button type="button" aria-label="Pas intéressé" style="width: 40px; height: 40px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#55625B" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></button></div></div>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

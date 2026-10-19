@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fiche D · Bento + onglets</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1F5C46}a:hover{color:#16231D}
+</style>
+</helmet>
+<div style="min-height: 1160px; background: #F2F4F1; color: #16231D; font-family: 'Figtree', sans-serif; padding: 24px 32px 56px; box-sizing: border-box">
+  <div style="max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+    <nav aria-label="Menu principal" style="background: #FFFFFF; border-radius: 999px; padding: 8px 8px 8px 24px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 15px; font-weight: 600">
+      <a href="#" style="font-family: 'Manrope', sans-serif; font-size: 21px; font-weight: 800; color: #16231D; text-decoration: none; margin-right: auto">Freeclutch</a>
+      <a href="#" style="color: #FFFFFF; background: #1F5C46; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mes candidatures</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Mon calendrier</a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px; display: flex; gap: 8px; align-items: center">Mes opportunités <span style="background: #FFB48A; border-radius: 999px; padding: 1px 9px; font-size: 13px; font-weight: 700">12</span></a>
+      <a href="#" style="color: #16231D; text-decoration: none; padding: 10px 16px; border-radius: 999px">Préférences</a>
+    </nav>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px">
+      <header style="flex: 3 1 520px; min-width: 0; background: #FFFFFF; border-radius: 28px; padding: 28px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px"><a href="#" style="font-size: 14px; font-weight: 600; text-decoration: none">← Mes candidatures</a><button type="button" aria-label="Modifier l'en-tête" style="width: 40px; height: 40px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16231D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button></div>
+        <h1 style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 38px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1">Développeur React / Next.js senior</h1>
+        <p style="margin: 0; font-size: 16px; color: #3B4A42">BNP Paribas AM · via Hays · Free-Work · 6 oct. · <a href="#">l'annonce</a></p>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px">
+          <span style="font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: #FFB48A">Entretien planifié</span>
+          <span style="font-size: 13px; color: #55625B">étape 4 sur 7</span>
+          <button type="button" style="margin-left: auto; font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 9px 14px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Changer le statut</button>
+        </div>
+      </header>
+      <div style="flex: 2 1 380px; min-width: 0; display: flex; flex-wrap: wrap; gap: 20px">
+        <div style="flex: 1 1 160px; background: #1F5C46; color: #FFFFFF; border-radius: 28px; padding: 22px; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px"><span style="font-size: 13px; font-weight: 600; color: #CFE3D8">TJM demandé</span><span style="font-family: 'Manrope', sans-serif; font-size: 34px; font-weight: 800">650 €/j</span></div>
+        <div style="flex: 1 1 160px; background: #FFB48A; border-radius: 28px; padding: 22px; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px"><span style="font-size: 13px; font-weight: 700">Entretien · dans 2 j</span><span style="font-family: 'Manrope', sans-serif; font-size: 26px; font-weight: 800">Mar. 21 · 10:00</span></div>
+        <div style="flex: 1 1 340px; background: #DCD6F7; border-radius: 28px; padding: 20px 22px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center"><div><div style="font-size: 13px; font-weight: 700">Préparation d'entretien</div><div style="font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 800">Brief + 9 questions · FR</div></div><button type="button" style="font-family: 'Figtree', sans-serif; font-size: 14px; font-weight: 700; padding: 11px 16px; border-radius: 999px; border: 0; background: #16231D; color: #FFFFFF; cursor: pointer">Voir mon brief</button></div>
+      </div>
+    </div>
+
+    <div aria-label="Sections de la fiche" style="display: flex; gap: 4px; flex-wrap: wrap; align-self: flex-start; background: #FFFFFF; border-radius: 999px; padding: 6px">
+      <button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 15px; font-weight: 600; padding: 10px 20px; border: 0; border-radius: 999px; background: transparent; color: #16231D; cursor: pointer">Aperçu</button>
+      <button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 15px; font-weight: 600; padding: 10px 20px; border: 0; border-radius: 999px; background: transparent; color: #16231D; cursor: pointer">Mission</button>
+      <button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 15px; font-weight: 600; padding: 10px 20px; border: 0; border-radius: 999px; background: transparent; color: #16231D; cursor: pointer">Entretiens · 2</button>
+      <button type="button" aria-pressed="true" style="font-family: 'Figtree', sans-serif; font-size: 15px; font-weight: 700; padding: 10px 20px; border: 0; border-radius: 999px; background: #1F5C46; color: #FFFFFF; cursor: pointer">Journal · 5</button>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <section aria-labelledby="journal-d" style="flex: 3 1 520px; min-width: 0; background: #FFFFFF; border-radius: 28px; padding: 26px; display: flex; flex-direction: column; gap: 4px">
+        <h2 id="journal-d" style="margin: 0 0 12px; font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800">Journal des échanges</h2>
+        <div style="display: flex; gap: 16px"><div style="display: flex; flex-direction: column; align-items: center"><span style="width: 14px; height: 14px; border-radius: 999px; background: #FFB48A; flex-shrink: 0"></span><span style="width: 2px; flex-grow: 1; background: #E6ECE8"></span></div><div style="padding-bottom: 18px"><div style="font-size: 13px; font-weight: 600; color: #55625B">Jeu. 16 oct. · Appel</div><div style="font-size: 15px">Jeanne confirme l'entretien client du 21 en visio avec le tech lead.</div></div></div>
+        <div style="display: flex; gap: 16px"><div style="display: flex; flex-direction: column; align-items: center"><span style="width: 14px; height: 14px; border-radius: 999px; background: #1F5C46; flex-shrink: 0"></span><span style="width: 2px; flex-grow: 1; background: #E6ECE8"></span></div><div style="padding-bottom: 18px"><div style="font-size: 13px; font-weight: 600; color: #55625B">Mar. 14 oct. · Statut</div><div style="font-size: 15px">Passée à <strong>Entretien planifié</strong>.</div></div></div>
+        <div style="display: flex; gap: 16px"><div style="display: flex; flex-direction: column; align-items: center"><span style="width: 14px; height: 14px; border-radius: 999px; background: #DCD6F7; flex-shrink: 0"></span><span style="width: 2px; flex-grow: 1; background: #E6ECE8"></span></div><div style="padding-bottom: 18px"><div style="font-size: 13px; font-weight: 600; color: #55625B">Jeu. 9 oct. · Envoi du CV</div><div style="font-size: 15px">CV positionné chez BNP AM par Hays.</div></div></div>
+        <div style="display: flex; gap: 16px"><div style="display: flex; flex-direction: column; align-items: center"><span style="width: 14px; height: 14px; border-radius: 999px; background: #FFB48A; flex-shrink: 0"></span><span style="width: 2px; flex-grow: 1; background: #E6ECE8"></span></div><div style="padding-bottom: 18px"><div style="font-size: 13px; font-weight: 600; color: #55625B">Mer. 8 oct. · Appel de qualification</div><div style="font-size: 15px">30 min avec Jeanne. TJM ok à 650 €/j, démarrage début novembre.</div></div></div>
+        <div style="display: flex; gap: 16px"><div style="display: flex; flex-direction: column; align-items: center"><span style="width: 14px; height: 14px; border-radius: 999px; background: #E6ECE8; flex-shrink: 0"></span></div><div><div style="font-size: 13px; font-weight: 600; color: #55625B">Lun. 6 oct. · Candidature</div><div style="font-size: 15px">Postulé via Free-Work.</div></div></div>
+      </section>
+
+      <aside aria-labelledby="noter-d" style="flex: 2 1 320px; min-width: 0; background: #FFFFFF; border-radius: 28px; padding: 26px; display: flex; flex-direction: column; gap: 12px">
+        <h2 id="noter-d" style="margin: 0; font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800">Noter un échange</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px" aria-label="Type d'échange">
+          <button type="button" aria-pressed="true" style="font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 700; padding: 7px 12px; border-radius: 999px; border: 0; background: #16231D; color: #FFFFFF; cursor: pointer">Appel</button>
+          <button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Mail de relance</button>
+          <button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Relance LinkedIn</button>
+          <button type="button" aria-pressed="false" style="font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; border: 1px solid #C9D3CC; background: #FFFFFF; color: #16231D; cursor: pointer">Envoi du CV</button>
+        </div>
+        <label for="resume-d" style="font-size: 13px; font-weight: 600; color: #55625B">Résumé</label>
+        <textarea id="resume-d" rows="4" placeholder="Ce qui s'est dit, la suite…" style="font-family: 'Figtree', sans-serif; font-size: 15px; padding: 12px 14px; border-radius: 16px; border: 1px solid #C9D3CC; background: #F7F9F7; resize: vertical"></textarea>
+        <button type="button" style="align-self: flex-start; font-family: 'Figtree', sans-serif; font-size: 15px; font-weight: 700; padding: 12px 20px; border-radius: 999px; border: 0; background: #1F5C46; color: #FFFFFF; cursor: pointer">Enregistrer l'échange</button>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1160}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
