@@ -1,5 +1,6 @@
 import { filterAndSortJobApplications, type JobApplicationsTableFilters } from './job-applications-filters'
 import type { JobApplicationListItem } from './job-application'
+import type { TodoAlert } from './todo-alerts'
 
 const buildJobApplication = (overrides: Partial<JobApplicationListItem>): JobApplicationListItem => ({
   id: 'id',
@@ -34,7 +35,7 @@ const buildJobApplication = (overrides: Partial<JobApplicationListItem>): JobApp
   ...overrides,
 })
 
-const defaultFilters: JobApplicationsTableFilters = { searchText: '', statuses: [], sources: [], showTerminal: false }
+const defaultFilters: JobApplicationsTableFilters = { searchText: '', statuses: [], sources: [], showTerminal: false, alertKind: null }
 const defaultSort = { key: 'title', direction: 'asc' } as const
 
 describe('filterAndSortJobApplications', () => {
@@ -44,13 +45,13 @@ describe('filterAndSortJobApplications', () => {
       buildJobApplication({ id: 'signed', status: 'signed' }),
       buildJobApplication({ id: 'ko', status: 'ko_cv' }),
     ]
-    const visibleIds = filterAndSortJobApplications(jobApplications, defaultFilters, defaultSort).map(({ id }) => id)
+    const visibleIds = filterAndSortJobApplications(jobApplications, defaultFilters, defaultSort, []).map(({ id }) => id)
     expect(visibleIds).toEqual(['active'])
   })
 
   it('shows terminal applications when requested', () => {
     const jobApplications = [buildJobApplication({ id: 'active' }), buildJobApplication({ id: 'signed', status: 'signed' })]
-    const result = filterAndSortJobApplications(jobApplications, { ...defaultFilters, showTerminal: true }, defaultSort)
+    const result = filterAndSortJobApplications(jobApplications, { ...defaultFilters, showTerminal: true }, defaultSort, [])
     expect(result).toHaveLength(2)
   })
 
@@ -59,7 +60,7 @@ describe('filterAndSortJobApplications', () => {
       buildJobApplication({ id: 'other', endClientName: 'Société Générale' }),
       buildJobApplication({ id: 'bnp', endClientName: 'BNP Paribas', endClientLabel: 'BNP Paribas' }),
     ]
-    const visibleIds = filterAndSortJobApplications(jobApplications, { ...defaultFilters, searchText: 'bnp' }, defaultSort).map(
+    const visibleIds = filterAndSortJobApplications(jobApplications, { ...defaultFilters, searchText: 'bnp' }, defaultSort, []).map(
       ({ id }) => id,
     )
     expect(visibleIds).toEqual(['bnp'])
@@ -67,6 +68,7 @@ describe('filterAndSortJobApplications', () => {
       jobApplications,
       { ...defaultFilters, searchText: 'SOCIETE generale' },
       defaultSort,
+      [],
     ).map(({ id }) => id)
     expect(accentInsensitiveIds).toEqual(['other'])
   })
@@ -77,7 +79,7 @@ describe('filterAndSortJobApplications', () => {
       buildJobApplication({ id: 'free-work', source: 'Free-Work' }),
       buildJobApplication({ id: 'no-source' }),
     ]
-    const visibleIds = filterAndSortJobApplications(jobApplications, { ...defaultFilters, sources: ['LinkedIn'] }, defaultSort).map(
+    const visibleIds = filterAndSortJobApplications(jobApplications, { ...defaultFilters, sources: ['LinkedIn'] }, defaultSort, []).map(
       ({ id }) => id,
     )
     expect(visibleIds).toEqual(['linkedin'])
@@ -92,6 +94,7 @@ describe('filterAndSortJobApplications', () => {
       jobApplications,
       { ...defaultFilters, statuses: ['cv_submitted'] },
       defaultSort,
+      [],
     ).map(({ id }) => id)
     expect(visibleIds).toEqual(['cv'])
   })
@@ -105,14 +108,64 @@ describe('filterAndSortJobApplications', () => {
     const sortedIds = filterAndSortJobApplications(jobApplications, defaultFilters, {
       key: 'lastActivityAt',
       direction: 'desc',
-    }).map(({ id }) => id)
+    }, []).map(({ id }) => id)
     expect(sortedIds).toEqual(['recent', 'old', 'none'])
   })
 
   it('sorts text columns ignoring accents and does not mutate the input', () => {
     const jobApplications = [buildJobApplication({ id: 'b', title: 'Zèbre' }), buildJobApplication({ id: 'a', title: 'Écureuil' })]
-    const sortedIds = filterAndSortJobApplications(jobApplications, defaultFilters, defaultSort).map(({ id }) => id)
+    const sortedIds = filterAndSortJobApplications(jobApplications, defaultFilters, defaultSort, []).map(({ id }) => id)
     expect(sortedIds).toEqual(['a', 'b'])
     expect(jobApplications.map(({ id }) => id)).toEqual(['b', 'a'])
+  })
+
+  describe('alert kind filter', () => {
+    const buildAlert = (jobApplicationId: string, kind: TodoAlert['kind']): TodoAlert => ({
+      kind,
+      jobApplicationId,
+      jobApplicationTitle: 'Dev',
+      referenceDate: new Date('2026-10-01T10:00:00Z'),
+    })
+    const jobApplications = [
+      buildJobApplication({ id: 'followed', status: 'cv_submitted' }),
+      buildJobApplication({ id: 'other', status: 'applied' }),
+      buildJobApplication({ id: 'snoozed', status: 'cv_submitted' }),
+    ]
+    const alerts = [buildAlert('followed', 'follow_up_due'), buildAlert('other', 'job_spec_missing'), buildAlert('other', 'follow_up_due')]
+
+    it('keeps only applications with an alert of the chosen kind', () => {
+      const visibleIds = filterAndSortJobApplications(
+        jobApplications,
+        { ...defaultFilters, alertKind: 'follow_up_due' },
+        defaultSort,
+        alerts,
+      ).map(({ id }) => id)
+      expect(visibleIds).toEqual(['followed', 'other'])
+    })
+
+    it('intersects with the other filters', () => {
+      const visibleIds = filterAndSortJobApplications(
+        jobApplications,
+        { ...defaultFilters, alertKind: 'follow_up_due', statuses: ['cv_submitted'] },
+        defaultSort,
+        alerts,
+      ).map(({ id }) => id)
+      expect(visibleIds).toEqual(['followed'])
+    })
+
+    it('changes nothing when no kind is chosen', () => {
+      const visibleIds = filterAndSortJobApplications(jobApplications, defaultFilters, defaultSort, alerts).map(({ id }) => id)
+      expect(visibleIds).toEqual(['followed', 'other', 'snoozed'])
+    })
+
+    it('excludes an application whose alert is absent from the alerts', () => {
+      const visibleIds = filterAndSortJobApplications(
+        jobApplications,
+        { ...defaultFilters, alertKind: 'follow_up_due' },
+        defaultSort,
+        alerts,
+      ).map(({ id }) => id)
+      expect(visibleIds).not.toContain('snoozed')
+    })
   })
 })

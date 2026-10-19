@@ -2,6 +2,7 @@ import type { TodoAlert } from '@/domain/todo-alerts'
 import {
   TODO_ALERT_KIND_TAG_LABELS,
   TODO_ALERT_KIND_TONES,
+  formatTodoAlertKindCount,
   formatTodoAlertMessage,
   getTodoAlertKey,
 } from './format-todo-alert'
@@ -100,5 +101,22 @@ describe('TODO_ALERT_KIND_TONES', () => {
     ['upcoming_interview', 'sage'],
   ] as const)('gives %s the %s tone', (alertKind, tone) => {
     expect(TODO_ALERT_KIND_TONES[alertKind]).toBe(tone)
+  })
+})
+
+describe('formatTodoAlertKindCount', () => {
+  it.each([
+    ['follow_up_due', 1, '1 relance'],
+    ['follow_up_due', 8, '8 relances'],
+    ['no_news_suggestion', 1, '1 sans nouvelles'],
+    ['no_news_suggestion', 6, '6 sans nouvelles'],
+    ['job_spec_missing', 1, '1 fiche métier'],
+    ['job_spec_missing', 5, '5 fiches métier'],
+    ['end_client_unknown', 1, '1 client inconnu'],
+    ['end_client_unknown', 4, '4 clients inconnus'],
+    ['upcoming_interview', 1, '1 entretien à venir'],
+    ['upcoming_interview', 2, '2 entretiens à venir'],
+  ] as const)('formats %s x%i as "%s"', (kind, count, expected) => {
+    expect(formatTodoAlertKindCount(kind, count)).toBe(expected)
   })
 })

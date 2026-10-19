@@ -1,6 +1,7 @@
 import { formatInTimeZone } from 'date-fns-tz'
 import { fr } from 'date-fns/locale'
 import { JOB_APPLICATION_STATUS_LABELS } from '@/domain/job-application-status'
+import { pluralizeFrench } from '@/domain/french-plural'
 import { PARIS_TIME_ZONE, countParisCalendarDaysBetween } from '@/domain/paris-time'
 import type { AlertInterview, TodoAlert } from '@/domain/todo-alerts'
 import type { PillTone } from '@/components/pill/interfaces'
@@ -27,6 +28,21 @@ export const TODO_ALERT_KIND_TONES: Record<AlertKind, PillTone> = {
   end_client_unknown: 'lilac',
   no_news_suggestion: 'clay',
   upcoming_interview: 'sage',
+}
+
+export const formatTodoAlertKindCount = (kind: AlertKind, count: number): string => {
+  switch (kind) {
+    case 'follow_up_due':
+      return `${count} ${pluralizeFrench(count, 'relance', 'relances')}`
+    case 'no_news_suggestion':
+      return `${count} sans nouvelles`
+    case 'job_spec_missing':
+      return `${count} ${pluralizeFrench(count, 'fiche métier', 'fiches métier')}`
+    case 'end_client_unknown':
+      return `${count} ${pluralizeFrench(count, 'client inconnu', 'clients inconnus')}`
+    case 'upcoming_interview':
+      return `${count} ${pluralizeFrench(count, 'entretien à venir', 'entretiens à venir')}`
+  }
 }
 
 export const getTodoAlertKey = (alert: TodoAlert): string =>

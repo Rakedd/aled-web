@@ -8,7 +8,7 @@ import {
 import { isTerminalStatus, type JobApplicationStatus } from '@/domain/job-application-status'
 import type { JobApplicationsTableControllerParameters } from './interfaces'
 
-const INITIAL_FILTERS: JobApplicationsTableFilters = { searchText: '', statuses: [], sources: [], showTerminal: false }
+const INITIAL_FILTERS: JobApplicationsTableFilters = { searchText: '', statuses: [], sources: [], showTerminal: false, alertKind: null }
 const INITIAL_SORT: JobApplicationsSort = { key: 'lastActivityAt', direction: 'desc' }
 
 const toggleValueInList = <Value,>(values: Value[], toggledValue: Value): Value[] =>
@@ -22,7 +22,7 @@ export const useController = ({ jobApplications }: JobApplicationsTableControlle
     ...new Set(jobApplications.flatMap(({ source }) => (source === null ? [] : [source]))),
   ].sort((firstSource, secondSource) => firstSource.localeCompare(secondSource, 'fr', { sensitivity: 'base' }))
 
-  const visibleJobApplications = filterAndSortJobApplications(jobApplications, filters, sort)
+  const visibleJobApplications = filterAndSortJobApplications(jobApplications, filters, sort, [])
 
   const setSearchText = (searchText: string) => setFilters((currentFilters) => ({ ...currentFilters, searchText }))
 

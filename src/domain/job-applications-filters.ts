@@ -1,5 +1,7 @@
 import { ALL_JOB_APPLICATION_STATUSES, isTerminalStatus, type JobApplicationStatus } from './job-application-status'
 import type { JobApplicationListItem } from './job-application'
+import type { TodoAlert } from './todo-alerts'
+import type { AlertKind } from './types'
 import { normalizeEntityName } from './entity-names'
 
 export type JobApplicationsTableFilters = {
@@ -7,6 +9,7 @@ export type JobApplicationsTableFilters = {
   statuses: JobApplicationStatus[]
   sources: string[]
   showTerminal: boolean
+  alertKind: AlertKind | null
 }
 
 export type JobApplicationsSortKey =
@@ -44,12 +47,20 @@ const matchesSearchText = (jobApplication: JobApplicationListItem, searchText: s
   )
 }
 
-const matchesFilters = (jobApplication: JobApplicationListItem, filters: JobApplicationsTableFilters): boolean => {
+const hasAlertOfKind = (jobApplication: JobApplicationListItem, alertKind: AlertKind, alerts: TodoAlert[]): boolean =>
+  alerts.some((alert) => alert.jobApplicationId === jobApplication.id && alert.kind === alertKind)
+
+const matchesFilters = (
+  jobApplication: JobApplicationListItem,
+  filters: JobApplicationsTableFilters,
+  alerts: TodoAlert[],
+): boolean => {
   if (!filters.showTerminal && isTerminalStatus(jobApplication.status)) return false
   if (filters.statuses.length > 0 && !filters.statuses.includes(jobApplication.status)) return false
   if (filters.sources.length > 0 && (jobApplication.source === null || !filters.sources.includes(jobApplication.source))) {
     return false
   }
+  if (filters.alertKind !== null && !hasAlertOfKind(jobApplication, filters.alertKind, alerts)) return false
   return matchesSearchText(jobApplication, filters.searchText)
 }
 
@@ -89,9 +100,10 @@ export const filterAndSortJobApplications = <JobApplication extends JobApplicati
   jobApplications: JobApplication[],
   filters: JobApplicationsTableFilters,
   sort: JobApplicationsSort,
+  alerts: TodoAlert[],
 ): JobApplication[] =>
   jobApplications
-    .filter((jobApplication) => matchesFilters(jobApplication, filters))
+    .filter((jobApplication) => matchesFilters(jobApplication, filters, alerts))
     .sort((firstJobApplication, secondJobApplication) =>
       compareJobApplications(firstJobApplication, secondJobApplication, sort),
     )

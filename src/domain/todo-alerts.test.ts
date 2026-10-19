@@ -1,4 +1,4 @@
-import { NO_NEWS_SUGGESTION_DAYS, UPCOMING_INTERVIEW_WINDOW_DAYS, computeTodoAlerts } from './todo-alerts'
+import { NO_NEWS_SUGGESTION_DAYS, UPCOMING_INTERVIEW_WINDOW_DAYS, computeTodoAlerts, countTodoAlertsByKind, type TodoAlert } from './todo-alerts'
 
 describe('todo alert thresholds', () => {
   it('suggests no news after 21 days and shows interviews 7 days ahead', () => {
@@ -99,5 +99,47 @@ describe('computeTodoAlerts', () => {
       'job_spec_missing:a1',
       'no_news_suggestion:a3',
     ])
+  })
+})
+
+describe('countTodoAlertsByKind', () => {
+  const buildAlert = (kind: TodoAlert['kind'], jobApplicationId: string): TodoAlert => ({
+    kind,
+    jobApplicationId,
+    jobApplicationTitle: 'Dev',
+    referenceDate: new Date('2026-10-01T10:00:00Z'),
+  })
+
+  it('counts by kind in summary order and omits zero counts', () => {
+    const alerts = [
+      buildAlert('upcoming_interview', 'a1'),
+      buildAlert('follow_up_due', 'a2'),
+      buildAlert('job_spec_missing', 'a3'),
+      buildAlert('follow_up_due', 'a4'),
+    ]
+
+    expect(countTodoAlertsByKind(alerts)).toEqual([
+      { kind: 'follow_up_due', count: 2 },
+      { kind: 'job_spec_missing', count: 1 },
+      { kind: 'upcoming_interview', count: 1 },
+    ])
+  })
+
+  it('does not count a snoozed follow-up', () => {
+    const now = new Date('2026-10-17T10:00:00Z')
+    const baseApplication = { title: 'Dev', status: 'cv_submitted' as const, appliedOn: new Date('2026-10-01T10:00:00Z'), lastActivityAt: new Date('2026-10-05T10:00:00Z'), hasJobSpec: true, hasEndClient: true }
+    const alerts = computeTodoAlerts({
+      jobApplications: [{ ...baseApplication, id: 'a1' }, { ...baseApplication, id: 'a2' }],
+      interviews: [],
+      snoozes: [{ jobApplicationId: 'a2', alertKind: 'follow_up_due', snoozedUntil: new Date('2026-10-20T10:00:00Z') }],
+      now,
+      followUpDelayDays: 7,
+    })
+
+    expect(countTodoAlertsByKind(alerts)).toEqual([{ kind: 'follow_up_due', count: 1 }])
+  })
+
+  it('returns an empty list without alerts', () => {
+    expect(countTodoAlertsByKind([])).toEqual([])
   })
 })

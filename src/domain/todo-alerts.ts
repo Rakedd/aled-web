@@ -53,6 +53,25 @@ const ALERT_KIND_DISPLAY_ORDER: readonly AlertKind[] = [
   'no_news_suggestion',
 ]
 
+export const TODO_SUMMARY_KIND_ORDER: readonly AlertKind[] = [
+  'follow_up_due',
+  'no_news_suggestion',
+  'job_spec_missing',
+  'end_client_unknown',
+  'upcoming_interview',
+]
+
+export type TodoAlertKindCount = {
+  kind: AlertKind
+  count: number
+}
+
+export const countTodoAlertsByKind = (alerts: TodoAlert[]): TodoAlertKindCount[] =>
+  TODO_SUMMARY_KIND_ORDER.map((kind) => ({
+    kind,
+    count: alerts.filter((alert) => alert.kind === kind).length,
+  })).filter(({ count }) => count > 0)
+
 const FOLLOW_UP_STATUSES: readonly JobApplicationStatus[] = ['intermediary_contact', 'cv_submitted']
 
 const JOB_SPEC_EXPECTED_STATUSES: readonly JobApplicationStatus[] = [
