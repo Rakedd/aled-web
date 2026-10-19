@@ -12,10 +12,10 @@ import {
   INTERVIEW_KINDS,
 } from '@/domain/interviews'
 import { formatParisInterviewDateTime } from '@/domain/paris-time'
-import { useController } from './controller'
-import type { InterviewsSectionProps } from './interfaces'
 import { NATIVE_SELECT_CLASS_NAME, TEXTAREA_CLASS_NAME } from '@/lib/control-class-names'
 import { cn } from '@/lib/utils'
+import { useController } from './controller'
+import type { InterviewsSectionProps } from './interfaces'
 
 const DATE_TIME_INPUT_ID = 'interview-date-time'
 const KIND_SELECT_ID = 'interview-kind'

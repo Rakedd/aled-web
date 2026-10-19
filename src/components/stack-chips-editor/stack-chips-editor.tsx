@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { STACK_CATEGORIES, STACK_CATEGORY_LABELS, type StackCategory } from '@/domain/types'
+import { NATIVE_SELECT_CLASS_NAME } from '@/lib/control-class-names'
 import { useController } from './controller'
 import type { StackChipsEditorProps } from './interfaces'
-import { NATIVE_SELECT_CLASS_NAME } from '@/lib/control-class-names'
 
 const isStackCategory = (candidate: string): candidate is StackCategory =>
   STACK_CATEGORIES.some((stackCategory) => stackCategory === candidate)

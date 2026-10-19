@@ -7,9 +7,9 @@ import { MissingAnthropicApiKeyNotice } from '@/components/missing-anthropic-api
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { BRIEF_LANGUAGES, BRIEF_LANGUAGE_LABELS, isBriefLanguage } from '@/domain/interview-preparation'
+import { NATIVE_SELECT_CLASS_NAME } from '@/lib/control-class-names'
 import { useController } from './controller'
 import type { InterviewPreparationButtonProps } from './interfaces'
-import { NATIVE_SELECT_CLASS_NAME } from '@/lib/control-class-names'
 
 const LANGUAGE_SELECT_ID = 'interview-preparation-language'
 

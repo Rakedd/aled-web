@@ -3,10 +3,10 @@
 import { BlockForm } from '@/components/block-form'
 import { FormField } from '@/components/form-field'
 import { TextField } from '@/components/text-field'
-import { useController } from './controller'
-import type { MissionDetailsFormProps } from './interfaces'
 import { TEXTAREA_CLASS_NAME } from '@/lib/control-class-names'
 import { cn } from '@/lib/utils'
+import { useController } from './controller'
+import type { MissionDetailsFormProps } from './interfaces'
 
 const NOTES_TEXTAREA_ID = 'mission-details-notes'
 

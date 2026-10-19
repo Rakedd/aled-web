@@ -10,11 +10,11 @@ import {
   isJobApplicationStatus,
   type JobApplicationStatus,
 } from '@/domain/job-application-status'
-import { cn } from '@/lib/utils'
 import { StatusBadge } from '@/components/status-badge'
+import { NATIVE_SELECT_CLASS_NAME } from '@/lib/control-class-names'
+import { cn } from '@/lib/utils'
 import { useController } from './controller'
 import type { JobApplicationHeaderProps } from './interfaces'
-import { NATIVE_SELECT_CLASS_NAME } from '@/lib/control-class-names'
 
 const STATUS_SELECT_ID = 'job-application-header-status'
 

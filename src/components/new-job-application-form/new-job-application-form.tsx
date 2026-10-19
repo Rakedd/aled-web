@@ -15,10 +15,10 @@ import {
   JOB_APPLICATION_STATUS_LABELS,
   isJobApplicationStatus,
 } from '@/domain/job-application-status'
-import { useController } from './controller'
-import type { NewJobApplicationFormProps, TextFormValueName } from './interfaces'
 import { NATIVE_SELECT_CLASS_NAME, TEXTAREA_CLASS_NAME } from '@/lib/control-class-names'
 import { cn } from '@/lib/utils'
+import { useController } from './controller'
+import type { NewJobApplicationFormProps, TextFormValueName } from './interfaces'
 
 const SOURCE_SUGGESTIONS = ['Free-Work', 'Collective', 'LeHibou', 'Malt', 'LinkedIn', 'Bouche-à-oreille', 'Autre']
 const SOURCE_SUGGESTIONS_LIST_ID = 'new-job-application-source-suggestions'
