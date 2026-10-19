@@ -49,6 +49,7 @@ export const useController = ({
   const [searchInput, setSearchInput] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
   const currentTabRef = useRef(initialTab)
+  const requestedTabRef = useRef(initialTab)
   const appliedSearchRef = useRef('')
   const latestListingRequestId = useRef(0)
   const inFlightSearchCount = useRef(0)
@@ -60,12 +61,7 @@ export const useController = ({
     searchDebounceTimer.current = null
   }
 
-  useEffect(
-    () => () => {
-      if (searchDebounceTimer.current !== null) clearTimeout(searchDebounceTimer.current)
-    },
-    [],
-  )
+  useEffect(() => clearSearchDebounceTimer, [])
 
   useEffect(() => {
     if (hasMarkedViewed.current) return
@@ -181,29 +177,38 @@ export const useController = ({
     setRemovedOpportunityIds([])
   }
 
-  const selectTab = async (nextTab: OpportunityTab) => {
-    if (nextTab === tab || inFlightOpportunityIds.current.size > 0) return
-    const actionResult = await fetchListing(nextTab, null, appliedSearchRef.current)
-    if (actionResult === null) return
-    if (!actionResult.ok) {
-      setErrorMessage(actionResult.errorMessage)
-      return
-    }
+  const commitTab = (nextTab: OpportunityTab) => {
     currentTabRef.current = nextTab
     setTab(nextTab)
-    replaceListing(actionResult.data)
     onTabChanged(nextTab)
   }
 
-  const applySearch = async (search: string) => {
-    inFlightSearchCount.current += 1
-    const actionResult = await fetchListing(currentTabRef.current, null, search, true)
-    inFlightSearchCount.current -= 1
+  const selectTab = async (nextTab: OpportunityTab) => {
+    if (nextTab === tab || inFlightOpportunityIds.current.size > 0) return
+    requestedTabRef.current = nextTab
+    const actionResult = await fetchListing(nextTab, null, appliedSearchRef.current)
     if (actionResult === null) return
     if (!actionResult.ok) {
+      requestedTabRef.current = currentTabRef.current
       setErrorMessage(actionResult.errorMessage)
       return
     }
+    commitTab(nextTab)
+    replaceListing(actionResult.data)
+  }
+
+  const applySearch = async (search: string) => {
+    const searchedTab = requestedTabRef.current
+    inFlightSearchCount.current += 1
+    const actionResult = await fetchListing(searchedTab, null, search, true)
+    inFlightSearchCount.current -= 1
+    if (actionResult === null) return
+    if (!actionResult.ok) {
+      requestedTabRef.current = currentTabRef.current
+      setErrorMessage(actionResult.errorMessage)
+      return
+    }
+    if (searchedTab !== currentTabRef.current) commitTab(searchedTab)
     appliedSearchRef.current = search
     setAppliedSearch(search)
     replaceListing(actionResult.data)

@@ -24,9 +24,7 @@ import { addParisCalendarDays, formatParisCalendarDate } from '@/domain/paris-ti
 import {
   findLastOpportunityReceivedAt,
   listOpportunitiesByIds,
-  listOpportunitySearchFieldsPublishedSince,
   listOpportunitySummariesPublishedSince,
-  type OpportunitySearchFields,
   type OpportunitySummary,
 } from '@/server/repositories/opportunities-repository'
 import {
@@ -130,29 +128,31 @@ const selectPositionsAfter = (
 ): OpportunityListingPosition[] =>
   after === null ? positions : positions.filter((position) => compareByPublicationDescending(position, after) > 0)
 
+type SearchableFields = { title: string; company: string | null; locationLabel: string | null }
+
 const buildSearchPredicate = (
-  searchFields: OpportunitySearchFields[],
+  { recentSummaries, decisions }: ToProcessContext,
   search: string,
 ): ((position: OpportunityListingPosition) => boolean) => {
-  const normalizedSearch = normalizeForKeywordMatch(search)
-  const matchingOpportunityIds = new Set(
-    searchFields
-      .filter(({ title, company, locationLabel }) =>
-        [title, company, locationLabel].some((field) => normalizeForKeywordMatch(field ?? '').includes(normalizedSearch)),
-      )
-      .map(({ id }) => id),
-  )
-  return ({ id }) => matchingOpportunityIds.has(id)
-}
-
-const loadSearchPredicate = async (
-  supabase: FreeclutchSupabaseClient,
-  search: string,
-  historyStart: Date,
-): Promise<(position: OpportunityListingPosition) => boolean> => {
   if (search === '') return () => true
-  const searchFields = await listOpportunitySearchFieldsPublishedSince(supabase, historyStart)
-  return buildSearchPredicate(searchFields, search)
+  const normalizedSearch = normalizeForKeywordMatch(search)
+  const searchableFieldsById = new Map<string, SearchableFields>([
+    ...decisions.map(
+      ({ opportunityId, opportunityTitle, opportunityCompany, opportunityLocationLabel }): [string, SearchableFields] => [
+        opportunityId,
+        { title: opportunityTitle, company: opportunityCompany, locationLabel: opportunityLocationLabel },
+      ],
+    ),
+    ...recentSummaries.map((summary): [string, SearchableFields] => [summary.id, summary]),
+  ])
+  return ({ id }) => {
+    const searchableFields = searchableFieldsById.get(id)
+    if (searchableFields === undefined) return false
+    const { title, company, locationLabel } = searchableFields
+    return [title, company, locationLabel].some((field) =>
+      normalizeForKeywordMatch(field ?? '').includes(normalizedSearch),
+    )
+  }
 }
 
 export const toListItems = (
@@ -200,12 +200,12 @@ export const buildOpportunityListing = async (
   now: Date,
 ): Promise<OpportunityListing> => {
   const historyStart = addParisCalendarDays(now, -HISTORY_WINDOW_DAYS)
-  const [toProcessContext, lastReceivedAt, lastViewedAt, matchesSearch] = await Promise.all([
+  const [toProcessContext, lastReceivedAt, lastViewedAt] = await Promise.all([
     loadToProcessContextOncePerRequest(supabase, userId, now),
     findLastOpportunityReceivedAt(supabase),
     findOpportunitiesLastViewedAt(supabase, userId),
-    loadSearchPredicate(supabase, search, historyStart),
   ])
+  const matchesSearch = buildSearchPredicate(toProcessContext, search)
   const positionsByTab: Record<OpportunityTab, OpportunityListingPosition[]> = {
     to_process: selectPositionsToProcess(toProcessContext).filter(matchesSearch),
     applied: selectDecidedPositions(toProcessContext.decisions, 'applied', historyStart).filter(matchesSearch),

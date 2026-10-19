@@ -83,7 +83,7 @@ export const OPPORTUNITY_VALIDATION_MESSAGES = {
   notFound: 'Opportunité introuvable',
   unknownSource: 'Source inconnue',
   invalidListingRequest: 'Onglet ou page invalide',
-  searchTooLong: 'La recherche ne peut pas dépasser 100 caractères',
+  searchTooLong: `La recherche ne peut pas dépasser ${OPPORTUNITY_SEARCH_MAX_LENGTH} caractères`,
   notDismissed: "Cette mission n'est pas ignorée",
   alreadyApplied: 'Tu as déjà postulé à cette mission',
 } as const

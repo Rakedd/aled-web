@@ -3,7 +3,6 @@ import { EMPTY_OPPORTUNITY_FILTERS } from '@/domain/opportunity-filters'
 import {
   findLastOpportunityReceivedAt,
   listOpportunitiesByIds,
-  listOpportunitySearchFieldsPublishedSince,
   listOpportunitySummariesPublishedSince,
 } from '@/server/repositories/opportunities-repository'
 import { listOpportunityDecisions } from '@/server/repositories/opportunity-decisions-repository'
@@ -27,7 +26,6 @@ jest.mock('react', () => {
 jest.mock('@/server/repositories/opportunities-repository', () => ({
   findLastOpportunityReceivedAt: jest.fn(),
   listOpportunitiesByIds: jest.fn(),
-  listOpportunitySearchFieldsPublishedSince: jest.fn(),
   listOpportunitySummariesPublishedSince: jest.fn(),
 }))
 jest.mock('@/server/repositories/opportunity-decisions-repository', () => ({ listOpportunityDecisions: jest.fn() }))
@@ -46,6 +44,7 @@ describe('to-process context loading', () => {
         id: '6f1f4f7e-2f8c-4c55-9f0e-1b2c3d4e5f60',
         source: 'free-work',
         title: 'Développeur React',
+        company: null,
         rateMin: null,
         rateMax: 550,
         remoteMode: 'partial',
@@ -74,17 +73,30 @@ describe('to-process context loading', () => {
     expect(findOpportunityFiltersBySource).toHaveBeenCalledTimes(1)
   })
 
-  it('does not load the search fields without a search', async () => {
-    await buildOpportunityListing(pageClient, 'user-1', { tab: 'to_process', after: null, search: '' }, NOW)
+  it('matches the search on the title of loaded summaries and keeps decided missions searchable', async () => {
+    jest.mocked(listOpportunityDecisions).mockResolvedValue([
+      {
+        opportunityId: '7a1f4f7e-2f8c-4c55-9f0e-1b2c3d4e5f61',
+        decision: 'dismissed',
+        jobApplicationId: null,
+        opportunityPublishedAt: new Date('2026-10-10T09:00:00Z'),
+        opportunityTitle: 'Architecte Cloud',
+        opportunityCompany: 'Société Générale',
+        opportunityLocationLabel: null,
+      },
+    ])
 
-    expect(listOpportunitySearchFieldsPublishedSince).not.toHaveBeenCalled()
+    const listing = await buildOpportunityListing(
+      pageClient,
+      'user-4',
+      { tab: 'dismissed', after: null, search: 'societe generale' },
+      NOW,
+    )
+
+    expect(listing.counts).toEqual({ to_process: 0, applied: 0, dismissed: 1 })
   })
 
   it('narrows the listing and its counts to the search while the to-process count stays unfiltered', async () => {
-    jest.mocked(listOpportunitySearchFieldsPublishedSince).mockResolvedValue([
-      { id: '6f1f4f7e-2f8c-4c55-9f0e-1b2c3d4e5f60', title: 'Développeur React', company: null, locationLabel: null },
-    ])
-
     const listing = await buildOpportunityListing(
       pageClient,
       'user-1',

@@ -453,6 +453,31 @@ describe('opportunities-board useController', () => {
       expect(listOpportunities).toHaveBeenLastCalledWith('dismissed', null, 'react')
     })
 
+    it('ends on the requested tab with the search applied when the debounce fires during the tab request', async () => {
+      const { result, listOpportunities, onTabChanged } = renderBoardController()
+      let resolveTabRequest: (actionResult: ActionResult<OpportunityListing>) => void = () => undefined
+      listOpportunities
+        .mockReturnValueOnce(new Promise((resolve) => (resolveTabRequest = resolve)))
+        .mockResolvedValueOnce(succeeded(buildListing({ items: [buildOpportunity('searched')], hasMore: false })))
+      typeSearch(result, 'react')
+
+      let selectingTab: Promise<void> = Promise.resolve()
+      act(() => {
+        selectingTab = result.current.selectTab('applied')
+      })
+      await advanceDebounce()
+      await act(async () => {
+        resolveTabRequest(succeeded(buildListing({ items: [buildOpportunity('unsearched')], hasMore: false })))
+        await selectingTab
+      })
+
+      expect(listOpportunities).toHaveBeenNthCalledWith(2, 'applied', null, 'react')
+      expect(result.current.tab).toBe('applied')
+      expect(result.current.items.map(({ id }) => id)).toEqual(['searched'])
+      expect(onTabChanged).toHaveBeenCalledWith('applied')
+      expect(result.current.hasActiveSearch).toBe(true)
+    })
+
     it('shows the error and keeps the list when the search fails', async () => {
       const { result, listOpportunities } = renderBoardController()
       listOpportunities.mockResolvedValue({ ok: false, errorMessage: 'La recherche ne peut pas dépasser 100 caractères' })

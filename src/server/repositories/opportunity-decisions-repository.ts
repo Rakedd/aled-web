@@ -12,7 +12,12 @@ export type OpportunityDecisionInput = {
   jobApplicationId: string | null
 }
 
-export type StoredOpportunityDecision = OpportunityDecisionInput & { opportunityPublishedAt: Date }
+export type StoredOpportunityDecision = OpportunityDecisionInput & {
+  opportunityPublishedAt: Date
+  opportunityTitle: string
+  opportunityCompany: string | null
+  opportunityLocationLabel: string | null
+}
 
 const DECISION_UNIQUE_KEY_COLUMNS = 'user_id,opportunity_id'
 
@@ -26,7 +31,7 @@ export const listOpportunityDecisions = async (
   const decisionRows = await fetchEveryRow('listOpportunityDecisions', (firstRowIndex, lastRowIndex) =>
     supabase
       .from('opportunity_decisions')
-      .select('id, opportunity_id, decision, job_application_id, opportunities(published_at)')
+      .select('id, opportunity_id, decision, job_application_id, opportunities(published_at, title, company, location_label)')
       .eq('user_id', userId)
       .order('id')
       .range(firstRowIndex, lastRowIndex),
@@ -40,6 +45,9 @@ export const listOpportunityDecisions = async (
         decision,
         jobApplicationId: decisionRow.job_application_id,
         opportunityPublishedAt: new Date(decidedOpportunity.published_at),
+        opportunityTitle: decidedOpportunity.title,
+        opportunityCompany: decidedOpportunity.company,
+        opportunityLocationLabel: decidedOpportunity.location_label,
       },
     ]
   })

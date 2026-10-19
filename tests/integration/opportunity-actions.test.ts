@@ -289,11 +289,13 @@ describe('listOpportunities', () => {
       const keyword = buildUniqueKeyword()
       const reactId = await seedOpportunityOrFail({ title: `Dev React ${keyword}` })
       await seedOpportunityOrFail({ title: `Dev Java ${keyword}` })
+      const reactWithoutSearchMatchId = await seedOpportunityOrFail({ title: 'Dev React sans rapport' })
       await saveFiltersOrFail(filtersWith({ includeKeywords: ['react'] }))
 
       const listing = await listOrFail('to_process', null, keyword)
 
       expect(listing.items.map((listItem) => listItem.id)).toEqual([reactId])
+      expect(listing.items.map((listItem) => listItem.id)).not.toContain(reactWithoutSearchMatchId)
       expect(listing.counts.to_process).toBe(1)
     })
 
