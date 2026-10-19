@@ -2,6 +2,7 @@ import {
   ALL_JOB_APPLICATION_STATUSES,
   JOB_APPLICATION_STATUS_LABELS,
   countActiveJobApplications,
+  formatPipelineStep,
   getNextPipelineStatus,
   getSuggestedKoStatuses,
   isActiveStatus,
@@ -78,5 +79,18 @@ describe('countActiveJobApplications', () => {
     const oneApplicationPerStatus = ALL_JOB_APPLICATION_STATUSES.map((status) => ({ status }))
     expect(countActiveJobApplications(oneApplicationPerStatus)).toBe(6)
     expect(countActiveJobApplications([])).toBe(0)
+  })
+
+  it('formats the pipeline step of pipeline statuses', () => {
+    expect(formatPipelineStep('applied')).toBe('étape 1 sur 7')
+    expect(formatPipelineStep('interview_scheduled')).toBe('étape 4 sur 7')
+    expect(formatPipelineStep('signed')).toBe('étape 7 sur 7')
+  })
+
+  it('has no pipeline step for KO and abandoned statuses', () => {
+    expect(formatPipelineStep('ko_cv')).toBeNull()
+    expect(formatPipelineStep('ko_after_contact')).toBeNull()
+    expect(formatPipelineStep('ko_interview')).toBeNull()
+    expect(formatPipelineStep('no_news_abandoned')).toBeNull()
   })
 })
