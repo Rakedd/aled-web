@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Figtree, Manrope } from "next/font/google";
+import { THEME_INIT_SCRIPT } from "@/lib/theme/theme-init-script";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -23,7 +24,11 @@ const RootLayout = ({ children }: LayoutProps<"/">) => (
   <html
     lang="fr"
     className={`${manrope.variable} ${figtree.variable} h-full antialiased`}
+    suppressHydrationWarning
   >
+    <head>
+      <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+    </head>
     <body className="min-h-full flex flex-col">{children}</body>
   </html>
 );
