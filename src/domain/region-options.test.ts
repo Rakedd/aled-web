@@ -13,6 +13,13 @@ describe('buildRegionOptions', () => {
     expect(regionOptions).toHaveLength(13)
   })
 
+  it('dedupes apostrophe and hyphen variants against the static list', () => {
+    const regionOptions = buildRegionOptions(['Provence-Alpes-Côte d’Azur', 'Pays-de-la-Loire'], ['Provence Alpes Côte d‘Azur'])
+    expect(regionOptions).toHaveLength(13)
+    expect(regionOptions).toContain("Provence-Alpes-Côte d'Azur")
+    expect(regionOptions).toContain('Pays de la Loire')
+  })
+
   it('keeps a selected or known region that is not in the static list', () => {
     const regionOptions = buildRegionOptions(['Belgique'], ['Suisse'])
     expect(regionOptions).toContain('Belgique')

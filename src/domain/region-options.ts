@@ -1,4 +1,4 @@
-import { normalizeForKeywordMatch } from './opportunity-filters'
+import { normalizeRegionName } from './opportunity-filters'
 
 export const METROPOLITAN_FRENCH_REGIONS: readonly string[] = [
   'Auvergne-Rhône-Alpes',
@@ -19,7 +19,7 @@ export const METROPOLITAN_FRENCH_REGIONS: readonly string[] = [
 export const buildRegionOptions = (knownRegions: string[], selectedRegions: string[]): string[] => {
   const regionsByNormalizedName = new Map<string, string>()
   for (const region of [...METROPOLITAN_FRENCH_REGIONS, ...knownRegions, ...selectedRegions]) {
-    const normalizedRegion = normalizeForKeywordMatch(region)
+    const normalizedRegion = normalizeRegionName(region)
     if (normalizedRegion !== '' && !regionsByNormalizedName.has(normalizedRegion)) {
       regionsByNormalizedName.set(normalizedRegion, region)
     }

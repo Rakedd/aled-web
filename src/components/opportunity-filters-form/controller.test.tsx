@@ -161,4 +161,17 @@ describe('opportunity-filters-form useController', () => {
     act(() => result.current.toggleRegion('Île-de-France'))
     expect(result.current.filters.regions).toEqual([])
   })
+
+  it('removes a selected region written with a curly apostrophe and hyphens with toggleRegion', () => {
+    const { result } = renderHook(() =>
+      useController({
+        source: 'free-work',
+        initialFilters: { ...EMPTY_OPPORTUNITY_FILTERS, regions: ['Provence-Alpes-Côte d’Azur'] },
+        saveOpportunityFilters: jest.fn(),
+        onDataChanged: jest.fn(),
+      }),
+    )
+    act(() => result.current.toggleRegion("Provence Alpes Côte d'Azur"))
+    expect(result.current.filters.regions).toEqual([])
+  })
 })

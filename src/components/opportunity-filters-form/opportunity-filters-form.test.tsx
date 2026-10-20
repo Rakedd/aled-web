@@ -41,6 +41,12 @@ describe('OpportunityFiltersForm', () => {
     expect(screen.getByRole('button', { name: 'Belgique' })).toHaveAttribute('aria-pressed', 'true')
   })
 
+  it('shows a region selected with a curly apostrophe as pressed on its static toggle', () => {
+    renderForm([], { ...EMPTY_OPPORTUNITY_FILTERS, regions: ['Provence-Alpes-Côte d’Azur'] })
+    expect(screen.getByRole('button', { name: "Provence-Alpes-Côte d'Azur" })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByRole('button', { name: 'Provence-Alpes-Côte d’Azur' })).not.toBeInTheDocument()
+  })
+
   it('saves a region toggled on', async () => {
     const { saveOpportunityFilters } = renderForm(['Bretagne'])
     await userEvent.click(screen.getByRole('button', { name: 'Bretagne' }))

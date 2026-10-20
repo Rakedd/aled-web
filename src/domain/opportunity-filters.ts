@@ -46,6 +46,8 @@ const MAXIMUM_REGION_COUNT = 30
 const MAXIMUM_TERM_LENGTH = 60
 const MAXIMUM_RATE_FLOOR = 5000
 const REGULAR_EXPRESSION_METACHARACTER_PATTERN = /[.*+?^${}()|[\]\\]/g
+const APOSTROPHE_VARIANT_PATTERN = /[\u2018\u2019\u02BC]/g
+const REGION_SEPARATOR_SEQUENCE_PATTERN = /[\s-]+/g
 
 type KeywordListField = 'includeKeywords' | 'alwaysExcludeKeywords' | 'rescuableExcludeKeywords' | 'rescueKeywords'
 type RateFloorField = 'rateFloorFullRemote' | 'rateFloorHybrid' | 'rateFloorOnsite'
@@ -87,6 +89,12 @@ const REGION_LIST_RULES: TermListRules = {
 
 export const normalizeForKeywordMatch = (text: string): string => normalizeEntityName(text)
 
+export const normalizeRegionName = (region: string): string =>
+  normalizeForKeywordMatch(region)
+    .replace(APOSTROPHE_VARIANT_PATTERN, "'")
+    .replace(REGION_SEPARATOR_SEQUENCE_PATTERN, ' ')
+    .trim()
+
 const escapeRegularExpression = (text: string): string => text.replace(REGULAR_EXPRESSION_METACHARACTER_PATTERN, '\\$&')
 
 const buildWholeWordPattern = (normalizedKeyword: string): RegExp =>
@@ -119,8 +127,8 @@ const passesRateFloor = (candidate: OpportunityMatchCandidate, filters: Opportun
 
 const isInWantedRegion = (candidate: OpportunityMatchCandidate, normalizedWantedRegions: string[]): boolean => {
   if (normalizedWantedRegions.length === 0 || candidate.remoteMode === 'full') return true
-  const normalizedRegion = normalizeForKeywordMatch(candidate.region ?? '')
-  const normalizedLocationLabel = normalizeForKeywordMatch(candidate.locationLabel ?? '')
+  const normalizedRegion = normalizeRegionName(candidate.region ?? '')
+  const normalizedLocationLabel = normalizeRegionName(candidate.locationLabel ?? '')
   if (normalizedRegion === '' && normalizedLocationLabel === '') return true
   return normalizedWantedRegions.some(
     (normalizedWantedRegion) =>
@@ -137,7 +145,7 @@ export const createOpportunityMatcher = (
   const findRescuableExcludeKeyword = buildKeywordMatcher(filters.rescuableExcludeKeywords)
   const findRescueKeyword = buildKeywordMatcher(filters.rescueKeywords)
   const normalizedWantedRegions = filters.regions
-    .map(normalizeForKeywordMatch)
+    .map(normalizeRegionName)
     .filter((normalizedWantedRegion) => normalizedWantedRegion !== '')
 
   return (candidate) => {

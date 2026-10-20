@@ -8,7 +8,7 @@ import type { PillTone } from '@/components/pill/interfaces'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { normalizeForKeywordMatch } from '@/domain/opportunity-filters'
+import { normalizeRegionName } from '@/domain/opportunity-filters'
 import { REMOTE_MODE_LABELS } from '@/domain/opportunities'
 import { buildRegionOptions } from '@/domain/region-options'
 import { useController } from './controller'
@@ -81,7 +81,7 @@ export const OpportunityFiltersForm = ({
   })
 
   const regionOptions = buildRegionOptions(knownRegions, filters.regions)
-  const selectedNormalizedRegions = new Set(filters.regions.map(normalizeForKeywordMatch))
+  const selectedNormalizedRegions = new Set(filters.regions.map(normalizeRegionName))
 
   const handleSubmit = (formEvent: FormEvent<HTMLFormElement>) => {
     formEvent.preventDefault()
@@ -139,7 +139,7 @@ export const OpportunityFiltersForm = ({
           {regionOptions.map((region) => (
             <PillToggle
               key={region}
-              isPressed={selectedNormalizedRegions.has(normalizeForKeywordMatch(region))}
+              isPressed={selectedNormalizedRegions.has(normalizeRegionName(region))}
               onPressedChange={() => toggleRegion(region)}
             >
               {region}

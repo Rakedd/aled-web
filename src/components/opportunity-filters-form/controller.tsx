@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
 import {
-  normalizeForKeywordMatch,
+  normalizeRegionName,
   type OpportunityFilters,
   validateOpportunityFilters,
 } from '@/domain/opportunity-filters'
@@ -54,14 +54,14 @@ export const useController = ({
 
   const toggleRegion = (region: string) =>
     setFilters((currentFilters) => {
-      const normalizedRegion = normalizeForKeywordMatch(region)
+      const normalizedRegion = normalizeRegionName(region)
       const isSelected = currentFilters.regions.some(
-        (selectedRegion) => normalizeForKeywordMatch(selectedRegion) === normalizedRegion,
+        (selectedRegion) => normalizeRegionName(selectedRegion) === normalizedRegion,
       )
       return {
         ...currentFilters,
         regions: isSelected
-          ? currentFilters.regions.filter((selectedRegion) => normalizeForKeywordMatch(selectedRegion) !== normalizedRegion)
+          ? currentFilters.regions.filter((selectedRegion) => normalizeRegionName(selectedRegion) !== normalizedRegion)
           : [...currentFilters.regions, region],
       }
     })

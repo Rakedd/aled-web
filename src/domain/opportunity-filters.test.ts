@@ -7,6 +7,7 @@ import {
   createOpportunityMatcher,
   hasActiveOpportunityFilters,
   normalizeForKeywordMatch,
+  normalizeRegionName,
   validateOpportunityFilters,
 } from './opportunity-filters'
 
@@ -16,6 +17,27 @@ const candidate = (override: Partial<OpportunityMatchCandidate>): OpportunityMat
 describe('normalizeForKeywordMatch', () => {
   it('lowercases, strips accents and collapses spaces', () => {
     expect(normalizeForKeywordMatch('  Développeur   ÉLECTRONIQUE ')).toBe('developpeur electronique')
+  })
+})
+
+describe('normalizeRegionName', () => {
+  it('folds curly apostrophes into the straight one', () => {
+    expect(normalizeRegionName('Provence-Alpes-Côte d’Azur')).toBe(normalizeRegionName("Provence-Alpes-Côte d'Azur"))
+    expect(normalizeRegionName('Côte d‘Azur')).toBe(normalizeRegionName("Côte d'Azur"))
+    expect(normalizeRegionName('Côte dʼAzur')).toBe(normalizeRegionName("Côte d'Azur"))
+  })
+
+  it('treats hyphens and spaces as the same separator', () => {
+    expect(normalizeRegionName('Pays-de-la-Loire')).toBe(normalizeRegionName('Pays de la Loire'))
+    expect(normalizeRegionName(' Île - de -  France ')).toBe('ile de france')
+  })
+
+  it('keeps accent and case folding from keyword normalization', () => {
+    expect(normalizeRegionName('ÎLE-DE-FRANCE')).toBe(normalizeRegionName('ile-de-france'))
+  })
+
+  it('leaves keyword normalization unchanged', () => {
+    expect(normalizeForKeywordMatch('Front-end d’Azur')).toBe('front-end d’azur')
   })
 })
 
@@ -90,6 +112,18 @@ describe('createOpportunityMatcher', () => {
     expect(matcher(candidate({ region: 'Bretagne', locationLabel: 'Rennes', remoteMode: 'full' }))).toBe(true)
     expect(matcher(candidate({ region: null, locationLabel: null }))).toBe(true)
     expect(createOpportunityMatcher(filters({ regions: ['ile-de-france'] }))(candidate({ region: 'Île-de-France', locationLabel: null }))).toBe(true)
+  })
+  it('matches a region across apostrophe and hyphen variants, on region and location label', () => {
+    const matcher = createOpportunityMatcher(filters({ regions: ["Provence-Alpes-Côte d'Azur", 'Pays-de-la-Loire'] }))
+    expect(matcher(candidate({ region: 'Provence-Alpes-Côte d’Azur', locationLabel: null }))).toBe(true)
+    expect(matcher(candidate({ region: null, locationLabel: 'Marseille, Provence Alpes Côte d’Azur' }))).toBe(true)
+    expect(matcher(candidate({ region: 'Pays de la Loire', locationLabel: 'Nantes' }))).toBe(true)
+    expect(matcher(candidate({ region: 'Occitanie', locationLabel: 'Toulouse' }))).toBe(false)
+  })
+  it('keeps keyword matching strict about hyphens', () => {
+    const matcher = createOpportunityMatcher(filters({ includeKeywords: ['front end'] }))
+    expect(matcher(candidate({ title: 'Développeur Front-end' }))).toBe(false)
+    expect(matcher(candidate({ title: 'Développeur Front end' }))).toBe(true)
   })
   it('ignores blank regions instead of matching every location', () => {
     expect(createOpportunityMatcher(filters({ regions: ['bretagne', ' '] }))(candidate({ region: 'Occitanie', locationLabel: 'Toulouse' }))).toBe(false)
