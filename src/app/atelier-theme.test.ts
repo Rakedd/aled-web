@@ -61,6 +61,7 @@ const CONTRAST_PAIRS: Array<[string, string]> = [
   ['clay', 'clay-tint'],
   [WHITE, 'ink'],
   ['peach', 'ink'],
+  ['on-forest', 'ink'],
 ]
 
 describe('atelier theme', () => {
@@ -73,6 +74,18 @@ describe('atelier theme', () => {
     expect(getContrastRatio(resolveColour(foreground), resolveColour(background))).toBeGreaterThanOrEqual(
       MINIMUM_TEXT_CONTRAST,
     )
+  })
+
+  it('outlines focused controls of ink surfaces in a light token', () => {
+    const darkSurfaceFocusUtility = /@utility focus-ring-on-dark\s*{([\s\S]*?)\n}/.exec(GLOBALS_CSS)?.[1] ?? ''
+    expect(darkSurfaceFocusUtility).toMatch(/:focus-visible\s*{[^}]*outline:\s*2px solid var\(--on-forest\)/)
+    expect(darkSurfaceFocusUtility).toMatch(/outline-offset:\s*2px/)
+  })
+
+  it('gives the ink Claude key card the light focus outline', () => {
+    const preferencesPage = fs.readFileSync(path.join(__dirname, '(app)', 'preferences', 'page.tsx'), 'utf8')
+    const apiKeySectionClassName = /aria-labelledby="settings-api-key-title" className="([^"]*)"/.exec(preferencesPage)?.[1]
+    expect(apiKeySectionClassName?.split(' ')).toEqual(expect.arrayContaining(['bg-ink', 'focus-ring-on-dark']))
   })
 
   it('does not ship a dark mode in the stylesheet', () => {

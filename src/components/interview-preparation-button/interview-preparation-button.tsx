@@ -48,8 +48,8 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
         <Button
           ref={openingButtonRef}
           type="button"
+          variant="ink"
           size="lg"
-          className="bg-ink font-bold text-on-forest hover:bg-ink/90"
           onClick={() => void handleButtonClick()}
           disabled={isButtonDisabled}
         >

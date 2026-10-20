@@ -101,7 +101,7 @@ export const HomeDashboard = ({
           )}
           <Link
             href={CALENDAR_ROUTE}
-            className={cn(buttonVariants({ size: 'lg' }), 'mt-auto self-start bg-ink font-bold text-on-forest hover:bg-ink/90')}
+            className={cn(buttonVariants({ variant: 'ink', size: 'lg' }), 'mt-auto self-start')}
           >
             Voir mon calendrier
           </Link>

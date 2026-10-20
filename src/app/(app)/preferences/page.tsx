@@ -38,7 +38,7 @@ const SettingsPage = async () => {
                 updateProfileSettings={updateProfileSettings}
               />
             </section>
-            <section aria-labelledby="settings-api-key-title" className="flex flex-col gap-4 rounded-2xl bg-ink p-6 text-primary-foreground">
+            <section aria-labelledby="settings-api-key-title" className="flex flex-col gap-4 rounded-2xl bg-ink p-6 text-primary-foreground focus-ring-on-dark">
               <div className="flex flex-col gap-1">
                 <h2 id="settings-api-key-title" className="text-lg font-semibold">
                   Clé API Claude

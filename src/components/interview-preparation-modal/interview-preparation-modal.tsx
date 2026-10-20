@@ -216,7 +216,7 @@ export const InterviewPreparationModal = ({
       <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/40" />
       <Dialog.Popup
         finalFocus={finalFocusRef}
-        className="fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[min(42rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 overflow-y-auto rounded-xl border bg-background p-6 shadow-xl outline-none"
+        className="fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[min(42rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 overflow-y-auto rounded-2xl bg-card p-6 shadow-xl outline-none"
       >
         <InterviewPreparationModalContent {...contentProps} />
       </Dialog.Popup>
