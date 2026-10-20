@@ -19,7 +19,7 @@ export const SettingsNavigation = () => {
 
   return (
     <nav aria-label="Navigation des préférences">
-      <ul className="flex flex-wrap gap-1">
+      <ul className="flex flex-wrap gap-2 lg:flex-col">
         {SETTINGS_NAVIGATION_ITEMS.map((navigationItem) => {
           const isActive = pathname === navigationItem.href
           return (
@@ -28,8 +28,8 @@ export const SettingsNavigation = () => {
                 href={navigationItem.href}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  'inline-flex h-9 items-center rounded-full px-3 text-sm font-medium text-ink-muted transition-colors hover:bg-muted hover:text-ink motion-reduce:transition-none',
-                  isActive && 'bg-forest text-primary-foreground hover:bg-forest hover:text-primary-foreground',
+                  'flex h-10 items-center rounded-full px-4 text-sm font-medium text-ink-muted transition-colors hover:bg-muted hover:text-ink motion-reduce:transition-none',
+                  isActive && 'bg-ink text-primary-foreground hover:bg-ink hover:text-primary-foreground',
                 )}
               >
                 {navigationItem.label}

@@ -3,9 +3,12 @@
 import { useRouter } from 'next/navigation'
 import type { FormEvent } from 'react'
 import { KeywordTagsInput } from '@/components/keyword-tags-input'
+import { PillToggle } from '@/components/pill-toggle'
+import type { PillTone } from '@/components/pill/interfaces'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { normalizeForKeywordMatch } from '@/domain/opportunity-filters'
 import { REMOTE_MODE_LABELS } from '@/domain/opportunities'
 import { useController } from './controller'
 import type { KeywordListField, OpportunityFiltersFormProps, RateFloorField } from './interfaces'
@@ -14,26 +17,31 @@ const KEYWORD_LIST_SECTIONS: {
   field: KeywordListField
   label: string
   helpText: string
+  tone: PillTone
 }[] = [
   {
     field: 'includeKeywords',
     label: 'Doit contenir au moins un de',
     helpText: 'Une mission doit avoir au moins un de ces mots dans son titre. Vide = pas de contrainte.',
+    tone: 'sage',
   },
   {
     field: 'alwaysExcludeKeywords',
     label: 'Exclure toujours',
     helpText: "Écarte la mission dès qu'un de ces mots est dans le titre (ex. stage, alternance).",
+    tone: 'clay',
   },
   {
     field: 'rescuableExcludeKeywords',
     label: 'Exclure, sauf si rattrapé',
     helpText: 'Écarte la mission, sauf si elle contient aussi un mot de rattrapage (ex. java).',
+    tone: 'peach',
   },
   {
     field: 'rescueKeywords',
     label: 'Mots de rattrapage',
     helpText: 'Garde une mission exclue ci-dessus si elle contient un de ces mots (ex. react).',
+    tone: 'lilac',
   },
 ]
 
@@ -56,7 +64,7 @@ export const OpportunityFiltersForm = ({
   const {
     filters,
     setKeywordList,
-    setRegions,
+    toggleRegion,
     rateFloorTexts,
     rateFloorErrors,
     setRateFloorText,
@@ -70,6 +78,15 @@ export const OpportunityFiltersForm = ({
     saveOpportunityFilters,
     onDataChanged: router.refresh,
   })
+
+  const regionOptions = [...knownRegions, ...filters.regions]
+    .filter(
+      (region, regionIndex, allRegions) =>
+        allRegions.findIndex((otherRegion) => normalizeForKeywordMatch(otherRegion) === normalizeForKeywordMatch(region)) ===
+        regionIndex,
+    )
+    .sort((firstRegion, secondRegion) => firstRegion.localeCompare(secondRegion, 'fr'))
+  const selectedNormalizedRegions = new Set(filters.regions.map(normalizeForKeywordMatch))
 
   const handleSubmit = (formEvent: FormEvent<HTMLFormElement>) => {
     formEvent.preventDefault()
@@ -88,12 +105,13 @@ export const OpportunityFiltersForm = ({
           helpText={keywordListSection.helpText}
           values={filters[keywordListSection.field]}
           onChange={(keywords) => setKeywordList(keywordListSection.field, keywords)}
+          tone={keywordListSection.tone}
         />
       ))}
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-1 text-sm font-medium">TJM minimum</legend>
         <p className="text-xs text-muted-foreground">En €/j, vide = pas de minimum.</p>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {RATE_FLOOR_INPUTS.map((rateFloorInput) => {
             const inputId = `opportunity-filters-form-${rateFloorInput.field}`
             const errorId = `${inputId}-error`
@@ -119,13 +137,21 @@ export const OpportunityFiltersForm = ({
           })}
         </div>
       </fieldset>
-      <KeywordTagsInput
-        label="Régions"
-        helpText={REGIONS_HELP_TEXT}
-        values={filters.regions}
-        onChange={setRegions}
-        suggestions={knownRegions}
-      />
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-1 text-sm font-medium">Régions</legend>
+        <p className="text-xs text-muted-foreground">{REGIONS_HELP_TEXT}</p>
+        <div className="flex flex-wrap gap-2">
+          {regionOptions.map((region) => (
+            <PillToggle
+              key={region}
+              isPressed={selectedNormalizedRegions.has(normalizeForKeywordMatch(region))}
+              onPressedChange={() => toggleRegion(region)}
+            >
+              {region}
+            </PillToggle>
+          ))}
+        </div>
+      </fieldset>
       {errorMessage && (
         <p role="alert" className="text-sm text-destructive">
           {errorMessage}
@@ -137,7 +163,7 @@ export const OpportunityFiltersForm = ({
         </p>
       )}
       <Button type="submit" className="self-start" disabled={isSubmitting}>
-        {isSubmitting ? 'Enregistrement…' : 'Enregistrer'}
+        {isSubmitting ? 'Enregistrement…' : 'Enregistrer les filtres'}
       </Button>
     </form>
   )

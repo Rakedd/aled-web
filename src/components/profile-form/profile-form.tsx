@@ -1,5 +1,6 @@
 'use client'
 
+import { Plus } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -71,7 +72,7 @@ export const ProfileForm = ({ initialProfileSettings, updateProfileSettings }: P
         <legend className="mb-2 text-sm font-medium">Liens</legend>
         {links.length === 0 && <p className="text-sm text-muted-foreground">Aucun lien pour l&apos;instant.</p>}
         {links.map((profileLink, linkIndex) => (
-          <div key={linkIndex} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div key={linkIndex} className="flex flex-col gap-2 rounded-2xl bg-muted p-3 sm:flex-row sm:items-end">
             <div className="flex flex-col gap-2 sm:w-40">
               <Label htmlFor={`profile-form-link-label-${linkIndex}`}>Libellé</Label>
               <Input
@@ -104,6 +105,7 @@ export const ProfileForm = ({ initialProfileSettings, updateProfileSettings }: P
         ))}
         {links.length < MAXIMUM_PROFILE_LINK_COUNT && (
           <Button type="button" variant="outline" onClick={addLink} className="self-start">
+            <Plus className="size-4" strokeWidth={1.75} aria-hidden="true" />
             Ajouter un lien
           </Button>
         )}

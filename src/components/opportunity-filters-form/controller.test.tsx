@@ -141,4 +141,24 @@ describe('opportunity-filters-form useController', () => {
     })
     expect(result.current.isSubmitting).toBe(false)
   })
+
+  it('adds a region with toggleRegion', () => {
+    const { result } = renderOpportunityFiltersFormController()
+    act(() => result.current.toggleRegion('Île-de-France'))
+    expect(result.current.filters.regions).toEqual(['Île-de-France'])
+  })
+
+  it('removes a selected region whose normalized name matches with toggleRegion', () => {
+    const saveOpportunityFilters = jest.fn()
+    const { result } = renderHook(() =>
+      useController({
+        source: 'free-work',
+        initialFilters: { ...EMPTY_OPPORTUNITY_FILTERS, regions: ['ile-de-france'] },
+        saveOpportunityFilters,
+        onDataChanged: jest.fn(),
+      }),
+    )
+    act(() => result.current.toggleRegion('Île-de-France'))
+    expect(result.current.filters.regions).toEqual([])
+  })
 })

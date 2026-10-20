@@ -1,17 +1,18 @@
 'use client'
 
 import { useId } from 'react'
+import { X } from 'lucide-react'
+import { Pill } from '@/components/pill'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useController } from './controller'
 import type { KeywordTagsInputProps } from './interfaces'
 
-export const KeywordTagsInput = ({ label, helpText, values, onChange, suggestions = [] }: KeywordTagsInputProps) => {
+export const KeywordTagsInput = ({ label, helpText, values, onChange, tone }: KeywordTagsInputProps) => {
   const { draft, changeDraft, addDraft, removeValue, handleDraftKeyDown } = useController({ values, onChange })
   const inputId = useId()
   const helpTextId = useId()
-  const suggestionsListId = useId()
 
   return (
     <div className="flex flex-col gap-2">
@@ -22,20 +23,18 @@ export const KeywordTagsInput = ({ label, helpText, values, onChange, suggestion
       {values.length > 0 && (
         <ul className="flex flex-wrap gap-2">
           {values.map((value, valueIndex) => (
-            <li
-              key={`${value}-${valueIndex}`}
-              className="flex items-center gap-1 rounded-full border border-input py-1 pr-1 pl-3 text-sm"
-            >
-              <span>{value}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                aria-label={`Retirer ${value}`}
-                onClick={() => removeValue(valueIndex)}
-              >
-                ×
-              </Button>
+            <li key={`${value}-${valueIndex}`}>
+              <Pill tone={tone} className="gap-1 py-1 pr-1 pl-3 text-sm">
+                <span>{value}</span>
+                <button
+                  type="button"
+                  aria-label={`Retirer ${value}`}
+                  onClick={() => removeValue(valueIndex)}
+                  className="inline-flex size-6 cursor-pointer items-center justify-center rounded-full outline-none transition-colors hover:bg-ink/10 focus-visible:ring-3 focus-visible:ring-ring/40 motion-reduce:transition-none"
+                >
+                  <X className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
+                </button>
+              </Pill>
             </li>
           ))}
         </ul>
@@ -45,7 +44,6 @@ export const KeywordTagsInput = ({ label, helpText, values, onChange, suggestion
           id={inputId}
           className="flex-1"
           value={draft}
-          list={suggestions.length > 0 ? suggestionsListId : undefined}
           aria-describedby={helpTextId}
           onChange={(changeEvent) => changeDraft(changeEvent.target.value)}
           onBlur={addDraft}
@@ -55,13 +53,6 @@ export const KeywordTagsInput = ({ label, helpText, values, onChange, suggestion
           Ajouter
         </Button>
       </div>
-      {suggestions.length > 0 && (
-        <datalist id={suggestionsListId}>
-          {suggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
-          ))}
-        </datalist>
-      )}
     </div>
   )
 }

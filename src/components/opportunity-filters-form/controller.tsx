@@ -1,6 +1,10 @@
 import { useRef, useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
-import { type OpportunityFilters, validateOpportunityFilters } from '@/domain/opportunity-filters'
+import {
+  normalizeForKeywordMatch,
+  type OpportunityFilters,
+  validateOpportunityFilters,
+} from '@/domain/opportunity-filters'
 import type {
   KeywordListField,
   OpportunityFiltersFormControllerParameters,
@@ -48,7 +52,19 @@ export const useController = ({
       [keywordListField]: keywords,
     }))
 
-  const setRegions = (regions: string[]) => setFilters((currentFilters) => ({ ...currentFilters, regions }))
+  const toggleRegion = (region: string) =>
+    setFilters((currentFilters) => {
+      const normalizedRegion = normalizeForKeywordMatch(region)
+      const isSelected = currentFilters.regions.some(
+        (selectedRegion) => normalizeForKeywordMatch(selectedRegion) === normalizedRegion,
+      )
+      return {
+        ...currentFilters,
+        regions: isSelected
+          ? currentFilters.regions.filter((selectedRegion) => normalizeForKeywordMatch(selectedRegion) !== normalizedRegion)
+          : [...currentFilters.regions, region],
+      }
+    })
 
   const setRateFloorText = (rateFloorField: RateFloorField, rateFloorText: string) => {
     setRateFloorTexts((currentTexts) => ({ ...currentTexts, [rateFloorField]: rateFloorText }))
@@ -99,7 +115,7 @@ export const useController = ({
   return {
     filters,
     setKeywordList,
-    setRegions,
+    toggleRegion,
     rateFloorTexts,
     rateFloorErrors,
     setRateFloorText,

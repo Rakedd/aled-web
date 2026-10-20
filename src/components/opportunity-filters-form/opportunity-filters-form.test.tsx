@@ -5,13 +5,13 @@ import { OpportunityFiltersForm } from './opportunity-filters-form'
 
 jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
 
-const renderForm = () => {
+const renderForm = (knownRegions: string[] = [], initialFilters = EMPTY_OPPORTUNITY_FILTERS) => {
   const saveOpportunityFilters = jest.fn().mockResolvedValue({ ok: true, data: EMPTY_OPPORTUNITY_FILTERS })
   render(
     <OpportunityFiltersForm
       source="free-work"
-      initialFilters={EMPTY_OPPORTUNITY_FILTERS}
-      knownRegions={[]}
+      initialFilters={initialFilters}
+      knownRegions={knownRegions}
       saveOpportunityFilters={saveOpportunityFilters}
     />,
   )
@@ -19,31 +19,40 @@ const renderForm = () => {
 }
 
 describe('OpportunityFiltersForm', () => {
-  it('keeps a typed but unconfirmed keyword when the user clicks Enregistrer', async () => {
+  it('keeps a typed but unconfirmed keyword when the user clicks Enregistrer les filtres', async () => {
     const { saveOpportunityFilters } = renderForm()
     await userEvent.type(screen.getByLabelText('Doit contenir au moins un de'), 'react')
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer les filtres' }))
     expect(saveOpportunityFilters).toHaveBeenCalledWith(
       'free-work',
       expect.objectContaining({ includeKeywords: ['react'] }),
     )
   })
 
-  it('keeps an unconfirmed region when the form is submitted with Enter from a rate floor', async () => {
+  it('submits with Enter from a rate floor', async () => {
     const { saveOpportunityFilters } = renderForm()
-    await userEvent.type(screen.getByLabelText('Régions'), 'Paris')
     await userEvent.type(screen.getByLabelText('Hybride'), '500{Enter}')
-    expect(saveOpportunityFilters).toHaveBeenCalledWith(
-      'free-work',
-      expect.objectContaining({ regions: ['Paris'], rateFloorHybrid: 500 }),
-    )
+    expect(saveOpportunityFilters).toHaveBeenCalledWith('free-work', expect.objectContaining({ rateFloorHybrid: 500 }))
+  })
+
+  it('renders known regions and selected unknown regions as toggles', () => {
+    renderForm(['Bretagne'], { ...EMPTY_OPPORTUNITY_FILTERS, regions: ['Corse'] })
+    expect(screen.getByRole('button', { name: 'Bretagne' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'Corse' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('saves a region toggled on', async () => {
+    const { saveOpportunityFilters } = renderForm(['Bretagne'])
+    await userEvent.click(screen.getByRole('button', { name: 'Bretagne' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer les filtres' }))
+    expect(saveOpportunityFilters).toHaveBeenCalledWith('free-work', expect.objectContaining({ regions: ['Bretagne'] }))
   })
 
   it('shows the amount error under the field with aria-invalid and aria-describedby', async () => {
     renderForm()
     const onsiteInput = screen.getByLabelText('Sur site')
     await userEvent.type(onsiteInput, 'abc')
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer les filtres' }))
     expect(onsiteInput).toHaveAttribute('aria-invalid', 'true')
     expect(onsiteInput).toHaveAccessibleDescription('Montant invalide')
   })

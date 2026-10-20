@@ -18,10 +18,13 @@ const FreeWorkOpportunitySettingsPage = async () => {
   ])
 
   return (
-    <div className="flex w-full max-w-2xl flex-col gap-8">
+    <div className="flex w-full max-w-5xl flex-col gap-6">
       <h1 className="text-2xl font-semibold">Préférences</h1>
-      <SettingsNavigation />
-      <section aria-labelledby="settings-free-work-title" className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <div className="lg:w-60 lg:shrink-0">
+          <SettingsNavigation />
+        </div>
+      <section aria-labelledby="settings-free-work-title" className="flex min-w-0 flex-1 flex-col gap-4 rounded-2xl bg-card p-6">
         <h2 id="settings-free-work-title" className="text-lg font-semibold">
           Opportunités · Free-Work
         </h2>
@@ -38,6 +41,7 @@ const FreeWorkOpportunitySettingsPage = async () => {
           />
         )}
       </section>
+      </div>
     </div>
   )
 }
