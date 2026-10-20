@@ -202,6 +202,8 @@ const ROLE_CONTRAST_PAIRS: Array<[string, string]> = [
   ['ink-muted', 'clay-tint'],
   ['destructive', 'card'],
   ['destructive', 'sage'],
+  ['primary', 'card'],
+  ['ink-secondary', 'card'],
   ['on-menu-counter', 'menu-counter'],
   ['on-settings-navigation-active', 'settings-navigation-active'],
 ]
@@ -387,6 +389,16 @@ describe('atelier theme', () => {
       .filter((filePath) => !/\.test\.tsx?$/.test(filePath))
       .filter((filePath) => DARK_VARIANT_CLASS_PATTERN.test(fs.readFileSync(filePath, 'utf8')))
     expect(filesWithDarkVariant.map((filePath) => path.relative(__dirname, filePath))).toEqual([])
+  })
+
+  it('names the colour of every ring offset', () => {
+    const filesWithUncolouredRingOffset = listSourceFiles(path.join(__dirname, '..'), ['.ts', '.tsx'])
+      .filter((filePath) => !/\.test\.tsx?$/.test(filePath))
+      .filter((filePath) => {
+        const sourceCode = fs.readFileSync(filePath, 'utf8')
+        return /\bring-offset-\d/.test(sourceCode) && !/\bring-offset-(?!\d)[a-z][\w-]*/.test(sourceCode)
+      })
+    expect(filesWithUncolouredRingOffset.map((filePath) => path.relative(__dirname, filePath))).toEqual([])
   })
 
   it('keeps hex colours inside globals.css', () => {

@@ -56,6 +56,10 @@ describe('interviews calendar styles', () => {
     expect(componentCss).not.toMatch(/\.fc-(toolbar|button|daygrid|event|day-today)\b/)
   })
 
+  it('writes default event text in the on-peach token', () => {
+    expect(componentCss).toMatch(/--fc-classic-event-contrast:\s*var\(--on-peach\)/)
+  })
+
   it('lets events take their per-kind contrast colour', () => {
     expect(componentCss).not.toMatch(/\.fc-atelier-event\s*\{[^}]*color:\s*var\(--ink\)/)
   })

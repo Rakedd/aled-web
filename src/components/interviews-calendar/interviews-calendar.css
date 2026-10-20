@@ -11,7 +11,7 @@
   --fc-classic-primary: var(--primary);
   --fc-classic-primary-foreground: var(--primary-foreground);
   --fc-classic-event: var(--peach);
-  --fc-classic-event-contrast: var(--ink);
+  --fc-classic-event-contrast: var(--on-peach);
   --fc-classic-button: var(--card);
   --fc-classic-button-border: var(--hairline-strong);
   --fc-classic-button-strong: var(--sage);

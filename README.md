@@ -10,7 +10,7 @@ Next.js (App Router), TypeScript, Supabase (Postgres, Auth, Storage), API Claude
 - **Jetons** : les couleurs, rayons et polices vivent dans `src/app/globals.css` (jetons de rôle `--primary`, `--accent-text`, `--brand-tile`, `--deep-surface`, `--lilac-panel`, `--menu-counter`, `--peach`, `--ink`…), exposées en classes Tailwind (`bg-primary`, `text-accent-text`, `bg-peach-tint`…). Le bloc `:root[data-theme='dark']` contient les valeurs sombres. Aucun hexadécimal ni classe `dark:` dans les composants.
 - **Tons de `Pill`** (`src/components/pill`) : `neutral`, `sage`, `forest-soft`, `brand`, `action`, `peach`, `peach-soft`, `lilac`, `lilac-soft`, `clay`, `counter`. `PillToggle` en dérive et expose le ton via `data-tone`.
 - **Thème** : choix Clair / Sombre / Système dans le menu en pilule (bouton « Thème »), mémorisé dans `localStorage` (`aled-theme`), appliqué avant la première peinture par le script de `src/lib/theme/theme-init-script.ts`.
-- **Contraste** : tout texte doit atteindre 4,5:1 dans les deux thèmes, vérifié par `atelier-theme.test.ts`. Sur fond pêche claire (`#FFB48A`), `text-ink-muted` est interdit (3,70:1) : utiliser `text-ink` ou `text-ink-secondary`.
+- **Contraste** : tout texte doit atteindre 4,5:1 dans les deux thèmes, vérifié par `atelier-theme.test.ts`. Sur `bg-peach`, utiliser `text-on-peach` ; sur `bg-lilac`, utiliser `text-on-lilac`.
 
 ## Installation locale
 
