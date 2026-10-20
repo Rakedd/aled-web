@@ -120,6 +120,21 @@ describe('browserThemePreferenceStore', () => {
     expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
   })
 
+  it('reads the last chosen preference when storage is blocked', () => {
+    stubDeviceColorScheme(false)
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('blocked')
+    })
+    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('blocked')
+    })
+
+    browserThemePreferenceStore.save('light')
+
+    expect(browserThemePreferenceStore.read()).toBe('light')
+  })
+
   it('applies a stored dark choice even when matchMedia is unavailable', () => {
     window.matchMedia = undefined as unknown as typeof window.matchMedia
 

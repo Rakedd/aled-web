@@ -60,7 +60,10 @@ export type ThemePreferenceStore = {
 
 const themePreferenceListeners = new Set<() => void>()
 
+let unstoredThemePreference: ThemePreference | null = null
+
 const readStoredThemePreference = (): ThemePreference => {
+  if (unstoredThemePreference !== null) return unstoredThemePreference
   try {
     return parseThemePreference(window.localStorage.getItem(THEME_STORAGE_KEY))
   } catch {
@@ -71,13 +74,16 @@ const readStoredThemePreference = (): ThemePreference => {
 const writeStoredThemePreference = (preference: ThemePreference) => {
   try {
     window.localStorage.setItem(THEME_STORAGE_KEY, preference)
+    unstoredThemePreference = null
   } catch (storageError) {
+    unstoredThemePreference = preference
     console.warn('Unable to remember the theme preference', storageError)
   }
 }
 
 const handleStorageEvent = (event: StorageEvent) => {
   if (event.key !== THEME_STORAGE_KEY) return
+  unstoredThemePreference = null
   const newPreference = parseThemePreference(event.newValue)
   const prefersDarkColorScheme = window.matchMedia ? window.matchMedia(DARK_COLOR_SCHEME_QUERY).matches : false
   applyResolvedTheme(resolveTheme(newPreference, prefersDarkColorScheme))

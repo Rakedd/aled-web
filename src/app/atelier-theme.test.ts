@@ -6,6 +6,7 @@ const MINIMUM_TEXT_CONTRAST = 4.5
 const MINIMUM_POPOVER_HIGHLIGHT_CONTRAST = 1.5
 const MINIMUM_FOCUS_CONTRAST = 3
 const INK_BUTTON_RING_OFFSET = 'card'
+const DARK_VARIANT_CLASS_PATTERN = /(^|[\s'"\x60])dark:[\w[]/m
 
 const resolveThemeColours = (theme: 'light' | 'dark' = 'light'): Record<string, string> => {
   const rootBlock = /:root\s*{([^}]*)}/.exec(GLOBALS_CSS)?.[1] ?? ''
@@ -373,10 +374,18 @@ describe('atelier theme', () => {
     expect(GLOBALS_CSS).not.toContain('@custom-variant dark')
   })
 
+  it('recognises a dark variant class but not a dark object key', () => {
+    expect(DARK_VARIANT_CLASS_PATTERN.test('className="dark:bg-card"')).toBe(true)
+    expect(DARK_VARIANT_CLASS_PATTERN.test("'p-2 dark:text-ink'")).toBe(true)
+    expect(DARK_VARIANT_CLASS_PATTERN.test('\x60dark:[color:red]\x60')).toBe(true)
+    expect(DARK_VARIANT_CLASS_PATTERN.test('dark: Moon,')).toBe(false)
+    expect(DARK_VARIANT_CLASS_PATTERN.test("dark: 'Sombre',")).toBe(false)
+  })
+
   it('does not use dark variants in any component', () => {
-    const filesWithDarkVariant = listTsxFiles(path.join(__dirname, '..')).filter((filePath) =>
-      fs.readFileSync(filePath, 'utf8').includes('dark:'),
-    )
+    const filesWithDarkVariant = listSourceFiles(path.join(__dirname, '..'), ['.ts', '.tsx'])
+      .filter((filePath) => !/\.test\.tsx?$/.test(filePath))
+      .filter((filePath) => DARK_VARIANT_CLASS_PATTERN.test(fs.readFileSync(filePath, 'utf8')))
     expect(filesWithDarkVariant.map((filePath) => path.relative(__dirname, filePath))).toEqual([])
   })
 

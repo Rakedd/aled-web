@@ -82,6 +82,20 @@ describe('ThemeMenu', () => {
     expect(screen.getByRole('button', { name: 'Thème' })).toHaveFocus()
   })
 
+  it('closes the menu when the already checked item is clicked', async () => {
+    stubResizeObserver()
+    const store = createInMemoryStore()
+    const user = userEvent.setup()
+    render(<ThemeMenu themePreferenceStore={store} />)
+
+    await user.click(screen.getByRole('button', { name: 'Thème' }))
+    const systemItem = await screen.findByRole('menuitemradio', { name: 'Système' })
+    await user.click(systemItem)
+
+    await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument())
+    expect(screen.getByRole('button', { name: 'Thème' })).toHaveFocus()
+  })
+
   it('updates the icon to moon after selecting dark', async () => {
     stubResizeObserver()
     const store = createInMemoryStore()
@@ -173,5 +187,24 @@ describe('ThemeMenu', () => {
 
     expect(document.documentElement.dataset.theme).toBe('dark')
     expect(localStorage.getItem('aled-theme')).toBe('dark')
+  })
+  it('shows the chosen theme when storage is blocked', async () => {
+    stubResizeObserver()
+    stubDeviceColorScheme(false)
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('blocked')
+    })
+    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('blocked')
+    })
+    const user = userEvent.setup()
+    render(<ThemeMenu themePreferenceStore={browserThemePreferenceStore} />)
+
+    await user.click(screen.getByRole('button', { name: 'Thème' }))
+    await user.click(await screen.findByRole('menuitemradio', { name: 'Sombre' }))
+
+    expect(screen.getByRole('button', { name: 'Thème' }).querySelector('[data-icon="moon"]')).toBeInTheDocument()
+    expect(document.documentElement.dataset.theme).toBe('dark')
   })
 })
