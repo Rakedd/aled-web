@@ -1,7 +1,15 @@
-# Freeclutch
+# Aled
+
+Aled (anciennement Freeclutch) : les URLs, le dépôt et les noms techniques portent encore `freeclutch`.
 
 Suivi des candidatures freelance : missions, intermédiaires, entretiens, fiches métier et brief client généré par Claude.
 Next.js (App Router), TypeScript, Supabase (Postgres, Auth, Storage), API Claude. Accès sur invitation uniquement.
+
+## Identité Atelier
+
+- **Jetons** : les couleurs, rayons et polices vivent dans `src/app/globals.css` (variables `--forest`, `--peach`, `--lilac`, `--ink`…), exposées en classes Tailwind (`bg-forest`, `text-ink-muted`, `bg-peach-tint`…). Aucun hexadécimal ni classe `dark:` dans les composants : mode clair seulement.
+- **Tons de `Pill`** (`src/components/pill`) : `neutral`, `sage`, `forest-soft`, `forest`, `peach`, `peach-soft`, `lilac`, `lilac-soft`, `clay`, `ink`. `PillToggle` en dérive et expose le ton via `data-tone`.
+- **Contraste** : tout texte doit atteindre 4,5:1. Sur fond pêche (`#FFB48A`), `text-ink-muted` est interdit (3,70:1) : utiliser `text-ink` ou `text-ink-secondary`.
 
 ## Installation locale
 

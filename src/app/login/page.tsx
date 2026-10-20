@@ -11,19 +11,27 @@ const LoginPage = async ({ searchParams }: PageProps<'/login'>) => {
   const hasInvalidLinkError = error === 'invalid-link'
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-12">
-      <div className="flex w-full max-w-sm flex-col gap-6">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">Aled</h1>
-          <p className="text-sm text-muted-foreground">Connecte-toi avec ton adresse e-mail.</p>
+    <main className="flex flex-1 flex-col lg:flex-row">
+      <section className="flex flex-col justify-center gap-4 bg-forest px-6 py-10 text-on-forest lg:w-1/2 lg:px-16 lg:py-20">
+        <p className="font-heading text-2xl font-extrabold text-primary-foreground">Aled</p>
+        <h1 className="font-heading text-3xl font-extrabold text-primary-foreground lg:text-5xl">
+          Trouver du travail sans traverser la rue.
+        </h1>
+        <p className="max-w-md text-base">
+          Candidatures, entretiens, briefs et nouvelles missions Free-Work, sans rien oublier.
+        </p>
+      </section>
+      <section className="flex flex-1 items-center justify-center px-4 py-10 lg:w-1/2">
+        <div className="flex w-full max-w-sm flex-col gap-6 rounded-2xl bg-card p-6">
+          <h2 className="font-heading text-2xl font-bold text-ink">Connexion</h2>
+          {hasInvalidLinkError && (
+            <p role="alert" className="text-sm text-destructive">
+              {INVALID_LINK_MESSAGE}
+            </p>
+          )}
+          <LoginForm requestMagicLink={requestMagicLink} />
         </div>
-        {hasInvalidLinkError && (
-          <p role="alert" className="text-sm text-destructive">
-            {INVALID_LINK_MESSAGE}
-          </p>
-        )}
-        <LoginForm requestMagicLink={requestMagicLink} />
-      </div>
+      </section>
     </main>
   )
 }

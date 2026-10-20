@@ -97,6 +97,7 @@ export const useController = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isExtracting, setIsExtracting] = useState(false)
   const [hasExtractionFailed, setHasExtractionFailed] = useState(false)
+  const [isPrefilledByClaude, setIsPrefilledByClaude] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isExtractionInFlightRef = useRef(false)
   const isSubmissionInFlightRef = useRef(false)
@@ -137,11 +138,13 @@ export const useController = ({
     isExtractionInFlightRef.current = false
     setIsExtracting(false)
     setHasExtractionFailed(extractionOutcome.errorMessage !== null)
+    setIsPrefilledByClaude(extractionOutcome.errorMessage === null)
     showForm(extractionOutcome.formValues, extractionOutcome.errorMessage)
   }
 
   const switchToManualEntry = () => {
     setHasExtractionFailed(false)
+    setIsPrefilledByClaude(false)
     showForm({ ...createEmptyFormValues(), postingRawText: pastedText.trim().length === 0 ? '' : pastedText }, null)
   }
 
@@ -189,6 +192,7 @@ export const useController = ({
     errorMessage,
     isExtracting,
     hasExtractionFailed,
+    isPrefilledByClaude,
     isSubmitting,
     extract,
     switchToManualEntry,

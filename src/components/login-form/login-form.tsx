@@ -8,6 +8,7 @@ import { useController } from './controller'
 import type { LoginFormProps } from './interfaces'
 
 const MAGIC_LINK_SENT_MESSAGE = "Si ce compte existe, un lien de connexion vient d'être envoyé."
+const INVITATION_ONLY_MESSAGE = 'Accès sur invitation uniquement.'
 const ERROR_MESSAGE_ELEMENT_ID = 'login-form-error-message'
 
 export const LoginForm = ({ requestMagicLink }: LoginFormProps) => {
@@ -18,11 +19,16 @@ export const LoginForm = ({ requestMagicLink }: LoginFormProps) => {
     void submit()
   }
 
+  const invitationOnlyReminder = <p className="text-sm text-ink-secondary">{INVITATION_ONLY_MESSAGE}</p>
+
   if (status === 'sent') {
     return (
-      <p role="status" className="text-sm text-muted-foreground">
-        {MAGIC_LINK_SENT_MESSAGE}
-      </p>
+      <div className="flex flex-col gap-4">
+        <p role="status" className="text-sm text-ink-secondary">
+          {MAGIC_LINK_SENT_MESSAGE}
+        </p>
+        {invitationOnlyReminder}
+      </div>
     )
   }
 
@@ -51,6 +57,7 @@ export const LoginForm = ({ requestMagicLink }: LoginFormProps) => {
       <Button type="submit" size="lg" disabled={status === 'sending'}>
         {status === 'sending' ? 'Envoi en cours…' : 'Recevoir un lien de connexion'}
       </Button>
+      {invitationOnlyReminder}
     </form>
   )
 }

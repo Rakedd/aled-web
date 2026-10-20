@@ -12,8 +12,8 @@ export const maxDuration = 120
 const NewJobApplicationPage = async () => {
   const hasAnthropicApiKey = await hasAnthropicApiKeyConfigured()
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Nouvelle candidature</h1>
+    <div className="flex w-full max-w-6xl flex-col gap-6">
+      <h1 className="font-heading text-2xl font-bold text-ink">Nouvelle candidature</h1>
       <NewJobApplicationForm
         extractJobPosting={extractJobPostingForCurrentUser}
         createJobApplication={createJobApplication}

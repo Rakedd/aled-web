@@ -45,6 +45,23 @@ describe('new-job-application-form useController', () => {
     expect(result.current.step).toBe('paste')
   })
 
+  it('flags the form as prefilled only after a successful extraction', async () => {
+    const { result } = renderNewJobApplicationFormController()
+    expect(result.current.isPrefilledByClaude).toBe(false)
+    act(() => result.current.setPastedText('Mission React à Paris'))
+    await act(() => result.current.extract())
+    expect(result.current.isPrefilledByClaude).toBe(true)
+  })
+
+  it('does not flag the form as prefilled after a failed extraction', async () => {
+    const { result } = renderNewJobApplicationFormController({
+      extractionResult: { ok: false, errorMessage: 'Échec' },
+    })
+    act(() => result.current.setPastedText('Mission React à Paris'))
+    await act(() => result.current.extract())
+    expect(result.current.isPrefilledByClaude).toBe(false)
+  })
+
   it('never calls the AI without a Claude key', async () => {
     const { result, extractJobPosting } = renderNewJobApplicationFormController({ hasAnthropicApiKey: false })
     act(() => result.current.setPastedText('Mission React à Paris'))
