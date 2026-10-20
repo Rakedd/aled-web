@@ -20,6 +20,18 @@
   --fc-classic-button-outline: var(--forest);
 }
 
+.interviews-calendar .fc-atelier-toolbar-section {
+  gap: 0.5rem;
+}
+
+.interviews-calendar .fc-atelier-button-group {
+  gap: 0.5rem;
+}
+
+.interviews-calendar .fc-atelier-button-group .fc-atelier-button {
+  margin: 0;
+}
+
 .interviews-calendar .fc-atelier-button {
   border-radius: 9999px;
   background-color: var(--card);
@@ -50,6 +62,13 @@
 }
 
 .interviews-calendar .fc-atelier-today {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
   border: 2px solid var(--forest);
   border-radius: 9999px;
   color: var(--forest);
@@ -59,6 +78,36 @@
 .interviews-calendar .fc-atelier-event {
   border-radius: 9999px;
   color: var(--ink);
+  cursor: pointer;
+}
+
+.interviews-calendar .fc-atelier-block-event-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  padding-inline: 0.75rem;
+  text-align: left;
+}
+
+.interviews-calendar .fc-atelier-block-event-time,
+.interviews-calendar .fc-atelier-block-event-title {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.interviews-calendar .fc-atelier-block-event-time {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.interviews-calendar .fc-atelier-block-event-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {

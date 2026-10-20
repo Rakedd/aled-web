@@ -42,7 +42,7 @@ export const InterviewsCalendar = ({ listUpcomingInterviews }: InterviewsCalenda
       <ul aria-label="Légende" className="flex flex-wrap gap-2">
         {INTERVIEW_KINDS.map((interviewKind) => (
           <li key={interviewKind}>
-            <Pill tone={INTERVIEW_KIND_TONES[interviewKind]}>{INTERVIEW_KIND_LABELS[interviewKind]}</Pill>
+            <Pill tone={INTERVIEW_KIND_TONES[interviewKind]} className="select-none">{INTERVIEW_KIND_LABELS[interviewKind]}</Pill>
           </li>
         ))}
       </ul>
@@ -59,9 +59,14 @@ export const InterviewsCalendar = ({ listUpcomingInterviews }: InterviewsCalenda
               buttonClass={({ isSelected }) =>
                 isSelected ? 'fc-atelier-button fc-atelier-button-active' : 'fc-atelier-button'
               }
+              buttonGroupClass="fc-atelier-button-group"
+              toolbarSectionClass="fc-atelier-toolbar-section"
               dayCellClass="fc-atelier-day-cell"
               dayCellTopInnerClass={({ isToday }) => (isToday ? 'fc-atelier-today' : '')}
               eventClass="fc-atelier-event"
+              blockEventInnerClass="fc-atelier-block-event-inner"
+              blockEventTimeClass="fc-atelier-block-event-time"
+              blockEventTitleClass="fc-atelier-block-event-title"
               listItemEventClass="fc-atelier-event"
               events={calendarEvents}
               datesSet={({ start, end }) => {

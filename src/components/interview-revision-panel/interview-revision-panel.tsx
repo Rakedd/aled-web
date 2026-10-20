@@ -1,5 +1,6 @@
 'use client'
 
+import { X } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useId, useRef } from 'react'
 import { Pill } from '@/components/pill'
@@ -24,9 +25,17 @@ export const InterviewRevisionPanel = ({ content, onClose }: InterviewRevisionPa
       onKeyDown={(keyboardEvent) => {
         if (keyboardEvent.key === 'Escape') onClose()
       }}
-      className="flex min-w-0 flex-col gap-5 rounded-2xl bg-card p-6"
+      className="relative flex min-w-0 flex-col gap-5 rounded-2xl bg-card p-6"
     >
-      <div className="flex flex-col gap-1">
+      <button
+        type="button"
+        aria-label="Fermer"
+        onClick={onClose}
+        className="absolute top-2 right-2 inline-flex size-11 items-center justify-center rounded-full text-ink hover:bg-sage focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+      >
+        <X aria-hidden="true" className="size-5" />
+      </button>
+      <div className="flex flex-col gap-1 pr-10">
         <h2 id={titleId} ref={titleRef} tabIndex={-1} className="font-heading text-lg font-bold outline-none">
           {content.jobApplicationTitle}
         </h2>
@@ -89,9 +98,6 @@ export const InterviewRevisionPanel = ({ content, onClose }: InterviewRevisionPa
         <Link href={content.briefHref} className={cn(buttonVariants({ variant: 'outline' }))}>
           Voir mon brief
         </Link>
-        <button type="button" onClick={onClose} className={cn(buttonVariants({ variant: 'outline' }))}>
-          Fermer
-        </button>
       </div>
     </aside>
   )

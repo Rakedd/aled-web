@@ -40,6 +40,18 @@ describe('interviews calendar styles', () => {
     })
   })
 
+  it('makes events clickable and the today marker a fixed-size circle', () => {
+    expect(componentCss).toMatch(/\.fc-atelier-event\s*\{[^}]*cursor:\s*pointer/)
+    expect(componentCss).toMatch(/\.fc-atelier-today\s*\{[^}]*width:\s*1\.75rem;[^}]*height:\s*1\.75rem/)
+    expect(componentCss).toMatch(/\.fc-atelier-today\s*\{[^}]*border-radius:\s*9999px/)
+  })
+
+  it('spaces toolbar buttons and aligns block event time and title', () => {
+    expect(componentCss).toMatch(/\.fc-atelier-button-group\s*\{[^}]*gap:/)
+    expect(componentCss).toMatch(/\.fc-atelier-toolbar-section\s*\{[^}]*gap:/)
+    expect(componentCss).toMatch(/\.fc-atelier-block-event-title\s*\{[^}]*text-overflow:\s*ellipsis/)
+  })
+
   it('does not rely on legacy FullCalendar class names that the installed version no longer ships', () => {
     expect(componentCss).not.toMatch(/\.fc-(toolbar|button|daygrid|event|day-today)\b/)
   })

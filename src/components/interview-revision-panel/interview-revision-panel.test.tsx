@@ -91,7 +91,15 @@ describe('InterviewRevisionPanel', () => {
     expect(openApplicationLink).toHaveFocus()
   })
 
-  it('closes with the Fermer button', async () => {
+  it('shows only the two link-buttons in the footer, the close control being an icon button', () => {
+    render(<InterviewRevisionPanel content={content} onClose={jest.fn()} />)
+
+    expect(screen.getAllByRole('link').map((link) => link.textContent)).toEqual(['Ouvrir la fiche', 'Voir mon brief'])
+    expect(screen.getAllByRole('button', { name: 'Fermer' })).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'Fermer' })).toHaveTextContent('')
+  })
+
+  it('closes with the icon-only Fermer button', async () => {
     const onClose = jest.fn()
     render(<InterviewRevisionPanel content={content} onClose={onClose} />)
 
