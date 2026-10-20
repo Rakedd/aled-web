@@ -4,11 +4,17 @@ import path from 'path'
 const GLOBALS_CSS = fs.readFileSync(path.join(__dirname, 'globals.css'), 'utf8')
 const MINIMUM_TEXT_CONTRAST = 4.5
 
-const resolveThemeColours = (): Record<string, string> => {
+const resolveThemeColours = (theme: 'light' | 'dark' = 'light'): Record<string, string> => {
   const rootBlock = /:root\s*{([^}]*)}/.exec(GLOBALS_CSS)?.[1] ?? ''
+  const darkBlock = theme === 'dark' ? (/:root\[data-theme='dark'\]\s*{([^}]*)}/.exec(GLOBALS_CSS)?.[1] ?? '') : ''
   const declaredValues: Record<string, string> = {}
   for (const match of rootBlock.matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) {
     declaredValues[match[1]] = match[2].trim()
+  }
+  if (theme === 'dark') {
+    for (const match of darkBlock.matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) {
+      declaredValues[match[1]] = match[2].trim()
+    }
   }
   const resolveValue = (value: string): string | undefined => {
     if (/^#[0-9A-Fa-f]{6}$/.test(value)) return value
@@ -100,6 +106,53 @@ const LIGHT_THEME_COLOURS: Record<string, string> = {
   input: '#C9D3CC',
 }
 
+const DARK_THEME_COLOURS: Record<string, string> = {
+  sage: '#171513',
+  card: '#211E1B',
+  'surface-soft': '#2A2622',
+  hairline: '#34302B',
+  'hairline-strong': '#3C3732',
+  'control-border': '#423D37',
+  ink: '#F1ECE6',
+  'ink-secondary': '#C8BFB5',
+  'ink-muted': '#A0968B',
+  primary: '#E9A27C',
+  'primary-foreground': '#1A120C',
+  'accent-text': '#EDB08E',
+  'brand-tile': '#2D4B3B',
+  'on-brand-tile': '#F1ECE6',
+  'on-brand-tile-secondary': '#D3DDCF',
+  'deep-surface': '#100E0C',
+  'on-deep-surface': '#F1ECE6',
+  'on-deep-surface-secondary': '#C8BFB5',
+  'on-deep-surface-soft': '#C8BFB5',
+  peach: '#E9A27C',
+  'on-peach': '#1A120C',
+  'peach-tint': '#2D221A',
+  'peach-soft': '#3A2A1E',
+  'peach-ink': '#F2B48E',
+  lilac: '#C9BFE6',
+  'on-lilac': '#15132A',
+  'lilac-tint': '#231F2C',
+  'lilac-soft': '#2B2638',
+  'on-lilac-soft': '#D4CEF5',
+  'lilac-panel': '#2B2638',
+  'forest-soft': '#26302A',
+  'on-forest-soft': '#A9CBA9',
+  clay: '#F1A79D',
+  'clay-soft': '#3A2420',
+  'clay-tint': '#2D1E1B',
+  popover: '#2A2622',
+  'menu-counter': '#C9BFE6',
+  'on-menu-counter': '#15132A',
+  'settings-navigation-active': '#E9A27C',
+  'on-settings-navigation-active': '#1A120C',
+  background: '#171513',
+  ring: '#E9A27C',
+  destructive: '#F1A79D',
+  muted: '#2A2622',
+}
+
 const ROLE_CONTRAST_PAIRS: Array<[string, string]> = [
   ['ink', 'sage'],
   ['ink-secondary', 'sage'],
@@ -145,30 +198,96 @@ const ROLE_CONTRAST_PAIRS: Array<[string, string]> = [
 ]
 
 const RETIRED_COLOUR_CLASS_PATTERNS = [
-  /\b(bg|text|border|ring|outline)-(forest|on-forest)\b(?!-)/,
-  /\b(bg|ring|border)-ink\b(?![-/])/,
+  /\b(bg|text|border|ring|outline|fill)-(forest|on-forest)\b(?!-)/,
+  /\b(bg|ring|border|fill|outline)-ink\b(?![-/])/,
   /\btext-primary\b(?!-)/,
   /\btext-hairline\b/,
 ]
 
 describe('atelier theme', () => {
-  const lightThemeColours = resolveThemeColours()
+  const lightThemeColours = resolveThemeColours('light')
 
   it('keeps every light colour at its current value', () => {
     expect(lightThemeColours).toMatchObject(LIGHT_THEME_COLOURS)
   })
 
-  it.each(ROLE_CONTRAST_PAIRS)('%s on %s reaches the minimum text contrast', (foreground, background) => {
-    expect(lightThemeColours[foreground]).toBeDefined()
-    expect(lightThemeColours[background]).toBeDefined()
-    expect(getContrastRatio(lightThemeColours[foreground], lightThemeColours[background])).toBeGreaterThanOrEqual(
-      MINIMUM_TEXT_CONTRAST,
-    )
+  it('pins every dark colour from the spec', () => {
+    expect(resolveThemeColours('dark')).toMatchObject(DARK_THEME_COLOURS)
+  })
+
+  describe.each(['light', 'dark'] as const)('%s theme contrast', (theme) => {
+    const themeColours = theme === 'light' ? LIGHT_THEME_COLOURS : DARK_THEME_COLOURS
+
+    it.each(ROLE_CONTRAST_PAIRS)('%s on %s reaches the minimum text contrast', (foreground, background) => {
+      expect(themeColours[foreground]).toBeDefined()
+      expect(themeColours[background]).toBeDefined()
+      expect(getContrastRatio(themeColours[foreground], themeColours[background])).toBeGreaterThanOrEqual(
+        MINIMUM_TEXT_CONTRAST,
+      )
+    })
+
+    it('keeps focus indicators visible', () => {
+      const focusPairs: Array<[string, string]> = [
+        ['primary', 'card'],
+        ['primary', 'sage'],
+        ['on-deep-surface-soft', 'deep-surface'],
+      ]
+      focusPairs.forEach(([foreground, background]) => {
+        expect(getContrastRatio(themeColours[foreground], themeColours[background])).toBeGreaterThanOrEqual(3)
+      })
+    })
+  })
+
+  it('exposes every role token as a Tailwind colour', () => {
+    const themeInlineBlock = /@theme inline\s*{([^}]*)}/.exec(GLOBALS_CSS)?.[1] ?? ''
+    const roleTokens = [
+      'sage',
+      'card',
+      'surface-soft',
+      'ink',
+      'ink-secondary',
+      'ink-muted',
+      'hairline',
+      'hairline-strong',
+      'control-border',
+      'accent-text',
+      'brand-tile',
+      'on-brand-tile',
+      'on-brand-tile-secondary',
+      'deep-surface',
+      'on-deep-surface',
+      'on-deep-surface-secondary',
+      'on-deep-surface-soft',
+      'peach',
+      'on-peach',
+      'peach-tint',
+      'peach-soft',
+      'peach-ink',
+      'lilac',
+      'on-lilac',
+      'lilac-tint',
+      'lilac-soft',
+      'on-lilac-soft',
+      'lilac-panel',
+      'forest-soft',
+      'on-forest-soft',
+      'clay',
+      'clay-soft',
+      'clay-tint',
+      'menu-counter',
+      'on-menu-counter',
+      'settings-navigation-active',
+      'on-settings-navigation-active',
+    ]
+    roleTokens.forEach((token) => {
+      const colorVariablePattern = new RegExp(`--color-${token}:\\s*var\\(--${token}\\)`)
+      expect(themeInlineBlock).toMatch(colorVariablePattern)
+    })
   })
 
   it('no component uses a retired colour class', () => {
-    const sourceFiles = listSourceFiles(path.join(__dirname, '..'), ['.ts', '.tsx']).filter(
-      (filePath) => !/\.test\.tsx?$/.test(filePath),
+    const sourceFiles = listSourceFiles(path.join(__dirname, '..'), ['.ts', '.tsx', '.css']).filter(
+      (filePath) => !/\.test\.(tsx?|css)$/.test(filePath) && !filePath.endsWith('globals.css'),
     )
     const filesWithRetiredClass = sourceFiles.filter((filePath) => {
       const sourceCode = fs.readFileSync(filePath, 'utf8')
@@ -197,7 +316,9 @@ describe('atelier theme', () => {
     expect(pageFilesWithLightTitle.map((filePath) => path.relative(__dirname, filePath))).toEqual([])
   })
 
-  it('does not ship a dark mode in the stylesheet', () => {
+  it('ships one dark token block and no dark variant', () => {
+    const darkBlockMatches = [...GLOBALS_CSS.matchAll(/:root\[data-theme='dark'\]/g)]
+    expect(darkBlockMatches).toHaveLength(1)
     expect(GLOBALS_CSS).not.toContain('.dark')
     expect(GLOBALS_CSS).not.toContain('@custom-variant dark')
   })
@@ -207,5 +328,16 @@ describe('atelier theme', () => {
       fs.readFileSync(filePath, 'utf8').includes('dark:'),
     )
     expect(filesWithDarkVariant.map((filePath) => path.relative(__dirname, filePath))).toEqual([])
+  })
+
+  it('keeps hex colours inside globals.css', () => {
+    const sourceFiles = listSourceFiles(path.join(__dirname, '..'), ['.ts', '.tsx', '.css']).filter(
+      (filePath) => !/\.test\.(tsx?|css)$/.test(filePath) && !filePath.endsWith('globals.css'),
+    )
+    const filesWithHex = sourceFiles.filter((filePath) => {
+      const sourceCode = fs.readFileSync(filePath, 'utf8')
+      return /#[0-9A-Fa-f]{3,8}\b/.test(sourceCode)
+    })
+    expect(filesWithHex.map((filePath) => path.relative(__dirname, filePath))).toEqual([])
   })
 })

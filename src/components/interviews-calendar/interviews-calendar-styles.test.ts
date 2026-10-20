@@ -55,4 +55,8 @@ describe('interviews calendar styles', () => {
   it('does not rely on legacy FullCalendar class names that the installed version no longer ships', () => {
     expect(componentCss).not.toMatch(/\.fc-(toolbar|button|daygrid|event|day-today)\b/)
   })
+
+  it('lets events take their per-kind contrast colour', () => {
+    expect(componentCss).not.toMatch(/\.fc-atelier-event\s*\{[^}]*color:\s*var\(--ink\)/)
+  })
 })

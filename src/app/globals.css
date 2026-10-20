@@ -69,6 +69,7 @@
 }
 
 :root {
+  color-scheme: light;
   --sage: #F2F4F1;
   --card: #FFFFFF;
   --surface-soft: #F7F9F7;
@@ -124,6 +125,50 @@
   --input: var(--control-border);
   --ring: var(--primary);
   --radius: 0.875rem;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --sage: #171513;
+  --card: #211E1B;
+  --surface-soft: #2A2622;
+  --hairline: #34302B;
+  --hairline-strong: #3C3732;
+  --control-border: #423D37;
+  --ink: #F1ECE6;
+  --ink-secondary: #C8BFB5;
+  --ink-muted: #A0968B;
+  --primary: #E9A27C;
+  --primary-foreground: #1A120C;
+  --accent-text: #EDB08E;
+  --brand-tile: #2D4B3B;
+  --on-brand-tile: #F1ECE6;
+  --on-brand-tile-secondary: #D3DDCF;
+  --deep-surface: #100E0C;
+  --on-deep-surface: #F1ECE6;
+  --on-deep-surface-secondary: #C8BFB5;
+  --on-deep-surface-soft: #C8BFB5;
+  --peach: #E9A27C;
+  --on-peach: #1A120C;
+  --peach-tint: #2D221A;
+  --peach-soft: #3A2A1E;
+  --peach-ink: #F2B48E;
+  --lilac: #C9BFE6;
+  --on-lilac: #15132A;
+  --lilac-tint: #231F2C;
+  --lilac-soft: #2B2638;
+  --on-lilac-soft: #D4CEF5;
+  --lilac-panel: #2B2638;
+  --forest-soft: #26302A;
+  --on-forest-soft: #A9CBA9;
+  --clay: #F1A79D;
+  --clay-soft: #3A2420;
+  --clay-tint: #2D1E1B;
+  --popover: #2A2622;
+  --menu-counter: var(--lilac);
+  --on-menu-counter: var(--on-lilac);
+  --settings-navigation-active: var(--primary);
+  --on-settings-navigation-active: var(--primary-foreground);
 }
 
 @utility focus-ring-on-dark {
