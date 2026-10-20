@@ -14,7 +14,7 @@ describe('AnthropicApiKeyForm on the dark key card', () => {
   it('keeps the label light and the typed key dark', () => {
     renderForm(null)
 
-    expect(screen.getByText('Clé API')).toHaveClass('text-hairline')
+    expect(screen.getByText('Clé API')).toHaveClass('text-on-deep-surface-secondary')
     expect(screen.getByLabelText('Clé API')).toHaveClass('text-ink')
   })
 

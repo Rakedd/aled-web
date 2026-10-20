@@ -52,7 +52,7 @@ export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, chil
                       aria-current={isActive ? 'page' : undefined}
                       className={cn(
                         'inline-flex h-9 items-center rounded-full px-3 text-sm whitespace-nowrap font-medium text-ink-muted transition-colors hover:bg-muted hover:text-ink motion-reduce:transition-none',
-                        isActive && 'bg-forest text-primary-foreground hover:bg-forest hover:text-primary-foreground',
+                        isActive && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground',
                       )}
                     >
                       {navigationItem.label}

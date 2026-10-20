@@ -45,7 +45,7 @@ export const AnthropicApiKeyForm = ({
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-sm">
             <span className="font-mono">{maskedApiKey}</span>{' '}
-            <span className="text-hairline">✓ active</span>
+            <span className="text-on-deep-surface-secondary">✓ active</span>
           </p>
           {!isReplacingApiKey && !isConfirmingDeletion && (
             <div className="flex gap-2">
@@ -60,7 +60,7 @@ export const AnthropicApiKeyForm = ({
         </div>
       )}
       {isConfirmingDeletion && (
-        <div className="flex flex-col gap-2 rounded-2xl border border-hairline/30 p-3">
+        <div className="flex flex-col gap-2 rounded-2xl border border-on-deep-surface-secondary/30 p-3">
           <p className="text-sm">
             Supprimer ta clé désactive le pré-remplissage et le brief client. Tu devras la saisir à nouveau pour les
             réactiver.
@@ -77,7 +77,7 @@ export const AnthropicApiKeyForm = ({
       )}
       {isApiKeyInputVisible && (
         <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-2">
-          <Label htmlFor={API_KEY_INPUT_ELEMENT_ID} className="text-hairline">{isReplacingApiKey ? 'Nouvelle clé API' : 'Clé API'}</Label>
+          <Label htmlFor={API_KEY_INPUT_ELEMENT_ID} className="text-on-deep-surface-secondary">{isReplacingApiKey ? 'Nouvelle clé API' : 'Clé API'}</Label>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               id={API_KEY_INPUT_ELEMENT_ID}
@@ -111,7 +111,7 @@ export const AnthropicApiKeyForm = ({
         </p>
       )}
       {successMessage && (
-        <p role="status" className="text-sm text-hairline">
+        <p role="status" className="text-sm text-on-deep-surface-secondary">
           {successMessage}
         </p>
       )}

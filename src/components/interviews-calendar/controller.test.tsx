@@ -45,8 +45,8 @@ const RANGE_END = new Date('2026-11-09T00:00:00Z')
 describe('EVENT_STYLES_BY_KIND', () => {
   it('colours each interview kind with the atelier tokens', () => {
     expect(EVENT_STYLES_BY_KIND).toEqual({
-      client: { className: 'interview-client', color: 'var(--peach)', contrastColor: 'var(--ink)' },
-      mock: { className: 'interview-mock', color: 'var(--lilac)', contrastColor: 'var(--ink)' },
+      client: { className: 'interview-client', color: 'var(--peach)', contrastColor: 'var(--on-peach)' },
+      mock: { className: 'interview-mock', color: 'var(--lilac)', contrastColor: 'var(--on-lilac)' },
       other: { className: 'interview-other', color: 'var(--hairline)', contrastColor: 'var(--ink)' },
     })
   })

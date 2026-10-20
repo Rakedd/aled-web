@@ -10,7 +10,7 @@ export const STATUS_BADGE_TONES: Record<JobApplicationStatus, PillTone> = {
   interview_scheduled: 'peach',
   interview_done: 'forest-soft',
   contract_received: 'forest-soft',
-  signed: 'forest',
+  signed: 'brand',
   ko_after_contact: 'clay',
   ko_cv: 'clay',
   ko_interview: 'clay',

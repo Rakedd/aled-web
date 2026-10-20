@@ -57,7 +57,7 @@ export const PillTabs = <TabKey extends string>({ label, tabs, selectedTab, onSe
             onKeyDown={(event) => handleKeyDown(event, index)}
             className={cn(
               'h-9 shrink-0 cursor-pointer rounded-full px-4 text-sm font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/40 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 motion-reduce:transition-none',
-              isSelected ? 'bg-forest text-primary-foreground' : 'text-ink hover:bg-hairline',
+              isSelected ? 'bg-primary text-primary-foreground' : 'text-ink hover:bg-hairline',
             )}
           >
             {tab.count === undefined ? tab.label : `${tab.label} · ${tab.count}`}

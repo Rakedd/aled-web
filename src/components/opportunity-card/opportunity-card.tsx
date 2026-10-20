@@ -59,7 +59,7 @@ export const OpportunityCard = ({
           <h3 className="min-w-0 break-words text-base font-semibold">{opportunity.title}</h3>
           {isNew && <Pill tone="lilac">nouveau</Pill>}
         </div>
-        <p className={cn('shrink-0 font-heading font-extrabold text-forest', isCompact ? 'text-lg' : 'text-xl')}>
+        <p className={cn('shrink-0 font-heading font-extrabold text-accent-text', isCompact ? 'text-lg' : 'text-xl')}>
           {formatOpportunityRate(opportunity)}
         </p>
       </header>

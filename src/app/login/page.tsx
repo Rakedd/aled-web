@@ -12,9 +12,9 @@ const LoginPage = async ({ searchParams }: PageProps<'/login'>) => {
 
   return (
     <main className="flex flex-1 flex-col lg:flex-row">
-      <section className="flex flex-col justify-center gap-4 bg-forest px-6 py-10 text-on-forest lg:w-1/2 lg:px-16 lg:py-20">
-        <p className="font-heading text-2xl font-extrabold text-primary-foreground">Aled</p>
-        <h1 className="font-heading text-3xl font-extrabold text-primary-foreground lg:text-5xl">
+      <section className="flex flex-col justify-center gap-4 bg-brand-tile px-6 py-10 text-on-brand-tile-secondary lg:w-1/2 lg:px-16 lg:py-20">
+        <p className="font-heading text-2xl font-extrabold text-on-brand-tile">Aled</p>
+        <h1 className="font-heading text-3xl font-extrabold text-on-brand-tile lg:text-5xl">
           Trouver du travail sans traverser la rue.
         </h1>
         <p className="max-w-md text-base">

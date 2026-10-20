@@ -15,14 +15,18 @@ describe('buttonVariants', () => {
     expect(buttonVariants({ variant: 'destructive' })).toContain('text-destructive')
   })
 
+  it('colours link buttons with the accent text token', () => {
+    expect(buttonVariants({ variant: 'link' }).split(' ')).toContain('text-accent-text')
+  })
+
   it('paints ink buttons with a ring that stands out from peach and lilac tiles', () => {
     const classNames = buttonVariants({ variant: 'ink' }).split(' ')
     expect(classNames).toEqual(
       expect.arrayContaining([
-        'bg-ink',
-        'text-on-forest',
-        'hover:bg-ink/90',
-        'focus-visible:ring-ink',
+        'bg-deep-surface',
+        'text-on-deep-surface-soft',
+        'hover:bg-deep-surface/90',
+        'focus-visible:ring-deep-surface',
         'focus-visible:ring-offset-2',
         'focus-visible:ring-offset-card',
       ]),

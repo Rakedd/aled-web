@@ -160,7 +160,7 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
         <div className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-6 lg:col-span-3">
           <Link
             href={JOB_APPLICATIONS_ROUTE}
-            className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-primary hover:underline focus-visible:underline"
+            className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-accent-text hover:underline focus-visible:underline"
           >
             <ArrowLeft aria-hidden="true" strokeWidth={1.75} className="size-4" />
             Mes candidatures

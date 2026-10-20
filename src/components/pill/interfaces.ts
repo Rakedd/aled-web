@@ -4,13 +4,14 @@ export type PillTone =
   | 'neutral'
   | 'sage'
   | 'forest-soft'
-  | 'forest'
+  | 'brand'
+  | 'action'
   | 'peach'
   | 'peach-soft'
   | 'lilac'
   | 'lilac-soft'
   | 'clay'
-  | 'ink'
+  | 'counter'
 
 export type PillProps = {
   tone: PillTone

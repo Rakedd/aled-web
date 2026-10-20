@@ -3,7 +3,7 @@ import { isExternalLinkUrl } from '@/domain/client-brief'
 import { MISSING_VALUE_LABEL, toDisplayText, toPhoneHref } from '@/domain/job-application-display'
 import type { ContactViewProps } from './interfaces'
 
-const LINK_CLASS_NAME = 'text-primary underline underline-offset-2 break-all'
+const LINK_CLASS_NAME = 'text-accent-text underline underline-offset-2 break-all'
 
 const renderPhone = (phone: string | null): ReactNode =>
   phone === null ? (

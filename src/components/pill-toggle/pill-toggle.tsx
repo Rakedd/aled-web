@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import type { PillToggleProps } from './interfaces'
 
 export const PillToggle = ({ isPressed, onPressedChange, children, tone = 'neutral', disabled = false }: PillToggleProps) => {
-  const currentTone = isPressed ? 'forest' : tone
+  const currentTone = isPressed ? 'action' : tone
 
   return (
     <button

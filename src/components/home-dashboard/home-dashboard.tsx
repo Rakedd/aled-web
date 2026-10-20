@@ -26,7 +26,7 @@ const FOLLOWING_INTERVIEWS_COUNT = 2
 const BENTO_ROW_CLASS_NAME = 'flex flex-col gap-5 md:flex-row md:flex-wrap'
 const BENTO_TILE_CLASS_NAME = 'flex min-w-0 flex-col rounded-2xl p-6'
 const OUTLINE_LINK_CLASS_NAME = cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'self-start font-bold')
-const DAY_BLOCK_CLASS_NAMES = ['bg-lilac', 'bg-hairline']
+const DAY_BLOCK_CLASS_NAMES = ['bg-lilac text-on-lilac', 'bg-hairline']
 
 export const HomeDashboard = ({
   firstName,
@@ -67,7 +67,7 @@ export const HomeDashboard = ({
       <div className={BENTO_ROW_CLASS_NAME}>
         <section
           aria-label="Bienvenue"
-          className={cn(BENTO_TILE_CLASS_NAME, 'min-h-52 justify-between gap-6 bg-forest p-8 text-on-forest md:flex-[2_1_32rem]')}
+          className={cn(BENTO_TILE_CLASS_NAME, 'min-h-52 justify-between gap-6 bg-brand-tile p-8 text-on-brand-tile-secondary md:flex-[2_1_32rem]')}
         >
           <p className="text-sm font-semibold">{formatParisLongDate(now)}</p>
           <div className="flex flex-col gap-2.5">
@@ -79,7 +79,7 @@ export const HomeDashboard = ({
         </section>
         <section
           aria-labelledby="home-next-interview-title"
-          className={cn(BENTO_TILE_CLASS_NAME, 'gap-2.5 bg-peach text-ink md:flex-[1_1_18rem]')}
+          className={cn(BENTO_TILE_CLASS_NAME, 'gap-2.5 bg-peach text-on-peach md:flex-[1_1_18rem]')}
         >
           <h2 id="home-next-interview-title" className="text-sm font-bold">
             {nextInterview === null ? 'Prochain entretien' : `Prochain entretien · ${formatInterviewCountdown(nextInterview.startsAt, now)}`}
@@ -160,13 +160,13 @@ export const HomeDashboard = ({
           </section>
         )}
         <section aria-label="En chiffres" className="flex min-w-0 flex-col gap-5 md:flex-[1_1_14rem]">
-          <div className={cn(BENTO_TILE_CLASS_NAME, 'flex-1 justify-end bg-lilac text-ink')}>
+          <div className={cn(BENTO_TILE_CLASS_NAME, 'flex-1 justify-end bg-lilac text-on-lilac')}>
             <p className="font-heading text-5xl leading-none font-extrabold">{activeJobApplicationCount}</p>
             <p className="text-sm font-semibold">
               {pluralizeFrench(activeJobApplicationCount, 'candidature en cours', 'candidatures en cours')}
             </p>
           </div>
-          <div className={cn(BENTO_TILE_CLASS_NAME, 'flex-1 justify-end bg-ink text-on-forest')}>
+          <div className={cn(BENTO_TILE_CLASS_NAME, 'flex-1 justify-end bg-deep-surface text-on-deep-surface-soft')}>
             <p className="font-heading text-5xl leading-none font-extrabold text-peach">{opportunitiesToProcessCount}</p>
             <p className="text-sm font-semibold">
               {pluralizeFrench(opportunitiesToProcessCount, 'mission à traiter', 'missions à traiter')}

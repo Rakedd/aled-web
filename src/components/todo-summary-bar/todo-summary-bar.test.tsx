@@ -34,11 +34,11 @@ describe('TodoSummaryBar', () => {
     expect(props.onToggleAlertKind).toHaveBeenCalledWith('follow_up_due')
   })
 
-  it('presses the selected kind with the forest tone', () => {
+  it('presses the selected kind with the action tone', () => {
     render(<TodoSummaryBar {...buildProps({ selectedAlertKind: 'follow_up_due' })} />)
     const selectedPill = screen.getByRole('button', { name: '8 relances' })
     expect(selectedPill).toHaveAttribute('aria-pressed', 'true')
-    expect(selectedPill).toHaveAttribute('data-tone', 'forest')
+    expect(selectedPill).toHaveAttribute('data-tone', 'action')
   })
 
   it('exposes the expansion state of the details', async () => {

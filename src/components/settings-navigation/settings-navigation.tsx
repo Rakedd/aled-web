@@ -29,7 +29,7 @@ export const SettingsNavigation = () => {
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
                   'flex h-10 items-center rounded-full px-4 text-sm font-medium text-ink-muted transition-colors hover:bg-muted hover:text-ink motion-reduce:transition-none',
-                  isActive && 'bg-ink text-primary-foreground hover:bg-ink hover:text-primary-foreground',
+                  isActive && 'bg-settings-navigation-active text-on-settings-navigation-active hover:bg-settings-navigation-active hover:text-on-settings-navigation-active',
                 )}
               >
                 {navigationItem.label}

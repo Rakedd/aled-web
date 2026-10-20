@@ -39,12 +39,12 @@ const SettingsPage = async () => {
                 updateProfileSettings={updateProfileSettings}
               />
             </section>
-            <section aria-labelledby="settings-api-key-title" className="flex flex-col gap-4 rounded-2xl bg-ink p-6 text-primary-foreground focus-ring-on-dark">
+            <section aria-labelledby="settings-api-key-title" className="flex flex-col gap-4 rounded-2xl bg-deep-surface p-6 text-on-deep-surface focus-ring-on-dark">
               <div className="flex flex-col gap-1">
                 <h2 id="settings-api-key-title" className="text-lg font-semibold">
                   Clé API Claude
                 </h2>
-                <p className="text-sm text-hairline">
+                <p className="text-sm text-on-deep-surface-secondary">
                   Ta clé active le pré-remplissage des candidatures et le brief client. Elle est vérifiée auprès de
                   Claude, stockée chiffrée et n&apos;est jamais réaffichée. Sans clé, tout reste utilisable en saisie
                   manuelle.
@@ -55,11 +55,11 @@ const SettingsPage = async () => {
                 saveAnthropicApiKey={saveAnthropicApiKey}
                 deleteAnthropicApiKey={deleteAnthropicApiKey}
               />
-              <p className="rounded-2xl bg-primary-foreground/10 p-3 text-sm text-hairline">
+              <p className="rounded-2xl bg-on-deep-surface/10 p-3 text-sm text-on-deep-surface-secondary">
                 Conseil : fixe un plafond de dépenses mensuel dans la console Anthropic.
               </p>
             </section>
-            <section aria-labelledby="settings-data-title" className="flex flex-col gap-4 rounded-2xl bg-lilac p-6 text-ink">
+            <section aria-labelledby="settings-data-title" className="flex flex-col gap-4 rounded-2xl bg-lilac-panel p-6 text-ink">
               <div className="flex flex-col gap-1">
                 <h2 id="settings-data-title" className="text-lg font-semibold">
                   Mes données

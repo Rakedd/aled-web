@@ -31,7 +31,7 @@ export const InterviewRevisionPanel = ({ content, onClose }: InterviewRevisionPa
         type="button"
         aria-label="Fermer"
         onClick={onClose}
-        className="absolute top-2 right-2 inline-flex size-11 items-center justify-center rounded-full text-ink hover:bg-sage focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+        className="absolute top-2 right-2 inline-flex size-11 items-center justify-center rounded-full text-ink hover:bg-sage focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         <X aria-hidden="true" className="size-5" />
       </button>

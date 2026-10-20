@@ -20,7 +20,7 @@ const ToggleHarness = ({ onPressedChange }: { onPressedChange: (isPressed: boole
 }
 
 describe('PillToggle', () => {
-  it('is neutral and unpressed at rest, then forest and pressed after a click', async () => {
+  it('is neutral and unpressed at rest, then action and pressed after a click', async () => {
     const onPressedChange = jest.fn()
     render(<ToggleHarness onPressedChange={onPressedChange} />)
     const toggle = screen.getByRole('button', { name: 'Remote' })
@@ -32,7 +32,7 @@ describe('PillToggle', () => {
 
     expect(onPressedChange).toHaveBeenCalledWith(true)
     expect(toggle).toHaveAttribute('aria-pressed', 'true')
-    expect(toggle).toHaveAttribute('data-tone', 'forest')
+    expect(toggle).toHaveAttribute('data-tone', 'action')
   })
 
   it('does not toggle while disabled', async () => {

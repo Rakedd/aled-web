@@ -236,7 +236,7 @@ export const NewJobApplicationForm = ({
 
   const columns = (
     <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-      <section className="flex flex-col gap-4 rounded-2xl bg-lilac p-6">
+      <section className="flex flex-col gap-4 rounded-2xl bg-lilac-panel p-6">
         <h2 className="font-heading text-lg font-bold text-ink">1 · Colle l&apos;annonce</h2>
         {pasteColumn}
       </section>

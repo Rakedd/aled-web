@@ -36,10 +36,16 @@ const CALENDAR_COLOR_BY_INTERVIEW_KIND_TONE: Record<InterviewKindTone, string> =
   sage: 'var(--hairline)',
 }
 
+const CALENDAR_CONTRAST_COLOR_BY_INTERVIEW_KIND_TONE: Record<InterviewKindTone, string> = {
+  peach: 'var(--on-peach)',
+  lilac: 'var(--on-lilac)',
+  sage: 'var(--ink)',
+}
+
 const toEventStyle = (interviewKind: InterviewKind): InterviewCalendarEventStyle => ({
   className: `interview-${interviewKind}`,
   color: CALENDAR_COLOR_BY_INTERVIEW_KIND_TONE[INTERVIEW_KIND_TONES[interviewKind]],
-  contrastColor: 'var(--ink)',
+  contrastColor: CALENDAR_CONTRAST_COLOR_BY_INTERVIEW_KIND_TONE[INTERVIEW_KIND_TONES[interviewKind]],
 })
 
 export const EVENT_STYLES_BY_KIND: Record<InterviewKind, InterviewCalendarEventStyle> = {

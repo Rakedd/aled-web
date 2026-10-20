@@ -32,7 +32,7 @@ const SourceItem = ({ source }: { source: ClientBriefSource }) => (
         href={source.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-primary underline underline-offset-2"
+        className="text-accent-text underline underline-offset-2"
       >
         {source.title}
       </a>
