@@ -9,6 +9,7 @@ export type InterviewRevisionMissionDetail = {
 }
 
 export type InterviewRevisionPanelContent = {
+  interviewId: string
   jobApplicationTitle: string
   endClientLabel: string | null
   startsAtLabel: string

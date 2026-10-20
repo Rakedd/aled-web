@@ -4,6 +4,7 @@ import { InterviewRevisionPanel } from './interview-revision-panel'
 import type { InterviewRevisionPanelContent } from './interfaces'
 
 const content: InterviewRevisionPanelContent = {
+  interviewId: 'interview-1',
   jobApplicationTitle: 'Développeur React senior',
   endClientLabel: 'Acme',
   startsAtLabel: 'mer. 28/10 · 14h00',
@@ -71,15 +72,23 @@ describe('InterviewRevisionPanel', () => {
     expect(screen.getByRole('heading', { name: 'Développeur React senior' })).toHaveFocus()
   })
 
-  it('moves focus to the new title when the content changes while open', () => {
+  it('moves focus to the title when another interview opens, even for the same mission title', () => {
     const { rerender } = render(<InterviewRevisionPanel content={content} onClose={jest.fn()} />)
     screen.getByRole('link', { name: 'Ouvrir la fiche' }).focus()
 
-    rerender(
-      <InterviewRevisionPanel content={{ ...content, jobApplicationTitle: 'Lead Vue' }} onClose={jest.fn()} />,
-    )
+    rerender(<InterviewRevisionPanel content={{ ...content, interviewId: 'interview-2' }} onClose={jest.fn()} />)
 
-    expect(screen.getByRole('heading', { name: 'Lead Vue' })).toHaveFocus()
+    expect(screen.getByRole('heading', { name: 'Développeur React senior' })).toHaveFocus()
+  })
+
+  it('leaves focus where it is when the same interview is refreshed', () => {
+    const { rerender } = render(<InterviewRevisionPanel content={content} onClose={jest.fn()} />)
+    const openApplicationLink = screen.getByRole('link', { name: 'Ouvrir la fiche' })
+    openApplicationLink.focus()
+
+    rerender(<InterviewRevisionPanel content={{ ...content, jobApplicationTitle: 'Lead Vue' }} onClose={jest.fn()} />)
+
+    expect(openApplicationLink).toHaveFocus()
   })
 
   it('closes with the Fermer button', async () => {

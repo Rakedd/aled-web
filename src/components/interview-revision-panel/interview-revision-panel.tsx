@@ -10,11 +10,11 @@ import type { InterviewRevisionPanelProps } from './interfaces'
 export const InterviewRevisionPanel = ({ content, onClose }: InterviewRevisionPanelProps) => {
   const titleId = useId()
   const titleRef = useRef<HTMLHeadingElement>(null)
-  const openedTitle = content?.jobApplicationTitle ?? null
+  const openedInterviewId = content?.interviewId ?? null
 
   useEffect(() => {
-    if (openedTitle !== null) titleRef.current?.focus()
-  }, [openedTitle])
+    if (openedInterviewId !== null) titleRef.current?.focus()
+  }, [openedInterviewId])
 
   if (content === null) return null
 

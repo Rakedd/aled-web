@@ -1,7 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { PILL_TONE_CLASS_NAMES } from '@/components/pill'
 import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
-import type { InterviewWithJobApplication } from '@/domain/interviews'
-import { EVENT_STYLES_BY_KIND, toCalendarEvents, useController } from './controller'
+import { INTERVIEW_KINDS, type InterviewWithJobApplication } from '@/domain/interviews'
+import { EVENT_STYLES_BY_KIND, INTERVIEW_KIND_TONES, toCalendarEvents, useController } from './controller'
 
 const JOB_APPLICATION_ID = '6f1c2a9e-1b2d-4c3e-8f4a-5b6c7d8e9f00'
 
@@ -47,6 +48,14 @@ describe('EVENT_STYLES_BY_KIND', () => {
       client: { className: 'interview-client', color: 'var(--peach)', contrastColor: 'var(--ink)' },
       mock: { className: 'interview-mock', color: 'var(--lilac)', contrastColor: 'var(--ink)' },
       other: { className: 'interview-other', color: 'var(--hairline)', contrastColor: 'var(--ink)' },
+    })
+  })
+
+  it('paints each event with the background of its legend pill', () => {
+    expect(INTERVIEW_KIND_TONES).toEqual({ client: 'peach', mock: 'lilac', other: 'sage' })
+    INTERVIEW_KINDS.forEach((interviewKind) => {
+      const colorVariableName = EVENT_STYLES_BY_KIND[interviewKind].color.replace(/^var\(--(.+)\)$/, '$1')
+      expect(PILL_TONE_CLASS_NAMES[INTERVIEW_KIND_TONES[interviewKind]]).toContain(`bg-${colorVariableName} `)
     })
   })
 })
@@ -126,9 +135,10 @@ describe('useController', () => {
     const { result } = renderHook(() => useController({ listUpcomingInterviews }))
     await act(() => result.current.onDatesSet(RANGE_START, RANGE_END))
 
-    act(() => result.current.selectInterview('interview-1'))
+    act(() => result.current.selectInterview('interview-1', document.body))
 
     expect(result.current.revisionPanelContent).toEqual({
+      interviewId: 'interview-1',
       jobApplicationTitle: 'Développeur React senior',
       endClientLabel: 'Acme',
       startsAtLabel: 'mer. 28/10 · 14h00',
@@ -155,13 +165,46 @@ describe('useController', () => {
     expect(result.current.revisionPanelContent).toBeNull()
   })
 
+  it('gives focus back to the clicked event when the panel closes', async () => {
+    const listUpcomingInterviews = jest.fn().mockResolvedValue({ ok: true, data: [buildInterview()] })
+    const { result } = renderHook(() => useController({ listUpcomingInterviews }))
+    await act(() => result.current.onDatesSet(RANGE_START, RANGE_END))
+    const clickedEventElement = document.createElement('a')
+    clickedEventElement.tabIndex = 0
+    document.body.append(clickedEventElement)
+
+    act(() => result.current.selectInterview('interview-1', clickedEventElement))
+    act(() => result.current.closePanel())
+
+    expect(clickedEventElement).toHaveFocus()
+    clickedEventElement.remove()
+  })
+
+  it('gives focus back to the calendar when the clicked event is gone', async () => {
+    const listUpcomingInterviews = jest.fn().mockResolvedValue({ ok: true, data: [buildInterview()] })
+    const { result } = renderHook(() => useController({ listUpcomingInterviews }))
+    await act(() => result.current.onDatesSet(RANGE_START, RANGE_END))
+    const calendarContainer = document.createElement('div')
+    calendarContainer.tabIndex = -1
+    document.body.append(calendarContainer)
+    result.current.calendarContainerRef.current = calendarContainer
+    const clickedEventElement = document.createElement('a')
+    clickedEventElement.tabIndex = 0
+
+    act(() => result.current.selectInterview('interview-1', clickedEventElement))
+    act(() => result.current.closePanel())
+
+    expect(calendarContainer).toHaveFocus()
+    calendarContainer.remove()
+  })
+
   it('keeps calendar events identity across panel interactions', async () => {
     const listUpcomingInterviews = jest.fn().mockResolvedValue({ ok: true, data: [buildInterview()] })
     const { result } = renderHook(() => useController({ listUpcomingInterviews }))
     await act(() => result.current.onDatesSet(RANGE_START, RANGE_END))
     const eventsBeforeInteraction = result.current.calendarEvents
 
-    act(() => result.current.selectInterview('interview-1'))
+    act(() => result.current.selectInterview('interview-1', document.body))
     expect(result.current.calendarEvents).toBe(eventsBeforeInteraction)
 
     act(() => result.current.closePanel())
@@ -186,7 +229,7 @@ describe('useController', () => {
     const { result } = renderHook(() => useController({ listUpcomingInterviews }))
     await act(() => result.current.onDatesSet(RANGE_START, RANGE_END))
 
-    act(() => result.current.selectInterview('interview-1'))
+    act(() => result.current.selectInterview('interview-1', document.body))
 
     expect(result.current.revisionPanelContent?.missionDetails).toEqual([
       { label: 'TJM annoncé', value: '0\u00a0€' },
@@ -204,7 +247,7 @@ describe('useController', () => {
     const { result } = renderHook(() => useController({ listUpcomingInterviews }))
     await act(() => result.current.onDatesSet(RANGE_START, RANGE_END))
 
-    act(() => result.current.selectInterview('interview-1'))
+    act(() => result.current.selectInterview('interview-1', document.body))
 
     expect(result.current.revisionPanelContent?.stackGroups).toEqual([
       { categoryLabel: 'Framework', stackItemNames: ['React'] },

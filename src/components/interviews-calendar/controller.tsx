@@ -3,7 +3,6 @@ import type {
   InterviewRevisionMissionDetail,
   InterviewRevisionPanelContent,
 } from '@/components/interview-revision-panel/interfaces'
-import type { PillTone } from '@/components/pill/interfaces'
 import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
 import {
   INTERVIEW_FORMAT_LABELS,
@@ -15,20 +14,38 @@ import { formatParisInterviewDateTime } from '@/domain/paris-time'
 import { jobApplicationTabRoute } from '@/domain/job-application-tabs'
 import { jobApplicationRoute } from '@/domain/routes'
 import type { InterviewKind } from '@/domain/types'
-import type { InterviewCalendarEvent, InterviewsCalendarProps, InterviewsCalendarView } from './interfaces'
+import type {
+  InterviewCalendarEvent,
+  InterviewCalendarEventStyle,
+  InterviewKindTone,
+  InterviewsCalendarProps,
+  InterviewsCalendarView,
+} from './interfaces'
 
 const NARROW_SCREEN_MAXIMUM_WIDTH_IN_PIXELS = 640
 
-export const EVENT_STYLES_BY_KIND: Record<InterviewKind, { className: string; color: string; contrastColor: string }> = {
-  client: { className: 'interview-client', color: 'var(--peach)', contrastColor: 'var(--ink)' },
-  mock: { className: 'interview-mock', color: 'var(--lilac)', contrastColor: 'var(--ink)' },
-  other: { className: 'interview-other', color: 'var(--hairline)', contrastColor: 'var(--ink)' },
-}
-
-export const INTERVIEW_KIND_TONES: Record<InterviewKind, PillTone> = {
+export const INTERVIEW_KIND_TONES: Record<InterviewKind, InterviewKindTone> = {
   client: 'peach',
   mock: 'lilac',
   other: 'sage',
+}
+
+const CALENDAR_COLOR_BY_INTERVIEW_KIND_TONE: Record<InterviewKindTone, string> = {
+  peach: 'var(--peach)',
+  lilac: 'var(--lilac)',
+  sage: 'var(--hairline)',
+}
+
+const toEventStyle = (interviewKind: InterviewKind): InterviewCalendarEventStyle => ({
+  className: `interview-${interviewKind}`,
+  color: CALENDAR_COLOR_BY_INTERVIEW_KIND_TONE[INTERVIEW_KIND_TONES[interviewKind]],
+  contrastColor: 'var(--ink)',
+})
+
+export const EVENT_STYLES_BY_KIND: Record<InterviewKind, InterviewCalendarEventStyle> = {
+  client: toEventStyle('client'),
+  mock: toEventStyle('mock'),
+  other: toEventStyle('other'),
 }
 
 const toEventTitle = ({ kind, jobApplicationTitle }: InterviewWithJobApplication): string =>
@@ -67,6 +84,7 @@ const toMissionDetails = (interview: InterviewWithJobApplication): InterviewRevi
 }
 
 const toRevisionPanelContent = (interview: InterviewWithJobApplication): InterviewRevisionPanelContent => ({
+  interviewId: interview.id,
   jobApplicationTitle: interview.jobApplicationTitle,
   endClientLabel: interview.endClientLabel,
   startsAtLabel: formatParisInterviewDateTime(interview.startsAt),
@@ -96,6 +114,7 @@ export const useController = ({ listUpcomingInterviews }: Pick<InterviewsCalenda
   const initialView = useSyncExternalStore(subscribeToNothing, readInitialViewForScreenWidth, readInitialViewOnServer)
   const calendarEvents = useMemo(() => toCalendarEvents(interviews), [interviews])
   const calendarContainerRef = useRef<HTMLDivElement>(null)
+  const clickedEventElementRef = useRef<HTMLElement | null>(null)
   const latestRangeRequestIdRef = useRef(0)
 
   const onDatesSet = async (rangeStart: Date, rangeEnd: Date) => {
@@ -115,13 +134,22 @@ export const useController = ({ listUpcomingInterviews }: Pick<InterviewsCalenda
     if (loadedInterviews !== null) setInterviews(loadedInterviews)
   }
 
-  const selectInterview = (interviewId: string) => {
+  const selectInterview = (interviewId: string, clickedEventElement: HTMLElement) => {
+    clickedEventElementRef.current = clickedEventElement
     setSelectedInterview(interviews.find((interview) => interview.id === interviewId) ?? null)
+  }
+
+  const focusClickedEventElement = (): boolean => {
+    const clickedEventElement = clickedEventElementRef.current
+    clickedEventElementRef.current = null
+    if (clickedEventElement === null || !clickedEventElement.isConnected) return false
+    clickedEventElement.focus()
+    return document.activeElement === clickedEventElement
   }
 
   const closePanel = () => {
     setSelectedInterview(null)
-    calendarContainerRef.current?.focus()
+    if (!focusClickedEventElement()) calendarContainerRef.current?.focus()
   }
 
   return {

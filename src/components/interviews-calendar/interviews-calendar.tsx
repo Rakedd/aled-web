@@ -10,6 +10,7 @@ import { InterviewRevisionPanel } from '@/components/interview-revision-panel'
 import { Pill } from '@/components/pill'
 import { INTERVIEW_KIND_LABELS, INTERVIEW_KINDS } from '@/domain/interviews'
 import { PARIS_TIME_ZONE } from '@/domain/paris-time'
+import { cn } from '@/lib/utils'
 import { INTERVIEW_KIND_TONES, useController } from './controller'
 import type { InterviewsCalendarProps } from './interfaces'
 import '@fullcalendar/react/skeleton.css'
@@ -45,7 +46,7 @@ export const InterviewsCalendar = ({ listUpcomingInterviews }: InterviewsCalenda
           </li>
         ))}
       </ul>
-      <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_22rem] lg:items-start">
+      <div className={cn('grid min-w-0 gap-4 lg:items-start', revisionPanelContent !== null && 'lg:grid-cols-[1fr_22rem]')}>
         <div ref={calendarContainerRef} tabIndex={-1} className="interviews-calendar min-w-0 rounded-2xl bg-card p-4 outline-none">
           {initialView !== null && (
             <FullCalendar
@@ -66,7 +67,7 @@ export const InterviewsCalendar = ({ listUpcomingInterviews }: InterviewsCalenda
               datesSet={({ start, end }) => {
                 void onDatesSet(start, end)
               }}
-              eventClick={({ event }) => selectInterview(event.id)}
+              eventClick={({ event, el }) => selectInterview(event.id, el)}
             />
           )}
         </div>
