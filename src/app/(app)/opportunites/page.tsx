@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { OpportunitiesBoard } from '@/components/opportunities-board'
 import { isOpportunityTab, NO_OPPORTUNITY_QUICK_FILTERS } from '@/domain/opportunities'
 import { hasActiveOpportunityFilters } from '@/domain/opportunity-filters'
+import { PAGE_TITLE_CLASS_NAME } from '@/lib/typography-class-names'
 import {
   applyToOpportunity,
   dismissOpportunity,
@@ -25,7 +26,7 @@ const OpportunitiesPage = async ({ searchParams }: PageProps<'/opportunites'>) =
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Mes opportunités</h1>
+      <h1 className={PAGE_TITLE_CLASS_NAME}>Mes opportunités</h1>
       {!listingResult.ok ? (
         <p role="alert" className="text-sm text-destructive">
           {listingResult.errorMessage}

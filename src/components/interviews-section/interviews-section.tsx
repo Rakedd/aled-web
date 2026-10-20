@@ -82,7 +82,7 @@ export const InterviewsSection = ({
         </h2>
         {editorTarget === null && (
           <Button type="button" variant="outline" onClick={startCreating} disabled={isSubmitting}>
-            Ajouter un entretien
+            Nouvel entretien
           </Button>
         )}
       </div>

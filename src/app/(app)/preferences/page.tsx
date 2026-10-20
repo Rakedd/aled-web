@@ -3,6 +3,7 @@ import { AnthropicApiKeyForm } from '@/components/anthropic-api-key-form'
 import { ProfileForm } from '@/components/profile-form'
 import { SettingsNavigation } from '@/components/settings-navigation'
 import { buttonVariants } from '@/components/ui/button'
+import { PAGE_TITLE_CLASS_NAME } from '@/lib/typography-class-names'
 import {
   deleteAnthropicApiKey,
   getProfileSettings,
@@ -17,7 +18,7 @@ const SettingsPage = async () => {
 
   return (
     <div className="flex w-full max-w-5xl flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Préférences</h1>
+      <h1 className={PAGE_TITLE_CLASS_NAME}>Préférences</h1>
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <div className="lg:w-60 lg:shrink-0">
           <SettingsNavigation />

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { OpportunityFiltersForm } from '@/components/opportunity-filters-form'
 import { SettingsNavigation } from '@/components/settings-navigation'
+import { PAGE_TITLE_CLASS_NAME } from '@/lib/typography-class-names'
 import {
   getOpportunityFilters,
   listKnownOpportunityRegions,
@@ -19,7 +20,7 @@ const FreeWorkOpportunitySettingsPage = async () => {
 
   return (
     <div className="flex w-full max-w-5xl flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Préférences</h1>
+      <h1 className={PAGE_TITLE_CLASS_NAME}>Préférences</h1>
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <div className="lg:w-60 lg:shrink-0">
           <SettingsNavigation />

@@ -5,6 +5,7 @@ import { JobApplicationsTable } from '@/components/job-applications-table'
 import { TodoBanner } from '@/components/todo-banner'
 import { buttonVariants } from '@/components/ui/button'
 import { JOB_APPLICATION_DELETED_SEARCH_PARAMETER, NEW_JOB_APPLICATION_ROUTE } from '@/domain/routes'
+import { PAGE_TITLE_CLASS_NAME } from '@/lib/typography-class-names'
 import { changeJobApplicationStatus, snoozeAlert } from '@/server/actions/job-application-actions'
 import { loadTodoReminders } from '@/server/todo-reminders/load-todo-reminders'
 
@@ -20,7 +21,7 @@ const JobApplicationsPage = async ({ searchParams }: PageProps<'/candidatures'>)
 
   const header = (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <h1 className="text-2xl font-semibold">Mes candidatures</h1>
+      <h1 className={PAGE_TITLE_CLASS_NAME}>Mes candidatures</h1>
       <Link href={NEW_JOB_APPLICATION_ROUTE} className={buttonVariants()}>
         + Nouvelle candidature
       </Link>

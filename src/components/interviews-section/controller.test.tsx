@@ -170,4 +170,18 @@ describe('InterviewsSection', () => {
     expect(interviewItems[1]).toHaveTextContent('mer. 04/11 · 10h00')
     expect(interviewItems[1]).toHaveTextContent('Visio')
   })
+
+  it('offers to add a new interview with the spec label', () => {
+    render(
+      <InterviewsSection
+        jobApplicationId={JOB_APPLICATION_ID}
+        initialInterviews={[]}
+        createInterview={jest.fn()}
+        updateInterview={jest.fn()}
+        deleteInterview={jest.fn()}
+        listInterviewsForJobApplication={jest.fn()}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Nouvel entretien' })).toBeInTheDocument()
+  })
 })

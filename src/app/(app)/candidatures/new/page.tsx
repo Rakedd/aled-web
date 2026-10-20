@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { NewJobApplicationForm } from '@/components/new-job-application-form'
+import { PAGE_TITLE_CLASS_NAME } from '@/lib/typography-class-names'
 import { extractJobPostingForCurrentUser } from '@/server/actions/ai-actions'
 import { searchEntities } from '@/server/actions/entity-actions'
 import { createJobApplication } from '@/server/actions/job-application-actions'
@@ -13,7 +14,7 @@ const NewJobApplicationPage = async () => {
   const hasAnthropicApiKey = await hasAnthropicApiKeyConfigured()
   return (
     <div className="flex w-full max-w-6xl flex-col gap-6">
-      <h1 className="font-heading text-2xl font-bold text-ink">Nouvelle candidature</h1>
+      <h1 className={PAGE_TITLE_CLASS_NAME}>Nouvelle candidature</h1>
       <NewJobApplicationForm
         extractJobPosting={extractJobPostingForCurrentUser}
         createJobApplication={createJobApplication}

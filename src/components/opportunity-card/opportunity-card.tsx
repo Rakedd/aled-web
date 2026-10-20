@@ -59,7 +59,9 @@ export const OpportunityCard = ({
           <h3 className="min-w-0 break-words text-base font-semibold">{opportunity.title}</h3>
           {isNew && <Pill tone="lilac">nouveau</Pill>}
         </div>
-        <p className="shrink-0 font-heading text-base text-forest">{formatOpportunityRate(opportunity)}</p>
+        <p className={cn('shrink-0 font-heading font-extrabold text-forest', isCompact ? 'text-lg' : 'text-xl')}>
+          {formatOpportunityRate(opportunity)}
+        </p>
       </header>
       <ul className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
         {facts.map((fact, factIndex) => (

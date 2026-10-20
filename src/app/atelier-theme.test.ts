@@ -88,6 +88,14 @@ describe('atelier theme', () => {
     expect(apiKeySectionClassName?.split(' ')).toEqual(expect.arrayContaining(['bg-ink', 'focus-ring-on-dark']))
   })
 
+  it('sets every page title in the shared Manrope heading scale', () => {
+    const pageFiles = listTsxFiles(__dirname).filter((filePath) => filePath.endsWith('page.tsx'))
+    const pageFilesWithLightTitle = pageFiles.filter((filePath) =>
+      /<h1 className="[^"]*font-(semibold|bold)\b/.test(fs.readFileSync(filePath, 'utf8')),
+    )
+    expect(pageFilesWithLightTitle.map((filePath) => path.relative(__dirname, filePath))).toEqual([])
+  })
+
   it('does not ship a dark mode in the stylesheet', () => {
     expect(GLOBALS_CSS).not.toContain('.dark')
     expect(GLOBALS_CSS).not.toContain('@custom-variant dark')
