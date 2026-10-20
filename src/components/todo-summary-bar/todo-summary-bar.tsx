@@ -18,7 +18,7 @@ export const TodoSummaryBar = ({
   return (
     <section
       aria-labelledby={titleId}
-      className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 rounded-full bg-card px-6 py-3"
+      className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 rounded-3xl bg-card px-6 py-3 sm:rounded-full"
     >
       {kindCounts.length === 0 ? (
         <>
@@ -32,7 +32,7 @@ export const TodoSummaryBar = ({
           <h2 id={titleId} className="font-heading text-base font-extrabold">
             À faire · {totalAlertCount}
           </h2>
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <div className="flex min-w-0 basis-full flex-wrap items-center gap-2 sm:flex-1 sm:basis-auto">
             {kindCounts.map(({ kind, count }) => (
               <PillToggle
                 key={kind}

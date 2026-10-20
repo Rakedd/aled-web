@@ -53,6 +53,14 @@ describe('TodoSummaryBar', () => {
     expect(screen.getByRole('button', { name: 'Tout replier' })).toHaveAttribute('aria-expanded', 'true')
   })
 
+  it('lets the pills take their own line on small screens', () => {
+    render(<TodoSummaryBar {...buildProps()} />)
+    const pillsGroup = screen.getByRole('button', { name: '8 relances' }).parentElement
+    expect(pillsGroup).toHaveClass('basis-full', 'sm:basis-auto', 'sm:flex-1')
+    expect(pillsGroup).not.toHaveClass('flex-1')
+    expect(screen.getByRole('region', { name: 'À faire · 23' })).toHaveClass('rounded-3xl', 'sm:rounded-full')
+  })
+
   it('shows an empty message without pills or expand button', () => {
     render(<TodoSummaryBar {...buildProps({ kindCounts: [] })} />)
     expect(screen.getByText("Rien à faire pour l'instant")).toBeInTheDocument()
