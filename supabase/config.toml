@@ -245,11 +245,11 @@ otp_expiry = 3600
 # sender_name = "Admin"
 
 [auth.email.template.invite]
-subject = "Ton invitation à Freeclutch"
+subject = "Ton invitation à Aled"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.magic_link]
-subject = "Ton lien de connexion à Freeclutch"
+subject = "Ton lien de connexion à Aled"
 content_path = "./supabase/templates/magic-link.html"
 
 # Uncomment to customize notification email template

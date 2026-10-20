@@ -106,7 +106,7 @@ Ne jamais coller le jeton dans un fichier suivi par git ni dans une commande qui
 L'inscription publique est désactivée. Pour ouvrir l'accès à quelqu'un :
 
 1. Dans le tableau de bord Supabase du projet : **Authentication → Users → Add user → Send invitation**, puis saisir son adresse e-mail. En local, la même action se fait depuis Supabase Studio (http://127.0.0.1:54323).
-2. La personne reçoit l'e-mail « Ton invitation à Freeclutch ». Son lien ouvre `/auth/confirm`, qui la connecte et la redirige vers l'accueil. Ensuite, elle se reconnecte avec un lien magique depuis `/login`.
+2. La personne reçoit l'e-mail « Ton invitation à Aled ». Son lien ouvre `/auth/confirm`, qui la connecte et la redirige vers l'accueil. Ensuite, elle se reconnecte avec un lien magique depuis `/login`.
 
 Sur le projet hébergé, les modèles d'e-mail **Invite user** et **Magic link** doivent reprendre les liens de `supabase/templates/invite.html` et `supabase/templates/magic-link.html` (`{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=...`), et la **Site URL** doit être l'URL de production.
 
