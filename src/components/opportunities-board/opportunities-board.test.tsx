@@ -78,13 +78,10 @@ describe('OpportunitiesBoard', () => {
     expect(neverSettlingApply).toHaveBeenCalledWith('opportunity-1')
   })
 
-  it('shows the filters empty state with a link to the Free-Work settings', () => {
+  it('shows the filters empty state with a link to the filters settings', () => {
     renderBoard({}, true)
     expect(screen.getByText(/Rien de nouveau qui correspond à tes filtres/)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Ajuster mes filtres Free-Work' })).toHaveAttribute(
-      'href',
-      '/preferences/opportunites/free-work',
-    )
+    expect(screen.getByRole('link', { name: 'Ajuster mes filtres' })).toHaveAttribute('href', '/preferences/opportunites')
   })
 
   it('shows the no-mission message only once when nothing was ever received', () => {
@@ -185,12 +182,10 @@ describe('OpportunitiesBoard', () => {
     toggles.forEach((toggle) => expect(toggle).toHaveAttribute('aria-pressed', 'false'))
   })
 
-  it('links to the Free-Work filters from the header', () => {
+  it('links to the filters settings from the header, without naming a source', () => {
     renderBoard({})
-    expect(screen.getByRole('link', { name: 'Mes filtres Free-Work' })).toHaveAttribute(
-      'href',
-      '/preferences/opportunites/free-work',
-    )
+    expect(screen.getByRole('link', { name: 'Filtres' })).toHaveAttribute('href', '/preferences/opportunites')
+    expect(screen.queryByRole('link', { name: /Free-Work|Collective/ })).not.toBeInTheDocument()
   })
 
   it('shows the filtered empty state once a remote mode is selected', async () => {

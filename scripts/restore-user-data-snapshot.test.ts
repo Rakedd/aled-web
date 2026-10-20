@@ -146,6 +146,60 @@ describe('parseUserDataSnapshot', () => {
     expect(parsedSnapshot.interviewQuestions).toEqual([interviewQuestions])
   })
 
+  it('keeps only the Free-Work filters of a snapshot written before shared filters, without their source', () => {
+    const sharedFilters: Tables<'opportunity_filters'> = {
+      id: '66666666-6666-4666-8666-666666666666',
+      user_id: SNAPSHOT_USER_ID,
+      include_keywords: ['react'],
+      always_exclude_keywords: [],
+      rescuable_exclude_keywords: [],
+      rescue_keywords: [],
+      rate_floor_full_remote: null,
+      rate_floor_hybrid: 450,
+      rate_floor_onsite: null,
+      regions: ['Île-de-France'],
+      disabled_sources: [],
+      created_at: '2026-10-05T10:00:00+00:00',
+      updated_at: '2026-10-05T10:00:00+00:00',
+    }
+    const { disabled_sources: absentFromEarlierSnapshots, ...earlierFreeWorkFilters } = sharedFilters
+    const earlierCollectiveFilters = {
+      ...earlierFreeWorkFilters,
+      id: '77777777-7777-4777-8777-777777777776',
+      source: 'collective',
+    }
+
+    const parsedSnapshot = parseUserDataSnapshot({
+      ...EMPTY_SNAPSHOT,
+      opportunityFilters: [{ ...earlierFreeWorkFilters, source: 'free-work' }, earlierCollectiveFilters],
+    })
+
+    expect(absentFromEarlierSnapshots).toEqual([])
+    expect(parsedSnapshot.opportunityFilters).toEqual([sharedFilters])
+  })
+
+  it('keeps the disabled sources of a current snapshot', () => {
+    const currentFilters: Tables<'opportunity_filters'> = {
+      id: '66666666-6666-4666-8666-666666666667',
+      user_id: SNAPSHOT_USER_ID,
+      include_keywords: [],
+      always_exclude_keywords: [],
+      rescuable_exclude_keywords: [],
+      rescue_keywords: [],
+      rate_floor_full_remote: null,
+      rate_floor_hybrid: null,
+      rate_floor_onsite: null,
+      regions: [],
+      disabled_sources: ['collective'],
+      created_at: '2026-10-21T10:00:00+00:00',
+      updated_at: '2026-10-21T10:00:00+00:00',
+    }
+
+    expect(parseUserDataSnapshot({ ...EMPTY_SNAPSHOT, opportunityFilters: [currentFilters] }).opportunityFilters).toEqual([
+      currentFilters,
+    ])
+  })
+
   it.each(['endClientBriefs', 'interviewQuestions'])('refuses a snapshot whose %s is not a list', (snapshotArrayKey) => {
     expect(() => parseUserDataSnapshot({ ...EMPTY_SNAPSHOT, [snapshotArrayKey]: {} })).toThrow(
       'The file is not a Freeclutch snapshot with formatVersion 1',

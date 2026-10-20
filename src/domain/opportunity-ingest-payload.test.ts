@@ -2,6 +2,7 @@ import { MAXIMUM_STACK_ITEM_COUNT, MAXIMUM_STACK_ITEM_NAME_LENGTH } from './job-
 import { type IngestMission, MAX_MISSIONS_PER_INGEST, parseIngestPayload } from './opportunity-ingest-payload'
 
 const buildWatcherMission = (override: Record<string, unknown> = {}): Record<string, unknown> => ({
+  source: 'free-work',
   id: '123456',
   title: ' Développeur React senior ',
   url: 'https://www.free-work.com/fr/tech-it/job-mission/developpeur-react/dev-react-senior',
@@ -53,6 +54,18 @@ describe('parseIngestPayload', () => {
       missions: [expectedIngestMission],
       skippedInvalid: 0,
     })
+  })
+
+  it('keeps the collective source of a watcher mission', () => {
+    expect(parseSingleMission({ source: 'collective' })).toEqual({
+      missions: [{ ...expectedIngestMission, source: 'collective' }],
+      skippedInvalid: 0,
+    })
+  })
+
+  it('counts a mission with an unknown or missing source as invalid', () => {
+    expect(parseSingleMission({ source: 'malt' })).toEqual({ missions: [], skippedInvalid: 1 })
+    expect(parseSingleMission({ source: undefined })).toEqual({ missions: [], skippedInvalid: 1 })
   })
 
   it('accepts an empty batch', () => {

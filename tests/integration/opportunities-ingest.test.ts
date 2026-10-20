@@ -10,6 +10,7 @@ const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
 const daysAgo = (dayCount: number): string => new Date(Date.now() - dayCount * MILLISECONDS_PER_DAY).toISOString()
 
 const buildWatcherMission = (externalId: string, override: Record<string, unknown> = {}) => ({
+  source: 'free-work',
   id: externalId,
   title: 'Développeur·se React Senior',
   url: `https://www.free-work.com/fr/tech-it/job-mission/developpeur-react/${externalId}`,
@@ -81,6 +82,30 @@ describe('POST /api/opportunities/ingest against local supabase', () => {
       remote_mode: 'partial',
       skills: ['React', 'TypeScript'],
     })
+  })
+
+  it('keeps a Free-Work and a Collective mission sharing an identifier as two opportunities', async () => {
+    const externalId = randomUUID()
+
+    const ingest = await ingestMissions([
+      buildWatcherMission(externalId),
+      buildWatcherMission(externalId, { source: 'collective', url: `https://www.collective.work/jobs/fr/${externalId}` }),
+    ])
+
+    expect(ingest).toEqual({
+      status: 200,
+      counters: { received: 2, upserted: 2, skippedInvalid: 0, purged: expect.any(Number) },
+    })
+    const { data: storedRows, error } = await createServiceRoleTestClient()
+      .from('opportunities')
+      .select('source, url')
+      .eq('external_id', externalId)
+      .order('source')
+    if (error) throw error
+    expect(storedRows).toEqual([
+      { source: 'collective', url: `https://www.collective.work/jobs/fr/${externalId}` },
+      { source: 'free-work', url: `https://www.free-work.com/fr/tech-it/job-mission/developpeur-react/${externalId}` },
+    ])
   })
 
   it('stores a mission sent twice in the same batch once, with its last version', async () => {

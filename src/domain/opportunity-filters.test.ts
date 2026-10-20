@@ -12,7 +12,7 @@ import {
 } from './opportunity-filters'
 
 const filters = (override: Partial<OpportunityFilters>): OpportunityFilters => ({ ...EMPTY_OPPORTUNITY_FILTERS, ...override })
-const candidate = (override: Partial<OpportunityMatchCandidate>): OpportunityMatchCandidate => ({ title: 'Dev React', rateMin: null, rateMax: null, remoteMode: 'partial', region: 'Île-de-France', locationLabel: 'Paris, Île-de-France', ...override })
+const candidate = (override: Partial<OpportunityMatchCandidate>): OpportunityMatchCandidate => ({ source: 'free-work', title: 'Dev React', rateMin: null, rateMax: null, remoteMode: 'partial', region: 'Île-de-France', locationLabel: 'Paris, Île-de-France', ...override })
 
 describe('normalizeForKeywordMatch', () => {
   it('lowercases, strips accents and collapses spaces', () => {
@@ -57,6 +57,11 @@ describe('buildKeywordMatcher', () => {
 })
 
 describe('createOpportunityMatcher', () => {
+  it('hides the missions of a disabled source and keeps the other sources', () => {
+    const matches = createOpportunityMatcher(filters({ disabledSources: ['collective'] }))
+    expect(matches(candidate({ source: 'collective' }))).toBe(false)
+    expect(matches(candidate({ source: 'free-work' }))).toBe(true)
+  })
   it('shows everything when no filter is set', () => {
     expect(createOpportunityMatcher(EMPTY_OPPORTUNITY_FILTERS)(candidate({ title: 'Plombier' }))).toBe(true)
   })
@@ -145,6 +150,7 @@ describe('validateOpportunityFilters', () => {
       rateFloorHybrid: null,
       rateFloorOnsite: 5000,
       regions: [' Île-de-France ', 'île-de-france', 'Bretagne'],
+      disabledSources: ['collective', 'collective'],
     })
     expect(result).toEqual({
       ok: true,
@@ -157,8 +163,16 @@ describe('validateOpportunityFilters', () => {
         rateFloorHybrid: null,
         rateFloorOnsite: 5000,
         regions: ['Île-de-France', 'Bretagne'],
+        disabledSources: ['collective'],
       },
     })
+  })
+  it.each([undefined, 'collective', ['malt'], [42]])('rejects disabled sources that are not known sources %p', (disabledSources) => {
+    expect(validateOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, disabledSources })).toEqual({ ok: false, errorMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.invalidSources })
+  })
+  it('refuses to disable every source', () => {
+    expect(validateOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, disabledSources: ['free-work', 'collective'] })).toEqual({ ok: false, errorMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.noEnabledSource })
+    expect(OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.noEnabledSource).toBe('Garde au moins une source active')
   })
   it.each([null, 'filters', ['react']])('rejects a malformed payload %p', (payload) => {
     expect(validateOpportunityFilters(payload)).toEqual({ ok: false, errorMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.malformedPayload })
@@ -205,6 +219,7 @@ describe('hasActiveOpportunityFilters', () => {
     filters({ includeKeywords: ['react'] }),
     filters({ rateFloorOnsite: 400 }),
     filters({ regions: ['Bretagne'] }),
+    filters({ disabledSources: ['collective'] }),
   ])('is true when a filter is set (%p)', (activeFilters) => {
     expect(hasActiveOpportunityFilters(activeFilters)).toBe(true)
   })

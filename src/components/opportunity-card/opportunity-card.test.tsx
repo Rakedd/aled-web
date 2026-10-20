@@ -67,6 +67,22 @@ describe('OpportunityCard', () => {
     expect(link).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
+  it('shows the platform of the mission as a pill next to its title', () => {
+    renderCard(buildOpportunity({ source: 'collective', url: 'https://www.collective.work/jobs/fr/mission-1' }))
+    const header = screen.getByRole('heading', { name: 'Développeur React' }).closest('header')
+    expect(header).not.toBeNull()
+    expect(within(header as HTMLElement).getByText('Collective')).toBeInTheDocument()
+  })
+
+  it('names the Collective platform on the link to a Collective posting', () => {
+    renderCard(buildOpportunity({ source: 'collective', url: 'https://www.collective.work/jobs/fr/mission-1' }))
+    expect(screen.getByRole('link', { name: 'Voir sur Collective' })).toHaveAttribute(
+      'href',
+      'https://www.collective.work/jobs/fr/mission-1',
+    )
+    expect(screen.queryByRole('link', { name: 'Voir sur Free-Work' })).not.toBeInTheDocument()
+  })
+
   it('shows the undisclosed rate, the duration and the Paris publication time', () => {
     renderCard(buildOpportunity())
     expect(screen.getByText('Non communiqué')).toBeInTheDocument()

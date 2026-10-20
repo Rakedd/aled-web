@@ -289,14 +289,14 @@ isOneToOne: false
                   ]
                 },"opportunity_filters": {
                   Row: {
-                    "always_exclude_keywords": (string)[],"created_at": string,"id": string,"include_keywords": (string)[],"rate_floor_full_remote": number | null,"rate_floor_hybrid": number | null,"rate_floor_onsite": number | null,"regions": (string)[],"rescuable_exclude_keywords": (string)[],"rescue_keywords": (string)[],"source": string,"updated_at": string,"user_id": string
+                    "always_exclude_keywords": (string)[],"created_at": string,"disabled_sources": (string)[],"id": string,"include_keywords": (string)[],"rate_floor_full_remote": number | null,"rate_floor_hybrid": number | null,"rate_floor_onsite": number | null,"regions": (string)[],"rescuable_exclude_keywords": (string)[],"rescue_keywords": (string)[],"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "always_exclude_keywords"?: (string)[],"created_at"?: string,"id"?: string,"include_keywords"?: (string)[],"rate_floor_full_remote"?: number | null,"rate_floor_hybrid"?: number | null,"rate_floor_onsite"?: number | null,"regions"?: (string)[],"rescuable_exclude_keywords"?: (string)[],"rescue_keywords"?: (string)[],"source": string,"updated_at"?: string,"user_id": string
+                    "always_exclude_keywords"?: (string)[],"created_at"?: string,"disabled_sources"?: (string)[],"id"?: string,"include_keywords"?: (string)[],"rate_floor_full_remote"?: number | null,"rate_floor_hybrid"?: number | null,"rate_floor_onsite"?: number | null,"regions"?: (string)[],"rescuable_exclude_keywords"?: (string)[],"rescue_keywords"?: (string)[],"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "always_exclude_keywords"?: (string)[],"created_at"?: string,"id"?: string,"include_keywords"?: (string)[],"rate_floor_full_remote"?: number | null,"rate_floor_hybrid"?: number | null,"rate_floor_onsite"?: number | null,"regions"?: (string)[],"rescuable_exclude_keywords"?: (string)[],"rescue_keywords"?: (string)[],"source"?: string,"updated_at"?: string,"user_id"?: string
+                    "always_exclude_keywords"?: (string)[],"created_at"?: string,"disabled_sources"?: (string)[],"id"?: string,"include_keywords"?: (string)[],"rate_floor_full_remote"?: number | null,"rate_floor_hybrid"?: number | null,"rate_floor_onsite"?: number | null,"regions"?: (string)[],"rescuable_exclude_keywords"?: (string)[],"rescue_keywords"?: (string)[],"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     

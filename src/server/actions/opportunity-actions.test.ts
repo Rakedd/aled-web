@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 import { EMPTY_OPPORTUNITY_FILTERS } from '@/domain/opportunity-filters'
-import type { OpportunityQuickFilters, OpportunitySource } from '@/domain/opportunities'
+import type { OpportunityQuickFilters } from '@/domain/opportunities'
 import { applyToOpportunityForUser } from '@/server/opportunities/apply-to-opportunity'
 import { buildOpportunityListing } from '@/server/opportunities/opportunity-listing'
 import {
@@ -195,19 +195,18 @@ describe('listOpportunities', () => {
 })
 
 describe('getOpportunityFilters', () => {
-  it('rejects an unknown source without querying the database', async () => {
-    await expect(getOpportunityFilters('linkedin' as OpportunitySource)).resolves.toEqual({
-      ok: false,
-      errorMessage: 'Source inconnue',
-    })
-    expect(findOpportunityFilters).not.toHaveBeenCalled()
+  it('loads the shared filters of the authenticated user', async () => {
+    jest.mocked(findOpportunityFilters).mockResolvedValue(EMPTY_OPPORTUNITY_FILTERS)
+
+    await expect(getOpportunityFilters()).resolves.toEqual({ ok: true, data: EMPTY_OPPORTUNITY_FILTERS })
+    expect(findOpportunityFilters).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1')
   })
 })
 
 describe('saveOpportunityFilters', () => {
   it('rejects a negative rate floor without querying the database', async () => {
     await expect(
-      saveOpportunityFilters('free-work', { ...EMPTY_OPPORTUNITY_FILTERS, rateFloorHybrid: -1 }),
+      saveOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, rateFloorHybrid: -1 }),
     ).resolves.toEqual({ ok: false, errorMessage: 'Le TJM minimum doit être un entier entre 0 et 5000' })
     expect(upsertOpportunityFilters).not.toHaveBeenCalled()
   })
@@ -217,8 +216,15 @@ describe('saveOpportunityFilters', () => {
     jest.mocked(upsertOpportunityFilters).mockResolvedValue(savedFilters)
 
     await expect(
-      saveOpportunityFilters('free-work', { ...savedFilters, includeKeywords: [' react ', ''], user_id: 'user-2' }),
+      saveOpportunityFilters({ ...savedFilters, includeKeywords: [' react ', ''], user_id: 'user-2' }),
     ).resolves.toEqual({ ok: true, data: savedFilters })
-    expect(upsertOpportunityFilters).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', 'free-work', savedFilters)
+    expect(upsertOpportunityFilters).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', savedFilters)
+  })
+
+  it('refuses to disable every source without querying the database', async () => {
+    await expect(
+      saveOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, disabledSources: ['free-work', 'collective'] }),
+    ).resolves.toEqual({ ok: false, errorMessage: 'Garde au moins une source active' })
+    expect(upsertOpportunityFilters).not.toHaveBeenCalled()
   })
 })

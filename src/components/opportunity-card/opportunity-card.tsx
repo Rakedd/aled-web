@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { Pill } from '@/components/pill'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { isExternalLinkUrl } from '@/domain/client-brief'
-import { formatOpportunityRate, REMOTE_MODE_LABELS } from '@/domain/opportunities'
+import { formatOpportunityRate, OPPORTUNITY_SOURCE_LABELS, REMOTE_MODE_LABELS } from '@/domain/opportunities'
 import { jobApplicationRoute } from '@/domain/routes'
 import { cn } from '@/lib/utils'
 import { formatOpportunityPublication } from './format-opportunity-publication'
@@ -48,7 +48,7 @@ export const OpportunityCard = ({
       rel="noopener noreferrer"
       className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
     >
-      Voir sur Free-Work
+      Voir sur {OPPORTUNITY_SOURCE_LABELS[opportunity.source]}
     </a>
   )
 
@@ -57,6 +57,7 @@ export const OpportunityCard = ({
       <header className="flex items-start gap-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <h3 className="min-w-0 break-words text-base font-semibold">{opportunity.title}</h3>
+          <Pill tone="neutral">{OPPORTUNITY_SOURCE_LABELS[opportunity.source]}</Pill>
           {isNew && <Pill tone="lilac">nouveau</Pill>}
         </div>
         <p className={cn('shrink-0 font-heading font-extrabold text-accent-text', isCompact ? 'text-lg' : 'text-xl')}>

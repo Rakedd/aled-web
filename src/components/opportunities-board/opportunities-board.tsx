@@ -15,7 +15,7 @@ import {
   REMOTE_MODES,
   type OpportunityTab,
 } from '@/domain/opportunities'
-import { FREE_WORK_PREFERENCES_ROUTE } from '@/domain/routes'
+import { OPPORTUNITY_PREFERENCES_ROUTE } from '@/domain/routes'
 import { useController } from './controller'
 import type { OpportunitiesBoardProps } from './interfaces'
 
@@ -67,8 +67,8 @@ export const OpportunitiesBoard = ({
     return (
       <p className="text-sm text-muted-foreground">
         Rien de nouveau qui correspond à tes filtres.{' '}
-        <Link href={FREE_WORK_PREFERENCES_ROUTE} className="underline underline-offset-4">
-          Ajuster mes filtres Free-Work
+        <Link href={OPPORTUNITY_PREFERENCES_ROUTE} className="underline underline-offset-4">
+          Ajuster mes filtres
         </Link>
       </p>
     )
@@ -78,8 +78,8 @@ export const OpportunitiesBoard = ({
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <OpportunityFeedFreshness lastReceivedAt={lastReceivedAt} now={now} />
-        <Link href={FREE_WORK_PREFERENCES_ROUTE} className="text-sm font-medium text-accent-text underline underline-offset-4">
-          Mes filtres Free-Work
+        <Link href={OPPORTUNITY_PREFERENCES_ROUTE} className="text-sm font-medium text-accent-text underline underline-offset-4">
+          Filtres
         </Link>
       </div>
       <div className="flex flex-wrap items-center gap-2">

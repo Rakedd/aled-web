@@ -205,7 +205,7 @@ describe('deleteJobApplication', () => {
     actAs(user)
     const keyword = buildUniqueKeyword()
     const opportunityId = await seedOpportunityOrFail(`Développeur React ${keyword}`)
-    const filtersSaveResult = await saveOpportunityFilters('free-work', {
+    const filtersSaveResult = await saveOpportunityFilters({
       ...EMPTY_OPPORTUNITY_FILTERS,
       includeKeywords: [keyword],
     })

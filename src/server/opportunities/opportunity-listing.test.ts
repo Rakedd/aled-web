@@ -13,7 +13,7 @@ import {
   type OpportunitySummary,
 } from '@/server/repositories/opportunities-repository'
 import { listOpportunityDecisions } from '@/server/repositories/opportunity-decisions-repository'
-import { findOpportunityFiltersBySource } from '@/server/repositories/opportunity-filters-repository'
+import { findOpportunityFilters } from '@/server/repositories/opportunity-filters-repository'
 import { findOpportunitiesLastViewedAt } from '@/server/repositories/profile-repository'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 import { buildOpportunityListing, countOpportunitiesToProcessForUser } from './opportunity-listing'
@@ -36,7 +36,7 @@ jest.mock('@/server/repositories/opportunities-repository', () => ({
   listOpportunitySummariesPublishedSince: jest.fn(),
 }))
 jest.mock('@/server/repositories/opportunity-decisions-repository', () => ({ listOpportunityDecisions: jest.fn() }))
-jest.mock('@/server/repositories/opportunity-filters-repository', () => ({ findOpportunityFiltersBySource: jest.fn() }))
+jest.mock('@/server/repositories/opportunity-filters-repository', () => ({ findOpportunityFilters: jest.fn() }))
 jest.mock('@/server/repositories/profile-repository', () => ({ findOpportunitiesLastViewedAt: jest.fn() }))
 
 const NOW = new Date('2026-10-18T10:00:00Z')
@@ -61,7 +61,7 @@ describe('to-process context loading', () => {
       },
     ])
     jest.mocked(listOpportunityDecisions).mockResolvedValue([])
-    jest.mocked(findOpportunityFiltersBySource).mockResolvedValue(new Map([['free-work', EMPTY_OPPORTUNITY_FILTERS]]))
+    jest.mocked(findOpportunityFilters).mockResolvedValue(EMPTY_OPPORTUNITY_FILTERS)
     jest.mocked(findLastOpportunityReceivedAt).mockResolvedValue(null)
     jest.mocked(findOpportunitiesLastViewedAt).mockResolvedValue(null)
     jest.mocked(listOpportunitiesByIds).mockResolvedValue([])
@@ -82,7 +82,14 @@ describe('to-process context loading', () => {
     expect(listing.counts.to_process).toBe(1)
     expect(listOpportunitySummariesPublishedSince).toHaveBeenCalledTimes(1)
     expect(listOpportunityDecisions).toHaveBeenCalledTimes(1)
-    expect(findOpportunityFiltersBySource).toHaveBeenCalledTimes(1)
+    expect(findOpportunityFilters).toHaveBeenCalledTimes(1)
+    expect(findOpportunityFilters).toHaveBeenCalledWith(layoutClient, 'user-1')
+  })
+
+  it('leaves out of the missions to process those of a disabled source', async () => {
+    jest.mocked(findOpportunityFilters).mockResolvedValue({ ...EMPTY_OPPORTUNITY_FILTERS, disabledSources: ['free-work'] })
+
+    await expect(countOpportunitiesToProcessForUser(layoutClient, 'user-disabled-source', NOW)).resolves.toBe(0)
   })
 
   it('matches the search on the title of loaded summaries and keeps decided missions searchable', async () => {
@@ -212,7 +219,7 @@ describe('rate sorted pagination', () => {
     jest.clearAllMocks()
     jest.mocked(listOpportunitySummariesPublishedSince).mockResolvedValue(rateSortedSummaries)
     jest.mocked(listOpportunityDecisions).mockResolvedValue([])
-    jest.mocked(findOpportunityFiltersBySource).mockResolvedValue(new Map([['free-work', EMPTY_OPPORTUNITY_FILTERS]]))
+    jest.mocked(findOpportunityFilters).mockResolvedValue(EMPTY_OPPORTUNITY_FILTERS)
     jest.mocked(findLastOpportunityReceivedAt).mockResolvedValue(null)
     jest.mocked(findOpportunitiesLastViewedAt).mockResolvedValue(null)
     jest.mocked(listOpportunitiesByIds).mockImplementation(async (_supabase, opportunityIds) =>

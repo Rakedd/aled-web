@@ -10,6 +10,8 @@ export const DEFAULT_THEME_PREFERENCE: ThemePreference = 'system'
 
 export const DARK_COLOR_SCHEME_QUERY = '(prefers-color-scheme: dark)'
 
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'
+
 export const THEME_COLOR_META_NAME = 'theme-color'
 
 export const PAGE_BACKGROUND_CUSTOM_PROPERTY = '--background'
@@ -50,6 +52,21 @@ export const applyResolvedTheme = (resolvedTheme: ResolvedTheme) => {
     .getPropertyValue(PAGE_BACKGROUND_CUSTOM_PROPERTY)
     .trim()
   if (pageBackgroundColor) findOrCreateThemeColorMeta().content = pageBackgroundColor
+}
+
+const prefersReducedMotion = () => (window.matchMedia ? window.matchMedia(REDUCED_MOTION_QUERY).matches : false)
+
+const shouldAnimateThemeChange = (resolvedTheme: ResolvedTheme) =>
+  typeof document.startViewTransition === 'function' &&
+  document.documentElement.getAttribute(THEME_ATTRIBUTE) !== resolvedTheme &&
+  !prefersReducedMotion()
+
+const applyResolvedThemeWithTransition = (resolvedTheme: ResolvedTheme) => {
+  if (!shouldAnimateThemeChange(resolvedTheme)) {
+    applyResolvedTheme(resolvedTheme)
+    return
+  }
+  document.startViewTransition(() => applyResolvedTheme(resolvedTheme))
 }
 
 export type ThemePreferenceStore = {
@@ -99,7 +116,7 @@ export const browserThemePreferenceStore: ThemePreferenceStore = {
   save: (preference) => {
     writeStoredThemePreference(preference)
     const prefersDarkColorScheme = window.matchMedia ? window.matchMedia(DARK_COLOR_SCHEME_QUERY).matches : false
-    applyResolvedTheme(resolveTheme(preference, prefersDarkColorScheme))
+    applyResolvedThemeWithTransition(resolveTheme(preference, prefersDarkColorScheme))
     themePreferenceListeners.forEach((listener) => listener())
   },
   subscribe: (listener) => {

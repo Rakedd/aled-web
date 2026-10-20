@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
+import type { OpportunitySource } from '@/domain/opportunities'
 import {
   normalizeRegionName,
   type OpportunityFilters,
@@ -33,7 +34,6 @@ const parseRateFloorText = (rateFloorText: string): number | null | undefined =>
 }
 
 export const useController = ({
-  source,
   initialFilters,
   saveOpportunityFilters,
   onDataChanged,
@@ -66,6 +66,14 @@ export const useController = ({
       }
     })
 
+  const toggleSource = (source: OpportunitySource) =>
+    setFilters((currentFilters) => ({
+      ...currentFilters,
+      disabledSources: currentFilters.disabledSources.includes(source)
+        ? currentFilters.disabledSources.filter((disabledSource) => disabledSource !== source)
+        : [...currentFilters.disabledSources, source],
+    }))
+
   const setRateFloorText = (rateFloorField: RateFloorField, rateFloorText: string) => {
     setRateFloorTexts((currentTexts) => ({ ...currentTexts, [rateFloorField]: rateFloorText }))
     setRateFloorErrors((currentErrors) => ({ ...currentErrors, [rateFloorField]: undefined }))
@@ -95,7 +103,7 @@ export const useController = ({
     isRequestInFlightRef.current = true
     setIsSubmitting(true)
     try {
-      const saveResult = await saveOpportunityFilters(source, validationResult.data)
+      const saveResult = await saveOpportunityFilters(validationResult.data)
       if (!saveResult.ok) {
         setErrorMessage(saveResult.errorMessage)
         return
@@ -116,6 +124,7 @@ export const useController = ({
     filters,
     setKeywordList,
     toggleRegion,
+    toggleSource,
     rateFloorTexts,
     rateFloorErrors,
     setRateFloorText,

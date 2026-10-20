@@ -40,6 +40,12 @@ const ROW_ID_LOOKUP_CHUNK_SIZE = 100
 const PARENT_DIRECTORY_SEGMENT = '..'
 const USER_NOT_FOUND_ERROR_CODE = 'user_not_found'
 const LEGACY_END_CLIENT_BRIEF_LANGUAGE: BriefLanguage = 'fr'
+const LEGACY_OPPORTUNITY_FILTERS_SOURCE = 'free-work'
+
+type EarlierOpportunityFiltersRow = Omit<Tables<'opportunity_filters'>, 'disabled_sources'> & {
+  source?: string
+  disabled_sources?: string[]
+}
 
 const isRecord = (candidate: unknown): candidate is Record<string, unknown> =>
   typeof candidate === 'object' && candidate !== null && !Array.isArray(candidate)
@@ -59,6 +65,17 @@ const toFrenchBriefsFromLegacyColumns = (endClient: Tables<'end_clients'>): Tabl
   ]
 }
 
+const toSharedOpportunityFiltersRow = (filtersRow: EarlierOpportunityFiltersRow): Tables<'opportunity_filters'> => {
+  const sharedFiltersRow = { ...filtersRow, disabled_sources: filtersRow.disabled_sources ?? [] }
+  delete sharedFiltersRow.source
+  return sharedFiltersRow
+}
+
+const toSharedOpportunityFilters = (filtersRows: EarlierOpportunityFiltersRow[]): Tables<'opportunity_filters'>[] =>
+  filtersRows
+    .filter((filtersRow) => filtersRow.source === undefined || filtersRow.source === LEGACY_OPPORTUNITY_FILTERS_SOURCE)
+    .map(toSharedOpportunityFiltersRow)
+
 export const parseUserDataSnapshot = (snapshotJson: unknown): UserDataSnapshot => {
   const hasSnapshotShape =
     isRecord(snapshotJson) &&
@@ -73,7 +90,7 @@ export const parseUserDataSnapshot = (snapshotJson: unknown): UserDataSnapshot =
   const parsedSnapshot = snapshotJson as UserDataSnapshot
   return {
     ...parsedSnapshot,
-    opportunityFilters: parsedSnapshot.opportunityFilters ?? [],
+    opportunityFilters: toSharedOpportunityFilters(parsedSnapshot.opportunityFilters ?? []),
     opportunityDecisions: parsedSnapshot.opportunityDecisions ?? [],
     endClientBriefs: parsedSnapshot.endClientBriefs ?? parsedSnapshot.endClients.flatMap(toFrenchBriefsFromLegacyColumns),
     interviewQuestions: parsedSnapshot.interviewQuestions ?? [],
@@ -295,7 +312,7 @@ export const restoreUserDataSnapshot = async (
   failOnWriteError('upsertAlertSnoozes', await supabase.from('alert_snoozes').upsert(snapshot.alertSnoozes))
   failOnWriteError(
     'upsertOpportunityFilters',
-    await supabase.from('opportunity_filters').upsert(snapshot.opportunityFilters, { onConflict: 'user_id,source' }),
+    await supabase.from('opportunity_filters').upsert(snapshot.opportunityFilters, { onConflict: 'user_id' }),
   )
   failOnWriteError(
     'upsertEndClientBriefs',

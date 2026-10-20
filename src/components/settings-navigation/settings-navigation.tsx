@@ -2,16 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FREE_WORK_PREFERENCES_ROUTE, PREFERENCES_ROUTE } from '@/domain/routes'
+import { OPPORTUNITY_PREFERENCES_ROUTE, PREFERENCES_ROUTE } from '@/domain/routes'
 import { cn } from '@/lib/utils'
 import type { SettingsNavigationItem } from './interfaces'
 
 const SETTINGS_NAVIGATION_ITEMS: SettingsNavigationItem[] = [
   { label: 'Profil', href: PREFERENCES_ROUTE },
-  {
-    label: 'Opportunités · Free-Work',
-    href: FREE_WORK_PREFERENCES_ROUTE,
-  },
+  { label: 'Opportunités', href: OPPORTUNITY_PREFERENCES_ROUTE },
 ]
 
 export const SettingsNavigation = () => {

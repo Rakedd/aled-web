@@ -31,7 +31,7 @@ export const ThemeMenu = ({ themePreferenceStore = browserThemePreferenceStore }
 
   return (
     <Menu.Root>
-      <Menu.Trigger render={<Button variant="outline" size="icon" aria-label="Thème" />}>
+      <Menu.Trigger render={<Button variant="outline" size="icon" aria-label="Thème" className="cursor-pointer" />}>
         <Icon strokeWidth={1.75} aria-hidden data-icon={THEME_ICON_NAMES[themePreference]} />
       </Menu.Trigger>
       <Menu.Portal>

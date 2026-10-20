@@ -11,12 +11,13 @@ import {
 import { PARIS_TIME_ZONE } from './paris-time'
 import type { StackItem } from './types'
 
-export const OPPORTUNITY_SOURCES = ['free-work'] as const
+export const OPPORTUNITY_SOURCES = ['free-work', 'collective'] as const
 
 export type OpportunitySource = (typeof OPPORTUNITY_SOURCES)[number]
 
 export const OPPORTUNITY_SOURCE_LABELS: Record<OpportunitySource, string> = {
   'free-work': 'Free-Work',
+  collective: 'Collective',
 }
 
 export const REMOTE_MODES = ['full', 'partial', 'none'] as const
@@ -83,7 +84,6 @@ export const HIGHLIGHTED_OPPORTUNITIES_COUNT = 2
 
 export const OPPORTUNITY_VALIDATION_MESSAGES = {
   notFound: 'Opportunité introuvable',
-  unknownSource: 'Source inconnue',
   invalidListingRequest: 'Onglet ou page invalide',
   searchTooLong: `La recherche ne peut pas dépasser ${OPPORTUNITY_SEARCH_MAX_LENGTH} caractères`,
   notDismissed: "Cette mission n'est pas ignorée",
@@ -127,11 +127,6 @@ export const isOpportunityTab = (candidate: unknown): candidate is OpportunityTa
 
 export const validateOpportunityId = (candidate: unknown): ActionResult<string> =>
   validateUuid(candidate, OPPORTUNITY_VALIDATION_MESSAGES.notFound)
-
-export const validateOpportunitySource = (candidate: unknown): ActionResult<OpportunitySource> =>
-  isOpportunitySource(candidate)
-    ? { ok: true, data: candidate }
-    : rejectWith(OPPORTUNITY_VALIDATION_MESSAGES.unknownSource)
 
 const isValidCursorRate = (candidate: unknown): candidate is number | null | undefined =>
   candidate === undefined ||

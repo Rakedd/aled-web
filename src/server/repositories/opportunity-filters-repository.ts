@@ -1,5 +1,5 @@
 import 'server-only'
-import { isOpportunitySource, type OpportunitySource } from '@/domain/opportunities'
+import { isOpportunitySource } from '@/domain/opportunities'
 import { EMPTY_OPPORTUNITY_FILTERS, type OpportunityFilters } from '@/domain/opportunity-filters'
 import type { Tables, TablesInsert } from '@/server/supabase/database-types'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
@@ -15,13 +15,14 @@ type OpportunityFiltersRow = Pick<
   | 'rate_floor_hybrid'
   | 'rate_floor_onsite'
   | 'regions'
+  | 'disabled_sources'
 >
 
 type OpportunityFiltersColumns = Omit<TablesInsert<'opportunity_filters'>, 'id' | 'created_at' | 'updated_at'>
 
 const OPPORTUNITY_FILTERS_COLUMNS =
-  'include_keywords, always_exclude_keywords, rescuable_exclude_keywords, rescue_keywords, rate_floor_full_remote, rate_floor_hybrid, rate_floor_onsite, regions'
-const FILTERS_UNIQUE_KEY_COLUMNS = 'user_id,source'
+  'include_keywords, always_exclude_keywords, rescuable_exclude_keywords, rescue_keywords, rate_floor_full_remote, rate_floor_hybrid, rate_floor_onsite, regions, disabled_sources'
+const FILTERS_UNIQUE_KEY_COLUMNS = 'user_id'
 
 const toOpportunityFilters = (filtersRow: OpportunityFiltersRow): OpportunityFilters => ({
   includeKeywords: filtersRow.include_keywords,
@@ -32,15 +33,11 @@ const toOpportunityFilters = (filtersRow: OpportunityFiltersRow): OpportunityFil
   rateFloorHybrid: filtersRow.rate_floor_hybrid,
   rateFloorOnsite: filtersRow.rate_floor_onsite,
   regions: filtersRow.regions,
+  disabledSources: filtersRow.disabled_sources.filter(isOpportunitySource),
 })
 
-const toOpportunityFiltersColumns = (
-  userId: string,
-  source: OpportunitySource,
-  filters: OpportunityFilters,
-): OpportunityFiltersColumns => ({
+const toOpportunityFiltersColumns = (userId: string, filters: OpportunityFilters): OpportunityFiltersColumns => ({
   user_id: userId,
-  source,
   include_keywords: filters.includeKeywords,
   always_exclude_keywords: filters.alwaysExcludeKeywords,
   rescuable_exclude_keywords: filters.rescuableExcludeKeywords,
@@ -49,48 +46,30 @@ const toOpportunityFiltersColumns = (
   rate_floor_hybrid: filters.rateFloorHybrid,
   rate_floor_onsite: filters.rateFloorOnsite,
   regions: filters.regions,
+  disabled_sources: filters.disabledSources,
 })
 
 export const findOpportunityFilters = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
-  source: OpportunitySource,
 ): Promise<OpportunityFilters> => {
   const { data, error } = await supabase
     .from('opportunity_filters')
     .select(OPPORTUNITY_FILTERS_COLUMNS)
     .eq('user_id', userId)
-    .eq('source', source)
     .maybeSingle()
   if (error) throw toRepositoryError('findOpportunityFilters', error)
   return data === null ? EMPTY_OPPORTUNITY_FILTERS : toOpportunityFilters(data)
 }
 
-export const findOpportunityFiltersBySource = async (
-  supabase: FreeclutchSupabaseClient,
-  userId: string,
-): Promise<Map<OpportunitySource, OpportunityFilters>> => {
-  const { data, error } = await supabase
-    .from('opportunity_filters')
-    .select(`source, ${OPPORTUNITY_FILTERS_COLUMNS}`)
-    .eq('user_id', userId)
-  if (error) throw toRepositoryError('findOpportunityFiltersBySource', error)
-  return new Map(
-    data.flatMap((filtersRow) =>
-      isOpportunitySource(filtersRow.source) ? [[filtersRow.source, toOpportunityFilters(filtersRow)] as const] : [],
-    ),
-  )
-}
-
 export const upsertOpportunityFilters = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
-  source: OpportunitySource,
   filters: OpportunityFilters,
 ): Promise<OpportunityFilters> => {
   const { data, error } = await supabase
     .from('opportunity_filters')
-    .upsert(toOpportunityFiltersColumns(userId, source, filters), { onConflict: FILTERS_UNIQUE_KEY_COLUMNS })
+    .upsert(toOpportunityFiltersColumns(userId, filters), { onConflict: FILTERS_UNIQUE_KEY_COLUMNS })
     .select(OPPORTUNITY_FILTERS_COLUMNS)
     .single()
   if (error) throw toRepositoryError('upsertOpportunityFilters', error)

@@ -21,7 +21,7 @@ const OpportunitiesPage = async ({ searchParams }: PageProps<'/opportunites'>) =
   const selectedTab = isOpportunityTab(tab) ? tab : 'to_process'
   const [listingResult, filtersResult] = await Promise.all([
     listOpportunities(selectedTab, null, '', NO_OPPORTUNITY_QUICK_FILTERS),
-    getOpportunityFilters('free-work'),
+    getOpportunityFilters(),
   ])
 
   return (

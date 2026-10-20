@@ -11,7 +11,7 @@ describe('OpportunityFeedFreshness', () => {
         now={new Date('2026-10-18T13:00:00Z')}
       />,
     )
-    expect(screen.getByText(/Free-Work · mis à jour il y a/)).toBeInTheDocument()
+    expect(screen.getByText(/^Mis à jour il y a/)).toBeInTheDocument()
     expect(screen.getByText(STALE_MESSAGE)).toBeInTheDocument()
   })
 
@@ -22,7 +22,7 @@ describe('OpportunityFeedFreshness', () => {
         now={new Date('2026-10-18T13:00:00Z')}
       />,
     )
-    expect(screen.getByText(/Free-Work · mis à jour il y a/)).toBeInTheDocument()
+    expect(screen.getByText(/^Mis à jour il y a/)).toBeInTheDocument()
     expect(screen.queryByText(STALE_MESSAGE)).not.toBeInTheDocument()
   })
 
@@ -48,6 +48,6 @@ describe('OpportunityFeedFreshness', () => {
         now={new Date('2026-10-18T13:00:00Z')}
       />,
     )
-    expect(screen.getByText('Free-Work · mis à jour il y a 25 minutes')).toBeInTheDocument()
+    expect(screen.getByText('Mis à jour il y a 25 minutes')).toBeInTheDocument()
   })
 })

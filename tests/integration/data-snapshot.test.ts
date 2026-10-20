@@ -140,7 +140,7 @@ const seedOpportunityFiltersAndDecisions = async (
   const vanishingOpportunityId = await insertOpportunity(serviceRoleClient, source, vanishingOpportunityExternalId)
   const { error: filterError } = await client.from('opportunity_filters').insert({
     user_id: userId,
-    source,
+    disabled_sources: ['collective'],
     include_keywords: ['react'],
     always_exclude_keywords: ['stage'],
     regions: ['Île-de-France'],
@@ -381,7 +381,7 @@ describe('user data snapshot', () => {
     expect(snapshot.opportunityFilters).toHaveLength(1)
     expect(snapshot.opportunityFilters[0]).toMatchObject({
       user_id: owner.userId,
-      source: owner.seededOpportunities.source,
+      disabled_sources: ['collective'],
       include_keywords: ['react'],
     })
     expect(snapshot.opportunityDecisions).toEqual(

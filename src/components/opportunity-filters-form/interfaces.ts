@@ -1,11 +1,6 @@
 import type { ActionResult } from '@/domain/action-result'
 import type { OpportunityFilters } from '@/domain/opportunity-filters'
-import type { OpportunitySource } from '@/domain/opportunities'
-
-export type SaveOpportunityFilters = (
-  source: OpportunitySource,
-  filters: OpportunityFilters,
-) => Promise<ActionResult<OpportunityFilters>>
+export type SaveOpportunityFilters = (filters: OpportunityFilters) => Promise<ActionResult<OpportunityFilters>>
 
 export type KeywordListField =
   'includeKeywords' | 'alwaysExcludeKeywords' | 'rescuableExcludeKeywords' | 'rescueKeywords'
@@ -17,7 +12,6 @@ export type RateFloorTexts = Record<RateFloorField, string>
 export type RateFloorErrors = Partial<Record<RateFloorField, string>>
 
 export type OpportunityFiltersFormControllerParameters = {
-  source: OpportunitySource
   initialFilters: OpportunityFilters
   saveOpportunityFilters: SaveOpportunityFilters
   onDataChanged: () => void

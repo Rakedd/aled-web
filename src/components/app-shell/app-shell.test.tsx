@@ -66,7 +66,7 @@ describe('AppShell', () => {
   })
 
   it('marks Préférences active on a preferences sub-page', () => {
-    renderShell(0, '/preferences/opportunites/free-work')
+    renderShell(0, '/preferences/opportunites')
     expect(screen.getByRole('link', { name: 'Préférences' })).toHaveAttribute('aria-current', 'page')
   })
 

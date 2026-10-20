@@ -71,7 +71,7 @@ describe('opportunities isolation', () => {
       .single()
     const { data: filtersOfA } = await userA.client
       .from('opportunity_filters')
-      .insert({ user_id: userA.userId, source: FREE_WORK_SOURCE, include_keywords: ['react'], rate_floor_full_remote: 450 })
+      .insert({ user_id: userA.userId, include_keywords: ['react'], rate_floor_full_remote: 450 })
       .select('id')
       .single()
 
@@ -130,7 +130,7 @@ describe('opportunities isolation', () => {
 
     const { error: negativeFloorError } = await user.client
       .from('opportunity_filters')
-      .insert({ user_id: user.userId, source: FREE_WORK_SOURCE, rate_floor_hybrid: -1 })
+      .insert({ user_id: user.userId, rate_floor_hybrid: -1 })
 
     expect(negativeFloorError?.code).toBe('23514')
   })

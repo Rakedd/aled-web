@@ -1,6 +1,6 @@
 # Aled
 
-Aled (anciennement Freeclutch) : les URLs, le dépôt et les noms techniques portent encore `freeclutch`.
+Aled (anciennement Freeclutch) : le dépôt GitHub s'appelle `aled-web` ; les URLs et les noms techniques portent encore `freeclutch`.
 
 Suivi des candidatures freelance : missions, intermédiaires, entretiens, fiches métier et brief client généré par Claude.
 Next.js (App Router), TypeScript, Supabase (Postgres, Auth, Storage), API Claude. Accès sur invitation uniquement.
@@ -9,7 +9,7 @@ Next.js (App Router), TypeScript, Supabase (Postgres, Auth, Storage), API Claude
 
 - **Jetons** : les couleurs, rayons et polices vivent dans `src/app/globals.css` (jetons de rôle `--primary`, `--accent-text`, `--brand-tile`, `--deep-surface`, `--lilac-panel`, `--menu-counter`, `--peach`, `--ink`…), exposées en classes Tailwind (`bg-primary`, `text-accent-text`, `bg-peach-tint`…). Le bloc `:root[data-theme='dark']` contient les valeurs sombres. Aucun hexadécimal ni classe `dark:` dans les composants.
 - **Tons de `Pill`** (`src/components/pill`) : `neutral`, `sage`, `forest-soft`, `brand`, `action`, `peach`, `peach-soft`, `lilac`, `lilac-soft`, `clay`, `counter`. `PillToggle` en dérive et expose le ton via `data-tone`.
-- **Thème** : choix Clair / Sombre / Système dans le menu en pilule (bouton « Thème »), mémorisé dans `localStorage` (`aled-theme`), appliqué avant la première peinture par le script de `src/lib/theme/theme-init-script.ts`.
+- **Thème** : choix Clair / Sombre / Système dans le menu en pilule (bouton « Thème »), mémorisé dans `localStorage` (`aled-theme`), appliqué avant la première peinture par le script de `src/lib/theme/theme-init-script.ts`. Un changement fait depuis le menu passe par un fondu (`document.startViewTransition`), sans animation si le navigateur ne la gère pas ou si l'appareil demande moins d'animations (`prefers-reduced-motion`).
 - **Contraste** : tout texte doit atteindre 4,5:1 dans les deux thèmes, vérifié par `atelier-theme.test.ts`. Sur `bg-peach`, utiliser `text-on-peach` ; sur `bg-lilac`, utiliser `text-on-lilac`.
 
 ## Installation locale
@@ -87,13 +87,14 @@ Menu : « Mes candidatures », « Mon calendrier », « Mes opportunités », «
 
 ## Opportunités
 
-La page « Mes opportunités » affiche les missions Free-Work des 7 derniers jours, filtrées selon les préférences de chaque utilisateur. Elle est alimentée par le watcher career-ops (`cloud/free-work-watcher`, dépôt career-ops), qui appelle le point d'entrée `POST /api/opportunities/ingest`.
+La page « Mes opportunités » affiche les missions freelance Free-Work et Collective des 7 derniers jours, filtrées selon les préférences de chaque utilisateur (`/preferences/opportunites`) : un seul jeu de filtres pour toutes les sources, et un interrupteur par source pour masquer ses missions de « À traiter ». Elle est alimentée par le watcher career-ops (`cloud/free-work-watcher`, dépôt career-ops), qui appelle le point d'entrée `POST /api/opportunities/ingest`.
 
 - **Authentification** : `Authorization: Bearer <OPPORTUNITIES_INGEST_TOKEN>`. Sans jeton configuré côté Freeclutch, ou avec un jeton incorrect, la requête est refusée.
+- **Source** : chaque mission porte sa `source` (`free-work` ou `collective`) ; une source absente ou inconnue rend la mission invalide.
 - **Lots** : 100 missions au maximum par requête.
-- **Idempotence** : renvoyer une mission déjà reçue ne crée pas de doublon.
+- **Idempotence** : renvoyer une mission déjà reçue ne crée pas de doublon (clé : source + identifiant). Une même mission publiée sur les deux plateformes apparaît deux fois.
 - **Missions invalides** : ignorées et comptées (`skippedInvalid`) ; un lot non vide entièrement invalide est refusé (422).
-- **Purge** : chaque appel supprime les missions publiées il y a plus de 30 jours (date de publication Free-Work, pas date de réception).
+- **Purge** : chaque appel supprime les missions publiées il y a plus de 30 jours (date de publication sur la plateforme, pas date de réception).
 
 Générer le jeton une seule fois, avec `openssl rand -hex 32`, puis placer la **même valeur** à deux endroits :
 
@@ -170,7 +171,7 @@ Secrets à créer dans GitHub (**Settings > Secrets and variables > Actions**) :
 | `SUPABASE_DB_PASSWORD` | le mot de passe de la base de production |
 | `SUPABASE_PROJECT_ID` | la référence du projet Supabase |
 
-Le watcher Free-Work (career-ops) se déploie à part, avec son propre `deploy.sh`.
+Le watcher Free-Work + Collective (career-ops) se déploie à part, avec son propre `deploy.sh`. Déployer Freeclutch **avant** le watcher : tant que Freeclutch ne connaît pas la source `collective`, il refuse ces missions.
 
 ## Déploiement
 

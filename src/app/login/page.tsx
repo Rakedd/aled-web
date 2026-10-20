@@ -18,7 +18,7 @@ const LoginPage = async ({ searchParams }: PageProps<'/login'>) => {
           Trouver du travail sans traverser la rue.
         </h1>
         <p className="max-w-md text-base">
-          Candidatures, entretiens, briefs et nouvelles missions Free-Work, sans rien oublier.
+          Candidatures, entretiens, briefs et nouvelles missions Free-Work et Collective, sans rien oublier.
         </p>
       </section>
       <section className="flex flex-1 items-center justify-center px-4 py-10 lg:w-1/2">

@@ -107,7 +107,7 @@ const filtersWith = (overrides: Partial<OpportunityFilters>): OpportunityFilters
 })
 
 const saveFiltersOrFail = async (filters: OpportunityFilters): Promise<void> => {
-  const saveResult = await saveOpportunityFilters('free-work', filters)
+  const saveResult = await saveOpportunityFilters(filters)
   if (!saveResult.ok) throw new Error(saveResult.errorMessage)
 }
 
@@ -696,7 +696,7 @@ describe('user isolation', () => {
     const applicationOfA = await applyToOpportunity(appliedByBothId)
 
     actAs(userB)
-    await expect(getOpportunityFilters('free-work')).resolves.toEqual({ ok: true, data: EMPTY_OPPORTUNITY_FILTERS })
+    await expect(getOpportunityFilters()).resolves.toEqual({ ok: true, data: EMPTY_OPPORTUNITY_FILTERS })
     expect(await listIdsOrFail('dismissed')).toEqual([])
     expect(await listIdsOrFail('applied')).toEqual([])
     const applicationOfB = await applyToOpportunity(appliedByBothId)
@@ -711,7 +711,7 @@ describe('user isolation', () => {
     ])
     actAs(userA)
     expect(await listIdsOrFail('dismissed')).toEqual([dismissedByAId])
-    await expect(getOpportunityFilters('free-work')).resolves.toEqual({
+    await expect(getOpportunityFilters()).resolves.toEqual({
       ok: true,
       data: filtersWith({ includeKeywords: [keyword], rateFloorHybrid: 600 }),
     })
@@ -723,7 +723,7 @@ describe('opportunity filters', () => {
     const user = await createTestUser()
     actAs(user)
 
-    await expect(getOpportunityFilters('free-work')).resolves.toEqual({ ok: true, data: EMPTY_OPPORTUNITY_FILTERS })
+    await expect(getOpportunityFilters()).resolves.toEqual({ ok: true, data: EMPTY_OPPORTUNITY_FILTERS })
 
     const savedFilters = filtersWith({
       includeKeywords: ['React', 'Next.js'],
@@ -735,9 +735,9 @@ describe('opportunity filters', () => {
       regions: ['Île-de-France'],
     })
     const unnormalizedFilters = { ...savedFilters, includeKeywords: [' React ', 'react', 'Next.js'] }
-    await expect(saveOpportunityFilters('free-work', unnormalizedFilters)).resolves.toEqual({ ok: true, data: savedFilters })
-    await expect(saveOpportunityFilters('free-work', savedFilters)).resolves.toEqual({ ok: true, data: savedFilters })
-    await expect(getOpportunityFilters('free-work')).resolves.toEqual({ ok: true, data: savedFilters })
+    await expect(saveOpportunityFilters(unnormalizedFilters)).resolves.toEqual({ ok: true, data: savedFilters })
+    await expect(saveOpportunityFilters(savedFilters)).resolves.toEqual({ ok: true, data: savedFilters })
+    await expect(getOpportunityFilters()).resolves.toEqual({ ok: true, data: savedFilters })
   })
 })
 

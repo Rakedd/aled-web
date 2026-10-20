@@ -1,7 +1,14 @@
 import type { ActionResult } from './action-result'
 import { normalizeEntityName } from './entity-names'
 import { isRecord, rejectWith } from './input-validation'
-import { type Opportunity, type RemoteMode, getOpportunityEffectiveRate } from './opportunities'
+import {
+  getOpportunityEffectiveRate,
+  isOpportunitySource,
+  type Opportunity,
+  OPPORTUNITY_SOURCES,
+  type OpportunitySource,
+  type RemoteMode,
+} from './opportunities'
 
 export type OpportunityFilters = {
   includeKeywords: string[]
@@ -12,6 +19,7 @@ export type OpportunityFilters = {
   rateFloorHybrid: number | null
   rateFloorOnsite: number | null
   regions: string[]
+  disabledSources: OpportunitySource[]
 }
 
 export const EMPTY_OPPORTUNITY_FILTERS: OpportunityFilters = {
@@ -23,11 +31,12 @@ export const EMPTY_OPPORTUNITY_FILTERS: OpportunityFilters = {
   rateFloorHybrid: null,
   rateFloorOnsite: null,
   regions: [],
+  disabledSources: [],
 }
 
 export type OpportunityMatchCandidate = Pick<
   Opportunity,
-  'title' | 'rateMin' | 'rateMax' | 'remoteMode' | 'region' | 'locationLabel'
+  'source' | 'title' | 'rateMin' | 'rateMax' | 'remoteMode' | 'region' | 'locationLabel'
 >
 
 export const OPPORTUNITY_FILTERS_VALIDATION_MESSAGES = {
@@ -39,6 +48,8 @@ export const OPPORTUNITY_FILTERS_VALIDATION_MESSAGES = {
   invalidRegions: 'Régions invalides',
   tooManyRegions: '30 régions maximum',
   regionTooLong: 'Une région fait plus de 60 caractères',
+  invalidSources: 'Sources invalides',
+  noEnabledSource: 'Garde au moins une source active',
 } as const
 
 const MAXIMUM_KEYWORD_COUNT = 100
@@ -147,8 +158,10 @@ export const createOpportunityMatcher = (
   const normalizedWantedRegions = filters.regions
     .map(normalizeRegionName)
     .filter((normalizedWantedRegion) => normalizedWantedRegion !== '')
+  const disabledSources = new Set(filters.disabledSources)
 
   return (candidate) => {
+    if (disabledSources.has(candidate.source)) return false
     const normalizedTitle = normalizeForKeywordMatch(candidate.title)
     if (hasIncludeKeywords && !findIncludeKeyword(normalizedTitle)) return false
     if (findAlwaysExcludeKeyword(normalizedTitle)) return false
@@ -182,6 +195,16 @@ const validateTermList = (candidate: unknown, termListRules: TermListRules): Act
   return { ok: true, data: cleanedTerms }
 }
 
+const validateDisabledSources = (candidate: unknown): ActionResult<OpportunitySource[]> => {
+  if (!Array.isArray(candidate) || !candidate.every(isOpportunitySource)) {
+    return rejectWith(OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.invalidSources)
+  }
+  const disabledSources = OPPORTUNITY_SOURCES.filter((source) => candidate.includes(source))
+  return disabledSources.length === OPPORTUNITY_SOURCES.length
+    ? rejectWith(OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.noEnabledSource)
+    : { ok: true, data: disabledSources }
+}
+
 const isValidRateFloor = (candidate: unknown): candidate is number | null =>
   candidate === null ||
   (typeof candidate === 'number' && Number.isInteger(candidate) && candidate >= 0 && candidate <= MAXIMUM_RATE_FLOOR)
@@ -202,6 +225,9 @@ export const validateOpportunityFilters = (candidate: unknown): ActionResult<Opp
   const regionsValidation = validateTermList(candidate.regions, REGION_LIST_RULES)
   if (!regionsValidation.ok) return regionsValidation
   validatedFilters.regions = regionsValidation.data
+  const disabledSourcesValidation = validateDisabledSources(candidate.disabledSources)
+  if (!disabledSourcesValidation.ok) return disabledSourcesValidation
+  validatedFilters.disabledSources = disabledSourcesValidation.data
   return { ok: true, data: validatedFilters }
 }
 
@@ -213,4 +239,5 @@ export const hasActiveOpportunityFilters = (filters: OpportunityFilters): boolea
   filters.rateFloorFullRemote !== null ||
   filters.rateFloorHybrid !== null ||
   filters.rateFloorOnsite !== null ||
-  filters.regions.length > 0
+  filters.regions.length > 0 ||
+  filters.disabledSources.length > 0

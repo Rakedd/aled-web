@@ -19,7 +19,6 @@ const renderOpportunityFiltersFormController = (
   const onDataChanged = jest.fn()
   const { result } = renderHook(() =>
     useController({
-      source: 'free-work',
       initialFilters: EMPTY_OPPORTUNITY_FILTERS,
       saveOpportunityFilters,
       onDataChanged,
@@ -34,7 +33,7 @@ describe('opportunity-filters-form useController', () => {
     act(() => result.current.setKeywordList('includeKeywords', ['react']))
     act(() => result.current.setRateFloorText('rateFloorHybrid', ' 500 '))
     await act(() => result.current.submit())
-    expect(saveOpportunityFilters).toHaveBeenCalledWith('free-work', savedFilters)
+    expect(saveOpportunityFilters).toHaveBeenCalledWith(savedFilters)
     expect(result.current.successMessage).toBe('Filtres enregistrés')
     expect(result.current.errorMessage).toBeNull()
     expect(onDataChanged).toHaveBeenCalledTimes(1)
@@ -67,7 +66,6 @@ describe('opportunity-filters-form useController', () => {
     act(() => result.current.setRateFloorText('rateFloorHybrid', rateFloorText))
     await act(() => result.current.submit())
     expect(saveOpportunityFilters).toHaveBeenCalledWith(
-      'free-work',
       expect.objectContaining({ rateFloorHybrid: expectedRateFloor }),
     )
   })
@@ -83,7 +81,7 @@ describe('opportunity-filters-form useController', () => {
   it('sends null for an empty rate floor', async () => {
     const { result, saveOpportunityFilters } = renderOpportunityFiltersFormController()
     await act(() => result.current.submit())
-    expect(saveOpportunityFilters).toHaveBeenCalledWith('free-work', EMPTY_OPPORTUNITY_FILTERS)
+    expect(saveOpportunityFilters).toHaveBeenCalledWith(EMPTY_OPPORTUNITY_FILTERS)
   })
 
   it('shows the generic error when the action throws', async () => {
@@ -91,8 +89,7 @@ describe('opportunity-filters-form useController', () => {
     const onDataChanged = jest.fn()
     const { result } = renderHook(() =>
       useController({
-        source: 'free-work',
-        initialFilters: EMPTY_OPPORTUNITY_FILTERS,
+          initialFilters: EMPTY_OPPORTUNITY_FILTERS,
         saveOpportunityFilters,
         onDataChanged,
       }),
@@ -122,8 +119,7 @@ describe('opportunity-filters-form useController', () => {
     )
     const { result } = renderHook(() =>
       useController({
-        source: 'free-work',
-        initialFilters: EMPTY_OPPORTUNITY_FILTERS,
+          initialFilters: EMPTY_OPPORTUNITY_FILTERS,
         saveOpportunityFilters,
         onDataChanged: jest.fn(),
       }),
@@ -148,12 +144,28 @@ describe('opportunity-filters-form useController', () => {
     expect(result.current.filters.regions).toEqual(['Île-de-France'])
   })
 
+  it('switches a source off then on again with toggleSource', () => {
+    const { result } = renderOpportunityFiltersFormController()
+    act(() => result.current.toggleSource('collective'))
+    expect(result.current.filters.disabledSources).toEqual(['collective'])
+    act(() => result.current.toggleSource('collective'))
+    expect(result.current.filters.disabledSources).toEqual([])
+  })
+
+  it('refuses to save with every source switched off, without calling the server', async () => {
+    const { result, saveOpportunityFilters } = renderOpportunityFiltersFormController()
+    act(() => result.current.toggleSource('free-work'))
+    act(() => result.current.toggleSource('collective'))
+    await act(() => result.current.submit())
+    expect(saveOpportunityFilters).not.toHaveBeenCalled()
+    expect(result.current.errorMessage).toBe('Garde au moins une source active')
+  })
+
   it('removes a selected region whose normalized name matches with toggleRegion', () => {
     const saveOpportunityFilters = jest.fn()
     const { result } = renderHook(() =>
       useController({
-        source: 'free-work',
-        initialFilters: { ...EMPTY_OPPORTUNITY_FILTERS, regions: ['ile-de-france'] },
+          initialFilters: { ...EMPTY_OPPORTUNITY_FILTERS, regions: ['ile-de-france'] },
         saveOpportunityFilters,
         onDataChanged: jest.fn(),
       }),
@@ -165,8 +177,7 @@ describe('opportunity-filters-form useController', () => {
   it('removes a selected region written with a curly apostrophe and hyphens with toggleRegion', () => {
     const { result } = renderHook(() =>
       useController({
-        source: 'free-work',
-        initialFilters: { ...EMPTY_OPPORTUNITY_FILTERS, regions: ['Provence-Alpes-Côte d’Azur'] },
+          initialFilters: { ...EMPTY_OPPORTUNITY_FILTERS, regions: ['Provence-Alpes-Côte d’Azur'] },
         saveOpportunityFilters: jest.fn(),
         onDataChanged: jest.fn(),
       }),

@@ -1,6 +1,8 @@
 import { MAXIMUM_STACK_ITEM_COUNT, validateJobApplicationInput } from './job-application'
 import {
   NO_OPPORTUNITY_QUICK_FILTERS,
+  OPPORTUNITY_SOURCE_LABELS,
+  OPPORTUNITY_SOURCES,
   type Opportunity,
   type OpportunityListingPosition,
   REMOTE_MODE_LABELS,
@@ -8,13 +10,13 @@ import {
   compareOpportunityListingPositions,
   formatOpportunityRate,
   isOpportunityFeedStale,
+  isOpportunitySource,
   isRemoteMode,
   matchesRemoteModeQuickFilter,
   mergeStackItems,
   toOpportunityListingPosition,
   validateOpportunityId,
   validateOpportunityListingRequest,
-  validateOpportunitySource,
 } from './opportunities'
 
 const today = new Date('2026-10-17T22:00:00Z')
@@ -57,6 +59,18 @@ const bareOpportunity: Opportunity = {
   skills: [],
 }
 
+describe('OPPORTUNITY_SOURCES', () => {
+  it('lists Free-Work then Collective with their display names', () => {
+    expect(OPPORTUNITY_SOURCES).toEqual(['free-work', 'collective'])
+    expect(OPPORTUNITY_SOURCE_LABELS).toEqual({ 'free-work': 'Free-Work', collective: 'Collective' })
+  })
+
+  it('knows collective and nothing beyond the listed sources', () => {
+    expect(isOpportunitySource('collective')).toBe(true)
+    expect(isOpportunitySource('linkedin')).toBe(false)
+  })
+})
+
 describe('REMOTE_MODE_LABELS', () => {
   it('labels every remote mode in French', () => {
     expect(REMOTE_MODE_LABELS).toEqual({ full: 'Full remote', partial: 'Hybride', none: 'Sur site' })
@@ -64,6 +78,12 @@ describe('REMOTE_MODE_LABELS', () => {
 })
 
 describe('buildJobApplicationInputFromOpportunity', () => {
+  it('names the Collective platform as the source of an application', () => {
+    expect(buildJobApplicationInputFromOpportunity({ ...completeOpportunity, source: 'collective' }, today).source).toBe(
+      'Collective',
+    )
+  })
+
   it('copies every known field of a complete opportunity', () => {
     expect(buildJobApplicationInputFromOpportunity(completeOpportunity, today)).toEqual({
       title: 'Dev React senior',
@@ -278,13 +298,6 @@ describe('validateOpportunityId', () => {
   it('answers « Opportunité introuvable » for anything else', () => {
     expect(validateOpportunityId('42')).toEqual({ ok: false, errorMessage: 'Opportunité introuvable' })
     expect(validateOpportunityId(undefined)).toEqual({ ok: false, errorMessage: 'Opportunité introuvable' })
-  })
-})
-
-describe('validateOpportunitySource', () => {
-  it('accepts free-work only', () => {
-    expect(validateOpportunitySource('free-work')).toEqual({ ok: true, data: 'free-work' })
-    expect(validateOpportunitySource('linkedin')).toEqual({ ok: false, errorMessage: 'Source inconnue' })
   })
 })
 

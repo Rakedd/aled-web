@@ -12,7 +12,7 @@ export const OPPORTUNITIES_ROUTE = '/opportunites'
 
 export const PREFERENCES_ROUTE = '/preferences'
 
-export const FREE_WORK_PREFERENCES_ROUTE = `${PREFERENCES_ROUTE}/opportunites/free-work`
+export const OPPORTUNITY_PREFERENCES_ROUTE = `${PREFERENCES_ROUTE}/opportunites`
 
 export const JOB_APPLICATION_DELETED_SEARCH_PARAMETER = 'supprimee'
 

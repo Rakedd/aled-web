@@ -11,11 +11,9 @@ import {
   type OpportunityListing,
   type OpportunityListingCursor,
   type OpportunityQuickFilters,
-  type OpportunitySource,
   type OpportunityTab,
   validateOpportunityId,
   validateOpportunityListingRequest,
-  validateOpportunitySource,
 } from '@/domain/opportunities'
 import { type OpportunityFilters, validateOpportunityFilters } from '@/domain/opportunity-filters'
 import { addParisCalendarDays } from '@/domain/paris-time'
@@ -118,34 +116,25 @@ export const markOpportunitiesViewed = async (): Promise<ActionResult<null>> =>
     },
   })
 
-export const getOpportunityFilters = async (source: OpportunitySource): Promise<ActionResult<OpportunityFilters>> =>
+export const getOpportunityFilters = async (): Promise<ActionResult<OpportunityFilters>> =>
   runAuthenticatedOperation({
     operationName: 'getOpportunityFilters',
     failureMessage: FILTERS_LOAD_FAILURE_MESSAGE,
-    validateArguments: () => validateOpportunitySource(source),
-    operation: async (supabase, userId, validatedSource) => ({
+    validateArguments: () => NO_ARGUMENTS,
+    operation: async (supabase, userId) => ({
       ok: true,
-      data: await findOpportunityFilters(supabase, userId, validatedSource),
+      data: await findOpportunityFilters(supabase, userId),
     }),
   })
 
-export const saveOpportunityFilters = async (
-  source: OpportunitySource,
-  filters: unknown,
-): Promise<ActionResult<OpportunityFilters>> =>
+export const saveOpportunityFilters = async (filters: unknown): Promise<ActionResult<OpportunityFilters>> =>
   runAuthenticatedOperation({
     operationName: 'saveOpportunityFilters',
     failureMessage: FILTERS_SAVE_FAILURE_MESSAGE,
-    validateArguments: (): ActionResult<{ source: OpportunitySource; filters: OpportunityFilters }> => {
-      const sourceValidation = validateOpportunitySource(source)
-      if (!sourceValidation.ok) return sourceValidation
-      const filtersValidation = validateOpportunityFilters(filters)
-      if (!filtersValidation.ok) return filtersValidation
-      return { ok: true, data: { source: sourceValidation.data, filters: filtersValidation.data } }
-    },
-    operation: async (supabase, userId, validatedArguments) => ({
+    validateArguments: () => validateOpportunityFilters(filters),
+    operation: async (supabase, userId, validatedFilters) => ({
       ok: true,
-      data: await upsertOpportunityFilters(supabase, userId, validatedArguments.source, validatedArguments.filters),
+      data: await upsertOpportunityFilters(supabase, userId, validatedFilters),
     }),
   })
 

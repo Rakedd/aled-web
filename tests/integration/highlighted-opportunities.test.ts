@@ -62,7 +62,7 @@ describe('listHighlightedOpportunities', () => {
     await seedMissionOrFail({ title: `Mid ${keyword}`, hoursAgo: 10, rateMax: 600 })
     await seedMissionOrFail({ title: `Unknown ${keyword}`, hoursAgo: 5, rateMax: null })
     await seedMissionOrFail({ title: `Top ${keyword}`, hoursAgo: 20, rateMax: 650 })
-    await saveOpportunityFilters('free-work', { ...EMPTY_OPPORTUNITY_FILTERS, includeKeywords: [keyword] })
+    await saveOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, includeKeywords: [keyword] })
 
     const highlighted = await listHighlightedOrFail()
 
@@ -77,7 +77,7 @@ describe('listHighlightedOpportunities', () => {
     await seedMissionOrFail({ title: `Unknown ${keyword}`, hoursAgo: 1, rateMax: null })
     await seedMissionOrFail({ title: `Older ${keyword}`, hoursAgo: 30, rateMax: 500 })
     await seedMissionOrFail({ title: `Newer ${keyword}`, hoursAgo: 3, rateMax: 500 })
-    await saveOpportunityFilters('free-work', { ...EMPTY_OPPORTUNITY_FILTERS, includeKeywords: [keyword] })
+    await saveOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, includeKeywords: [keyword] })
 
     expect(await listHighlightedTitlesOrFail()).toEqual([`Newer ${keyword}`, `Older ${keyword}`])
   })
@@ -88,7 +88,7 @@ describe('listHighlightedOpportunities', () => {
     const keyword = `tok${randomUUID().replaceAll('-', '').slice(0, 12)}`
     const dismissedId = await seedMissionOrFail({ title: `Dismissed ${keyword}`, hoursAgo: 2, rateMax: 900 })
     await seedMissionOrFail({ title: `Kept ${keyword}`, hoursAgo: 2, rateMax: 400 })
-    await saveOpportunityFilters('free-work', { ...EMPTY_OPPORTUNITY_FILTERS, includeKeywords: [keyword] })
+    await saveOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, includeKeywords: [keyword] })
     await dismissOpportunity(dismissedId)
 
     expect(await listHighlightedTitlesOrFail()).toEqual([`Kept ${keyword}`])
@@ -100,7 +100,7 @@ describe('listHighlightedOpportunities', () => {
     const keyword = `tok${randomUUID().replaceAll('-', '').slice(0, 12)}`
     await seedMissionOrFail({ title: `Java ${keyword}`, hoursAgo: 2, rateMax: 900 })
     await seedMissionOrFail({ title: `React ${keyword}`, hoursAgo: 2, rateMax: 400 })
-    await saveOpportunityFilters('free-work', {
+    await saveOpportunityFilters({
       ...EMPTY_OPPORTUNITY_FILTERS,
       includeKeywords: [keyword],
       alwaysExcludeKeywords: ['java'],
@@ -114,7 +114,7 @@ describe('listHighlightedOpportunities', () => {
     actAs(user)
     const keyword = `tok${randomUUID().replaceAll('-', '').slice(0, 12)}`
     await Promise.all([1, 2, 3].map((index) => seedMissionOrFail({ title: `M${index} ${keyword}`, hoursAgo: index, rateMax: 500 + index })))
-    await saveOpportunityFilters('free-work', { ...EMPTY_OPPORTUNITY_FILTERS, includeKeywords: [keyword] })
+    await saveOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, includeKeywords: [keyword] })
 
     const highlighted = await listHighlightedOrFail()
 

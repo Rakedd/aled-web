@@ -6,7 +6,6 @@ import {
   matchesRemoteModeQuickFilter,
   type Opportunity,
   OPPORTUNITY_PAGE_SIZE,
-  OPPORTUNITY_SOURCES,
   type OpportunityDecision,
   type OpportunityListing,
   type OpportunityListingOrder,
@@ -14,18 +13,12 @@ import {
   type OpportunityListingRequest,
   type OpportunityListItem,
   type OpportunityQuickFilters,
-  type OpportunitySource,
   type OpportunityTab,
   type RemoteMode,
   TO_PROCESS_WINDOW_DAYS,
   toOpportunityListingPosition,
 } from '@/domain/opportunities'
-import {
-  createOpportunityMatcher,
-  EMPTY_OPPORTUNITY_FILTERS,
-  normalizeForKeywordMatch,
-  type OpportunityFilters,
-} from '@/domain/opportunity-filters'
+import { createOpportunityMatcher, normalizeForKeywordMatch, type OpportunityFilters } from '@/domain/opportunity-filters'
 import { addParisCalendarDays, formatParisCalendarDate } from '@/domain/paris-time'
 import {
   findLastOpportunityReceivedAt,
@@ -37,14 +30,14 @@ import {
   listOpportunityDecisions,
   type StoredOpportunityDecision,
 } from '@/server/repositories/opportunity-decisions-repository'
-import { findOpportunityFiltersBySource } from '@/server/repositories/opportunity-filters-repository'
+import { findOpportunityFilters } from '@/server/repositories/opportunity-filters-repository'
 import { findOpportunitiesLastViewedAt } from '@/server/repositories/profile-repository'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 
 type ToProcessContext = {
   recentSummaries: OpportunitySummary[]
   decisions: StoredOpportunityDecision[]
-  filtersBySource: Map<OpportunitySource, OpportunityFilters>
+  filters: OpportunityFilters
 }
 
 const loadToProcessContext = async (
@@ -52,12 +45,12 @@ const loadToProcessContext = async (
   userId: string,
   now: Date,
 ): Promise<ToProcessContext> => {
-  const [recentSummaries, decisions, filtersBySource] = await Promise.all([
+  const [recentSummaries, decisions, filters] = await Promise.all([
     listOpportunitySummariesPublishedSince(supabase, addParisCalendarDays(now, -TO_PROCESS_WINDOW_DAYS)),
     listOpportunityDecisions(supabase, userId),
-    findOpportunityFiltersBySource(supabase, userId),
+    findOpportunityFilters(supabase, userId),
   ])
-  return { recentSummaries, decisions, filtersBySource }
+  return { recentSummaries, decisions, filters }
 }
 
 const getRequestScopedToProcessContexts = cache(() => new Map<string, Promise<ToProcessContext>>())
@@ -74,18 +67,6 @@ const loadToProcessContextOncePerRequest = (
   return loadingContext
 }
 
-const buildSourceAwareMatcher = (
-  filtersBySource: Map<OpportunitySource, OpportunityFilters>,
-): ((summary: OpportunitySummary) => boolean) => {
-  const matcherBySource = new Map(
-    OPPORTUNITY_SOURCES.map((source) => [
-      source,
-      createOpportunityMatcher(filtersBySource.get(source) ?? EMPTY_OPPORTUNITY_FILTERS),
-    ]),
-  )
-  return (summary) => matcherBySource.get(summary.source)?.(summary) ?? false
-}
-
 const toSortedUniquePositions = (
   positions: OpportunityListingPosition[],
   order: OpportunityListingOrder,
@@ -97,10 +78,10 @@ const toSortedUniquePositions = (
 const selectSummariesToProcess = ({
   recentSummaries,
   decisions,
-  filtersBySource,
+  filters,
 }: ToProcessContext): OpportunitySummary[] => {
   const decidedOpportunityIds = new Set(decisions.map((storedDecision) => storedDecision.opportunityId))
-  const matchesUserFilters = buildSourceAwareMatcher(filtersBySource)
+  const matchesUserFilters = createOpportunityMatcher(filters)
   return recentSummaries.filter((summary) => !decidedOpportunityIds.has(summary.id) && matchesUserFilters(summary))
 }
 

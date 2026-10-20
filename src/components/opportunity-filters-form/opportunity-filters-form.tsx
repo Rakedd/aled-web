@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { normalizeRegionName } from '@/domain/opportunity-filters'
-import { REMOTE_MODE_LABELS } from '@/domain/opportunities'
+import { OPPORTUNITY_SOURCE_LABELS, OPPORTUNITY_SOURCES, REMOTE_MODE_LABELS } from '@/domain/opportunities'
 import { buildRegionOptions } from '@/domain/region-options'
 import { useController } from './controller'
 import type { KeywordListField, OpportunityFiltersFormProps, RateFloorField } from './interfaces'
@@ -53,10 +53,11 @@ const RATE_FLOOR_INPUTS: { field: RateFloorField; label: string }[] = [
 ]
 
 const REGIONS_HELP_TEXT =
-  'La mission doit être dans une de ces régions ou villes (ex. Île-de-France, Paris). Le full remote passe toujours.'
+  "La mission doit être dans une de ces régions ou villes (ex. Île-de-France, Paris). Le full remote passe toujours. Collective n'indique que la ville : ajoute-la aussi."
+
+const SOURCES_HELP_TEXT = "Les missions d'une source désactivée n'apparaissent plus dans « À traiter »."
 
 export const OpportunityFiltersForm = ({
-  source,
   initialFilters,
   knownRegions,
   saveOpportunityFilters,
@@ -66,6 +67,7 @@ export const OpportunityFiltersForm = ({
     filters,
     setKeywordList,
     toggleRegion,
+    toggleSource,
     rateFloorTexts,
     rateFloorErrors,
     setRateFloorText,
@@ -74,7 +76,6 @@ export const OpportunityFiltersForm = ({
     successMessage,
     submit,
   } = useController({
-    source,
     initialFilters,
     saveOpportunityFilters,
     onDataChanged: router.refresh,
@@ -91,8 +92,23 @@ export const OpportunityFiltersForm = ({
   return (
     <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-6">
       <p className="rounded-lg bg-muted p-3 text-sm">
-        Sans aucun filtre, toutes les missions Free-Work s&apos;affichent.
+        Sans aucun filtre, toutes les missions s&apos;affichent.
       </p>
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-1 text-sm font-medium">Sources</legend>
+        <p className="text-xs text-muted-foreground">{SOURCES_HELP_TEXT}</p>
+        <div className="flex flex-wrap gap-2">
+          {OPPORTUNITY_SOURCES.map((source) => (
+            <PillToggle
+              key={source}
+              isPressed={!filters.disabledSources.includes(source)}
+              onPressedChange={() => toggleSource(source)}
+            >
+              {OPPORTUNITY_SOURCE_LABELS[source]}
+            </PillToggle>
+          ))}
+        </div>
+      </fieldset>
       {KEYWORD_LIST_SECTIONS.map((keywordListSection) => (
         <KeywordTagsInput
           key={keywordListSection.field}

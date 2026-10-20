@@ -9,8 +9,24 @@ const stubDeviceColorScheme = (prefersDarkColorScheme: boolean) => {
   window.matchMedia = jest.fn().mockReturnValue({ matches: prefersDarkColorScheme })
 }
 
+const stubLightDeviceMotionPreference = (prefersReducedMotion: boolean) => {
+  window.matchMedia = jest.fn((query: string) => ({
+    matches: query === '(prefers-reduced-motion: reduce)' ? prefersReducedMotion : false,
+  })) as unknown as typeof window.matchMedia
+}
+
+const stubViewTransitionSupport = () => {
+  const startViewTransitionSpy = jest.fn((updateTheme: ViewTransitionUpdateCallback) => {
+    void updateTheme()
+    return {} as ViewTransition
+  })
+  document.startViewTransition = startViewTransitionSpy
+  return startViewTransitionSpy
+}
+
 afterEach(() => {
   jest.restoreAllMocks()
+  Reflect.deleteProperty(document, 'startViewTransition')
   localStorage.clear()
   delete document.documentElement.dataset.theme
   document.head.querySelector('meta[name="theme-color"]')?.remove()
@@ -148,6 +164,39 @@ describe('browserThemePreferenceStore', () => {
 
     browserThemePreferenceStore.save('system')
 
+    expect(document.documentElement.dataset.theme).toBe('light')
+  })
+
+  it('fades to the new theme with a view transition when the browser supports it', () => {
+    stubLightDeviceMotionPreference(false)
+    const startViewTransitionSpy = stubViewTransitionSupport()
+    document.documentElement.dataset.theme = 'light'
+
+    browserThemePreferenceStore.save('dark')
+
+    expect(startViewTransitionSpy).toHaveBeenCalledTimes(1)
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
+  it('switches instantly when the user prefers reduced motion', () => {
+    stubLightDeviceMotionPreference(true)
+    const startViewTransitionSpy = stubViewTransitionSupport()
+    document.documentElement.dataset.theme = 'light'
+
+    browserThemePreferenceStore.save('dark')
+
+    expect(startViewTransitionSpy).not.toHaveBeenCalled()
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
+  it('skips the transition when the resolved theme stays the same', () => {
+    stubLightDeviceMotionPreference(false)
+    const startViewTransitionSpy = stubViewTransitionSupport()
+    document.documentElement.dataset.theme = 'light'
+
+    browserThemePreferenceStore.save('system')
+
+    expect(startViewTransitionSpy).not.toHaveBeenCalled()
     expect(document.documentElement.dataset.theme).toBe('light')
   })
 })

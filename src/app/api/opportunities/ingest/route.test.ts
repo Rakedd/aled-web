@@ -21,6 +21,7 @@ const INGEST_INSTANT = new Date('2026-10-18T10:00:00Z')
 const fakeServiceRoleClient = { from: jest.fn() } as unknown as FreeclutchSupabaseClient
 
 const buildWatcherMission = (externalId: string) => ({
+  source: 'free-work',
   id: externalId,
   title: 'Développeur React senior',
   url: `https://www.free-work.com/fr/tech-it/job-mission/developpeur-react/${externalId}`,

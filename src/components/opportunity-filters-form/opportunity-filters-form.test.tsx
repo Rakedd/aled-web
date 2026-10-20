@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EMPTY_OPPORTUNITY_FILTERS } from '@/domain/opportunity-filters'
 import { OpportunityFiltersForm } from './opportunity-filters-form'
@@ -9,7 +9,6 @@ const renderForm = (knownRegions: string[] = [], initialFilters = EMPTY_OPPORTUN
   const saveOpportunityFilters = jest.fn().mockResolvedValue({ ok: true, data: EMPTY_OPPORTUNITY_FILTERS })
   render(
     <OpportunityFiltersForm
-      source="free-work"
       initialFilters={initialFilters}
       knownRegions={knownRegions}
       saveOpportunityFilters={saveOpportunityFilters}
@@ -19,12 +18,35 @@ const renderForm = (knownRegions: string[] = [], initialFilters = EMPTY_OPPORTUN
 }
 
 describe('OpportunityFiltersForm', () => {
+  it('tells that without any filter every mission shows', () => {
+    renderForm()
+    expect(screen.getByText("Sans aucun filtre, toutes les missions s'affichent.")).toBeInTheDocument()
+  })
+
+  it('shows every source switched on by default', () => {
+    renderForm()
+    const sourcesGroup = screen.getByRole('group', { name: 'Sources' })
+    expect(within(sourcesGroup).getByRole('button', { name: 'Free-Work' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(sourcesGroup).getByRole('button', { name: 'Collective' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('shows a disabled source switched off', () => {
+    renderForm([], { ...EMPTY_OPPORTUNITY_FILTERS, disabledSources: ['collective'] })
+    expect(screen.getByRole('button', { name: 'Collective' })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('saves a source switched off', async () => {
+    const { saveOpportunityFilters } = renderForm()
+    await userEvent.click(screen.getByRole('button', { name: 'Collective' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer les filtres' }))
+    expect(saveOpportunityFilters).toHaveBeenCalledWith(expect.objectContaining({ disabledSources: ['collective'] }))
+  })
+
   it('keeps a typed but unconfirmed keyword when the user clicks Enregistrer les filtres', async () => {
     const { saveOpportunityFilters } = renderForm()
     await userEvent.type(screen.getByLabelText('Doit contenir au moins un de'), 'react')
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer les filtres' }))
     expect(saveOpportunityFilters).toHaveBeenCalledWith(
-      'free-work',
       expect.objectContaining({ includeKeywords: ['react'] }),
     )
   })
@@ -32,7 +54,7 @@ describe('OpportunityFiltersForm', () => {
   it('submits with Enter from a rate floor', async () => {
     const { saveOpportunityFilters } = renderForm()
     await userEvent.type(screen.getByLabelText('Hybride'), '500{Enter}')
-    expect(saveOpportunityFilters).toHaveBeenCalledWith('free-work', expect.objectContaining({ rateFloorHybrid: 500 }))
+    expect(saveOpportunityFilters).toHaveBeenCalledWith(expect.objectContaining({ rateFloorHybrid: 500 }))
   })
 
   it('renders known regions and selected unknown regions as toggles', () => {
@@ -51,7 +73,7 @@ describe('OpportunityFiltersForm', () => {
     const { saveOpportunityFilters } = renderForm(['Bretagne'])
     await userEvent.click(screen.getByRole('button', { name: 'Bretagne' }))
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer les filtres' }))
-    expect(saveOpportunityFilters).toHaveBeenCalledWith('free-work', expect.objectContaining({ regions: ['Bretagne'] }))
+    expect(saveOpportunityFilters).toHaveBeenCalledWith(expect.objectContaining({ regions: ['Bretagne'] }))
   })
 
   it('shows the amount error under the field with aria-invalid and aria-describedby', async () => {

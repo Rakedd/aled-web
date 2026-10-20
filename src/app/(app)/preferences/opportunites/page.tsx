@@ -9,12 +9,12 @@ import {
 } from '@/server/actions/opportunity-actions'
 
 export const metadata: Metadata = {
-  title: 'Opportunités Free-Work · Préférences · Aled',
+  title: 'Opportunités · Préférences · Aled',
 }
 
-const FreeWorkOpportunitySettingsPage = async () => {
+const OpportunitySettingsPage = async () => {
   const [filtersResult, knownRegionsResult] = await Promise.all([
-    getOpportunityFilters('free-work'),
+    getOpportunityFilters(),
     listKnownOpportunityRegions(),
   ])
 
@@ -25,9 +25,9 @@ const FreeWorkOpportunitySettingsPage = async () => {
         <div className="lg:w-60 lg:shrink-0">
           <SettingsNavigation />
         </div>
-        <section aria-labelledby="settings-free-work-title" className="flex min-w-0 flex-1 flex-col gap-4 rounded-2xl bg-card p-6">
-          <h2 id="settings-free-work-title" className="text-lg font-semibold">
-            Opportunités · Free-Work
+        <section aria-labelledby="settings-opportunities-title" className="flex min-w-0 flex-1 flex-col gap-4 rounded-2xl bg-card p-6">
+          <h2 id="settings-opportunities-title" className="text-lg font-semibold">
+            Opportunités
           </h2>
           {!filtersResult.ok ? (
             <p role="alert" className="text-sm text-destructive">
@@ -35,7 +35,6 @@ const FreeWorkOpportunitySettingsPage = async () => {
             </p>
           ) : (
             <OpportunityFiltersForm
-              source="free-work"
               initialFilters={filtersResult.data}
               knownRegions={knownRegionsResult.ok ? knownRegionsResult.data : []}
               saveOpportunityFilters={saveOpportunityFilters}
@@ -47,4 +46,4 @@ const FreeWorkOpportunitySettingsPage = async () => {
   )
 }
 
-export default FreeWorkOpportunitySettingsPage
+export default OpportunitySettingsPage
