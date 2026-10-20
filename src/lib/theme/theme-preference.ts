@@ -14,6 +14,8 @@ export const THEME_COLOR_META_NAME = 'theme-color'
 
 export const PAGE_BACKGROUND_CUSTOM_PROPERTY = '--background'
 
+export const THEME_ATTRIBUTE = 'data-theme'
+
 export const THEME_PREFERENCE_LABELS: Record<ThemePreference, string> = {
   light: 'Clair',
   dark: 'Sombre',
@@ -42,7 +44,7 @@ const findOrCreateThemeColorMeta = (): HTMLMetaElement => {
 
 export const applyResolvedTheme = (resolvedTheme: ResolvedTheme) => {
   const rootElement = document.documentElement
-  rootElement.dataset.theme = resolvedTheme
+  rootElement.setAttribute(THEME_ATTRIBUTE, resolvedTheme)
   const pageBackgroundColor = window
     .getComputedStyle(rootElement)
     .getPropertyValue(PAGE_BACKGROUND_CUSTOM_PROPERTY)
@@ -74,11 +76,24 @@ const writeStoredThemePreference = (preference: ThemePreference) => {
   }
 }
 
+const handleStorageEvent = (event: StorageEvent) => {
+  if (event.key !== THEME_STORAGE_KEY) return
+  const newPreference = parseThemePreference(event.newValue)
+  const prefersDarkColorScheme = window.matchMedia ? window.matchMedia(DARK_COLOR_SCHEME_QUERY).matches : false
+  applyResolvedTheme(resolveTheme(newPreference, prefersDarkColorScheme))
+  themePreferenceListeners.forEach((listener) => listener())
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', handleStorageEvent)
+}
+
 export const browserThemePreferenceStore: ThemePreferenceStore = {
   read: readStoredThemePreference,
   save: (preference) => {
     writeStoredThemePreference(preference)
-    applyResolvedTheme(resolveTheme(preference, window.matchMedia(DARK_COLOR_SCHEME_QUERY).matches))
+    const prefersDarkColorScheme = window.matchMedia ? window.matchMedia(DARK_COLOR_SCHEME_QUERY).matches : false
+    applyResolvedTheme(resolveTheme(preference, prefersDarkColorScheme))
     themePreferenceListeners.forEach((listener) => listener())
   },
   subscribe: (listener) => {

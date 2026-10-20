@@ -119,4 +119,20 @@ describe('browserThemePreferenceStore', () => {
     expect(document.documentElement.dataset.theme).toBe('dark')
     expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
   })
+
+  it('applies a stored dark choice even when matchMedia is unavailable', () => {
+    window.matchMedia = undefined as unknown as typeof window.matchMedia
+
+    browserThemePreferenceStore.save('dark')
+
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
+  it('defaults to light in system mode when matchMedia is unavailable', () => {
+    window.matchMedia = undefined as unknown as typeof window.matchMedia
+
+    browserThemePreferenceStore.save('system')
+
+    expect(document.documentElement.dataset.theme).toBe('light')
+  })
 })

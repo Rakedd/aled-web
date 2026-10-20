@@ -100,4 +100,38 @@ describe('THEME_INIT_SCRIPT', () => {
     expect(THEME_INIT_SCRIPT).not.toMatch(/#[0-9a-fA-F]{3,8}\b/)
     expect(THEME_INIT_SCRIPT).not.toContain('</script>')
   })
+
+  it('retries setting the theme-color meta on DOMContentLoaded when --background is empty', () => {
+    setUpDevice(false)
+    const getPropertyValueSpy = jest.fn()
+    getPropertyValueSpy.mockReturnValueOnce('')
+    getPropertyValueSpy.mockReturnValueOnce(' canvas ')
+    jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+      getPropertyValue: getPropertyValueSpy,
+    } as unknown as CSSStyleDeclaration)
+
+    runThemeInitScript()
+    expect(document.head.querySelector('meta[name="theme-color"]')).toBeNull()
+
+    document.dispatchEvent(new Event('DOMContentLoaded'))
+
+    expect(document.head.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', 'canvas')
+  })
+
+  it('applies a stored dark choice even when matchMedia is unavailable', () => {
+    localStorage.setItem('aled-theme', 'dark')
+    window.matchMedia = undefined as unknown as typeof window.matchMedia
+
+    runThemeInitScript()
+
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
+  it('defaults to light in system mode when matchMedia is unavailable', () => {
+    window.matchMedia = undefined as unknown as typeof window.matchMedia
+
+    runThemeInitScript()
+
+    expect(document.documentElement.dataset.theme).toBe('light')
+  })
 })
