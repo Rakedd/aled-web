@@ -30,4 +30,16 @@ describe('LoginForm', () => {
     expect(await screen.findByRole('status')).toHaveTextContent("Si ce compte existe, un lien de connexion vient d'être envoyé.")
     expect(screen.getByText(INVITATION_ONLY_MESSAGE)).toBeInTheDocument()
   })
+
+  it('announces the failure next to the email field when the link cannot be sent', async () => {
+    render(<LoginForm requestMagicLink={jest.fn().mockResolvedValue({ ok: false, errorMessage: 'Service indisponible' })} />)
+
+    const emailInput = screen.getByLabelText('Adresse e-mail')
+    await userEvent.type(emailInput, 'moi@example.com')
+    await userEvent.click(screen.getByRole('button', { name: 'Recevoir un lien de connexion' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Service indisponible')
+    expect(emailInput).toHaveAttribute('aria-invalid', 'true')
+    expect(emailInput).toHaveAccessibleDescription('Service indisponible')
+  })
 })

@@ -1,4 +1,5 @@
 import {
+  JOB_APPLICATION_TAB_LABELS,
   JOB_APPLICATION_TABS,
   isJobApplicationTab,
   jobApplicationTabRoute,
@@ -8,6 +9,17 @@ import {
 const NOW = new Date('2026-10-19T08:00:00Z')
 
 const interviewAt = (startsAt: string) => [{ startsAt: new Date(startsAt) }]
+
+describe('JOB_APPLICATION_TAB_LABELS', () => {
+  it('names every tab in French, in display order', () => {
+    expect(JOB_APPLICATION_TABS.map((tab) => JOB_APPLICATION_TAB_LABELS[tab])).toEqual([
+      'Aperçu',
+      'Mission',
+      'Entretiens',
+      'Journal',
+    ])
+  })
+})
 
 describe('isJobApplicationTab', () => {
   it('accepts every known tab and rejects anything else', () => {
