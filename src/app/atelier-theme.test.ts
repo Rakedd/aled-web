@@ -3,6 +3,7 @@ import path from 'path'
 
 const GLOBALS_CSS = fs.readFileSync(path.join(__dirname, 'globals.css'), 'utf8')
 const MINIMUM_TEXT_CONTRAST = 4.5
+const MINIMUM_POPOVER_HIGHLIGHT_CONTRAST = 1.5
 
 const resolveThemeColours = (theme: 'light' | 'dark' = 'light'): Record<string, string> => {
   const rootBlock = /:root\s*{([^}]*)}/.exec(GLOBALS_CSS)?.[1] ?? ''
@@ -94,6 +95,7 @@ const LIGHT_THEME_COLOURS: Record<string, string> = {
   'clay-soft': '#F1E3E1',
   'clay-tint': '#FBF1EF',
   popover: '#FFFFFF',
+  'popover-highlight': '#F7F9F7',
   'menu-counter': '#FFB48A',
   'on-menu-counter': '#16231D',
   'settings-navigation-active': '#16231D',
@@ -143,6 +145,7 @@ const DARK_THEME_COLOURS: Record<string, string> = {
   'clay-soft': '#3A2420',
   'clay-tint': '#2D1E1B',
   popover: '#2A2622',
+  'popover-highlight': '#4A433C',
   'menu-counter': '#C9BFE6',
   'on-menu-counter': '#15132A',
   'settings-navigation-active': '#E9A27C',
@@ -163,6 +166,7 @@ const ROLE_CONTRAST_PAIRS: Array<[string, string]> = [
   ['ink', 'hairline'],
   ['ink-muted', 'hairline'],
   ['ink', 'popover'],
+  ['ink', 'popover-highlight'],
   ['primary-foreground', 'primary'],
   ['accent-text', 'card'],
   ['accent-text', 'sage'],
@@ -236,6 +240,36 @@ describe('atelier theme', () => {
         expect(getContrastRatio(themeColours[foreground], themeColours[background])).toBeGreaterThanOrEqual(3)
       })
     })
+
+    it('outlines highlighted popup options visibly', () => {
+      const highlightOutlinePairs: Array<[string, string]> = [
+        ['ring', 'popover'],
+        ['ring', 'popover-highlight'],
+        ['ring', 'forest-soft'],
+      ]
+      highlightOutlinePairs.forEach(([outline, background]) => {
+        expect(getContrastRatio(themeColours[outline], themeColours[background])).toBeGreaterThanOrEqual(3)
+      })
+    })
+  })
+
+  it('separates the dark popover highlight from the popover', () => {
+    expect(getContrastRatio(DARK_THEME_COLOURS['popover-highlight'], DARK_THEME_COLOURS.popover)).toBeGreaterThanOrEqual(
+      MINIMUM_POPOVER_HIGHLIGHT_CONTRAST,
+    )
+  })
+
+  it('highlights popup options with the popover highlight token and an outline', () => {
+    const popupFiles = listTsxFiles(path.join(__dirname, '..')).filter(
+      (filePath) => !/\.test\.tsx$/.test(filePath) && fs.readFileSync(filePath, 'utf8').includes('bg-popover'),
+    )
+    expect(popupFiles.length).toBeGreaterThan(0)
+    popupFiles.forEach((filePath) => {
+      const sourceCode = fs.readFileSync(filePath, 'utf8')
+      expect(sourceCode).not.toMatch(/(aria-selected|data-highlighted|focus-visible|hover):bg-muted\b/)
+      expect(sourceCode).toMatch(/(aria-selected|data-highlighted):bg-popover-highlight\b/)
+      expect(sourceCode).toMatch(/(aria-selected|data-highlighted):outline-ring\b/)
+    })
   })
 
   it('exposes every role token as a Tailwind colour', () => {
@@ -274,6 +308,7 @@ describe('atelier theme', () => {
       'clay',
       'clay-soft',
       'clay-tint',
+      'popover-highlight',
       'menu-counter',
       'on-menu-counter',
       'settings-navigation-active',

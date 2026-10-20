@@ -40,9 +40,10 @@ export const ThemeMenu = ({ themePreferenceStore = browserThemePreferenceStore }
                   <Menu.RadioItem
                     key={preference}
                     value={preference}
+                    data-tone={isChecked ? 'forest-soft' : 'popover'}
                     className={cn(
-                      'h-11 flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer outline-none focus-visible:bg-muted',
-                      isChecked && 'bg-forest-soft text-on-forest-soft',
+                      'h-11 flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer outline-none data-highlighted:outline-2 data-highlighted:-outline-offset-2 data-highlighted:outline-ring data-highlighted:outline-solid',
+                      isChecked ? 'bg-forest-soft text-on-forest-soft' : 'data-highlighted:bg-popover-highlight',
                     )}
                   >
                     <PreferenceIcon strokeWidth={1.75} aria-hidden />

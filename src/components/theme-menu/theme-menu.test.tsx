@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { browserThemePreferenceStore } from '@/lib/theme/theme-preference'
 import type { ThemePreferenceStore } from '@/lib/theme/theme-preference'
@@ -109,7 +109,7 @@ describe('ThemeMenu', () => {
     expect(menu).toBeInTheDocument()
 
     const radioItems = screen.getAllByRole('menuitemradio')
-    expect(radioItems[0]).toHaveFocus()
+    await waitFor(() => expect(radioItems[0]).toHaveFocus())
 
     await user.keyboard('{ArrowDown}')
     expect(radioItems[1]).toHaveFocus()
@@ -117,6 +117,27 @@ describe('ThemeMenu', () => {
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
     expect(button).toHaveFocus()
+  })
+
+  it('keeps the checked tone on the highlighted checked item', async () => {
+    stubResizeObserver()
+    const store = createInMemoryStore()
+    const user = userEvent.setup()
+    render(<ThemeMenu themePreferenceStore={store} />)
+
+    screen.getByRole('button', { name: 'Thème' }).focus()
+    await user.keyboard('{ArrowDown}')
+    const radioItems = await screen.findAllByRole('menuitemradio')
+
+    await waitFor(() => expect(radioItems[0]).toHaveFocus())
+    expect(radioItems[0]).toHaveAttribute('data-highlighted')
+    expect(radioItems[0]).toHaveAttribute('data-tone', 'popover')
+
+    await user.keyboard('{ArrowDown}{ArrowDown}')
+
+    await waitFor(() => expect(radioItems[2]).toHaveAttribute('data-highlighted'))
+    expect(radioItems[2]).toHaveAttribute('data-tone', 'forest-soft')
+    expect(radioItems[0]).not.toHaveAttribute('data-highlighted')
   })
 
   it('shows the sun icon when light is stored', () => {

@@ -46,7 +46,7 @@ export const EntityAutocomplete = ({
               key={suggestion.id}
               role="option"
               aria-selected={suggestionIndex === highlightedIndex}
-              className="cursor-pointer rounded px-2 py-1.5 aria-selected:bg-muted hover:bg-muted"
+              className="cursor-pointer rounded px-2 py-1.5 hover:bg-popover-highlight aria-selected:bg-popover-highlight aria-selected:outline-2 aria-selected:-outline-offset-2 aria-selected:outline-ring"
               onMouseDown={(mouseEvent) => mouseEvent.preventDefault()}
               onClick={() => selectSuggestion(suggestion)}
             >

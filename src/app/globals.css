@@ -35,6 +35,7 @@
   --color-clay: var(--clay);
   --color-clay-soft: var(--clay-soft);
   --color-clay-tint: var(--clay-tint);
+  --color-popover-highlight: var(--popover-highlight);
   --color-menu-counter: var(--menu-counter);
   --color-on-menu-counter: var(--on-menu-counter);
   --color-settings-navigation-active: var(--settings-navigation-active);
@@ -106,6 +107,7 @@
   --clay-soft: #F1E3E1;
   --clay-tint: #FBF1EF;
   --popover: #FFFFFF;
+  --popover-highlight: var(--surface-soft);
   --menu-counter: var(--peach);
   --on-menu-counter: var(--on-peach);
   --settings-navigation-active: var(--deep-surface);
@@ -165,6 +167,7 @@
   --clay-soft: #3A2420;
   --clay-tint: #2D1E1B;
   --popover: #2A2622;
+  --popover-highlight: #4A433C;
   --menu-counter: var(--lilac);
   --on-menu-counter: var(--on-lilac);
   --settings-navigation-active: var(--primary);
