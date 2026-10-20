@@ -17,7 +17,7 @@ const buttonVariants = cva(
         destructive:
           "border-input bg-card text-destructive hover:bg-muted focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
         link: "text-accent-text underline-offset-4 hover:underline",
-        ink: "bg-deep-surface font-bold text-on-deep-surface-soft hover:bg-deep-surface/90 focus-visible:border-deep-surface focus-visible:ring-2 focus-visible:ring-deep-surface focus-visible:ring-offset-2 focus-visible:ring-offset-card",
+        ink: "bg-deep-surface font-bold text-on-deep-surface-soft hover:bg-deep-surface/90 focus-visible:border-ink-button-ring focus-visible:ring-2 focus-visible:ring-ink-button-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
       },
       size: {
         default:

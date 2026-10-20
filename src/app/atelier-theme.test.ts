@@ -4,6 +4,8 @@ import path from 'path'
 const GLOBALS_CSS = fs.readFileSync(path.join(__dirname, 'globals.css'), 'utf8')
 const MINIMUM_TEXT_CONTRAST = 4.5
 const MINIMUM_POPOVER_HIGHLIGHT_CONTRAST = 1.5
+const MINIMUM_FOCUS_CONTRAST = 3
+const INK_BUTTON_RING_OFFSET = 'card'
 
 const resolveThemeColours = (theme: 'light' | 'dark' = 'light'): Record<string, string> => {
   const rootBlock = /:root\s*{([^}]*)}/.exec(GLOBALS_CSS)?.[1] ?? ''
@@ -96,6 +98,7 @@ const LIGHT_THEME_COLOURS: Record<string, string> = {
   'clay-tint': '#FBF1EF',
   popover: '#FFFFFF',
   'popover-highlight': '#F7F9F7',
+  'ink-button-ring': '#16231D',
   'menu-counter': '#FFB48A',
   'on-menu-counter': '#16231D',
   'settings-navigation-active': '#16231D',
@@ -146,6 +149,7 @@ const DARK_THEME_COLOURS: Record<string, string> = {
   'clay-tint': '#2D1E1B',
   popover: '#2A2622',
   'popover-highlight': '#4A433C',
+  'ink-button-ring': '#E9A27C',
   'menu-counter': '#C9BFE6',
   'on-menu-counter': '#15132A',
   'settings-navigation-active': '#E9A27C',
@@ -241,6 +245,16 @@ describe('atelier theme', () => {
       })
     })
 
+    it.each(['lilac-panel', 'peach', 'card'])('keeps the ink button focus ring visible on %s', (surface) => {
+      const ringColour = themeColours['ink-button-ring']
+      const ringOffsetColour = themeColours[INK_BUTTON_RING_OFFSET]
+      const surfaceColour = themeColours[surface]
+      expect(getContrastRatio(ringColour, ringOffsetColour)).toBeGreaterThanOrEqual(MINIMUM_FOCUS_CONTRAST)
+      expect(
+        Math.max(getContrastRatio(ringColour, surfaceColour), getContrastRatio(ringOffsetColour, surfaceColour)),
+      ).toBeGreaterThanOrEqual(MINIMUM_FOCUS_CONTRAST)
+    })
+
     it('outlines highlighted popup options visibly', () => {
       const highlightOutlinePairs: Array<[string, string]> = [
         ['ring', 'popover'],
@@ -309,6 +323,7 @@ describe('atelier theme', () => {
       'clay-soft',
       'clay-tint',
       'popover-highlight',
+      'ink-button-ring',
       'menu-counter',
       'on-menu-counter',
       'settings-navigation-active',
