@@ -37,9 +37,9 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: /Mes opportunités.*3 à traiter/ })).toHaveAttribute('aria-current', 'page')
   })
 
-  it('renders the count in a peach pill while keeping the accessible name', () => {
+  it('renders the count in a counter pill while keeping the accessible name', () => {
     renderShell(3)
-    expect(screen.getByText('3')).toHaveAttribute('data-tone', 'peach')
+    expect(screen.getByText('3')).toHaveAttribute('data-tone', 'counter')
     expect(screen.getByRole('link', { name: /^Mes opportunités\s*, 3 à traiter$/ })).toBeInTheDocument()
     expect(screen.getByText(', 3 à traiter')).toHaveClass('sr-only')
   })
@@ -73,5 +73,12 @@ describe('AppShell', () => {
   it('marks nothing active on the home page', () => {
     renderShell(0, '/')
     expect(screen.getByRole('navigation', { name: 'Navigation principale' }).querySelector('[aria-current]')).toBeNull()
+  })
+
+  it('places the theme button before the sign-out button', () => {
+    renderShell(0)
+    const themeButton = screen.getByRole('button', { name: 'Thème' })
+    const signOutButton = screen.getByRole('button', { name: 'Se déconnecter' })
+    expect(themeButton.compareDocumentPosition(signOutButton)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
   })
 })

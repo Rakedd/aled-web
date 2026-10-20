@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Pill } from '@/components/pill'
+import { ThemeMenu } from '@/components/theme-menu'
 import { Button } from '@/components/ui/button'
 import { CALENDAR_ROUTE, HOME_ROUTE, JOB_APPLICATIONS_ROUTE, OPPORTUNITIES_ROUTE, PREFERENCES_ROUTE } from '@/domain/routes'
 import { cn } from '@/lib/utils'
@@ -59,7 +60,7 @@ export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, chil
                       {navigationItem.showsOpportunitiesToProcessCount && opportunitiesToProcessCount > 0 && (
                         <>
                           <span aria-hidden="true" className="ml-1.5">
-                            <Pill tone="peach">{opportunitiesToProcessCount}</Pill>
+                            <Pill tone="counter">{opportunitiesToProcessCount}</Pill>
                           </span>
                           <span className="sr-only">, {opportunitiesToProcessCount} à traiter</span>
                         </>
@@ -72,6 +73,7 @@ export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, chil
           </nav>
           <div className="ml-auto flex min-w-0 items-center gap-3">
             <span className="hidden truncate text-sm text-ink-muted md:inline">{userEmail}</span>
+            <ThemeMenu />
             <form action={signOut}>
               <Button type="submit" variant="outline">
                 Se déconnecter
