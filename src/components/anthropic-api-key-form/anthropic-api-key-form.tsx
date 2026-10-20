@@ -49,7 +49,7 @@ export const AnthropicApiKeyForm = ({
           </p>
           {!isReplacingApiKey && !isConfirmingDeletion && (
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={startReplacingApiKey} disabled={isBusy}>
+              <Button type="button" variant="outline" className="text-ink" onClick={startReplacingApiKey} disabled={isBusy}>
                 Remplacer
               </Button>
               <Button type="button" variant="destructive" onClick={requestApiKeyDeletion} disabled={isBusy}>
@@ -69,7 +69,7 @@ export const AnthropicApiKeyForm = ({
             <Button type="button" variant="destructive" onClick={() => void confirmApiKeyDeletion()} disabled={isBusy}>
               {status === 'deleting' ? 'Suppression…' : 'Confirmer la suppression'}
             </Button>
-            <Button type="button" variant="outline" onClick={cancelApiKeyDeletion} disabled={isBusy}>
+            <Button type="button" variant="outline" className="text-ink" onClick={cancelApiKeyDeletion} disabled={isBusy}>
               Annuler
             </Button>
           </div>
@@ -77,10 +77,11 @@ export const AnthropicApiKeyForm = ({
       )}
       {isApiKeyInputVisible && (
         <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-2">
-          <Label htmlFor={API_KEY_INPUT_ELEMENT_ID}>{isReplacingApiKey ? 'Nouvelle clé API' : 'Clé API'}</Label>
+          <Label htmlFor={API_KEY_INPUT_ELEMENT_ID} className="text-hairline">{isReplacingApiKey ? 'Nouvelle clé API' : 'Clé API'}</Label>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               id={API_KEY_INPUT_ELEMENT_ID}
+              className="text-ink"
               type="password"
               name="anthropic-api-key"
               autoComplete="off"
@@ -96,7 +97,7 @@ export const AnthropicApiKeyForm = ({
                 {status === 'saving' ? 'Vérification…' : 'Enregistrer'}
               </Button>
               {isReplacingApiKey && (
-                <Button type="button" variant="outline" onClick={cancelReplacingApiKey} disabled={isBusy}>
+                <Button type="button" variant="outline" className="text-ink" onClick={cancelReplacingApiKey} disabled={isBusy}>
                   Annuler
                 </Button>
               )}

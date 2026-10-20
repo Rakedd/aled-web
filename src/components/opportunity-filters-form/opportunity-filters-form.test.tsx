@@ -36,9 +36,9 @@ describe('OpportunityFiltersForm', () => {
   })
 
   it('renders known regions and selected unknown regions as toggles', () => {
-    renderForm(['Bretagne'], { ...EMPTY_OPPORTUNITY_FILTERS, regions: ['Corse'] })
+    renderForm([], { ...EMPTY_OPPORTUNITY_FILTERS, regions: ['Belgique'] })
     expect(screen.getByRole('button', { name: 'Bretagne' })).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getByRole('button', { name: 'Corse' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Belgique' })).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('saves a region toggled on', async () => {

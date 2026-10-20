@@ -24,23 +24,23 @@ const FreeWorkOpportunitySettingsPage = async () => {
         <div className="lg:w-60 lg:shrink-0">
           <SettingsNavigation />
         </div>
-      <section aria-labelledby="settings-free-work-title" className="flex min-w-0 flex-1 flex-col gap-4 rounded-2xl bg-card p-6">
-        <h2 id="settings-free-work-title" className="text-lg font-semibold">
-          Opportunités · Free-Work
-        </h2>
-        {!filtersResult.ok ? (
-          <p role="alert" className="text-sm text-destructive">
-            {filtersResult.errorMessage}
-          </p>
-        ) : (
-          <OpportunityFiltersForm
-            source="free-work"
-            initialFilters={filtersResult.data}
-            knownRegions={knownRegionsResult.ok ? knownRegionsResult.data : []}
-            saveOpportunityFilters={saveOpportunityFilters}
-          />
-        )}
-      </section>
+        <section aria-labelledby="settings-free-work-title" className="flex min-w-0 flex-1 flex-col gap-4 rounded-2xl bg-card p-6">
+          <h2 id="settings-free-work-title" className="text-lg font-semibold">
+            Opportunités · Free-Work
+          </h2>
+          {!filtersResult.ok ? (
+            <p role="alert" className="text-sm text-destructive">
+              {filtersResult.errorMessage}
+            </p>
+          ) : (
+            <OpportunityFiltersForm
+              source="free-work"
+              initialFilters={filtersResult.data}
+              knownRegions={knownRegionsResult.ok ? knownRegionsResult.data : []}
+              saveOpportunityFilters={saveOpportunityFilters}
+            />
+          )}
+        </section>
       </div>
     </div>
   )

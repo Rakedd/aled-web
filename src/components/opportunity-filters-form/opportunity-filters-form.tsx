@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { normalizeForKeywordMatch } from '@/domain/opportunity-filters'
 import { REMOTE_MODE_LABELS } from '@/domain/opportunities'
+import { buildRegionOptions } from '@/domain/region-options'
 import { useController } from './controller'
 import type { KeywordListField, OpportunityFiltersFormProps, RateFloorField } from './interfaces'
 
@@ -79,13 +80,7 @@ export const OpportunityFiltersForm = ({
     onDataChanged: router.refresh,
   })
 
-  const regionOptions = [...knownRegions, ...filters.regions]
-    .filter(
-      (region, regionIndex, allRegions) =>
-        allRegions.findIndex((otherRegion) => normalizeForKeywordMatch(otherRegion) === normalizeForKeywordMatch(region)) ===
-        regionIndex,
-    )
-    .sort((firstRegion, secondRegion) => firstRegion.localeCompare(secondRegion, 'fr'))
+  const regionOptions = buildRegionOptions(knownRegions, filters.regions)
   const selectedNormalizedRegions = new Set(filters.regions.map(normalizeForKeywordMatch))
 
   const handleSubmit = (formEvent: FormEvent<HTMLFormElement>) => {

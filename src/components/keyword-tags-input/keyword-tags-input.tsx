@@ -30,7 +30,7 @@ export const KeywordTagsInput = ({ label, helpText, values, onChange, tone }: Ke
                   type="button"
                   aria-label={`Retirer ${value}`}
                   onClick={() => removeValue(valueIndex)}
-                  className="inline-flex size-6 cursor-pointer items-center justify-center rounded-full outline-none transition-colors hover:bg-ink/10 focus-visible:ring-3 focus-visible:ring-ring/40 motion-reduce:transition-none"
+                  className="inline-flex size-6 cursor-pointer items-center justify-center rounded-full outline-none transition-colors hover:bg-ink/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 motion-reduce:transition-none"
                 >
                   <X className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
                 </button>
