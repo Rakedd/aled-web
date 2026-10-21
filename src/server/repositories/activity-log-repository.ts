@@ -49,7 +49,7 @@ export const listActivityLogEntriesForJobApplication = async (
     ok: true,
     data: data.map((activityLogEntryRow) => ({
       id: activityLogEntryRow.id,
-      jobApplicationId: activityLogEntryRow.job_application_id,
+      jobApplicationId: activityLogEntryRow.job_application_id ?? jobApplicationId,
       occurredAt: new Date(activityLogEntryRow.occurred_at),
       kind: activityLogEntryRow.kind,
       summary: activityLogEntryRow.summary,

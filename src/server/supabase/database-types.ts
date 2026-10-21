@@ -7,17 +7,29 @@ export type Database = {
           Tables: {
             "activity_log_entries": {
                   Row: {
-                    "created_at": string,"id": string,"job_application_id": string,"kind": Database["public"]['Enums']["activity_kind"],"occurred_at": string,"summary": string,"updated_at": string,"user_id": string
+                    "contact_id": string | null,"created_at": string,"id": string,"job_application_id": string | null,"kind": Database["public"]['Enums']["activity_kind"],"occurred_at": string,"summary": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"job_application_id": string,"kind": Database["public"]['Enums']["activity_kind"],"occurred_at"?: string,"summary": string,"updated_at"?: string,"user_id": string
+                    "contact_id"?: string | null,"created_at"?: string,"id"?: string,"job_application_id"?: string | null,"kind": Database["public"]['Enums']["activity_kind"],"occurred_at"?: string,"summary": string,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"job_application_id"?: string,"kind"?: Database["public"]['Enums']["activity_kind"],"occurred_at"?: string,"summary"?: string,"updated_at"?: string,"user_id"?: string
+                    "contact_id"?: string | null,"created_at"?: string,"id"?: string,"job_application_id"?: string | null,"kind"?: Database["public"]['Enums']["activity_kind"],"occurred_at"?: string,"summary"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "activity_log_entries_user_id_contact_id_fkey"
+      columns: ["user_id","contact_id"]
+isOneToOne: false
+      referencedRelation: "contacts"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "activity_log_entries_user_id_contact_id_fkey"
+      columns: ["user_id","contact_id"]
+isOneToOne: false
+      referencedRelation: "contacts_overview"
+      referencedColumns: ["user_id","id"]
+    },{
       foreignKeyName: "activity_log_entries_user_id_job_application_id_fkey"
       columns: ["user_id","job_application_id"]
 isOneToOne: false
@@ -59,14 +71,14 @@ isOneToOne: false
                   ]
                 },"contacts": {
                   Row: {
-                    "created_at": string,"email": string | null,"full_name": string,"id": string,"intermediary_id": string | null,"linkedin_url": string | null,"normalized_name": string,"phone": string | null,"updated_at": string,"user_id": string
+                    "created_at": string,"email": string | null,"full_name": string,"id": string,"intermediary_id": string | null,"linkedin_url": string | null,"normalized_name": string,"notes": string | null,"phone": string | null,"referred_by": string | null,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"email"?: string | null,"full_name": string,"id"?: string,"intermediary_id"?: string | null,"linkedin_url"?: string | null,"normalized_name": string,"phone"?: string | null,"updated_at"?: string,"user_id": string
+                    "created_at"?: string,"email"?: string | null,"full_name": string,"id"?: string,"intermediary_id"?: string | null,"linkedin_url"?: string | null,"normalized_name": string,"notes"?: string | null,"phone"?: string | null,"referred_by"?: string | null,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"email"?: string | null,"full_name"?: string,"id"?: string,"intermediary_id"?: string | null,"linkedin_url"?: string | null,"normalized_name"?: string,"phone"?: string | null,"updated_at"?: string,"user_id"?: string
+                    "created_at"?: string,"email"?: string | null,"full_name"?: string,"id"?: string,"intermediary_id"?: string | null,"linkedin_url"?: string | null,"normalized_name"?: string,"notes"?: string | null,"phone"?: string | null,"referred_by"?: string | null,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -74,6 +86,12 @@ isOneToOne: false
       columns: ["user_id","intermediary_id"]
 isOneToOne: false
       referencedRelation: "intermediaries"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "contacts_user_id_intermediary_id_fkey"
+      columns: ["user_id","intermediary_id"]
+isOneToOne: false
+      referencedRelation: "intermediaries_overview"
       referencedColumns: ["user_id","id"]
     }
                   ]
@@ -202,6 +220,12 @@ isOneToOne: false
       referencedRelation: "contacts"
       referencedColumns: ["user_id","id"]
     },{
+      foreignKeyName: "job_applications_user_id_contact_id_fkey"
+      columns: ["user_id","contact_id"]
+isOneToOne: false
+      referencedRelation: "contacts_overview"
+      referencedColumns: ["user_id","id"]
+    },{
       foreignKeyName: "job_applications_user_id_end_client_id_fkey"
       columns: ["user_id","end_client_id"]
 isOneToOne: false
@@ -212,6 +236,12 @@ isOneToOne: false
       columns: ["user_id","intermediary_id"]
 isOneToOne: false
       referencedRelation: "intermediaries"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "job_applications_user_id_intermediary_id_fkey"
+      columns: ["user_id","intermediary_id"]
+isOneToOne: false
+      referencedRelation: "intermediaries_overview"
       referencedColumns: ["user_id","id"]
     }
                   ]
@@ -318,7 +348,61 @@ isOneToOne: false
                 }
           }
           Views: {
-            "job_applications_overview": {
+            "contacts_overview": {
+                  Row: {
+                    "created_at": string | null,"email": string | null,"full_name": string | null,"id": string | null,"intermediary_id": string | null,"intermediary_name": string | null,"last_exchange_at": string | null,"linkedin_url": string | null,"normalized_name": string | null,"notes": string | null,"phone": string | null,"proposed_mission_count": number | null,"referred_by": string | null,"updated_at": string | null,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "contacts_user_id_intermediary_id_fkey"
+      columns: ["user_id","intermediary_id"]
+isOneToOne: false
+      referencedRelation: "intermediaries"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "contacts_user_id_intermediary_id_fkey"
+      columns: ["user_id","intermediary_id"]
+isOneToOne: false
+      referencedRelation: "intermediaries_overview"
+      referencedColumns: ["user_id","id"]
+    }
+                  ]
+                },"exchanges_overview": {
+                  Row: {
+                    "contact_intermediary_id": string | null,"contact_name": string | null,"created_at": string | null,"effective_contact_id": string | null,"id": string | null,"job_application_id": string | null,"job_application_intermediary_id": string | null,"job_application_title": string | null,"kind": Database["public"]['Enums']["activity_kind"] | null,"occurred_at": string | null,"summary": string | null,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "activity_log_entries_user_id_job_application_id_fkey"
+      columns: ["user_id","job_application_id"]
+isOneToOne: false
+      referencedRelation: "job_applications"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "activity_log_entries_user_id_job_application_id_fkey"
+      columns: ["user_id","job_application_id"]
+isOneToOne: false
+      referencedRelation: "job_applications_overview"
+      referencedColumns: ["user_id","id"]
+    }
+                  ]
+                },"intermediaries_overview": {
+                  Row: {
+                    "contact_count": number | null,"created_at": string | null,"id": string | null,"kind": Database["public"]['Enums']["intermediary_kind"] | null,"last_exchange_at": string | null,"name": string | null,"proposed_mission_count": number | null,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                           "contact_count"?: never,"created_at"?: string | null,"id"?: string | null,"kind"?: Database["public"]['Enums']["intermediary_kind"] | null,"last_exchange_at"?: never,"name"?: string | null,"proposed_mission_count"?: never,"user_id"?: string | null
+                         }
+                        Update: {
+                           "contact_count"?: never,"created_at"?: string | null,"id"?: string | null,"kind"?: Database["public"]['Enums']["intermediary_kind"] | null,"last_exchange_at"?: never,"name"?: string | null,"proposed_mission_count"?: never,"user_id"?: string | null
+                         }
+                        Relationships: [
+                    
+                  ]
+                },"job_applications_overview": {
                   Row: {
                     "actual_start_date": string | null,"applied_on": string | null,"contact_id": string | null,"contact_name": string | null,"created_at": string | null,"desired_start": string | null,"duration": string | null,"end_client_id": string | null,"end_client_name": string | null,"end_client_parent_name": string | null,"has_job_spec": boolean | null,"id": string | null,"intermediary_id": string | null,"intermediary_kind": Database["public"]['Enums']["intermediary_kind"] | null,"intermediary_name": string | null,"last_activity_at": string | null,"location": string | null,"notes": string | null,"posted_daily_rate": number | null,"posting_raw_text": string | null,"posting_url": string | null,"remote_policy": string | null,"requested_daily_rate": number | null,"source": string | null,"stack": Json | null,"status": Database["public"]['Enums']["job_application_status"] | null,"title": string | null,"updated_at": string | null,"user_id": string | null
                   }
@@ -329,6 +413,12 @@ isOneToOne: false
       columns: ["user_id","contact_id"]
 isOneToOne: false
       referencedRelation: "contacts"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "job_applications_user_id_contact_id_fkey"
+      columns: ["user_id","contact_id"]
+isOneToOne: false
+      referencedRelation: "contacts_overview"
       referencedColumns: ["user_id","id"]
     },{
       foreignKeyName: "job_applications_user_id_end_client_id_fkey"
@@ -342,12 +432,23 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "intermediaries"
       referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "job_applications_user_id_intermediary_id_fkey"
+      columns: ["user_id","intermediary_id"]
+isOneToOne: false
+      referencedRelation: "intermediaries_overview"
+      referencedColumns: ["user_id","id"]
     }
                   ]
                 }
           }
           Functions: {
-            [_ in never]: never
+            "assign_missing_contact_intermediaries":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"delete_contact":
+{ Args: { "target_contact_id": string }; Returns: boolean
+                           }
           }
           Enums: {
             "activity_kind": "call"|"message"|"email"|"status_change"|"other","alert_kind": "follow_up_due"|"job_spec_missing"|"end_client_unknown"|"upcoming_interview"|"no_news_suggestion","intermediary_kind": "agency"|"esn"|"platform"|"direct"|"other","interview_format": "video"|"onsite"|"phone","interview_kind": "client"|"mock"|"other","job_application_status": "applied"|"intermediary_contact"|"cv_submitted"|"interview_scheduled"|"interview_done"|"contract_received"|"signed"|"ko_after_contact"|"ko_cv"|"ko_interview"|"no_news_abandoned","job_spec_source_kind": "pdf"|"text"
