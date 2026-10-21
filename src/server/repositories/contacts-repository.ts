@@ -144,11 +144,7 @@ export const saveContactProfile = async (
   return { ok: true, data: null }
 }
 
-export const deleteContactRow = async (
-  supabase: FreeclutchSupabaseClient,
-  userId: string,
-  contactId: string,
-): Promise<boolean> => {
+export const deleteContactRow = async (supabase: FreeclutchSupabaseClient, contactId: string): Promise<boolean> => {
   const { data, error } = await supabase.rpc('delete_contact', { target_contact_id: contactId })
   if (error) throw toRepositoryError('deleteContactRow', error)
   return data

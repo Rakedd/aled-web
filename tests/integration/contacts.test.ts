@@ -280,8 +280,8 @@ describe('contacts repositories', () => {
     await expect(
       recordContactExchange(stranger.client, stranger.userId, contactId, exchangeInput()),
     ).resolves.toEqual({ ok: false, errorMessage: ENTITY_NOT_FOUND_MESSAGES.contact })
-    await expect(deleteContactRow(stranger.client, stranger.userId, contactId)).resolves.toBe(false)
-    await expect(deleteContactRow(owner.client, owner.userId, contactId)).resolves.toBe(true)
+    await expect(deleteContactRow(stranger.client, contactId)).resolves.toBe(false)
+    await expect(deleteContactRow(owner.client, contactId)).resolves.toBe(true)
   })
 
   it('suggests contacts with their agency and details', async () => {
