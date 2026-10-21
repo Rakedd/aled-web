@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import nextConfig from './next.config'
+import nextConfig, { buildLandingApiRedirects } from './next.config'
 
 const readHeadersForEveryRoute = async () => {
   const headerRules = (await nextConfig.headers?.()) ?? []
@@ -22,5 +22,37 @@ describe('next.config security headers', () => {
   it('does not restrict scripts, so the Next.js runtime keeps working', async () => {
     const headersForEveryRoute = await readHeadersForEveryRoute()
     expect(headersForEveryRoute.get('Content-Security-Policy')).not.toContain('script-src')
+  })
+})
+
+describe('next.config landing API redirects', () => {
+  it('sends API calls made on a landing domain to the app', () => {
+    expect(
+      buildLandingApiRedirects({ landingHostnames: 'aled.work,www.aled.work', appOrigin: 'https://app.aled.work' }),
+    ).toEqual([
+      {
+        source: '/api/:path*',
+        has: [{ type: 'host', value: 'aled.work' }],
+        destination: 'https://app.aled.work/api/:path*',
+        permanent: true,
+      },
+      {
+        source: '/api/:path*',
+        has: [{ type: 'host', value: 'www.aled.work' }],
+        destination: 'https://app.aled.work/api/:path*',
+        permanent: true,
+      },
+    ])
+  })
+
+  it('adds no redirect when the app origin is unknown', () => {
+    expect(buildLandingApiRedirects({ landingHostnames: 'aled.work', appOrigin: undefined })).toEqual([])
+  })
+
+  it('keeps the settings redirects', async () => {
+    const redirects = (await nextConfig.redirects?.()) ?? []
+    expect(redirects.map((redirect) => redirect.source)).toEqual(
+      expect.arrayContaining(['/settings', '/settings/:path*']),
+    )
   })
 })

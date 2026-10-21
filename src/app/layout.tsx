@@ -18,6 +18,7 @@ const figtree = Figtree({
 export const metadata: Metadata = {
   title: "Aled",
   description: "Trouver du travail sans traverser la rue.",
+  robots: { index: false, follow: false },
 };
 
 const RootLayout = ({ children }: LayoutProps<"/">) => (

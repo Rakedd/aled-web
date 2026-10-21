@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { BrandLogoLink } from '@/components/brand-logo-link'
 import { Pill } from '@/components/pill'
 import { ThemeMenu } from '@/components/theme-menu'
 import { Button } from '@/components/ui/button'
@@ -39,12 +40,7 @@ export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, chil
     <div className="flex min-h-full flex-1 flex-col">
       <header className="px-4 pt-4">
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 rounded-3xl bg-card px-4 py-2 sm:rounded-full sm:px-6">
-          <Link
-            href={HOME_ROUTE}
-            className="block h-9 w-20 shrink-0 bg-(image:--brand-logo) bg-contain bg-left bg-no-repeat"
-          >
-            <span className="sr-only">Aled</span>
-          </Link>
+          <BrandLogoLink href={HOME_ROUTE} />
           <nav aria-label="Navigation principale" className="order-last w-full min-w-0 sm:order-none sm:w-auto">
             <ul className="flex flex-wrap gap-1">
               {NAVIGATION_ITEMS.map((navigationItem) => {

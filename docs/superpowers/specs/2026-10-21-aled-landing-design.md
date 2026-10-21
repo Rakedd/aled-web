@@ -95,8 +95,8 @@ Sur le fond vert de marque, centré :
   - app non indexable : `robots.txt` qui interdit tout sur `app.aled.work`, et `noindex` sur les pages de l'app ;
   - le `robots.txt` servi dépend donc du domaine.
 - **Pages légales**, sur le domaine de la landing :
-  - `/mentions-legales` : éditeur, directeur de publication, hébergeur (Vercel Inc.), contact ;
-  - `/confidentialite` : données collectées par la landing (aucune hormis la mesure d'audience sans cookie), renvoi vers l'app pour le reste.
+  - `/mentions-legales` : éditeur, directeur de publication, hébergeur (Vercel Inc.), contact. Le porteur fournira ces informations plus tard (décision du porteur). En attendant, la page affiche des emplacements visiblement marqués, par exemple `[À COMPLÉTER : nom de l'éditeur]`. Seules les coordonnées de l'hébergeur sont écrites définitivement ;
+  - `/confidentialite` : données collectées par la landing, c'est-à-dire aucune hormis la mesure d'audience sans cookie. Cette page deviendra la politique de confidentialité unique d'Aled : la partie qui concerne l'app (compte, candidatures, clé API) sera ajoutée par le projet « inscription », qui crée les premiers comptes publics. En attendant, la page ne renvoie vers aucune page inexistante **[choix du rédacteur]**.
 
 ## 4. Architecture
 
@@ -104,6 +104,7 @@ Sur le fond vert de marque, centré :
 - Le proxy (`src/proxy.ts`) regarde d'abord le nom d'hôte.
 - **Domaines de la landing** : une liste lue dans la variable d'environnement `LANDING_HOSTNAMES`, séparée par des virgules. Production : `aled.work,www.aled.work`. Local : `aled.localhost`, que Chrome et Firefox résolvent nativement vers 127.0.0.1.
 - **Sur un domaine de landing** : le proxy réécrit le chemin vers le segment interne `/vitrine` (`/` → `/vitrine`, `/mentions-legales` → `/vitrine/mentions-legales`, etc.). Il renvoie la réponse **avant** de créer le client Supabase : aucune session, aucun appel réseau. `www.aled.work` redirige de façon permanente vers `aled.work` **[choix du rédacteur]**.
+- **Chemins de l'app demandés sur le domaine de la landing** (`/login`, `/auth/confirm`, `/candidatures/...`, `/api/...`, etc.) : redirection permanente vers le même chemin sur `{APP_ORIGIN}`. Aujourd'hui, Vercel redirige `aled.work` vers l'app en gardant le chemin : les favoris et les liens déjà partagés continuent donc de fonctionner après le lancement. Tout autre chemin inconnu renvoie la 404 de la landing. Le mécanisme est laissé au builder : le matcher du proxy exclut aujourd'hui `/api` **[choix du rédacteur]**.
 - **Sur tout autre domaine** : le proxy se comporte exactement comme aujourd'hui. Un accès direct à `/vitrine` y renvoie une 404, pour ne pas dupliquer la landing sous `app.aled.work`.
 - **Exception pour la relecture** : sur les déploiements de prévisualisation Vercel (`VERCEL_ENV !== 'production'`) et en développement, `/vitrine` reste accessible directement. Le porteur peut ainsi relire la landing avant le lancement, sans DNS **[choix du rédacteur]**.
 
@@ -150,18 +151,24 @@ Conformément aux règles du porteur, les tests font partie de la fonctionnalit�
 - **Proxy :**
   - domaine de landing → réécriture vers `/vitrine`, sans appel à Supabase ;
   - `www` → redirection ;
+  - chemin de l'app sur le domaine de la landing → redirection vers `{APP_ORIGIN}` avec le même chemin ;
   - `/vitrine` sur le domaine de l'app en production → 404 ;
   - `/vitrine` en prévisualisation → accessible ;
   - domaine de l'app → comportement inchangé (tests existants).
 - **Pages :** présence des sections et textes clés ; les deux boutons pointent vers `{APP_ORIGIN}/inscription` et « Se connecter » vers `{APP_ORIGIN}/login`.
 - **Garde-fou :** aucun texte de la landing ne contient le mot « freelance », quelle que soit la casse.
+- **Garde-fou du lancement :** un test vérifie qu'il ne reste aucun emplacement `[À COMPLÉTER` dans les pages légales. Il est marqué comme ignoré (`it.skip` ou équivalent, avec la mention « à activer avant le lancement ») tant que le porteur n'a pas fourni les informations. L'activer fait partie de la checklist du §7 **[choix du rédacteur]**.
 - **Référencement :** `robots.txt` différent selon le domaine.
 - **Mesure d'audience :** présente dans le layout de la landing, absente de l'app.
 
 ## 7. Mise en ligne
 
 1. La landing est développée et relue sur les déploiements de prévisualisation (`/vitrine`). Pendant ce temps, `aled.work` continue de rediriger vers `app.aled.work` (procédure « Domaine de production » du README).
-2. Prérequis du lancement : l'inscription publique existe sur `app.aled.work/inscription`, la relecture du contrat est livrée, et les textes légaux sont complets.
+2. Prérequis du lancement :
+   - l'inscription publique existe sur `app.aled.work/inscription` ;
+   - la relecture du contrat est livrée ;
+   - les emplacements des mentions légales sont remplis et le test de garde-fou correspondant est activé ;
+   - la politique de confidentialité couvre l'app.
 3. Le jour du lancement :
    - dans Vercel, renseigner `LANDING_HOSTNAMES` et `APP_ORIGIN` pour la production ;
    - activer Web Analytics sur le projet ;

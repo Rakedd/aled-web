@@ -56,6 +56,8 @@ Toutes sont lues côté serveur uniquement (aucune n'a le préfixe `NEXT_PUBLIC_
 | `GCS_BACKUP_BUCKET` | nom du bucket Google Cloud Storage qui reçoit les sauvegardes | facultatif en local |
 | `GCP_BACKUP_SERVICE_ACCOUNT_KEY_BASE64` | clé JSON du compte de service GCP, encodée en base64 (voir ci-dessous) | facultatif en local |
 | `OPPORTUNITIES_INGEST_TOKEN` | jeton attendu par `/api/opportunities/ingest` dans l'en-tête `Authorization: Bearer <OPPORTUNITIES_INGEST_TOKEN>` ; sans lui, la route refuse tout | `openssl rand -hex 32` |
+| `LANDING_HOSTNAMES` | domaines qui affichent la landing page, séparés par des virgules ; le premier est le domaine canonique (voir « Landing page ») | `aled.localhost` |
+| `APP_ORIGIN` | origine de l'app, utilisée par les liens de la landing (« Se connecter », inscription) et pour renvoyer vers l'app les anciens liens ouverts sur la landing ; sans elle, les liens restent relatifs | `http://localhost:3000` |
 
 Changer `API_KEY_ENCRYPTION_SECRET` rend illisibles les clés API Claude déjà enregistrées : chaque utilisateur devra ressaisir la sienne.
 
@@ -84,6 +86,24 @@ Menu : « Mes candidatures », « Mon calendrier », « Mes opportunités », «
 - **Stack** : sur « J'ai postulé », la stack de la mission est extraite par l'IA.
 - **Brief d'entretien** : « Générer le brief » devient « Brief généré · voir mon brief » et ouvre une fenêtre avec le brief par langue (fr/en) : une langue à la fois, choisie avant de générer, avec les callouts « Chiffres clés » et « Dates clés », « Mes notes sur l'entreprise », « Questions à poser en entretien » et « Voir les sources (N) » repliées. « Régénérer » relance la génération.
 - **Suppression** : le bouton rouge « Supprimer la candidature » demande confirmation, puis supprime le journal, les entretiens, la fiche métier et son PDF. L'opportunité d'origine revient dans « À traiter ».
+
+## Landing page
+
+La landing page de `aled.work` vit dans ce projet, sous le segment interne `src/app/vitrine/` (accueil, `mentions-legales`, `confidentialite`, `sitemap.xml`, `robots.txt` et image d'aperçu). Elle n'utilise ni Supabase ni session : ses pages sont statiques.
+
+- **Routage par domaine** : `src/proxy.ts` reconnaît les domaines de `LANDING_HOSTNAMES` et réécrit leurs chemins vers `/vitrine` (`aled.work/` affiche `/vitrine`, `aled.work/mentions-legales` affiche `/vitrine/mentions-legales`). `www.aled.work` redirige vers `aled.work`. Un chemin de l'app ouvert sur la landing (`/login`, `/auth/confirm`, `/candidatures/…`, `/api/…`) redirige vers le même chemin sur `APP_ORIGIN`. Sur `app.aled.work`, `/vitrine` renvoie une 404 en production.
+- **Textes** : tous les textes de la page sont dans `src/domain/landing-copy.ts`, ceux des pages légales dans `src/domain/legal-copy.ts`. Le mot « freelance » y est interdit, un test le vérifie.
+- **En local** : mettre `LANDING_HOSTNAMES=aled.localhost` et `APP_ORIGIN=http://localhost:3000` dans `.env.local`, lancer `npm run dev`, puis ouvrir `http://aled.localhost:3000` (Chrome et Firefox résolvent `*.localhost` tout seuls). L'app reste sur `http://localhost:3000`.
+- **Prévisualisations Vercel** : la landing est consultable sans connexion sur `<url-de-prévisualisation>/vitrine`.
+- **Référencement** : la landing est indexable ; l'app ne l'est pas (`robots.txt` qui interdit tout et `noindex` sur ses pages).
+- **Mesure d'audience** : Vercel Web Analytics, sans cookie, sur la landing seulement. L'activer dans **Analytics** du projet Vercel.
+
+### Checklist de lancement
+
+1. L'inscription publique existe sur `app.aled.work/inscription` (projet séparé) et la relecture du contrat est livrée.
+2. Les emplacements `[À COMPLÉTER` de `src/domain/legal-copy.ts` sont remplis, et le test « contains no placeholder left » de `src/domain/legal-copy.test.ts` est activé (retirer le `.skip`).
+3. La page Confidentialité couvre aussi l'app (comptes, candidatures, clé API).
+4. Dans Vercel : renseigner `LANDING_HOSTNAMES` et `APP_ORIGIN` en Production, activer Web Analytics, retirer la redirection de `aled.work` (voir « Domaine de production »), puis déployer.
 
 ## Opportunités
 
@@ -231,6 +251,7 @@ La première mise en place se fait à la main, dans cet ordre : Supabase, Google
    | `CRON_SECRET` | une valeur aléatoire, par exemple `openssl rand -hex 32` |
    | `GCS_BACKUP_BUCKET`, `GCP_BACKUP_SERVICE_ACCOUNT_KEY_BASE64` | relevées à l'étape 2 |
    | `OPPORTUNITIES_INGEST_TOKEN` | `openssl rand -hex 32` ; la **même valeur** que le secret GCP `freeclutch-ingest-token` (voir « Opportunités ») |
+   | `LANDING_HOSTNAMES`, `APP_ORIGIN` | `aled.work,www.aled.work` et `https://app.aled.work`, en **Production** uniquement, le jour du lancement de la landing (voir « Landing page ») |
 
 3. Les pages qui appellent l'IA déclarent un `maxDuration` jusqu'à 300 s, ce qui exige **Fluid compute** : il est activé par défaut sur les nouveaux projets, mais vérifier dans **Settings > Functions**.
 4. `vercel.json` planifie la sauvegarde (`/api/cron/backup`, le lundi et le jeudi à 03:00 UTC). Vercel envoie `Authorization: Bearer <CRON_SECRET>` lui-même. Après le premier déploiement, vérifier dans **Settings > Cron Jobs** que la tâche est présente.

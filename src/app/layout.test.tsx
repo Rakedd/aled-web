@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { THEME_INIT_SCRIPT } from '@/lib/theme/theme-init-script'
-import RootLayout from './layout'
+import RootLayout, { metadata } from './layout'
 
 jest.mock('next/font/google', () => ({
   Manrope: () => ({ variable: 'font' }),
@@ -18,5 +18,11 @@ describe('RootLayout', () => {
 
     expect(markup).toContain(themeScriptMarkup)
     expect(markup.indexOf(themeScriptMarkup)).toBeLessThan(markup.indexOf('<body'))
+  })
+})
+
+describe('root metadata', () => {
+  it('keeps the app pages out of search engines by default', () => {
+    expect(metadata.robots).toEqual({ index: false, follow: false })
   })
 })
