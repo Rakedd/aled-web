@@ -7,6 +7,7 @@ import { createJobApplicationOrFail } from './job-application-fixtures'
 type TestUser = { client: SupabaseClient<Database>; userId: string }
 
 const CHECK_VIOLATION_CODE = '23514'
+const FOREIGN_KEY_VIOLATION_CODE = '23503'
 
 const createTestUser = (): Promise<TestUser> => createSignedInTestClient(`contacts-schema-${randomUUID()}@test.local`)
 
@@ -68,7 +69,7 @@ const listExchangesOfJobApplication = async (jobApplicationId: string) => {
   const { data, error } = await createServiceRoleTestClient()
     .from('activity_log_entries')
     .select('id, job_application_id, contact_id')
-    .or(`job_application_id.eq.${jobApplicationId}`)
+    .eq('job_application_id', jobApplicationId)
   if (error) throw error
   return data
 }
@@ -98,7 +99,7 @@ describe('contacts and agencies schema', () => {
 
     const { error } = await insertExchange(userB, { contactId: contactIdOfUserA })
 
-    expect(error).not.toBeNull()
+    expect(error?.code).toBe(FOREIGN_KEY_VIOLATION_CODE)
   })
 
   it('keeps contact exchanges and deletes the others when a job application is deleted', async () => {
@@ -209,6 +210,47 @@ describe('contacts and agencies schema', () => {
     expect(intermediary?.contact_count).toBe(1)
     expect(intermediary?.proposed_mission_count).toBe(1)
     expect(new Date(intermediary?.last_exchange_at ?? '').toISOString()).toBe('2026-10-08T10:00:00.000Z')
+  })
+
+  it('uses the most recent exchange of a contact of the agency', async () => {
+    const user = await createTestUser()
+    const intermediaryId = await insertIntermediaryOrFail(user)
+    const contactId = await insertContactOrFail(user, intermediaryId)
+    const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
+    await linkJobApplication(user, jobApplicationId, { intermediaryId })
+    await insertExchangeOrFail(user, { jobApplicationId, occurredAt: '2026-10-03T10:00:00+00:00' })
+    await insertExchangeOrFail(user, { contactId, occurredAt: '2026-10-12T10:00:00+00:00' })
+
+    const { data: intermediary, error } = await user.client
+      .from('intermediaries_overview')
+      .select('last_exchange_at')
+      .eq('id', intermediaryId)
+      .single()
+
+    expect(error).toBeNull()
+    expect(new Date(intermediary?.last_exchange_at ?? '').toISOString()).toBe('2026-10-12T10:00:00.000Z')
+  })
+
+  it('deletes a user who has a standalone exchange', async () => {
+    const user = await createTestUser()
+    const contactId = await insertContactOrFail(user)
+    await insertExchangeOrFail(user, { contactId })
+
+    const { error } = await createServiceRoleTestClient().auth.admin.deleteUser(user.userId)
+
+    expect(error).toBeNull()
+  })
+
+  it('deletes standalone exchanges when a contact row is deleted directly', async () => {
+    const user = await createTestUser()
+    const contactId = await insertContactOrFail(user)
+    await insertExchangeOrFail(user, { contactId })
+
+    const { error } = await user.client.from('contacts').delete().eq('id', contactId)
+
+    expect(error).toBeNull()
+    const { data: remainingExchanges } = await user.client.from('activity_log_entries').select('id')
+    expect(remainingExchanges).toEqual([])
   })
 
   it('assigns the agency of the most recent job application to contacts without one', async () => {

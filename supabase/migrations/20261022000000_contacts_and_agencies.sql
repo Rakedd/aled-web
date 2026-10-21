@@ -26,6 +26,21 @@ $$;
 create trigger job_applications_detach_contact_exchanges before delete on public.job_applications
   for each row execute function public.detach_contact_exchanges_from_job_application();
 
+create function public.delete_standalone_exchanges_of_contact()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  delete from public.activity_log_entries
+  where contact_id = old.id and job_application_id is null;
+  return old;
+end;
+$$;
+
+create trigger contacts_delete_standalone_exchanges before delete on public.contacts
+  for each row execute function public.delete_standalone_exchanges_of_contact();
+
 create function public.delete_contact(target_contact_id uuid)
 returns boolean
 language plpgsql
@@ -35,9 +50,6 @@ as $$
 declare
   deleted_contact_count int;
 begin
-  delete from public.activity_log_entries
-  where contact_id = target_contact_id and job_application_id is null;
-
   delete from public.contacts where id = target_contact_id;
   get diagnostics deleted_contact_count = row_count;
 
