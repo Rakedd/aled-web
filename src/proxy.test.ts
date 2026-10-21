@@ -49,7 +49,7 @@ describe('proxy', () => {
     expect(response.headers.get('cache-control')).toBe(AUTH_CACHE_HEADERS['Cache-Control'])
   })
 
-  it.each(['/login', '/auth/confirm', '/robots.txt'])('lets an unauthenticated request reach the public path %s', async (pathname) => {
+  it.each(['/login', '/auth/confirm', '/robots.txt', '/.well-known/assetlinks.json'])('lets an unauthenticated request reach the public path %s', async (pathname) => {
     mockSupabaseSession({ claims: null, clearsAuthCookie: false })
 
     const response = await proxy(buildRequest(pathname))

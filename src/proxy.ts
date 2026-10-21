@@ -12,7 +12,7 @@ import { isProductionDeployment, readAppOrigin, readLandingHostnames } from '@/l
 import type { Database } from '@/server/supabase/database-types'
 import { readSupabaseEnvironmentVariable } from '@/server/supabase/supabase-environment'
 
-const PUBLIC_PATHNAMES = ['/login', '/auth/confirm', '/robots.txt']
+const PUBLIC_PATHNAMES = ['/login', '/auth/confirm', '/robots.txt', '/.well-known']
 
 const PERMANENT_REDIRECT_STATUS = 308
 

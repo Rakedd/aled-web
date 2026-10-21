@@ -58,6 +58,7 @@ Toutes sont lues côté serveur uniquement (aucune n'a le préfixe `NEXT_PUBLIC_
 | `OPPORTUNITIES_INGEST_TOKEN` | jeton attendu par `/api/opportunities/ingest` dans l'en-tête `Authorization: Bearer <OPPORTUNITIES_INGEST_TOKEN>` ; sans lui, la route refuse tout | `openssl rand -hex 32` |
 | `LANDING_HOSTNAMES` | domaines qui affichent la landing page, séparés par des virgules ; le premier est le domaine canonique (voir « Landing page ») | `aled.localhost` |
 | `APP_ORIGIN` | origine de l'app, utilisée par les liens de la landing (« Se connecter », inscription) et pour renvoyer vers l'app les anciens liens ouverts sur la landing ; sans elle, les liens restent relatifs | `http://localhost:3000` |
+| `ANDROID_APP_SHA256_FINGERPRINTS` | empreintes SHA-256 des certificats de signature de l'app Android `work.aled.app`, séparées par des virgules ; servies dans `/.well-known/assetlinks.json` pour que les liens `app.aled.work` s'ouvrent dans l'app (voir « App Links Android ») | facultatif en local |
 
 Changer `API_KEY_ENCRYPTION_SECRET` rend illisibles les clés API Claude déjà enregistrées : chaque utilisateur devra ressaisir la sienne.
 
@@ -104,6 +105,16 @@ La landing page de `aled.work` vit dans ce projet, sous le segment interne `src/
 2. Les emplacements `[À COMPLÉTER` de `src/domain/legal-copy.ts` sont remplis, et le test « contains no placeholder left » de `src/domain/legal-copy.test.ts` est activé (retirer le `.skip`).
 3. La page Confidentialité couvre aussi l'app (comptes, candidatures, clé API).
 4. Dans Vercel : renseigner `LANDING_HOSTNAMES` et `APP_ORIGIN` en Production, activer Web Analytics, retirer la redirection de `aled.work` (voir « Domaine de production »), puis déployer.
+
+## App Links Android
+
+Les liens `https://app.aled.work/auth/confirm…` (connexion et invitation) et `https://app.aled.work/candidatures/…` s'ouvrent dans l'app mobile quand elle est installée sur Android. Android le vérifie avec `/.well-known/assetlinks.json`, servi par `src/app/.well-known/assetlinks.json/route.ts` sans connexion (chemin public du proxy).
+
+1. Récupérer l'empreinte SHA-256 du certificat de signature : `npx eas-cli@latest credentials -p android` dans `aled-mobile`, ligne « SHA256 Fingerprint ». Une fois l'app sur le Play Store, ajouter aussi l'empreinte de Play App Signing (Play Console > Configuration > Signature de l'application).
+2. Dans Vercel, renseigner `ANDROID_APP_SHA256_FINGERPRINTS` (les empreintes séparées par des virgules), puis redéployer : le fichier est généré au build.
+3. Vérifier que `https://app.aled.work/.well-known/assetlinks.json` répond en JSON, sans redirection.
+
+Tant que la variable est vide, le fichier contient `[]` et les liens continuent de s'ouvrir dans le navigateur.
 
 ## Opportunités
 
