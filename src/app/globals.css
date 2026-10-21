@@ -129,6 +129,7 @@
   --input: var(--control-border);
   --ring: var(--primary);
   --radius: 0.875rem;
+  --brand-logo: url('/brand/aled-logo-on-light.png');
 }
 
 :root[data-theme='dark'] {
@@ -175,6 +176,7 @@
   --on-menu-counter: var(--on-lilac);
   --settings-navigation-active: var(--primary);
   --on-settings-navigation-active: var(--primary-foreground);
+  --brand-logo: url('/brand/aled-logo-on-dark.png');
 }
 
 @utility focus-ring-on-dark {

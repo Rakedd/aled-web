@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import { LoginForm } from '@/components/login-form'
 import { requestMagicLink } from '@/server/actions/auth-actions'
 
@@ -13,7 +14,7 @@ const LoginPage = async ({ searchParams }: PageProps<'/login'>) => {
   return (
     <main className="flex flex-1 flex-col lg:flex-row">
       <section className="flex flex-col justify-center gap-4 bg-brand-tile px-6 py-10 text-on-brand-tile-secondary lg:w-1/2 lg:px-16 lg:py-20">
-        <p className="font-heading text-2xl font-extrabold text-on-brand-tile">Aled</p>
+        <Image src="/brand/aled-logo-on-dark.png" alt="Aled" width={107} height={48} />
         <h1 className="font-heading text-3xl font-extrabold text-on-brand-tile lg:text-5xl">
           Trouver du travail sans traverser la rue.
         </h1>

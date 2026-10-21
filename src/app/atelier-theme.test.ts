@@ -401,6 +401,14 @@ describe('atelier theme', () => {
     expect(filesWithUncolouredRingOffset.map((filePath) => path.relative(__dirname, filePath))).toEqual([])
   })
 
+  it('declares a brand logo for each theme that ships in public', () => {
+    const declaredLogoPaths = [...GLOBALS_CSS.matchAll(/--brand-logo:\s*url\('([^']+)'\);/g)].map((match) => match[1])
+    expect(declaredLogoPaths).toEqual(['/brand/aled-logo-on-light.png', '/brand/aled-logo-on-dark.png'])
+    declaredLogoPaths.forEach((logoPath) => {
+      expect(fs.existsSync(path.join(__dirname, '..', '..', 'public', logoPath))).toBe(true)
+    })
+  })
+
   it('keeps hex colours inside globals.css', () => {
     const sourceFiles = listSourceFiles(path.join(__dirname, '..'), ['.ts', '.tsx', '.css']).filter(
       (filePath) => !/\.test\.(tsx?|css)$/.test(filePath) && !filePath.endsWith('globals.css'),

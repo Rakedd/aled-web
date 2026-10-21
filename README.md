@@ -1,6 +1,6 @@
 # Aled
 
-Aled (anciennement Freeclutch) : le dépôt GitHub s'appelle `aled-web` ; les URLs et les noms techniques portent encore `freeclutch`.
+Aled (anciennement Freeclutch) : le dépôt GitHub s'appelle `aled-web` et l'application est servie sur `https://app.aled.work` ; les noms techniques portent encore `freeclutch`.
 
 Suivi des candidatures freelance : missions, intermédiaires, entretiens, fiches métier et brief client généré par Claude.
 Next.js (App Router), TypeScript, Supabase (Postgres, Auth, Storage), API Claude. Accès sur invitation uniquement.
@@ -190,8 +190,8 @@ La première mise en place se fait à la main, dans cet ordre : Supabase, Google
 
 3. Dans **Authentication > Sign In / Providers** (ou **Settings**), désactiver les inscriptions (« Allow new users to sign up »). C'est l'équivalent de `enable_signup = false` dans `supabase/config.toml` : seules les invitations créent des comptes.
 4. Dans **Authentication > URL Configuration** :
-   - **Site URL** : le domaine Vercel, par exemple `https://<domaine>` ;
-   - **Redirect URLs** : ajouter `https://<domaine>/auth/confirm`.
+   - **Site URL** : `https://app.aled.work` ;
+   - **Redirect URLs** : ajouter `https://app.aled.work/auth/confirm`.
 5. Dans **Authentication > Email Templates**, reproduire ce que `supabase/config.toml` fait en local (les fichiers sont dans `supabase/templates/`). Le lien de chaque modèle doit être :
    - **Magic link** : `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`
    - **Invite user** : `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite`
@@ -235,6 +235,17 @@ La première mise en place se fait à la main, dans cet ordre : Supabase, Google
 3. Les pages qui appellent l'IA déclarent un `maxDuration` jusqu'à 300 s, ce qui exige **Fluid compute** : il est activé par défaut sur les nouveaux projets, mais vérifier dans **Settings > Functions**.
 4. `vercel.json` planifie la sauvegarde (`/api/cron/backup`, le lundi et le jeudi à 03:00 UTC). Vercel envoie `Authorization: Bearer <CRON_SECRET>` lui-même. Après le premier déploiement, vérifier dans **Settings > Cron Jobs** que la tâche est présente.
 5. Déployer, puis reporter le domaine obtenu dans la **Site URL** et la **Redirect URL** de Supabase (étape 1.4) s'il a changé.
+6. Brancher le domaine de production `app.aled.work` (voir « Domaine de production »).
+
+### Domaine de production
+
+L'application est servie sur `https://app.aled.work`. Le domaine racine `aled.work` est réservé à la landing page, servie par ce même projet. Le code ne contient aucun domaine en dur : les redirections d'authentification partent de l'URL de la requête et les e-mails de `{{ .SiteURL }}`. Changer de domaine se fait donc uniquement dans les services externes, dans cet ordre :
+
+1. **Vercel**, dans **Settings > Domains** : ajouter `app.aled.work`, puis créer chez le registrar l'enregistrement DNS `CNAME app` avec la valeur affichée par Vercel. Attendre que Vercel indique « Valid Configuration » et que le certificat HTTPS soit émis.
+2. **Supabase**, dans **Authentication > URL Configuration** : passer la **Site URL** à `https://app.aled.work` et ajouter `https://app.aled.work/auth/confirm` aux **Redirect URLs**. Garder l'ancienne redirect URL quelques jours : les liens de connexion déjà envoyés pointent encore vers l'ancien domaine.
+3. **Watcher career-ops** : redéployer avec `deploy.sh`, dont `FREECLUTCH_INGEST_URL` vaut `https://app.aled.work/api/opportunities/ingest` par défaut. Ne pas compter sur une redirection de l'ancien domaine : `fetch` retire l'en-tête `Authorization` lorsqu'il suit une redirection vers un autre domaine, et l'ingestion serait refusée (401).
+4. **Expéditeur des e-mails** (optionnel) : pour envoyer depuis une adresse `@aled.work`, vérifier le domaine chez le fournisseur SMTP (SPF, DKIM) puis changer l'adresse d'expéditeur dans **Authentication > Emails > SMTP Settings**.
+5. Une fois le watcher vérifié sur le nouveau domaine, rediriger `aled.work` et `freeclutch.vercel.app` vers `app.aled.work` dans **Settings > Domains**. Quand la landing page est prête, retirer la redirection de `aled.work` : le domaine reste attaché à ce projet Vercel, qui sert alors la landing. Les sessions sont liées au domaine : il faut se reconnecter une fois sur `app.aled.work`.
 
 ### 4. Premier utilisateur
 
