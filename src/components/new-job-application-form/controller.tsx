@@ -109,6 +109,7 @@ export const useController = ({
   const [pastedText, setPastedText] = useState('')
   const [formValues, setFormValues] = useState<JobApplicationFormValues>(createEmptyFormValues)
   const [userEditedContactFields, setUserEditedContactFields] = useState<ContactDetailFieldName[]>([])
+  const [isContactPrefilledFromSuggestion, setIsContactPrefilledFromSuggestion] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isExtracting, setIsExtracting] = useState(false)
   const [hasExtractionFailed, setHasExtractionFailed] = useState(false)
@@ -170,11 +171,22 @@ export const useController = ({
         currentFields.includes(editedContactField) ? currentFields : [...currentFields, editedContactField],
       )
     }
-    setFormValues((currentFormValues) => ({ ...currentFormValues, [valueName]: value }))
+    const shouldClearPrefilledContactDetails = valueName === 'contactName' && isContactPrefilledFromSuggestion
+    if (shouldClearPrefilledContactDetails) setIsContactPrefilledFromSuggestion(false)
+    setFormValues((currentFormValues) => ({
+      ...currentFormValues,
+      ...(shouldClearPrefilledContactDetails && {
+        contactPhone: userEditedContactFields.includes('phone') ? currentFormValues.contactPhone : '',
+        contactEmail: userEditedContactFields.includes('email') ? currentFormValues.contactEmail : '',
+        contactLinkedinUrl: userEditedContactFields.includes('linkedinUrl') ? currentFormValues.contactLinkedinUrl : '',
+      }),
+      [valueName]: value,
+    }))
   }
 
   const selectContactSuggestion = (suggestion: EntitySuggestion) => {
     setUserEditedContactFields([])
+    setIsContactPrefilledFromSuggestion(true)
     setFormValues((currentFormValues) => ({
       ...currentFormValues,
       contactPhone: suggestion.contactDetails?.phone ?? '',

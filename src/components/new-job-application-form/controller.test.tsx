@@ -299,6 +299,40 @@ describe('new-job-application-form useController', () => {
     act(() => result.current.setTextFormValue('contactEmail', 'autre@x.fr'))
     act(() => result.current.selectContactSuggestion(existingContactSuggestion))
     expect(result.current.userEditedContactFields).toEqual([])
+    expect(result.current.formValues.contactEmail).toBe('jeanne@acme.fr')
+    expect(result.current.formValues.contactPhone).toBe('0611223344')
+  })
+
+  it('clears details prefilled from a chosen contact when the name is retyped', () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.selectContactSuggestion(existingContactSuggestion))
+    act(() => result.current.setTextFormValue('contactName', 'Bob'))
+    expect(result.current.formValues).toMatchObject({
+      contactName: 'Bob',
+      contactPhone: '',
+      contactEmail: '',
+      contactLinkedinUrl: '',
+    })
+  })
+
+  it('keeps contact details the user edited when the name is retyped', () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.selectContactSuggestion(existingContactSuggestion))
+    act(() => result.current.setTextFormValue('contactEmail', 'bob@x.fr'))
+    act(() => result.current.setTextFormValue('contactName', 'Bob'))
+    expect(result.current.formValues).toMatchObject({
+      contactEmail: 'bob@x.fr',
+      contactPhone: '',
+      contactLinkedinUrl: '',
+    })
+  })
+
+  it('keeps AI-prefilled contact details when the name is edited', async () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.setPastedText('Annonce React'))
+    await act(() => result.current.extract())
+    act(() => result.current.setTextFormValue('contactName', 'Bob'))
+    expect(result.current.formValues).toMatchObject({ contactEmail: 'jeanne@example.com', contactPhone: '0102030405' })
   })
 
   it('sends the LinkedIn url and the edited fields', async () => {

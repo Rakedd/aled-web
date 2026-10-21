@@ -102,7 +102,8 @@ export const useController = ({
     highlightedIndex,
     isOpen: isListVisible,
     creationOptionLabel,
-    changeValue,     selectSuggestion,
+    changeValue,
+    selectSuggestion,
     closeSuggestions,
     handleKeyDown,
   }
