@@ -68,6 +68,16 @@ describe('filterContacts', () => {
     expect(filterContacts(contacts, 'societe').map((contact) => contact.id)).toEqual(['a'])
   })
 
+  it('finds a contact stored as +33 when searching with a 06 number', () => {
+    const storedInternationally = [buildContact({ id: 'a', phone: '+33 6 12 34 56 78' })]
+    expect(filterContacts(storedInternationally, '06 12 34').map((contact) => contact.id)).toEqual(['a'])
+  })
+
+  it('finds a contact stored as 06 when searching with a +33 number', () => {
+    const storedLocally = [buildContact({ id: 'a', phone: '06 12 34 56 78' })]
+    expect(filterContacts(storedLocally, '+33 6 12 34').map((contact) => contact.id)).toEqual(['a'])
+  })
+
   it('finds a contact by name', () => {
     expect(filterContacts(contacts, 'DURAND').map((contact) => contact.id)).toEqual(['b'])
   })
