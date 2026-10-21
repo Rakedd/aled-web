@@ -6,7 +6,15 @@ import { BrandLogoLink } from '@/components/brand-logo-link'
 import { Pill } from '@/components/pill'
 import { ThemeMenu } from '@/components/theme-menu'
 import { Button } from '@/components/ui/button'
-import { CALENDAR_ROUTE, HOME_ROUTE, JOB_APPLICATIONS_ROUTE, OPPORTUNITIES_ROUTE, PREFERENCES_ROUTE } from '@/domain/routes'
+import {
+  CALENDAR_ROUTE,
+  CONTACTS_ROUTE,
+  HOME_ROUTE,
+  INTERMEDIARIES_ROUTE,
+  JOB_APPLICATIONS_ROUTE,
+  OPPORTUNITIES_ROUTE,
+  PREFERENCES_ROUTE,
+} from '@/domain/routes'
 import { cn } from '@/lib/utils'
 import type { AppShellNavigationItem, AppShellProps } from './interfaces'
 
@@ -18,6 +26,12 @@ const NAVIGATION_ITEMS: AppShellNavigationItem[] = [
     label: 'Mes candidatures',
     href: JOB_APPLICATIONS_ROUTE,
     isActiveForPathname: (pathname) => isPathnameWithinRoute(pathname, JOB_APPLICATIONS_ROUTE),
+  },
+  {
+    label: 'Mes contacts',
+    href: CONTACTS_ROUTE,
+    isActiveForPathname: (pathname) =>
+      isPathnameWithinRoute(pathname, CONTACTS_ROUTE) || isPathnameWithinRoute(pathname, INTERMEDIARIES_ROUTE),
   },
   { label: 'Mon calendrier', href: CALENDAR_ROUTE, isActiveForPathname: (pathname) => isPathnameWithinRoute(pathname, CALENDAR_ROUTE) },
   {

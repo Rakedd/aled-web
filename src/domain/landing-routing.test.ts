@@ -79,6 +79,8 @@ describe('isAppPathname', () => {
     '/auth/confirm',
     '/candidatures/42',
     '/calendar',
+    '/contacts',
+    '/agences/x',
     '/opportunites',
     '/preferences/opportunites',
     '/settings',

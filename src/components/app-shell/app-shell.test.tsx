@@ -21,6 +21,7 @@ describe('AppShell', () => {
     const menuLinks = screen.getByRole('navigation', { name: 'Navigation principale' }).querySelectorAll('a')
     expect(Array.from(menuLinks).map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
       ['Mes candidatures', '/candidatures'],
+      ['Mes contacts', '/contacts'],
       ['Mon calendrier', '/calendar'],
       ['Mes opportunités', '/opportunites'],
       ['Préférences', '/preferences'],
@@ -68,6 +69,11 @@ describe('AppShell', () => {
   it('marks Préférences active on a preferences sub-page', () => {
     renderShell(0, '/preferences/opportunites')
     expect(screen.getByRole('link', { name: 'Préférences' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it.each(['/contacts', '/contacts/abc', '/agences', '/agences/abc'])('marks Mes contacts active on %s', (pathname) => {
+    renderShell(0, pathname)
+    expect(screen.getByRole('link', { name: 'Mes contacts' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('marks nothing active on the home page', () => {
