@@ -73,12 +73,13 @@ rm ~/Downloads/cle.json
 
 ## Navigation et fonctionnalités
 
-Menu : « Mes candidatures », « Mon calendrier », « Mes opportunités », « Préférences ».
+Menu : « Mes candidatures », « Mes contacts », « Mon calendrier », « Mes opportunités », « Préférences ».
 
 | Route | Contenu |
 | --- | --- |
 | `/` | accueil : rappels, prochains entretiens et missions mises en avant |
 | `/candidatures` | tableau des candidatures |
+| `/contacts` | « Mes contacts » : onglets contacts et agences, avec la page de chaque contact (profil, missions, échanges, notes) et de chaque agence (`/agences/<id>`) |
 | `/calendar` | « Mon calendrier » |
 | `/candidatures/<id>` | page de la candidature, en lecture d'abord, avec un crayon pour modifier chaque bloc (en-tête, infos mission, contact, stack) |
 | `/opportunites` | « Mes opportunités », avec recherche par titre, entreprise ou lieu |
@@ -177,7 +178,7 @@ Ce que fait le script :
 
 - il refuse, sans rien écrire, un fichier qui n'est pas un export Freeclutch (`formatVersion: 1`), qui contient une ligne d'un autre utilisateur, dont un identifiant de ligne appartient déjà à un autre utilisateur en base, ou dont un PDF sort du dossier de l'utilisateur ou dépasse 4 Mo ;
 - si le compte n'existe plus (projet recréé, utilisateur supprimé), il le recrée avec le même identifiant et l'adresse e-mail du profil ; le compte recréé n'a pas de mot de passe : en définir un depuis sa fiche dans Supabase (**Authentication → Users**) avant que l'utilisateur se reconnecte ;
-- il fait un upsert (insertion, ou mise à jour par identifiant) du profil, des intermédiaires, contacts, clients finaux, candidatures, journal d'activité, entretiens, fiches métier, reports d'alerte, briefs par langue, questions d'entretien, filtres et décisions des opportunités, dans l'ordre des dépendances, puis remet chaque PDF à son chemin de stockage ;
+- il fait un upsert (insertion, ou mise à jour par identifiant) du profil, des intermédiaires, contacts, clients finaux, candidatures, journal d'activité, entretiens, fiches métier, reports d'alerte, briefs par langue, questions d'entretien, filtres et décisions des opportunités, dans l'ordre des dépendances, puis rattache les contacts sans agence à celle de leur candidature la plus récente et remet chaque PDF à son chemin de stockage ;
 - les lignes absentes de la sauvegarde ne sont pas supprimées : pour revenir exactement à l'état sauvegardé, supprimer d'abord les données actuelles de l'utilisateur.
 
 La clé API Claude n'étant jamais sauvegardée, l'utilisateur doit la ressaisir dans les préférences si son profil a été recréé.

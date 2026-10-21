@@ -326,6 +326,7 @@ export const restoreUserDataSnapshot = async (
       .from('interview_questions')
       .upsert(snapshot.interviewQuestions, { onConflict: 'user_id,job_application_id,language' }),
   )
+  failOnWriteError('assignMissingContactIntermediaries', await supabase.rpc('assign_missing_contact_intermediaries'))
   const skippedOpportunityDecisionCount = await restoreOpportunityDecisions(supabase, snapshot)
   await uploadJobSpecPdfs(supabase, snapshot)
   return { skippedOpportunityDecisionCount }

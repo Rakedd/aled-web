@@ -201,7 +201,7 @@ describe('user data snapshot', () => {
       contacts: 1,
       endClients: 3,
       jobApplications: 1,
-      activityLogEntries: 1,
+      activityLogEntries: 2,
       interviews: 1,
       jobSpecs: 1,
       alertSnoozes: 1,
@@ -549,6 +549,45 @@ describe('user data snapshot', () => {
       language: 'en',
       questions: ['Which product ships next?', 'How large is the frontend team?'],
     })
+  })
+
+  it('exports and restores an exchange without job application and contact notes', async () => {
+    const owner = await createSeededTestUser()
+    const serviceRoleClient = createServiceRoleTestClient()
+    const originalSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner.pdfStoragePath)
+
+    await restoreUserDataSnapshot(serviceRoleClient, {
+      ...originalSnapshot,
+      endClients: listChildEndClientsBeforeRootOnes(originalSnapshot.endClients),
+    })
+
+    const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    expect(restoredSnapshot.contacts[0]).toMatchObject({ notes: 'Rencontrée au meetup React', referred_by: 'Paul Leroy' })
+    expect(restoredSnapshot.activityLogEntries).toContainEqual(
+      expect.objectContaining({
+        job_application_id: null,
+        contact_id: restoredSnapshot.contacts[0].id,
+        summary: 'Appel sans candidature',
+      }),
+    )
+    expect({ ...restoredSnapshot, exportedAt: originalSnapshot.exportedAt }).toEqual(originalSnapshot)
+  })
+
+  it('assigns agencies to restored contacts without one', async () => {
+    const owner = await createSeededTestUser()
+    const serviceRoleClient = createServiceRoleTestClient()
+    const originalSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner.pdfStoragePath)
+
+    await restoreUserDataSnapshot(serviceRoleClient, {
+      ...originalSnapshot,
+      endClients: listChildEndClientsBeforeRootOnes(originalSnapshot.endClients),
+      contacts: originalSnapshot.contacts.map((contact) => ({ ...contact, intermediary_id: null })),
+    })
+
+    const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    expect(restoredSnapshot.contacts[0].intermediary_id).toBe(originalSnapshot.jobApplications[0].intermediary_id)
   })
 
   it('refuses a brief or interview questions of another user and reused ids, writing nothing', async () => {

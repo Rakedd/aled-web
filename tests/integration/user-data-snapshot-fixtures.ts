@@ -121,6 +121,8 @@ export const seedEveryUserTable = async (testUser: TestUser): Promise<SeededUser
         email: 'jeanne.martin@alpha.example',
         phone: '+33 6 12 34 56 78',
         intermediary_id: intermediaryId,
+        notes: 'Rencontrée au meetup React',
+        referred_by: 'Paul Leroy',
       })
       .select('id')
       .single(),
@@ -150,6 +152,16 @@ export const seedEveryUserTable = async (testUser: TestUser): Promise<SeededUser
       kind: 'call',
       summary: 'Appel de qualification',
       occurred_at: '2026-10-03T09:15:00+00:00',
+    }),
+  )
+  failOnError(
+    await client.from('activity_log_entries').insert({
+      user_id: userId,
+      job_application_id: null,
+      contact_id: contactId,
+      kind: 'call',
+      summary: 'Appel sans candidature',
+      occurred_at: '2026-10-04T10:00:00+00:00',
     }),
   )
   failOnError(
