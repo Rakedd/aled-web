@@ -1,106 +1,114 @@
 import { AuthApiError } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/server/supabase/create-server-supabase-client'
-import { requestMagicLink, signOut } from './auth-actions'
+import { signInWithPassword, signOut } from './auth-actions'
 
 jest.mock('server-only', () => ({}))
 jest.mock('next/navigation', () => ({ redirect: jest.fn() }))
 jest.mock('@/server/supabase/create-server-supabase-client', () => ({ createServerSupabaseClient: jest.fn() }))
 
-const signInWithOtp = jest.fn()
+const authSignInWithPassword = jest.fn()
 const authSignOut = jest.fn()
 
 beforeEach(() => {
   jest.clearAllMocks()
   jest.mocked(createServerSupabaseClient).mockResolvedValue(
-    { auth: { signInWithOtp, signOut: authSignOut } } as unknown as Awaited<ReturnType<typeof createServerSupabaseClient>>,
+    { auth: { signInWithPassword: authSignInWithPassword, signOut: authSignOut } } as unknown as Awaited<
+      ReturnType<typeof createServerSupabaseClient>
+    >,
   )
 })
 
-describe('requestMagicLink', () => {
+describe('signInWithPassword', () => {
   it('rejects an invalid email without calling Supabase', async () => {
-    await expect(requestMagicLink('not-an-email')).resolves.toEqual({ ok: false, errorMessage: 'Adresse e-mail invalide' })
-    expect(signInWithOtp).not.toHaveBeenCalled()
+    await expect(signInWithPassword('not-an-email', 'secret')).resolves.toEqual({
+      ok: false,
+      errorMessage: 'Adresse e-mail invalide',
+    })
+    expect(authSignInWithPassword).not.toHaveBeenCalled()
   })
 
-  it('asks Supabase for a magic link without creating any account', async () => {
-    signInWithOtp.mockResolvedValue({ data: {}, error: null })
-
-    await expect(requestMagicLink(' freelance@example.com ')).resolves.toEqual({ ok: true, data: null })
-    expect(signInWithOtp).toHaveBeenCalledWith({ email: 'freelance@example.com', options: { shouldCreateUser: false } })
+  it('rejects an empty password without calling Supabase', async () => {
+    await expect(signInWithPassword('freelance@example.com', '')).resolves.toEqual({
+      ok: false,
+      errorMessage: 'Saisis ton mot de passe.',
+    })
+    expect(authSignInWithPassword).not.toHaveBeenCalled()
   })
 
-  it('reports success for an email that was never invited, so accounts cannot be enumerated', async () => {
-    signInWithOtp.mockResolvedValue({
+  it.each([
+    [undefined, 'secret'],
+    [42, 'secret'],
+    ['freelance@example.com', null],
+    ['freelance@example.com', { password: 'secret' }],
+  ])('rejects the non-string payload (%p, %p) without calling Supabase', async (email, password) => {
+    await expect(signInWithPassword(email as unknown as string, password as unknown as string)).resolves.toEqual({
+      ok: false,
+      errorMessage: 'Une erreur est survenue, réessaie.',
+    })
+    expect(authSignInWithPassword).not.toHaveBeenCalled()
+  })
+
+  it('signs in with the trimmed email and the untouched password', async () => {
+    authSignInWithPassword.mockResolvedValue({ data: {}, error: null })
+
+    await expect(signInWithPassword(' freelance@example.com ', ' secret ')).resolves.toEqual({ ok: true, data: null })
+    expect(authSignInWithPassword).toHaveBeenCalledWith({ email: 'freelance@example.com', password: ' secret ' })
+  })
+
+  it('reports wrong credentials with one message for both unknown emails and wrong passwords', async () => {
+    authSignInWithPassword.mockResolvedValue({
       data: {},
-      error: new AuthApiError('Signups not allowed for otp', 422, 'otp_disabled'),
+      error: new AuthApiError('Invalid login credentials', 400, 'invalid_credentials'),
     })
 
-    await expect(requestMagicLink('stranger@example.com')).resolves.toEqual({ ok: true, data: null })
+    await expect(signInWithPassword('freelance@example.com', 'wrong')).resolves.toEqual({
+      ok: false,
+      errorMessage: 'E-mail ou mot de passe incorrect.',
+    })
   })
 
-  it('reports success when the existing account is throttled, so the throttle cannot reveal the account', async () => {
+  it('explains that an unconfirmed account cannot sign in yet', async () => {
+    authSignInWithPassword.mockResolvedValue({
+      data: {},
+      error: new AuthApiError('Email not confirmed', 400, 'email_not_confirmed'),
+    })
+
+    await expect(signInWithPassword('freelance@example.com', 'secret')).resolves.toEqual({
+      ok: false,
+      errorMessage: "Ton compte n'est pas encore activé.",
+    })
+  })
+
+  it('asks to retry later and warns the operator with the error code only when sign-ins are throttled', async () => {
     const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
-    signInWithOtp.mockResolvedValue({
+    authSignInWithPassword.mockResolvedValue({
       data: {},
-      error: new AuthApiError('Email rate limit exceeded', 429, 'over_email_send_rate_limit'),
+      error: new AuthApiError('Request rate limit reached', 429, 'over_request_rate_limit'),
     })
 
-    await expect(requestMagicLink('freelance@example.com')).resolves.toEqual({ ok: true, data: null })
-    consoleWarnSpy.mockRestore()
-  })
-
-  it('warns the operator about the email throttle with the error code only, never the email address', async () => {
-    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
-    signInWithOtp.mockResolvedValue({
-      data: {},
-      error: new AuthApiError('Email rate limit exceeded', 429, 'over_email_send_rate_limit'),
+    await expect(signInWithPassword('freelance@example.com', 'secret')).resolves.toEqual({
+      ok: false,
+      errorMessage: 'Trop de tentatives de connexion. Réessaie dans quelques minutes.',
     })
-
-    await requestMagicLink('freelance@example.com')
-
-    expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
-    expect(consoleWarnSpy).toHaveBeenCalledWith('Magic link email throttled', { code: 'over_email_send_rate_limit' })
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Password sign-in throttled', { code: 'over_request_rate_limit' })
     expect(JSON.stringify(consoleWarnSpy.mock.calls)).not.toContain('freelance@example.com')
     consoleWarnSpy.mockRestore()
   })
 
-  it('does not warn when an uninvited email is silently accepted', async () => {
-    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
-    signInWithOtp.mockResolvedValue({
-      data: {},
-      error: new AuthApiError('Signups not allowed for otp', 422, 'otp_disabled'),
-    })
-
-    await requestMagicLink('stranger@example.com')
-
-    expect(consoleWarnSpy).not.toHaveBeenCalled()
-    consoleWarnSpy.mockRestore()
-  })
-
-  it.each([undefined, null, 42, { email: 'freelance@example.com' }])(
-    'rejects the non-string payload %p without calling Supabase',
-    async (nonStringPayload) => {
-      await expect(requestMagicLink(nonStringPayload as unknown as string)).resolves.toEqual({
-        ok: false,
-        errorMessage: 'Adresse e-mail invalide',
-      })
-      expect(signInWithOtp).not.toHaveBeenCalled()
-    },
-  )
-
-  it('reports a generic error when Supabase fails for another reason', async () => {
+  it('reports a generic error and logs it without credentials when Supabase fails for another reason', async () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
-    signInWithOtp.mockResolvedValue({
+    authSignInWithPassword.mockResolvedValue({
       data: {},
       error: new AuthApiError('Unexpected failure', 500, 'unexpected_failure'),
     })
 
-    await expect(requestMagicLink('freelance@example.com')).resolves.toEqual({
+    await expect(signInWithPassword('freelance@example.com', 'secret')).resolves.toEqual({
       ok: false,
-      errorMessage: "Impossible d'envoyer le lien de connexion pour le moment. Réessaie dans quelques minutes.",
+      errorMessage: 'Connexion impossible pour le moment. Réessaie dans quelques minutes.',
     })
-    expect(consoleErrorSpy).toHaveBeenCalled()
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Password sign-in failed', { code: 'unexpected_failure', status: 500 })
+    expect(JSON.stringify(consoleErrorSpy.mock.calls)).not.toMatch(/freelance@example\.com|secret/)
     consoleErrorSpy.mockRestore()
   })
 })

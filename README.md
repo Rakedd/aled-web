@@ -134,14 +134,14 @@ Générer le jeton une seule fois, avec `openssl rand -hex 32`, puis placer la *
 
 Ne jamais coller le jeton dans un fichier suivi par git ni dans une commande qui resterait dans l'historique du shell. Pour le renouveler, générer une nouvelle valeur, la mettre à jour des deux côtés, puis redéployer Vercel. Le déploiement du watcher est documenté dans le dépôt career-ops.
 
-## Inviter un utilisateur
+## Créer un compte utilisateur
 
-L'inscription publique est désactivée. Pour ouvrir l'accès à quelqu'un :
+L'inscription publique est désactivée. Les comptes se connectent par e-mail et mot de passe, sur le web (`/login`) comme sur l'application mobile. Pour ouvrir l'accès à quelqu'un :
 
-1. Dans le tableau de bord Supabase du projet : **Authentication → Users → Add user → Send invitation**, puis saisir son adresse e-mail. En local, la même action se fait depuis Supabase Studio (http://127.0.0.1:54323).
-2. La personne reçoit l'e-mail « Ton invitation à Aled ». Son lien ouvre `/auth/confirm`, qui la connecte et la redirige vers l'accueil. Ensuite, elle se reconnecte avec un lien magique depuis `/login`.
+1. Dans le tableau de bord Supabase du projet : **Authentication → Users → Add user → Create new user**, saisir son adresse e-mail et un mot de passe, et cocher **Auto Confirm User**. Sans cette case, la connexion est refusée avec « Ton compte n'est pas encore activé. ». En local, la même action se fait depuis Supabase Studio (http://127.0.0.1:54323).
+2. Transmettre le mot de passe à la personne par un canal privé. L'application ne permet pas encore de le changer ni de le réinitialiser : en cas d'oubli, le modifier depuis la fiche de l'utilisateur dans Supabase.
 
-Sur le projet hébergé, les modèles d'e-mail **Invite user** et **Magic link** doivent reprendre les liens de `supabase/templates/invite.html` et `supabase/templates/magic-link.html` (`{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=...`), et la **Site URL** doit être l'URL de production.
+La route `/auth/confirm` reste en place pour les liens envoyés par Supabase (invitation, lien magique). Sur le projet hébergé, les modèles d'e-mail correspondants doivent reprendre les liens de `supabase/templates/invite.html` et `supabase/templates/magic-link.html` (`{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=...`), et la **Site URL** doit être l'URL de production.
 
 Un profil est créé automatiquement pour chaque nouveau compte.
 
@@ -176,7 +176,7 @@ Un objet déjà présent n'est jamais écrasé : relancer la sauvegarde le même
 Ce que fait le script :
 
 - il refuse, sans rien écrire, un fichier qui n'est pas un export Freeclutch (`formatVersion: 1`), qui contient une ligne d'un autre utilisateur, dont un identifiant de ligne appartient déjà à un autre utilisateur en base, ou dont un PDF sort du dossier de l'utilisateur ou dépasse 4 Mo ;
-- si le compte n'existe plus (projet recréé, utilisateur supprimé), il le recrée avec le même identifiant et l'adresse e-mail du profil ; l'utilisateur se reconnecte ensuite par lien magique ;
+- si le compte n'existe plus (projet recréé, utilisateur supprimé), il le recrée avec le même identifiant et l'adresse e-mail du profil ; le compte recréé n'a pas de mot de passe : en définir un depuis sa fiche dans Supabase (**Authentication → Users**) avant que l'utilisateur se reconnecte ;
 - il fait un upsert (insertion, ou mise à jour par identifiant) du profil, des intermédiaires, contacts, clients finaux, candidatures, journal d'activité, entretiens, fiches métier, reports d'alerte, briefs par langue, questions d'entretien, filtres et décisions des opportunités, dans l'ordre des dépendances, puis remet chaque PDF à son chemin de stockage ;
 - les lignes absentes de la sauvegarde ne sont pas supprimées : pour revenir exactement à l'état sauvegardé, supprimer d'abord les données actuelles de l'utilisateur.
 
@@ -219,7 +219,7 @@ La première mise en place se fait à la main, dans cet ordre : Supabase, Google
    npx supabase db push
    ```
 
-3. Dans **Authentication > Sign In / Providers** (ou **Settings**), désactiver les inscriptions (« Allow new users to sign up »). C'est l'équivalent de `enable_signup = false` dans `supabase/config.toml` : seules les invitations créent des comptes.
+3. Dans **Authentication > Sign In / Providers** (ou **Settings**), désactiver les inscriptions (« Allow new users to sign up »). C'est l'équivalent de `enable_signup = false` dans `supabase/config.toml` : seuls les comptes créés depuis le tableau de bord existent.
 4. Dans **Authentication > URL Configuration** :
    - **Site URL** : `https://app.aled.work` ;
    - **Redirect URLs** : ajouter `https://app.aled.work/auth/confirm`.
@@ -228,12 +228,12 @@ La première mise en place se fait à la main, dans cet ordre : Supabase, Google
    - **Invite user** : `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite`
 
    Le plus simple est de copier le contenu de `supabase/templates/magic-link.html` et `supabase/templates/invite.html` dans les deux modèles, avec les mêmes objets.
-6. Configurer un serveur SMTP personnalisé, **avant d'inviter qui que ce soit**. Le service d'e-mail intégré de Supabase n'envoie qu'aux adresses des membres de l'équipe du projet Supabase, avec une limite de quelques e-mails par heure : sans SMTP personnalisé, les invitations et les liens de connexion envoyés aux amis n'arrivent jamais, sans aucune erreur visible.
+6. Configurer un serveur SMTP personnalisé avant d'envoyer des e-mails Supabase (invitation, lien magique). La connexion par mot de passe n'envoie aucun e-mail et fonctionne sans. Le service d'e-mail intégré de Supabase n'envoie qu'aux adresses des membres de l'équipe du projet Supabase, avec une limite de quelques e-mails par heure : sans SMTP personnalisé, ces e-mails n'arrivent jamais, sans aucune erreur visible.
    - Créer un compte chez un fournisseur gratuit, par exemple [Resend](https://resend.com) (3 000 e-mails par mois) ou [Brevo](https://www.brevo.com) (300 e-mails par jour).
    - Chez ce fournisseur, vérifier le domaine d'envoi (enregistrements DNS SPF et DKIM) ou, à défaut, l'adresse d'expéditeur.
    - Dans **Authentication > Emails > SMTP Settings**, activer **Enable custom SMTP** et renseigner l'hôte, le port, l'identifiant, le mot de passe (clé SMTP du fournisseur), l'adresse et le nom d'expéditeur.
    - Dans **Authentication > Rate Limits**, relever la limite d'envoi d'e-mails (« Rate limit for sending emails »), par exemple à 30 par heure : la valeur par défaut reste très basse même avec un SMTP personnalisé.
-   - Vérifier en s'envoyant un lien de connexion à une adresse qui n'est pas membre de l'équipe Supabase. Si l'application affiche un succès sans qu'aucun e-mail n'arrive, les journaux Vercel contiennent l'avertissement `Magic link email throttled` quand la limite d'envoi est atteinte.
+   - Vérifier en envoyant une invitation depuis le tableau de bord à une adresse qui n'est pas membre de l'équipe Supabase.
 7. Relever dans **Project Settings > API** : l'URL du projet (`SUPABASE_URL`), la clé `anon` (`SUPABASE_ANON_KEY`) et la clé `service_role` (`SUPABASE_SERVICE_ROLE_KEY`, secrète).
 
 ### 2. Sauvegardes sur Google Cloud Storage
@@ -281,7 +281,7 @@ L'application est servie sur `https://app.aled.work`. Le domaine racine `aled.wo
 
 ### 4. Premier utilisateur
 
-1. Dans le tableau de bord Supabase, **Authentication > Users > Invite user** : s'inviter avec sa propre adresse.
-2. Ouvrir le lien reçu par e-mail pour se connecter.
+1. Dans le tableau de bord Supabase, **Authentication > Users > Add user > Create new user** : créer son compte avec sa propre adresse, un mot de passe, et **Auto Confirm User** coché.
+2. Se connecter sur `/login` avec cette adresse et ce mot de passe.
 3. Dans **Préférences**, enregistrer sa clé API Claude.
 4. Dans la console Anthropic, définir une limite de dépense mensuelle pour cette clé.

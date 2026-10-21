@@ -2,44 +2,63 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { LoginForm } from './login-form'
 
+const routerReplace = jest.fn()
+
+jest.mock('next/navigation', () => ({ useRouter: () => ({ replace: routerReplace }) }))
+
 const INVITATION_ONLY_MESSAGE = 'Accès sur invitation uniquement.'
 
+const fillAndSubmitCredentials = async () => {
+  await userEvent.type(screen.getByLabelText('Adresse e-mail'), 'moi@example.com')
+  await userEvent.type(screen.getByLabelText('Mot de passe'), 'secret')
+  await userEvent.click(screen.getByRole('button', { name: 'Se connecter' }))
+}
+
+beforeEach(() => {
+  routerReplace.mockClear()
+})
+
 describe('LoginForm', () => {
-  it('offers the magic link button and the invitation-only reminder', () => {
-    render(<LoginForm requestMagicLink={jest.fn()} />)
+  it('offers email and password fields, the sign-in button and the invitation-only reminder', () => {
+    render(<LoginForm signInWithPassword={jest.fn()} />)
 
-    expect(screen.getByRole('button', { name: 'Recevoir un lien de connexion' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Adresse e-mail')).toHaveAttribute('autocomplete', 'username')
+    expect(screen.getByLabelText('Mot de passe')).toHaveAttribute('type', 'password')
+    expect(screen.getByLabelText('Mot de passe')).toHaveAttribute('autocomplete', 'current-password')
+    expect(screen.getByRole('button', { name: 'Se connecter' })).toBeInTheDocument()
     expect(screen.getByText(INVITATION_ONLY_MESSAGE)).toBeInTheDocument()
   })
 
-  it('shows the sending label while the link is being requested', async () => {
-    render(<LoginForm requestMagicLink={jest.fn(() => new Promise<never>(() => undefined))} />)
+  it('shows the pending label while signing in', async () => {
+    render(<LoginForm signInWithPassword={jest.fn(() => new Promise<never>(() => undefined))} />)
 
-    await userEvent.type(screen.getByLabelText('Adresse e-mail'), 'moi@example.com')
-    await userEvent.click(screen.getByRole('button', { name: 'Recevoir un lien de connexion' }))
+    await fillAndSubmitCredentials()
 
-    expect(screen.getByRole('button', { name: 'Envoi en cours…' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Connexion en cours…' })).toBeDisabled()
   })
 
-  it('keeps the invitation-only reminder once the link is sent', async () => {
-    render(<LoginForm requestMagicLink={jest.fn().mockResolvedValue({ ok: true, data: null })} />)
+  it('goes to the home page once signed in', async () => {
+    render(<LoginForm signInWithPassword={jest.fn().mockResolvedValue({ ok: true, data: null })} />)
 
-    await userEvent.type(screen.getByLabelText('Adresse e-mail'), 'moi@example.com')
-    await userEvent.click(screen.getByRole('button', { name: 'Recevoir un lien de connexion' }))
+    await fillAndSubmitCredentials()
 
-    expect(await screen.findByRole('status')).toHaveTextContent("Si ce compte existe, un lien de connexion vient d'être envoyé.")
-    expect(screen.getByText(INVITATION_ONLY_MESSAGE)).toBeInTheDocument()
+    expect(routerReplace).toHaveBeenCalledWith('/')
   })
 
-  it('announces the failure next to the email field when the link cannot be sent', async () => {
-    render(<LoginForm requestMagicLink={jest.fn().mockResolvedValue({ ok: false, errorMessage: 'Service indisponible' })} />)
+  it('announces the failure on both fields when the credentials are rejected', async () => {
+    render(
+      <LoginForm
+        signInWithPassword={jest.fn().mockResolvedValue({ ok: false, errorMessage: 'E-mail ou mot de passe incorrect.' })}
+      />,
+    )
 
-    const emailInput = screen.getByLabelText('Adresse e-mail')
-    await userEvent.type(emailInput, 'moi@example.com')
-    await userEvent.click(screen.getByRole('button', { name: 'Recevoir un lien de connexion' }))
+    await fillAndSubmitCredentials()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Service indisponible')
-    expect(emailInput).toHaveAttribute('aria-invalid', 'true')
-    expect(emailInput).toHaveAccessibleDescription('Service indisponible')
+    expect(await screen.findByRole('alert')).toHaveTextContent('E-mail ou mot de passe incorrect.')
+    for (const field of [screen.getByLabelText('Adresse e-mail'), screen.getByLabelText('Mot de passe')]) {
+      expect(field).toHaveAttribute('aria-invalid', 'true')
+      expect(field).toHaveAccessibleDescription('E-mail ou mot de passe incorrect.')
+    }
+    expect(routerReplace).not.toHaveBeenCalled()
   })
 })

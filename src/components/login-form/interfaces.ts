@@ -1,11 +1,14 @@
 import type { ActionResult } from '@/domain/action-result'
 
-export type LoginFormStatus = 'idle' | 'sending' | 'sent' | 'error'
+export type LoginFormStatus = 'idle' | 'signing-in' | 'error'
 
-export type RequestMagicLink = (email: string) => Promise<ActionResult<null>>
+export type SignInWithPassword = (email: string, password: string) => Promise<ActionResult<null>>
 
 export type LoginFormControllerParameters = {
-  requestMagicLink: RequestMagicLink
+  signInWithPassword: SignInWithPassword
+  onSignedIn: () => void
 }
 
-export type LoginFormProps = LoginFormControllerParameters
+export type LoginFormProps = {
+  signInWithPassword: SignInWithPassword
+}

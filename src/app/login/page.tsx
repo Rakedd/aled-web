@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import { LoginForm } from '@/components/login-form'
-import { requestMagicLink } from '@/server/actions/auth-actions'
+import { signInWithPassword } from '@/server/actions/auth-actions'
 
 export const metadata: Metadata = { title: 'Connexion · Aled' }
 
-const INVALID_LINK_MESSAGE = 'Ce lien de connexion est invalide ou a expiré. Demande un nouveau lien.'
+const INVALID_LINK_MESSAGE = 'Ce lien de connexion est invalide ou a expiré. Connecte-toi avec ton mot de passe.'
 
 const LoginPage = async ({ searchParams }: PageProps<'/login'>) => {
   const { error } = await searchParams
@@ -30,7 +30,7 @@ const LoginPage = async ({ searchParams }: PageProps<'/login'>) => {
               {INVALID_LINK_MESSAGE}
             </p>
           )}
-          <LoginForm requestMagicLink={requestMagicLink} />
+          <LoginForm signInWithPassword={signInWithPassword} />
         </div>
       </section>
     </main>

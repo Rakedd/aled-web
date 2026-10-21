@@ -1,47 +1,38 @@
 'use server'
 
 import 'server-only'
-import type { AuthError } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
-import type { ActionResult } from '@/domain/action-result'
-import { INVALID_EMAIL_ADDRESS_MESSAGE, isValidEmailAddress } from '@/domain/email-address'
+import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
+import {
+  SIGN_IN_FAILURE_MESSAGE,
+  SIGN_IN_RATE_LIMIT_ERROR_CODE,
+  findExpectedSignInErrorMessage,
+  findSignInCredentialsError,
+} from '@/domain/password-sign-in'
 import { createServerSupabaseClient } from '@/server/supabase/create-server-supabase-client'
 
-const MAGIC_LINK_FAILURE_MESSAGE =
-  "Impossible d'envoyer le lien de connexion pour le moment. Réessaie dans quelques minutes."
-
-const ACCOUNT_REVEALING_ERROR_CODES = new Set([
-  'otp_disabled',
-  'signup_disabled',
-  'user_not_found',
-  'over_email_send_rate_limit',
-])
-
-const isAccountRevealingError = (authError: AuthError): boolean =>
-  authError.code !== undefined && ACCOUNT_REVEALING_ERROR_CODES.has(authError.code)
-
-export const requestMagicLink = async (email: string): Promise<ActionResult<null>> => {
-  if (typeof email !== 'string') return { ok: false, errorMessage: INVALID_EMAIL_ADDRESS_MESSAGE }
+export const signInWithPassword = async (email: string, password: string): Promise<ActionResult<null>> => {
+  if (typeof email !== 'string' || typeof password !== 'string') {
+    return { ok: false, errorMessage: GENERIC_ACTION_ERROR_MESSAGE }
+  }
 
   const trimmedEmail = email.trim()
-  if (!isValidEmailAddress(trimmedEmail)) return { ok: false, errorMessage: INVALID_EMAIL_ADDRESS_MESSAGE }
+  const credentialsError = findSignInCredentialsError(trimmedEmail, password)
+  if (credentialsError) return { ok: false, errorMessage: credentialsError }
 
   const supabase = await createServerSupabaseClient()
-  const { error: signInError } = await supabase.auth.signInWithOtp({
-    email: trimmedEmail,
-    options: { shouldCreateUser: false },
-  })
+  const { error: signInError } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password })
+  if (!signInError) return { ok: true, data: null }
 
-  if (signInError?.code === 'over_email_send_rate_limit') {
-    console.warn('Magic link email throttled', { code: signInError.code })
+  if (signInError.code === SIGN_IN_RATE_LIMIT_ERROR_CODE) {
+    console.warn('Password sign-in throttled', { code: signInError.code })
   }
 
-  if (signInError && !isAccountRevealingError(signInError)) {
-    console.error('Magic link request failed', { code: signInError.code, status: signInError.status })
-    return { ok: false, errorMessage: MAGIC_LINK_FAILURE_MESSAGE }
-  }
+  const expectedSignInErrorMessage = findExpectedSignInErrorMessage(signInError.code)
+  if (expectedSignInErrorMessage) return { ok: false, errorMessage: expectedSignInErrorMessage }
 
-  return { ok: true, data: null }
+  console.error('Password sign-in failed', { code: signInError.code, status: signInError.status })
+  return { ok: false, errorMessage: SIGN_IN_FAILURE_MESSAGE }
 }
 
 export const signOut = async (): Promise<void> => {
