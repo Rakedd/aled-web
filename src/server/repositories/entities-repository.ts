@@ -3,6 +3,7 @@ import type { ActionResult } from '@/domain/action-result'
 import {
   type ContactDetails,
   type ContactDetailsInput,
+  CONTACT_NAME_ALREADY_TAKEN_MESSAGE,
   END_CLIENT_PARENT_CYCLE_MESSAGE,
   ENTITY_NOT_FOUND_MESSAGES,
   type EntitySearchArguments,
@@ -32,7 +33,6 @@ export type JobApplicationEntityColumns = Pick<
 const ENTITY_SUGGESTION_LIMIT = 10
 const NAME_UNIQUENESS_CONFLICT_TARGET = 'user_id,normalized_name'
 const LIKE_PATTERN_SPECIAL_CHARACTERS = /[\\%_*]/g
-const CONTACT_NAME_ALREADY_TAKEN_MESSAGE = 'Un autre contact porte déjà ce nom'
 
 const escapeLikePattern = (searchText: string): string => searchText.replace(LIKE_PATTERN_SPECIAL_CHARACTERS, '\\$&')
 
@@ -231,6 +231,7 @@ const searchIntermediarySuggestions = async (
     name: intermediaryRow.name,
     label: intermediaryRow.name,
     parentName: null,
+    contactDetails: null,
   }))
 }
 
@@ -252,6 +253,7 @@ const searchContactSuggestions = async (
     name: contactRow.full_name,
     label: contactRow.full_name,
     parentName: null,
+    contactDetails: null,
   }))
 }
 
@@ -295,6 +297,7 @@ const searchEndClientSuggestions = async (
       name: endClientRow.name,
       label: formatEndClientLabel(endClientRow.name, parentName),
       parentName,
+      contactDetails: null,
     }
   })
 }
