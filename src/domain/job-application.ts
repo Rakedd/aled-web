@@ -1,5 +1,11 @@
 import type { ActionResult } from './action-result'
-import { MAXIMUM_ENTITY_NAME_LENGTH, MAXIMUM_PHONE_LENGTH, validateOptionalEntityName } from './entities'
+import { type ContactDetailFieldName, validateUserEditedContactFields } from './contacts'
+import {
+  ENTITY_VALIDATION_MESSAGES,
+  MAXIMUM_ENTITY_NAME_LENGTH,
+  MAXIMUM_PHONE_LENGTH,
+  validateOptionalEntityName,
+} from './entities'
 import {
   type TextFieldRule,
   isRecord,
@@ -70,6 +76,8 @@ export type JobApplicationInput = {
   contactName: string | null
   contactEmail: string | null
   contactPhone: string | null
+  contactLinkedinUrl: string | null
+  userEditedContactFields: ContactDetailFieldName[]
   endClientName: string | null
   endClientParentName: string | null
 }
@@ -102,6 +110,7 @@ export const MAXIMUM_DAILY_RATE = 100_000
 export const MAXIMUM_STACK_ITEM_COUNT = 100
 export const MAXIMUM_STACK_ITEM_NAME_LENGTH = 100
 export const POSTING_URL_ALLOWED_PROTOCOLS: readonly string[] = ['http:', 'https:']
+const LINKEDIN_URL_ALLOWED_PROTOCOLS: readonly string[] = ['https:']
 const STACK_ITEM_ORIGINS: readonly StackItemOrigin[] = ['posting', 'job_spec']
 
 export const JOB_APPLICATION_TEXT_FIELD_RULES = {
@@ -194,6 +203,9 @@ const JOB_APPLICATION_FIELD_VALIDATORS: JobApplicationFieldValidators = {
   contactEmail: (candidate) =>
     validateOptionalEmailAddress(candidate, JOB_APPLICATION_VALIDATION_MESSAGES.invalidContactEmail),
   contactPhone: validateOptionalTextField(JOB_APPLICATION_TEXT_FIELD_RULES.contactPhone),
+  contactLinkedinUrl: (candidate) =>
+    validateOptionalUrl(candidate, LINKEDIN_URL_ALLOWED_PROTOCOLS, ENTITY_VALIDATION_MESSAGES.invalidLinkedinUrl),
+  userEditedContactFields: validateUserEditedContactFields,
   endClientName: validateOptionalEntityNameField(JOB_APPLICATION_TEXT_FIELD_RULES.endClientName),
   endClientParentName: validateOptionalEntityNameField(JOB_APPLICATION_TEXT_FIELD_RULES.endClientParentName),
 }

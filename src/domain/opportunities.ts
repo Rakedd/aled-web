@@ -288,6 +288,8 @@ export const buildJobApplicationInputFromOpportunity = (opportunity: Opportunity
   contactName: null,
   contactEmail: null,
   contactPhone: null,
+  contactLinkedinUrl: null,
+  userEditedContactFields: [],
   endClientName: null,
   endClientParentName: null,
 })

@@ -25,6 +25,8 @@ const validJobApplicationInput: JobApplicationInput = {
   contactName: 'Jean Dupont',
   contactEmail: 'jean@agence-x.fr',
   contactPhone: '06 12 34 56 78',
+  contactLinkedinUrl: 'https://www.linkedin.com/in/jean-dupont',
+  userEditedContactFields: ['phone'],
   endClientName: 'BNP Paribas AM',
   endClientParentName: 'BNP Paribas',
 }
@@ -50,6 +52,19 @@ describe('validateJobApplicationInput', () => {
   it('turns blank optional text into null', () => {
     const validationResult = validateJobApplicationInput({ ...validJobApplicationInput, source: '  ', endClientName: '' })
     expect(validationResult).toMatchObject({ ok: true, data: { source: null, endClientName: null } })
+  })
+
+  it('rejects a non-https contact LinkedIn url', () => {
+    expect(
+      validateJobApplicationInput({ ...validJobApplicationInput, contactLinkedinUrl: 'http://www.linkedin.com/in/jean' }),
+    ).toEqual({ ok: false, errorMessage: 'Lien LinkedIn invalide' })
+  })
+
+  it('rejects unknown user edited contact fields', () => {
+    expect(validateJobApplicationInput({ ...validJobApplicationInput, userEditedContactFields: ['fullName'] })).toEqual({
+      ok: false,
+      errorMessage: 'Champs modifiés invalides',
+    })
   })
 
   it('requires a title', () => {

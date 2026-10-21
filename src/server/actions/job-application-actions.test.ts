@@ -85,6 +85,8 @@ const validJobApplicationInput: JobApplicationInput = {
   contactName: null,
   contactEmail: null,
   contactPhone: null,
+  contactLinkedinUrl: null,
+  userEditedContactFields: [],
   endClientName: null,
   endClientParentName: null,
 }

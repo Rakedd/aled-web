@@ -1,5 +1,6 @@
 import 'server-only'
 import type { ActionResult } from '@/domain/action-result'
+import { type ContactDetailFieldName, type ContactDetailValues, mergeContactDetailValues } from '@/domain/contacts'
 import {
   type ContactDetails,
   type ContactDetailsInput,
@@ -22,7 +23,14 @@ type EntityTableName = 'intermediaries' | 'contacts' | 'end_clients'
 
 export type JobApplicationEntityNames = Pick<
   JobApplicationInput,
-  'intermediaryName' | 'contactName' | 'contactEmail' | 'contactPhone' | 'endClientName' | 'endClientParentName'
+  | 'intermediaryName'
+  | 'contactName'
+  | 'contactEmail'
+  | 'contactPhone'
+  | 'contactLinkedinUrl'
+  | 'userEditedContactFields'
+  | 'endClientName'
+  | 'endClientParentName'
 >
 
 export type JobApplicationEntityColumns = Pick<
@@ -52,7 +60,7 @@ const findEntityIdByNormalizedName = async (
   return data.id
 }
 
-const resolveIntermediaryId = async (
+export const resolveIntermediaryId = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   intermediaryName: string,
@@ -68,29 +76,12 @@ const resolveIntermediaryId = async (
   return findEntityIdByNormalizedName(supabase, userId, 'intermediaries', normalizedName)
 }
 
-const fillEmptyContactField = async (
-  supabase: FreeclutchSupabaseClient,
-  userId: string,
-  contactId: string,
-  contactFieldName: 'email' | 'phone',
-  contactFieldValue: string | null,
-): Promise<void> => {
-  if (contactFieldValue === null) return
-  const { error } = await supabase
-    .from('contacts')
-    .update(contactFieldName === 'email' ? { email: contactFieldValue } : { phone: contactFieldValue })
-    .eq('id', contactId)
-    .eq('user_id', userId)
-    .is(contactFieldName, null)
-  if (error) throw toRepositoryError('fillEmptyContactField', error)
-}
-
 const resolveContactId = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   contactName: string,
-  contactEmail: string | null,
-  contactPhone: string | null,
+  submittedContactDetails: ContactDetailValues,
+  userEditedFields: readonly ContactDetailFieldName[],
 ): Promise<string> => {
   const normalizedName = normalizeEntityName(contactName)
   const { error } = await supabase
@@ -100,10 +91,48 @@ const resolveContactId = async (
       { onConflict: NAME_UNIQUENESS_CONFLICT_TARGET, ignoreDuplicates: true },
     )
   if (error) throw toRepositoryError('resolveContactId', error)
-  const contactId = await findEntityIdByNormalizedName(supabase, userId, 'contacts', normalizedName)
-  await fillEmptyContactField(supabase, userId, contactId, 'email', contactEmail)
-  await fillEmptyContactField(supabase, userId, contactId, 'phone', contactPhone)
-  return contactId
+  const { data: currentContact, error: readError } = await supabase
+    .from('contacts')
+    .select('id, phone, email, linkedin_url')
+    .eq('user_id', userId)
+    .eq('normalized_name', normalizedName)
+    .single()
+  if (readError) throw toRepositoryError('resolveContactId read', readError)
+  const mergedContactDetails = mergeContactDetailValues(
+    { phone: currentContact.phone, email: currentContact.email, linkedinUrl: currentContact.linkedin_url },
+    submittedContactDetails,
+    userEditedFields,
+  )
+  const contactColumnsToWrite: TablesUpdate<'contacts'> = {
+    phone: mergedContactDetails.phone,
+    email: mergedContactDetails.email,
+    linkedin_url: mergedContactDetails.linkedinUrl,
+  }
+  const hasDetailsToWrite = Object.values(contactColumnsToWrite).some((columnValue) => columnValue !== undefined)
+  if (hasDetailsToWrite) {
+    const { error: updateError } = await supabase
+      .from('contacts')
+      .update(contactColumnsToWrite)
+      .eq('id', currentContact.id)
+      .eq('user_id', userId)
+    if (updateError) throw toRepositoryError('resolveContactId update', updateError)
+  }
+  return currentContact.id
+}
+
+export const assignContactIntermediaryIfMissing = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  contactId: string,
+  intermediaryId: string,
+): Promise<void> => {
+  const { error } = await supabase
+    .from('contacts')
+    .update({ intermediary_id: intermediaryId })
+    .eq('id', contactId)
+    .eq('user_id', userId)
+    .is('intermediary_id', null)
+  if (error) throw toRepositoryError('assignContactIntermediaryIfMissing', error)
 }
 
 const resolveEndClientIdWithoutParent = async (
@@ -173,8 +202,12 @@ export const resolveJobApplicationEntityColumns = async (
             supabase,
             userId,
             entityNames.contactName,
-            entityNames.contactEmail ?? null,
-            entityNames.contactPhone ?? null,
+            {
+              phone: entityNames.contactPhone ?? null,
+              email: entityNames.contactEmail ?? null,
+              linkedinUrl: entityNames.contactLinkedinUrl ?? null,
+            },
+            entityNames.userEditedContactFields ?? [],
           )
   }
   return { ok: true, data: entityColumns }

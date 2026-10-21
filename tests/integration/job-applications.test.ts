@@ -104,6 +104,60 @@ describe('job applications repository', () => {
     expect(intermediaryIds).toEqual([intermediaries?.[0].id, intermediaries?.[0].id])
   })
 
+  it('keeps the existing contact email when an AI-prefilled email is submitted', async () => {
+    const user = await createTestUser()
+    await createJobApplicationOrFail(user.client, user.userId, { contactName: 'Jean Dupont', contactEmail: 'jean@agence-x.fr' })
+    await createJobApplicationOrFail(user.client, user.userId, {
+      contactName: 'Jean Dupont',
+      contactEmail: 'autre@agence-x.fr',
+      userEditedContactFields: [],
+    })
+
+    const { data: contacts } = await user.client.from('contacts').select('email').eq('user_id', user.userId)
+    expect(contacts).toEqual([{ email: 'jean@agence-x.fr' }])
+  })
+
+  it('overwrites the contact phone the user edited', async () => {
+    const user = await createTestUser()
+    await createJobApplicationOrFail(user.client, user.userId, { contactName: 'Jean Dupont', contactPhone: '06 00 00 00 00' })
+    await createJobApplicationOrFail(user.client, user.userId, {
+      contactName: 'Jean Dupont',
+      contactPhone: '06 12 34 56 78',
+      userEditedContactFields: ['phone'],
+    })
+
+    const { data: contacts } = await user.client.from('contacts').select('phone').eq('user_id', user.userId)
+    expect(contacts).toEqual([{ phone: '06 12 34 56 78' }])
+  })
+
+  it('saves the contact LinkedIn url at creation', async () => {
+    const user = await createTestUser()
+    await createJobApplicationOrFail(user.client, user.userId, {
+      contactName: 'Jean Dupont',
+      contactLinkedinUrl: 'https://www.linkedin.com/in/jean-dupont',
+    })
+
+    const { data: contacts } = await user.client.from('contacts').select('linkedin_url').eq('user_id', user.userId)
+    expect(contacts).toEqual([{ linkedin_url: 'https://www.linkedin.com/in/jean-dupont' }])
+  })
+
+  it('gives the job application agency to a contact without one', async () => {
+    const user = await createTestUser()
+    await createJobApplicationOrFail(user.client, user.userId, { contactName: 'Jean Dupont', intermediaryName: 'Agence X' })
+
+    const { data: contacts } = await user.client.from('contacts').select('intermediaries(name)').eq('user_id', user.userId)
+    expect(contacts).toEqual([{ intermediaries: { name: 'Agence X' } }])
+  })
+
+  it('keeps the agency of a contact that already has a different one', async () => {
+    const user = await createTestUser()
+    await createJobApplicationOrFail(user.client, user.userId, { contactName: 'Jean Dupont', intermediaryName: 'Agence X' })
+    await createJobApplicationOrFail(user.client, user.userId, { contactName: 'Jean Dupont', intermediaryName: 'Agence Y' })
+
+    const { data: contacts } = await user.client.from('contacts').select('intermediaries(name)').eq('user_id', user.userId)
+    expect(contacts).toEqual([{ intermediaries: { name: 'Agence X' } }])
+  })
+
   it('fills the e-mail and phone of an existing contact only when they are empty', async () => {
     const user = await createTestUser()
     await createJobApplicationOrFail(user.client, user.userId, { contactName: 'Jean Dupont', contactEmail: 'jean@agence-x.fr' })

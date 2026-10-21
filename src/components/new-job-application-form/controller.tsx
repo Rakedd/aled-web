@@ -81,6 +81,8 @@ const toJobApplicationCandidate = (formValues: JobApplicationFormValues) => ({
   contactName: toNullableText(formValues.contactName),
   contactEmail: toNullableText(formValues.contactEmail),
   contactPhone: toNullableText(formValues.contactPhone),
+  contactLinkedinUrl: null,
+  userEditedContactFields: [],
   endClientName: toNullableText(formValues.endClientName),
   endClientParentName: toNullableText(formValues.endClientParentName),
 })

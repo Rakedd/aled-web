@@ -15,7 +15,11 @@ import type { StackItem } from '@/domain/types'
 import type { Json, Tables, TablesUpdate } from '@/server/supabase/database-types'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 import { recordActivityLogEntry } from './activity-log-repository'
-import { type JobApplicationEntityNames, resolveJobApplicationEntityColumns } from './entities-repository'
+import {
+  assignContactIntermediaryIfMissing,
+  type JobApplicationEntityNames,
+  resolveJobApplicationEntityColumns,
+} from './entities-repository'
 import { toRepositoryError } from './repository-error'
 
 type JobApplicationOverviewRow = Tables<'job_applications_overview'>
@@ -134,6 +138,16 @@ export const findJobApplicationOverview = async (
   return { ok: true, data: toJobApplicationOverview(data) }
 }
 
+const attachContactToIntermediary = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  contactId: string | null | undefined,
+  intermediaryId: string | null | undefined,
+): Promise<void> => {
+  if (!contactId || !intermediaryId) return
+  await assignContactIntermediaryIfMissing(supabase, userId, contactId, intermediaryId)
+}
+
 export const insertJobApplication = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
@@ -141,6 +155,12 @@ export const insertJobApplication = async (
 ): Promise<ActionResult<{ id: string }>> => {
   const entityColumnsResolution = await resolveJobApplicationEntityColumns(supabase, userId, input)
   if (!entityColumnsResolution.ok) return entityColumnsResolution
+  await attachContactToIntermediary(
+    supabase,
+    userId,
+    entityColumnsResolution.data.contact_id,
+    entityColumnsResolution.data.intermediary_id,
+  )
   const { data, error } = await supabase
     .from('job_applications')
     .insert({
@@ -161,13 +181,16 @@ const completeEntityNamesFromCurrentValues = (
   currentOverview: JobApplicationOverview,
 ): Partial<JobApplicationEntityNames> => {
   const isUpdatingContactDetailsOnly =
-    input.contactName === undefined && (input.contactEmail !== undefined || input.contactPhone !== undefined)
+    input.contactName === undefined &&
+    (input.contactEmail !== undefined || input.contactPhone !== undefined || input.contactLinkedinUrl !== undefined)
   const isUpdatingEndClientParentOnly = input.endClientName === undefined && input.endClientParentName !== undefined
   return {
     intermediaryName: input.intermediaryName,
     contactName: isUpdatingContactDetailsOnly ? currentOverview.contactName : input.contactName,
     contactEmail: input.contactEmail,
     contactPhone: input.contactPhone,
+    contactLinkedinUrl: input.contactLinkedinUrl,
+    userEditedContactFields: input.userEditedContactFields,
     endClientName: isUpdatingEndClientParentOnly ? currentOverview.endClientName : input.endClientName,
     endClientParentName: input.endClientParentName,
   }
@@ -223,6 +246,16 @@ export const updateJobApplicationRow = async (
     completeEntityNamesFromCurrentValues(input, currentOverviewResult.data),
   )
   if (!entityColumnsResolution.ok) return entityColumnsResolution
+  await attachContactToIntermediary(
+    supabase,
+    userId,
+    entityColumnsResolution.data.contact_id === undefined
+      ? currentOverviewResult.data.contactId
+      : entityColumnsResolution.data.contact_id,
+    entityColumnsResolution.data.intermediary_id === undefined
+      ? currentOverviewResult.data.intermediaryId
+      : entityColumnsResolution.data.intermediary_id,
+  )
   const columnsToUpdate = { ...toJobApplicationColumns(input), ...entityColumnsResolution.data }
   if (!hasAnyDefinedValue(columnsToUpdate)) return { ok: true, data: null }
   const { error } = await supabase

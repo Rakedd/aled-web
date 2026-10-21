@@ -109,6 +109,8 @@ describe('buildJobApplicationInputFromOpportunity', () => {
       contactName: null,
       contactEmail: null,
       contactPhone: null,
+      contactLinkedinUrl: null,
+      userEditedContactFields: [],
       endClientName: null,
       endClientParentName: null,
     })
@@ -135,6 +137,8 @@ describe('buildJobApplicationInputFromOpportunity', () => {
       contactName: null,
       contactEmail: null,
       contactPhone: null,
+      contactLinkedinUrl: null,
+      userEditedContactFields: [],
       endClientName: null,
       endClientParentName: null,
     })

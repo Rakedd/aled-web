@@ -23,6 +23,8 @@ export const buildJobApplicationInput = (overrides: Partial<JobApplicationInput>
   contactName: null,
   contactEmail: null,
   contactPhone: null,
+  contactLinkedinUrl: null,
+  userEditedContactFields: [],
   endClientName: null,
   endClientParentName: null,
   ...overrides,
