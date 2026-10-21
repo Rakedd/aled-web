@@ -275,7 +275,7 @@ const searchContactSuggestions = async (
 ): Promise<EntitySuggestion[]> => {
   const { data, error } = await supabase
     .from('contacts')
-    .select('id, full_name')
+    .select('id, full_name, phone, email, linkedin_url, intermediaries(name)')
     .eq('user_id', userId)
     .ilike('normalized_name', likePattern)
     .order('full_name')
@@ -284,9 +284,9 @@ const searchContactSuggestions = async (
   return data.map((contactRow) => ({
     id: contactRow.id,
     name: contactRow.full_name,
-    label: contactRow.full_name,
+    label: contactRow.intermediaries ? `${contactRow.full_name} · ${contactRow.intermediaries.name}` : contactRow.full_name,
     parentName: null,
-    contactDetails: null,
+    contactDetails: { phone: contactRow.phone, email: contactRow.email, linkedinUrl: contactRow.linkedin_url },
   }))
 }
 

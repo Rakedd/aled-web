@@ -126,12 +126,12 @@ describe('entities repository', () => {
 
     await expect(assignEndClientParent(user.client, user.userId, bankId, groupId)).resolves.toEqual({ ok: true, data: null })
     await expect(searchEntitySuggestions(user.client, user.userId, { entityKind: 'end_client', query: 'banque' })).resolves.toEqual([
-      { id: bankId, name: 'Banque Z', label: 'Banque Z (Groupe Z)', parentName: 'Groupe Z' },
+      { id: bankId, name: 'Banque Z', label: 'Banque Z (Groupe Z)', parentName: 'Groupe Z', contactDetails: null },
     ])
 
     await expect(assignEndClientParent(user.client, user.userId, bankId, null)).resolves.toEqual({ ok: true, data: null })
     await expect(searchEntitySuggestions(user.client, user.userId, { entityKind: 'end_client', query: 'banque' })).resolves.toEqual([
-      { id: bankId, name: 'Banque Z', label: 'Banque Z', parentName: null },
+      { id: bankId, name: 'Banque Z', label: 'Banque Z', parentName: null, contactDetails: null },
     ])
   })
 
@@ -162,12 +162,18 @@ describe('entities repository', () => {
     await expect(
       searchEntitySuggestions(user.client, user.userId, { entityKind: 'intermediary', query: 'SOCIETE' }),
     ).resolves.toEqual([
-      { id: expect.any(String), name: 'Société Conseil', label: 'Société Conseil', parentName: null },
+      { id: expect.any(String), name: 'Société Conseil', label: 'Société Conseil', parentName: null, contactDetails: null },
     ])
     await expect(
       searchEntitySuggestions(user.client, user.userId, { entityKind: 'contact', query: 'helene' }),
     ).resolves.toEqual([
-      { id: expect.any(String), name: 'Hélène Martin', label: 'Hélène Martin', parentName: null },
+      {
+        id: expect.any(String),
+        name: 'Hélène Martin',
+        label: 'Hélène Martin · Société Conseil',
+        parentName: null,
+        contactDetails: { phone: null, email: null, linkedinUrl: null },
+      },
     ])
     await expect(
       searchEntitySuggestions(user.client, user.userId, { entityKind: 'contact', query: '%' }),
@@ -204,7 +210,13 @@ describe('entities repository', () => {
     await expect(
       searchEntitySuggestions(user.client, user.userId, { entityKind: 'contact', query: 'jean-pierre' }),
     ).resolves.toEqual([
-      { id: contactId, name: 'Jean-Pierre Dupont', label: 'Jean-Pierre Dupont', parentName: null },
+      {
+        id: contactId,
+        name: 'Jean-Pierre Dupont',
+        label: 'Jean-Pierre Dupont',
+        parentName: null,
+        contactDetails: { phone: '06 12 34 56 78', email: 'jp@agence-x.fr', linkedinUrl: 'https://www.linkedin.com/in/jpdupont' },
+      },
     ])
   })
 

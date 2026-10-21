@@ -1,5 +1,6 @@
 import 'server-only'
 import type { ActionResult } from '@/domain/action-result'
+import type { ProposedMission } from '@/domain/contacts'
 import { formatStatusChangeSummary } from '@/domain/activity-log'
 import { formatEndClientLabel } from '@/domain/entity-names'
 import {
@@ -120,6 +121,57 @@ export const listJobApplicationItems = async (
     .order('created_at', { ascending: false })
   if (error) throw toRepositoryError('listJobApplicationItems', error)
   return data.map(toJobApplicationListItem)
+}
+
+const PROPOSED_MISSION_COLUMNS = 'id, title, applied_on, status, contact_name, end_client_name, end_client_parent_name'
+
+type ProposedMissionRow = Pick<
+  JobApplicationOverviewRow,
+  'id' | 'title' | 'applied_on' | 'status' | 'contact_name' | 'end_client_name' | 'end_client_parent_name'
+>
+
+const toProposedMission = (overviewRow: ProposedMissionRow): ProposedMission => ({
+  jobApplicationId: requireOverviewValue(overviewRow.id, 'id'),
+  title: requireOverviewValue(overviewRow.title, 'title'),
+  appliedOn: parseParisCalendarDate(requireOverviewValue(overviewRow.applied_on, 'applied_on')),
+  endClientLabel:
+    overviewRow.end_client_name === null
+      ? null
+      : formatEndClientLabel(overviewRow.end_client_name, overviewRow.end_client_parent_name),
+  contactName: overviewRow.contact_name,
+  status: requireOverviewValue(overviewRow.status, 'status'),
+})
+
+export const listProposedMissionsForContact = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  contactId: string,
+): Promise<ProposedMission[]> => {
+  const { data, error } = await supabase
+    .from('job_applications_overview')
+    .select(PROPOSED_MISSION_COLUMNS)
+    .eq('user_id', userId)
+    .eq('contact_id', contactId)
+    .order('applied_on', { ascending: false })
+    .order('created_at', { ascending: false })
+  if (error) throw toRepositoryError('listProposedMissionsForContact', error)
+  return data.map(toProposedMission)
+}
+
+export const listProposedMissionsForIntermediary = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  intermediaryId: string,
+): Promise<ProposedMission[]> => {
+  const { data, error } = await supabase
+    .from('job_applications_overview')
+    .select(PROPOSED_MISSION_COLUMNS)
+    .eq('user_id', userId)
+    .eq('intermediary_id', intermediaryId)
+    .order('applied_on', { ascending: false })
+    .order('created_at', { ascending: false })
+  if (error) throw toRepositoryError('listProposedMissionsForIntermediary', error)
+  return data.map(toProposedMission)
 }
 
 export const findJobApplicationOverview = async (
