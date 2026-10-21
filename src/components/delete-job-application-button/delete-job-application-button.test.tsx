@@ -28,7 +28,7 @@ describe('DeleteJobApplicationButton', () => {
       name: 'Supprimer définitivement cette candidature ?',
     })
     expect(confirmation).toHaveAccessibleDescription(
-      'Son journal, ses entretiens et sa fiche métier seront supprimés.',
+      "Son journal, ses entretiens et sa fiche métier seront supprimés. Les échanges notés depuis la fiche d'un contact restent dans son historique.",
     )
     await userEvent.click(screen.getByRole('button', { name: 'Annuler' }))
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()

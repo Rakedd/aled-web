@@ -11,6 +11,7 @@ describe('ContactView', () => {
         contactName="Jeanne Martin"
         contactDetails={buildContactDetails({ phone: '+33 6 12 34 56 78' })}
         loadErrorMessage={null}
+        contactId={null}
       />,
     )
     expect(readValueOf('Nom')).toHaveTextContent('Jeanne Martin')
@@ -27,6 +28,7 @@ describe('ContactView', () => {
         contactName="Jeanne Martin"
         contactDetails={buildContactDetails({ phone: null, email: null, linkedinUrl: null })}
         loadErrorMessage={null}
+        contactId={null}
       />,
     )
     expect(readValueOf('Téléphone')).toHaveTextContent('—')
@@ -36,13 +38,23 @@ describe('ContactView', () => {
   })
 
   it('shows a dash for the name when the application has no contact', () => {
-    render(<ContactView contactName={null} contactDetails={null} loadErrorMessage={null} />)
+    render(<ContactView contactName={null} contactDetails={null} loadErrorMessage={null} contactId={null} />)
     expect(readValueOf('Nom')).toHaveTextContent('—')
     expect(readValueOf('Téléphone')).toHaveTextContent('—')
   })
 
   it('tells when the contact details could not be loaded', () => {
-    render(<ContactView contactName="Jeanne Martin" contactDetails={null} loadErrorMessage="Contact introuvable" />)
+    render(<ContactView contactName="Jeanne Martin" contactDetails={null} loadErrorMessage="Contact introuvable" contactId={null} />)
     expect(screen.getByRole('alert')).toHaveTextContent('Contact introuvable')
+  })
+
+  it('links to the contact page', () => {
+    render(<ContactView contactName="Jeanne Martin" contactDetails={null} loadErrorMessage={null} contactId="contact-1" />)
+    expect(screen.getByRole('link', { name: 'Voir la fiche du contact' })).toHaveAttribute('href', '/contacts/contact-1')
+  })
+
+  it('does not link to a contact page without a contact', () => {
+    render(<ContactView contactName={null} contactDetails={null} loadErrorMessage={null} contactId={null} />)
+    expect(screen.queryByRole('link', { name: 'Voir la fiche du contact' })).not.toBeInTheDocument()
   })
 })

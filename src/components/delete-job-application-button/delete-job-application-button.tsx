@@ -38,7 +38,7 @@ export const DeleteJobApplicationButton = (controllerParameters: DeleteJobApplic
               Supprimer définitivement cette candidature ?
             </AlertDialog.Title>
             <AlertDialog.Description className="text-sm text-muted-foreground">
-              Son journal, ses entretiens et sa fiche métier seront supprimés.
+              Son journal, ses entretiens et sa fiche métier seront supprimés. Les échanges notés depuis la fiche d&apos;un contact restent dans son historique.
             </AlertDialog.Description>
             {errorMessage && (
               <p role="alert" className="text-sm text-destructive">

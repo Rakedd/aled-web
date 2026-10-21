@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { EntitySuggestion } from '@/domain/entities'
+import { normalizeEntityName } from '@/domain/entity-names'
 import type { EntityAutocompleteControllerParameters } from './interfaces'
 
 export const ENTITY_SEARCH_DEBOUNCE_MILLISECONDS = 250
@@ -11,10 +12,12 @@ export const useController = ({
   onChange,
   onSelectSuggestion,
   searchEntities,
+  allowsCreation = false,
 }: EntityAutocompleteControllerParameters) => {
   const [suggestions, setSuggestions] = useState<EntitySuggestion[]>([])
   const [highlightedIndex, setHighlightedIndex] = useState(NO_HIGHLIGHT_INDEX)
   const [isOpen, setIsOpen] = useState(false)
+  const [typedQuery, setTypedQuery] = useState('')
   const pendingSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const latestSearchNumberRef = useRef(0)
 
@@ -28,6 +31,7 @@ export const useController = ({
 
   const closeSuggestions = () => {
     cancelPendingSearch()
+    setTypedQuery('')
     setSuggestions([])
     setHighlightedIndex(NO_HIGHLIGHT_INDEX)
     setIsOpen(false)
@@ -41,8 +45,17 @@ export const useController = ({
     if (searchNumber !== latestSearchNumberRef.current) return
     setSuggestions(searchSuggestions)
     setHighlightedIndex(NO_HIGHLIGHT_INDEX)
-    setIsOpen(searchSuggestions.length > 0)
+    setTypedQuery(query)
+    setIsOpen(true)
   }
+
+  const hasSuggestionNamedLikeTypedQuery = suggestions.some(
+    (suggestion) => normalizeEntityName(suggestion.name) === normalizeEntityName(typedQuery),
+  )
+  const creationOptionLabel =
+    allowsCreation && isOpen && typedQuery.length > 0 && !hasSuggestionNamedLikeTypedQuery ? `Créer « ${typedQuery} »` : null
+  const optionCount = suggestions.length + (creationOptionLabel === null ? 0 : 1)
+  const isListVisible = isOpen && optionCount > 0
 
   const changeValue = (newValue: string) => {
     onChange(newValue)
@@ -65,23 +78,32 @@ export const useController = ({
   const handleKeyDown = (key: string): boolean => {
     if (key === 'Escape') {
       closeSuggestions()
-      return isOpen
+      return isListVisible
     }
-    if (!isOpen) return false
+    if (!isListVisible) return false
     if (key === 'ArrowDown') {
-      setHighlightedIndex((currentIndex) => (currentIndex + 1) % suggestions.length)
+      setHighlightedIndex((currentIndex) => (currentIndex + 1) % optionCount)
       return true
     }
     if (key === 'ArrowUp') {
-      setHighlightedIndex((currentIndex) => (currentIndex <= 0 ? suggestions.length - 1 : currentIndex - 1))
+      setHighlightedIndex((currentIndex) => (currentIndex <= 0 ? optionCount - 1 : currentIndex - 1))
       return true
     }
     if (key === 'Enter' && highlightedIndex !== NO_HIGHLIGHT_INDEX) {
-      selectSuggestion(suggestions[highlightedIndex])
+      if (highlightedIndex === suggestions.length) closeSuggestions()
+      else selectSuggestion(suggestions[highlightedIndex])
       return true
     }
     return false
   }
 
-  return { suggestions, highlightedIndex, isOpen, changeValue, selectSuggestion, closeSuggestions, handleKeyDown }
+  return {
+    suggestions,
+    highlightedIndex,
+    isOpen: isListVisible,
+    creationOptionLabel,
+    changeValue,     selectSuggestion,
+    closeSuggestions,
+    handleKeyDown,
+  }
 }

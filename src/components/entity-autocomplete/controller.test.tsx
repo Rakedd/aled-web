@@ -6,11 +6,12 @@ import { ENTITY_SEARCH_DEBOUNCE_MILLISECONDS, useController } from './controller
 const renderEntityAutocompleteController = ({
   entityKind = 'intermediary',
   searchResult = { ok: true, data: [] },
-}: { entityKind?: EntityKind; searchResult?: ActionResult<EntitySuggestion[]> } = {}) => {
+  allowsCreation = false,
+}: { entityKind?: EntityKind; searchResult?: ActionResult<EntitySuggestion[]>; allowsCreation?: boolean } = {}) => {
   const onChange = jest.fn()
   const onSelectSuggestion = jest.fn()
   const searchEntities = jest.fn().mockResolvedValue(searchResult)
-  const { result } = renderHook(() => useController({ entityKind, onChange, onSelectSuggestion, searchEntities }))
+  const { result } = renderHook(() => useController({ entityKind, onChange, onSelectSuggestion, searchEntities, allowsCreation }))
   return { result, onChange, onSelectSuggestion, searchEntities }
 }
 
@@ -156,6 +157,55 @@ describe('entity-autocomplete useController', () => {
     act(() => void result.current.handleKeyDown('Escape'))
     await advanceDebounce(ENTITY_SEARCH_DEBOUNCE_MILLISECONDS)
     expect(searchEntities).not.toHaveBeenCalled()
+    expect(result.current.isOpen).toBe(false)
+  })
+
+  it('offers to create the typed contact when no suggestion matches exactly', async () => {
+    const { result } = renderEntityAutocompleteController({
+      entityKind: 'contact',
+      allowsCreation: true,
+      searchResult: { ok: true, data: [{ id: 'one', name: 'Jeanne Martin', label: 'Jeanne Martin · Acme', parentName: null, contactDetails: null }] },
+    })
+    act(() => result.current.changeValue('Jeanne'))
+    await advanceDebounce(ENTITY_SEARCH_DEBOUNCE_MILLISECONDS)
+    expect(result.current.creationOptionLabel).toBe('Créer « Jeanne »')
+    expect(result.current.isOpen).toBe(true)
+  })
+
+  it('does not offer creation when a suggestion has the same normalized name', async () => {
+    const { result } = renderEntityAutocompleteController({
+      entityKind: 'contact',
+      allowsCreation: true,
+      searchResult: { ok: true, data: [{ id: 'one', name: 'Jeanne Martin', label: 'Jeanne Martin · Acme', parentName: null, contactDetails: null }] },
+    })
+    act(() => result.current.changeValue('  jeanne  MARTIN '))
+    await advanceDebounce(ENTITY_SEARCH_DEBOUNCE_MILLISECONDS)
+    expect(result.current.creationOptionLabel).toBeNull()
+  })
+
+  it('offers creation even when the search returns nothing', async () => {
+    const { result } = renderEntityAutocompleteController({ entityKind: 'contact', allowsCreation: true })
+    act(() => result.current.changeValue('Nouvelle Personne'))
+    await advanceDebounce(ENTITY_SEARCH_DEBOUNCE_MILLISECONDS)
+    expect(result.current.creationOptionLabel).toBe('Créer « Nouvelle Personne »')
+    expect(result.current.isOpen).toBe(true)
+  })
+
+  it('never offers creation when it is not allowed', async () => {
+    const { result } = renderEntityAutocompleteController({ entityKind: 'contact' })
+    act(() => result.current.changeValue('Nouvelle Personne'))
+    await advanceDebounce(ENTITY_SEARCH_DEBOUNCE_MILLISECONDS)
+    expect(result.current.creationOptionLabel).toBeNull()
+  })
+
+  it('closes the list without changing the value when the creation option is chosen with the keyboard', async () => {
+    const { result, onChange } = renderEntityAutocompleteController({ entityKind: 'contact', allowsCreation: true })
+    act(() => result.current.changeValue('Nouvelle Personne'))
+    await advanceDebounce(ENTITY_SEARCH_DEBOUNCE_MILLISECONDS)
+    act(() => void result.current.handleKeyDown('ArrowDown'))
+    expect(result.current.highlightedIndex).toBe(0)
+    act(() => void result.current.handleKeyDown('Enter'))
+    expect(onChange).toHaveBeenCalledTimes(1)
     expect(result.current.isOpen).toBe(false)
   })
 })

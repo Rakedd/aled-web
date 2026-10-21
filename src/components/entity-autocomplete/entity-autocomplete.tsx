@@ -11,10 +11,19 @@ export const EntityAutocomplete = ({
   onChange,
   onSelectSuggestion,
   searchEntities,
+  allowsCreation,
   id,
 }: EntityAutocompleteProps) => {
-  const { suggestions, highlightedIndex, isOpen, changeValue, selectSuggestion, closeSuggestions, handleKeyDown } =
-    useController({ entityKind, onChange, onSelectSuggestion, searchEntities })
+  const {
+    suggestions,
+    highlightedIndex,
+    isOpen,
+    creationOptionLabel,
+    changeValue,
+    selectSuggestion,
+    closeSuggestions,
+    handleKeyDown,
+  } = useController({ entityKind, onChange, onSelectSuggestion, searchEntities, allowsCreation })
   const listboxId = useId()
 
   const handleInputKeyDown = (keyboardEvent: KeyboardEvent<HTMLInputElement>) => {
@@ -53,6 +62,17 @@ export const EntityAutocomplete = ({
               {suggestion.label}
             </li>
           ))}
+          {creationOptionLabel !== null && (
+            <li
+              role="option"
+              aria-selected={highlightedIndex === suggestions.length}
+              className="cursor-pointer rounded px-2 py-1.5 font-medium hover:bg-popover-highlight aria-selected:bg-popover-highlight aria-selected:outline-2 aria-selected:-outline-offset-2 aria-selected:outline-ring"
+              onMouseDown={(mouseEvent) => mouseEvent.preventDefault()}
+              onClick={closeSuggestions}
+            >
+              {creationOptionLabel}
+            </li>
+          )}
         </ul>
       )}
     </div>

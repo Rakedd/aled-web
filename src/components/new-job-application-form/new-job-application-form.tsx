@@ -44,6 +44,7 @@ export const NewJobApplicationForm = ({
     extract,
     switchToManualEntry,
     setTextFormValue,
+    selectContactSuggestion,
     setStatus,
     setStack,
     submit,
@@ -89,8 +90,11 @@ export const NewJobApplicationForm = ({
         onSelectSuggestion={
           entityKind === 'end_client'
             ? (suggestion) => setTextFormValue('endClientParentName', suggestion.parentName ?? '')
-            : undefined
+            : entityKind === 'contact'
+              ? selectContactSuggestion
+              : undefined
         }
+        allowsCreation={entityKind === 'contact'}
         searchEntities={searchEntities}
       />
     </FormField>
@@ -213,6 +217,7 @@ export const NewJobApplicationForm = ({
           {renderEntityField('contactName', 'contact', 'Contact')}
           {renderTextInput('contactEmail', 'E-mail du contact', { type: 'email', inputMode: 'email' })}
           {renderTextInput('contactPhone', 'Téléphone du contact', { type: 'tel', inputMode: 'tel' })}
+          {renderTextInput('contactLinkedinUrl', 'LinkedIn du contact', { type: 'url', inputMode: 'url', placeholder: 'https://' })}
           {renderEntityField('endClientName', 'end_client', 'Client final')}
           {renderTextInput('endClientParentName', 'Groupe du client final')}
         </fieldset>

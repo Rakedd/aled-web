@@ -259,4 +259,59 @@ describe('new-job-application-form useController', () => {
     expect(result.current.isSubmitting).toBe(false)
     expect(navigateTo).not.toHaveBeenCalled()
   })
+
+  const existingContactSuggestion = {
+    id: 'contact-1',
+    name: 'Jeanne Martin',
+    label: 'Jeanne Martin · Acme',
+    parentName: null,
+    contactDetails: { phone: '0611223344', email: 'jeanne@acme.fr', linkedinUrl: 'https://www.linkedin.com/in/jeanne' },
+  }
+
+  it('prefills phone, email and LinkedIn when an existing contact is chosen', () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.selectContactSuggestion(existingContactSuggestion))
+    expect(result.current.formValues).toMatchObject({
+      contactPhone: '0611223344',
+      contactEmail: 'jeanne@acme.fr',
+      contactLinkedinUrl: 'https://www.linkedin.com/in/jeanne',
+    })
+  })
+
+  it('marks a contact field as edited when the user types in it', () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.setTextFormValue('contactPhone', '0699999999'))
+    act(() => result.current.setTextFormValue('contactLinkedinUrl', 'https://www.linkedin.com/in/x'))
+    act(() => result.current.setTextFormValue('title', 'Titre'))
+    expect(result.current.userEditedContactFields).toEqual(['phone', 'linkedinUrl'])
+  })
+
+  it('does not mark AI-prefilled contact fields as edited', async () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.setPastedText('Annonce React'))
+    await act(() => result.current.extract())
+    expect(result.current.formValues.contactEmail).toBe('jeanne@example.com')
+    expect(result.current.userEditedContactFields).toEqual([])
+  })
+
+  it('resets edited fields when another contact is chosen', () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.setTextFormValue('contactEmail', 'autre@x.fr'))
+    act(() => result.current.selectContactSuggestion(existingContactSuggestion))
+    expect(result.current.userEditedContactFields).toEqual([])
+  })
+
+  it('sends the LinkedIn url and the edited fields', async () => {
+    const { result, createJobApplication } = renderNewJobApplicationFormController()
+    act(() => result.current.setTextFormValue('title', 'Mission'))
+    act(() => result.current.setTextFormValue('contactName', 'Jeanne Martin'))
+    act(() => result.current.setTextFormValue('contactLinkedinUrl', 'https://www.linkedin.com/in/jeanne'))
+    await act(() => result.current.submit())
+    expect(createJobApplication).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contactLinkedinUrl: 'https://www.linkedin.com/in/jeanne',
+        userEditedContactFields: ['linkedinUrl'],
+      }),
+    )
+  })
 })

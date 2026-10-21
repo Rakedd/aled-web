@@ -223,6 +223,7 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
                         contactName={jobApplication.contactName}
                         contactDetails={contactDetails}
                         loadErrorMessage={contactDetailsErrorMessage}
+                        contactId={jobApplication.contactId}
                       />
                     }
                     form={{

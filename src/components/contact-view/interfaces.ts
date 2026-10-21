@@ -4,4 +4,5 @@ export type ContactViewProps = {
   contactName: string | null
   contactDetails: ContactDetails | null
   loadErrorMessage: string | null
+  contactId: string | null
 }

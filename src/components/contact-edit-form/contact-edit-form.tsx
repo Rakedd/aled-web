@@ -41,6 +41,7 @@ export const ContactEditForm = ({ searchEntities, ...controllerParameters }: Con
           value={formValues.contactName}
           onChange={(value) => setFormValue('contactName', value)}
           searchEntities={searchEntities}
+          allowsCreation
         />
       </FormField>
       <div className="grid gap-4 sm:grid-cols-3">

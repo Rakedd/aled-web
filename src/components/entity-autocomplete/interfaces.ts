@@ -8,6 +8,7 @@ export type EntityAutocompleteControllerParameters = {
   onChange: (value: string) => void
   onSelectSuggestion?: (suggestion: EntitySuggestion) => void
   searchEntities: SearchEntities
+  allowsCreation?: boolean
 }
 
 export type EntityAutocompleteProps = EntityAutocompleteControllerParameters & {

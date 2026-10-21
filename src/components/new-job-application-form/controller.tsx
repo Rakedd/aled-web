@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
 import { MAX_PASTED_TEXT_LENGTH, type JobPostingExtraction } from '@/domain/job-posting-extraction'
 import { AI_ERROR_MESSAGES } from '@/domain/ai-errors'
+import type { ContactDetailFieldName } from '@/domain/contacts'
+import type { EntitySuggestion } from '@/domain/entities'
 import { type JobApplicationInput, validateJobApplicationInput } from '@/domain/job-application'
 import type { JobApplicationStatus } from '@/domain/job-application-status'
 import { formatParisCalendarDate, parseParisCalendarDate } from '@/domain/paris-time'
@@ -26,6 +28,7 @@ const createEmptyFormValues = (): JobApplicationFormValues => ({
   contactName: '',
   contactEmail: '',
   contactPhone: '',
+  contactLinkedinUrl: '',
   endClientName: '',
   endClientParentName: '',
   postedDailyRate: '',
@@ -56,12 +59,21 @@ const toFormValues = (
   stack: jobPostingExtraction.stack,
 })
 
+const CONTACT_DETAIL_FIELD_BY_FORM_VALUE_NAME: Partial<Record<TextFormValueName, ContactDetailFieldName>> = {
+  contactPhone: 'phone',
+  contactEmail: 'email',
+  contactLinkedinUrl: 'linkedinUrl',
+}
+
 const toNullableText = (text: string): string | null => (text.trim().length === 0 ? null : text)
 
 const toNullableDailyRate = (dailyRateText: string): number | null =>
   dailyRateText.trim().length === 0 ? null : Number(dailyRateText)
 
-const toJobApplicationCandidate = (formValues: JobApplicationFormValues) => ({
+const toJobApplicationCandidate = (
+  formValues: JobApplicationFormValues,
+  userEditedContactFields: ContactDetailFieldName[],
+) => ({
   title: formValues.title,
   source: toNullableText(formValues.source),
   postingUrl: toNullableText(formValues.postingUrl),
@@ -81,8 +93,8 @@ const toJobApplicationCandidate = (formValues: JobApplicationFormValues) => ({
   contactName: toNullableText(formValues.contactName),
   contactEmail: toNullableText(formValues.contactEmail),
   contactPhone: toNullableText(formValues.contactPhone),
-  contactLinkedinUrl: null,
-  userEditedContactFields: [],
+  contactLinkedinUrl: toNullableText(formValues.contactLinkedinUrl),
+  userEditedContactFields,
   endClientName: toNullableText(formValues.endClientName),
   endClientParentName: toNullableText(formValues.endClientParentName),
 })
@@ -96,6 +108,7 @@ export const useController = ({
   const [step, setStep] = useState<NewJobApplicationStep>('paste')
   const [pastedText, setPastedText] = useState('')
   const [formValues, setFormValues] = useState<JobApplicationFormValues>(createEmptyFormValues)
+  const [userEditedContactFields, setUserEditedContactFields] = useState<ContactDetailFieldName[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isExtracting, setIsExtracting] = useState(false)
   const [hasExtractionFailed, setHasExtractionFailed] = useState(false)
@@ -150,8 +163,25 @@ export const useController = ({
     showForm({ ...createEmptyFormValues(), postingRawText: pastedText.trim().length === 0 ? '' : pastedText }, null)
   }
 
-  const setTextFormValue = (valueName: TextFormValueName, value: string) =>
+  const setTextFormValue = (valueName: TextFormValueName, value: string) => {
+    const editedContactField = CONTACT_DETAIL_FIELD_BY_FORM_VALUE_NAME[valueName]
+    if (editedContactField !== undefined) {
+      setUserEditedContactFields((currentFields) =>
+        currentFields.includes(editedContactField) ? currentFields : [...currentFields, editedContactField],
+      )
+    }
     setFormValues((currentFormValues) => ({ ...currentFormValues, [valueName]: value }))
+  }
+
+  const selectContactSuggestion = (suggestion: EntitySuggestion) => {
+    setUserEditedContactFields([])
+    setFormValues((currentFormValues) => ({
+      ...currentFormValues,
+      contactPhone: suggestion.contactDetails?.phone ?? '',
+      contactEmail: suggestion.contactDetails?.email ?? '',
+      contactLinkedinUrl: suggestion.contactDetails?.linkedinUrl ?? '',
+    }))
+  }
 
   const setStatus = (status: JobApplicationStatus) =>
     setFormValues((currentFormValues) => ({ ...currentFormValues, status }))
@@ -169,7 +199,7 @@ export const useController = ({
   const submit = async () => {
     if (isSubmissionInFlightRef.current) return
     setErrorMessage(null)
-    const validationResult = validateJobApplicationInput(toJobApplicationCandidate(formValues))
+    const validationResult = validateJobApplicationInput(toJobApplicationCandidate(formValues, userEditedContactFields))
     if (!validationResult.ok) {
       setErrorMessage(validationResult.errorMessage)
       return
@@ -199,6 +229,8 @@ export const useController = ({
     extract,
     switchToManualEntry,
     setTextFormValue,
+    selectContactSuggestion,
+    userEditedContactFields,
     setStatus,
     setStack,
     submit,

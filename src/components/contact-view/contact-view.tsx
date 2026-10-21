@@ -1,5 +1,7 @@
+import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { isExternalLinkUrl } from '@/domain/client-brief'
+import { contactRoute } from '@/domain/routes'
 import { MISSING_VALUE_LABEL, toDisplayText, toPhoneHref } from '@/domain/job-application-display'
 import type { ContactViewProps } from './interfaces'
 
@@ -32,7 +34,7 @@ const renderLinkedinUrl = (linkedinUrl: string | null): ReactNode =>
     </a>
   )
 
-export const ContactView = ({ contactName, contactDetails, loadErrorMessage }: ContactViewProps) => {
+export const ContactView = ({ contactName, contactDetails, loadErrorMessage, contactId }: ContactViewProps) => {
   const contactEntries = [
     { term: 'Nom', value: toDisplayText(contactName) },
     { term: 'Téléphone', value: renderPhone(contactDetails?.phone ?? null) },
@@ -50,6 +52,11 @@ export const ContactView = ({ contactName, contactDetails, loadErrorMessage }: C
           </div>
         ))}
       </dl>
+      {contactId !== null && (
+        <Link href={contactRoute(contactId)} className={`text-sm ${LINK_CLASS_NAME}`}>
+          Voir la fiche du contact
+        </Link>
+      )}
       {loadErrorMessage !== null && (
         <p role="alert" className="text-sm text-destructive">
           {loadErrorMessage}

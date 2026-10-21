@@ -21,6 +21,7 @@ export type JobApplicationFormValues = {
   contactName: string
   contactEmail: string
   contactPhone: string
+  contactLinkedinUrl: string
   endClientName: string
   endClientParentName: string
   postedDailyRate: string
