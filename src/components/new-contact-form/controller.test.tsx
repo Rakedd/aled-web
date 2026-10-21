@@ -55,4 +55,11 @@ describe('new-contact-form useController', () => {
     expect(result.current.isSubmitting).toBe(false)
     expect(navigateTo).not.toHaveBeenCalled()
   })
+
+  it('starts with the initial agency name when provided', () => {
+    const { result } = renderHook(() =>
+      useController({ createContact: jest.fn(), navigateTo: jest.fn(), initialIntermediaryName: 'Free-Work' }),
+    )
+    expect(result.current.formValues.intermediaryName).toBe('Free-Work')
+  })
 })

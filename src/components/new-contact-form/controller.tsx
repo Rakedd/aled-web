@@ -24,8 +24,15 @@ const toContactProfileCandidate = (formValues: NewContactFormValues) => ({
   notes: null,
 })
 
-export const useController = ({ createContact, navigateTo }: NewContactFormControllerParameters) => {
-  const [formValues, setFormValues] = useState<NewContactFormValues>(EMPTY_FORM_VALUES)
+export const useController = ({
+  createContact,
+  navigateTo,
+  initialIntermediaryName = null,
+}: NewContactFormControllerParameters) => {
+  const [formValues, setFormValues] = useState<NewContactFormValues>({
+    ...EMPTY_FORM_VALUES,
+    intermediaryName: initialIntermediaryName ?? '',
+  })
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isSubmissionInFlightRef = useRef(false)

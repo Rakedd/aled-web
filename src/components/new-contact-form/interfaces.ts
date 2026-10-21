@@ -15,9 +15,11 @@ export type NewContactFormValues = {
 export type NewContactFormControllerParameters = {
   createContact: CreateContact
   navigateTo: (path: string) => void
+  initialIntermediaryName?: string | null
 }
 
 export type NewContactFormProps = {
   createContact: CreateContact
   searchEntities: SearchEntities
+  initialIntermediaryName?: string | null
 }

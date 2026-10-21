@@ -9,11 +9,12 @@ import { Input } from '@/components/ui/input'
 import { useController } from './controller'
 import type { NewContactFormProps, NewContactFormValues } from './interfaces'
 
-export const NewContactForm = ({ createContact, searchEntities }: NewContactFormProps) => {
+export const NewContactForm = ({ createContact, searchEntities, initialIntermediaryName = null }: NewContactFormProps) => {
   const router = useRouter()
   const { formValues, errorMessage, isSubmitting, setFormValue, submit } = useController({
     createContact,
     navigateTo: router.push,
+    initialIntermediaryName,
   })
 
   const renderTextInput = (
