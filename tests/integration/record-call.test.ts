@@ -3,6 +3,7 @@ import type { RecordCallInput } from '@/domain/call-log'
 import type { ContactProfileInput } from '@/domain/contacts'
 import { CONTACT_EXCHANGE_JOB_APPLICATION_MISMATCH_MESSAGE } from '@/domain/contacts'
 import { CONTACT_NAME_ALREADY_TAKEN_MESSAGE, ENTITY_NOT_FOUND_MESSAGES } from '@/domain/entities'
+import { formatParisCalendarDate } from '@/domain/paris-time'
 import { recordCall } from '@/server/calls/record-call'
 import { insertContact, listContactListItems, findContactProfile } from '@/server/repositories/contacts-repository'
 import { createCvFromVersion, findSentCvVersionId, storeCvVersion } from '@/server/repositories/cvs-repository'
@@ -152,7 +153,7 @@ describe('recordCall', () => {
       intermediaryName: 'Hays',
       endClientName: 'Total',
     })
-    expect([overview.appliedOn.getFullYear(), overview.appliedOn.getMonth(), overview.appliedOn.getDate()]).toEqual([2026, 9, 20])
+    expect(formatParisCalendarDate(overview.appliedOn)).toBe('2026-10-20')
   })
 
   it('creates a job application with the KO après échange status', async () => {
