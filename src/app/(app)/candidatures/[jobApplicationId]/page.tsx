@@ -14,15 +14,23 @@ import { JobApplicationHighlights } from '@/components/job-application-highlight
 import { JobApplicationTabs } from '@/components/job-application-tabs'
 import { JobSpecSection } from '@/components/job-spec-section'
 import { MissionDetailsView } from '@/components/mission-details-view'
+import { SentCvView } from '@/components/sent-cv-view'
 import { StackView } from '@/components/stack-view'
 import type { ActionResult } from '@/domain/action-result'
 import type { ContactDetails } from '@/domain/entities'
 import type { InterviewPreparation } from '@/domain/interview-preparation'
+import { toCvOptions } from '@/domain/cv-library'
 import { findNextInterview } from '@/domain/interviews'
 import { JOB_APPLICATION_NOT_FOUND_MESSAGE, type JobApplicationOverview } from '@/domain/job-application'
 import { JOB_APPLICATION_TAB_SEARCH_PARAMETER, resolveJobApplicationTab } from '@/domain/job-application-tabs'
 import { JOB_APPLICATIONS_ROUTE } from '@/domain/routes'
 import { updateEndClientNotes } from '@/server/actions/client-brief-actions'
+import {
+  attachLibraryCvToJobApplication,
+  detachSentCvFromJobApplication,
+  listCvs,
+  uploadTailoredCvForJobApplication,
+} from '@/server/actions/cv-actions'
 import {
   getContactDetails,
   searchEntities,
@@ -97,6 +105,7 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
     interviewsResult,
     interviewPreparationResult,
     hasAnthropicApiKey,
+    cvsResult,
   ] = await Promise.all([
     loadJobApplicationWithContactDetails(jobApplicationId),
     listActivityLogEntries(jobApplicationId),
@@ -104,6 +113,7 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
     listInterviewsForJobApplication(jobApplicationId),
     loadInitialInterviewPreparation(jobApplicationId),
     hasAnthropicApiKeyConfigured(),
+    listCvs(),
   ])
 
   if (!jobApplicationResult.ok) {
@@ -153,6 +163,8 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
   const contactDetails = contactDetailsResult?.ok ? contactDetailsResult.data : null
   const contactDetailsErrorMessage =
     contactDetailsResult !== null && !contactDetailsResult.ok ? contactDetailsResult.errorMessage : null
+
+  const cvOptions = cvsResult.ok ? toCvOptions(cvsResult.data) : []
 
   return (
     <div className="flex min-w-0 flex-col gap-8">
@@ -229,6 +241,24 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
                     form={{
                       kind: 'contact',
                       props: { jobApplication, contactDetails, updateJobApplication, updateContactDetails, searchEntities },
+                    }}
+                  />
+                </div>
+                <div className={PANEL_CARD_CLASS_NAME}>
+                  <JobApplicationBlock
+                    title="CV envoyé"
+                    view={<SentCvView sentCv={jobApplication.sentCv} />}
+                    form={{
+                      kind: 'sentCv',
+                      props: {
+                        jobApplicationId: jobApplication.id,
+                        jobApplicationTitle: jobApplication.title,
+                        sentCv: jobApplication.sentCv,
+                        cvOptions,
+                        attachLibraryCvToJobApplication,
+                        uploadTailoredCvForJobApplication,
+                        detachSentCvFromJobApplication,
+                      },
                     }}
                   />
                 </div>

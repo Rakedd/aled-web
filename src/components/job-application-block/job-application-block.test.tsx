@@ -122,4 +122,28 @@ describe('JobApplicationBlock', () => {
     expect(screen.queryByText(/Société Générale \(Groupe SG\) · via Free-Work/)).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1, name: 'Développeur React' })).toBeInTheDocument()
   })
+
+  it('renders the sent cv form when editing that block', async () => {
+    render(
+      <JobApplicationBlock
+        title="CV envoyé"
+        view={<p>Aucun CV indiqué</p>}
+        form={{
+          kind: 'sentCv',
+          props: {
+            jobApplicationId: 'application-1',
+            jobApplicationTitle: 'Développeur React',
+            sentCv: null,
+            cvOptions: [{ id: 'cv-1', label: 'CV DevOps' }],
+            attachLibraryCvToJobApplication: jest.fn(),
+            uploadTailoredCvForJobApplication: jest.fn(),
+            detachSentCvFromJobApplication: jest.fn(),
+          },
+        }}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Modifier CV envoyé' }))
+    expect(screen.getByRole('combobox', { name: 'CV de ma bibliothèque' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Retirer le CV envoyé' })).not.toBeInTheDocument()
+  })
 })
