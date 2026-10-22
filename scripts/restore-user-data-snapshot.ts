@@ -2,10 +2,12 @@ import { randomUUID } from 'node:crypto'
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js'
 import type {
   UserDataSnapshot,
+  UserDataSnapshotCvVersion,
   UserDataSnapshotJobSpec,
   UserDataSnapshotOpportunityDecision,
 } from '../src/server/data-snapshot/build-user-data-snapshot'
 import type { BriefLanguage } from '../src/domain/interview-preparation'
+import { CV_PDF_MIME_TYPE, CVS_BUCKET, MAX_CV_PDF_BYTES } from '../src/domain/cv-library'
 import { JOB_SPEC_PDF_MIME_TYPE, JOB_SPECS_BUCKET, MAX_JOB_SPEC_PDF_BYTES } from '../src/domain/job-spec'
 import type { Database, Tables } from '../src/server/supabase/database-types'
 
@@ -23,6 +25,8 @@ const SNAPSHOT_TABLE_NAMES = {
   opportunityFilters: 'opportunity_filters',
   endClientBriefs: 'end_client_briefs',
   interviewQuestions: 'interview_questions',
+  cvs: 'cvs',
+  cvVersions: 'cv_versions',
 } as const satisfies Record<string, keyof Database['public']['Tables']>
 const SNAPSHOT_ARRAY_KEYS = Object.keys(SNAPSHOT_TABLE_NAMES) as (keyof typeof SNAPSHOT_TABLE_NAMES)[]
 const ARRAY_KEYS_ABSENT_FROM_EARLIER_SNAPSHOTS = [
@@ -30,6 +34,8 @@ const ARRAY_KEYS_ABSENT_FROM_EARLIER_SNAPSHOTS = [
   'opportunityDecisions',
   'endClientBriefs',
   'interviewQuestions',
+  'cvs',
+  'cvVersions',
 ] as const
 const REQUIRED_SNAPSHOT_ARRAY_KEYS = SNAPSHOT_ARRAY_KEYS.filter(
   (snapshotArrayKey) => !(ARRAY_KEYS_ABSENT_FROM_EARLIER_SNAPSHOTS as readonly string[]).includes(snapshotArrayKey),
@@ -94,6 +100,8 @@ export const parseUserDataSnapshot = (snapshotJson: unknown): UserDataSnapshot =
     opportunityDecisions: parsedSnapshot.opportunityDecisions ?? [],
     endClientBriefs: parsedSnapshot.endClientBriefs ?? parsedSnapshot.endClients.flatMap(toFrenchBriefsFromLegacyColumns),
     interviewQuestions: parsedSnapshot.interviewQuestions ?? [],
+    cvs: parsedSnapshot.cvs ?? [],
+    cvVersions: parsedSnapshot.cvVersions ?? [],
   }
 }
 
@@ -131,22 +139,34 @@ const assertEveryOpportunityDecisionIsRestorable = (snapshot: UserDataSnapshot):
   }
 }
 
+const isStoragePathInUserFolder = (storagePath: string, userId: string): boolean =>
+  storagePath.startsWith(`${userId}/`) && !storagePath.split('/').includes(PARENT_DIRECTORY_SEGMENT)
+
+const isPdfWithinLimit = (pdfBase64: unknown, maximumBytes: number): boolean =>
+  typeof pdfBase64 === 'string' && Buffer.from(pdfBase64, 'base64').byteLength <= maximumBytes
+
 const isJobSpecFileConfinedToSnapshotUser = (jobSpec: UserDataSnapshotJobSpec, userId: string): boolean => {
   const { storage_path: storagePath, pdfBase64 } = jobSpec
-  const isPdfWithinLimit =
-    pdfBase64 === null ||
-    (typeof pdfBase64 === 'string' && Buffer.from(pdfBase64, 'base64').byteLength <= MAX_JOB_SPEC_PDF_BYTES)
-  const isStoragePathInUserFolder =
-    storagePath === null ||
-    (typeof storagePath === 'string' &&
-      storagePath.startsWith(`${userId}/`) &&
-      !storagePath.split('/').includes(PARENT_DIRECTORY_SEGMENT))
-  return isPdfWithinLimit && isStoragePathInUserFolder
+  return (
+    (pdfBase64 === null || isPdfWithinLimit(pdfBase64, MAX_JOB_SPEC_PDF_BYTES)) &&
+    (storagePath === null || (typeof storagePath === 'string' && isStoragePathInUserFolder(storagePath, userId)))
+  )
 }
 
 const assertEveryJobSpecFileStaysInUserFolder = (snapshot: UserDataSnapshot): void => {
   if (!snapshot.jobSpecs.every((jobSpec) => isJobSpecFileConfinedToSnapshotUser(jobSpec, snapshot.userId))) {
     throw new Error('Snapshot job spec files must stay in the snapshot user folder and weigh at most 4 MB')
+  }
+}
+
+const isCvVersionFileConfinedToSnapshotUser = (cvVersion: UserDataSnapshotCvVersion, userId: string): boolean =>
+  isPdfWithinLimit(cvVersion.pdfBase64, MAX_CV_PDF_BYTES) &&
+  typeof cvVersion.storage_path === 'string' &&
+  isStoragePathInUserFolder(cvVersion.storage_path, userId)
+
+const assertEveryCvVersionFileStaysInUserFolder = (snapshot: UserDataSnapshot): void => {
+  if (!snapshot.cvVersions.every((cvVersion) => isCvVersionFileConfinedToSnapshotUser(cvVersion, snapshot.userId))) {
+    throw new Error('Snapshot cv version files must stay in the snapshot user folder and weigh at most 4 MB')
   }
 }
 
@@ -230,6 +250,27 @@ const uploadJobSpecPdfs = async (supabase: RestoreSupabaseClient, snapshot: User
   }
 }
 
+const toCvVersionRow = (cvVersion: UserDataSnapshotCvVersion): Tables<'cv_versions'> => ({
+  id: cvVersion.id,
+  user_id: cvVersion.user_id,
+  cv_id: cvVersion.cv_id,
+  label: cvVersion.label,
+  storage_path: cvVersion.storage_path,
+  file_name: cvVersion.file_name,
+  byte_size: cvVersion.byte_size,
+  uploaded_at: cvVersion.uploaded_at,
+  created_at: cvVersion.created_at,
+})
+
+const uploadCvVersionPdfs = async (supabase: RestoreSupabaseClient, snapshot: UserDataSnapshot): Promise<void> => {
+  for (const { storage_path: storagePath, pdfBase64 } of snapshot.cvVersions) {
+    const { error } = await supabase.storage
+      .from(CVS_BUCKET)
+      .upload(storagePath, Buffer.from(pdfBase64, 'base64'), { contentType: CV_PDF_MIME_TYPE, upsert: true })
+    if (error) throw new Error(`Restore operation uploadCvVersionPdf failed: ${error.message}`)
+  }
+}
+
 const buildOpportunityKey = (source: string, externalId: string): string =>
   `${source}${OPPORTUNITY_KEY_SEPARATOR}${externalId}`
 
@@ -293,13 +334,32 @@ export const restoreUserDataSnapshot = async (
   assertEveryRowBelongsToSnapshotUser(snapshot)
   assertEveryOpportunityDecisionIsRestorable(snapshot)
   assertEveryJobSpecFileStaysInUserFolder(snapshot)
+  assertEveryCvVersionFileStaysInUserFolder(snapshot)
   await assertNoRowIdBelongsToAnotherUser(supabase, snapshot)
   await ensureSnapshotUserExists(supabase, snapshot)
   failOnWriteError('upsertProfile', await supabase.from('profiles').upsert(snapshot.profile))
   failOnWriteError('upsertIntermediaries', await supabase.from('intermediaries').upsert(snapshot.intermediaries))
   failOnWriteError('upsertContacts', await supabase.from('contacts').upsert(snapshot.contacts))
   failOnWriteError('upsertEndClients', await supabase.from('end_clients').upsert(snapshot.endClients))
-  failOnWriteError('upsertJobApplications', await supabase.from('job_applications').upsert(snapshot.jobApplications))
+  failOnWriteError(
+    'upsertCvsWithoutCurrentVersion',
+    await supabase.from('cvs').upsert(snapshot.cvs.map((cv) => ({ ...cv, current_version_id: null }))),
+  )
+  failOnWriteError(
+    'upsertJobApplicationsWithoutSentCvVersion',
+    await supabase
+      .from('job_applications')
+      .upsert(snapshot.jobApplications.map((jobApplication) => ({ ...jobApplication, sent_cv_version_id: null }))),
+  )
+  failOnWriteError('upsertCvVersions', await supabase.from('cv_versions').upsert(snapshot.cvVersions.map(toCvVersionRow)))
+  await uploadCvVersionPdfs(supabase, snapshot)
+  failOnWriteError('upsertCvs', await supabase.from('cvs').upsert(snapshot.cvs))
+  failOnWriteError(
+    'upsertJobApplications',
+    await supabase
+      .from('job_applications')
+      .upsert(snapshot.jobApplications.filter((jobApplication) => jobApplication.sent_cv_version_id !== null)),
+  )
   failOnWriteError(
     'upsertActivityLogEntries',
     await supabase.from('activity_log_entries').upsert(snapshot.activityLogEntries),

@@ -1,11 +1,20 @@
 import { randomUUID } from 'node:crypto'
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js'
+import { CVS_BUCKET } from '@/domain/cv-library'
 import { JOB_SPECS_BUCKET } from '@/domain/job-spec'
 import type { Database } from '@/server/supabase/database-types'
 
 export type TestUser = { client: SupabaseClient<Database>; userId: string }
 
-export type SeededUserData = { jobApplicationId: string; pdfStoragePath: string }
+export type SeededUserData = {
+  jobApplicationId: string
+  pdfStoragePath: string
+  cvId: string
+  sentCvVersionId: string
+  currentCvVersionId: string
+  sentCvStoragePath: string
+  currentCvStoragePath: string
+}
 
 export const STORED_ENCRYPTED_API_KEY = 'chiffre-ne-doit-jamais-sortir'
 
@@ -87,6 +96,69 @@ const uploadJobSpecPdf = async ({ client, userId }: TestUser, jobApplicationId: 
     .upload(pdfStoragePath, STORED_PDF_BYTES, { contentType: 'application/pdf' })
   if (error) throw new Error(`Fixture pdf upload failed: ${error.message}`)
   return pdfStoragePath
+}
+
+export const SENT_CV_PDF_BYTES = Uint8Array.from([
+  ...new TextEncoder().encode('%PDF-1.4\n'),
+  ...Array.from({ length: 256 }, (_unused, byteValue) => 255 - byteValue),
+])
+
+export const CURRENT_CV_PDF_BYTES = Uint8Array.from([
+  ...new TextEncoder().encode('%PDF-1.7\n'),
+  ...Array.from({ length: 256 }, (_unused, byteValue) => (byteValue * 7) % 256),
+])
+
+const insertCvVersionWithFile = async (
+  { client, userId }: TestUser,
+  cvId: string | null,
+  label: string,
+  pdfBytes: Uint8Array,
+): Promise<{ versionId: string; storagePath: string }> => {
+  const storagePath = `${userId}/${randomUUID()}.pdf`
+  const { error } = await client.storage
+    .from(CVS_BUCKET)
+    .upload(storagePath, pdfBytes, { contentType: 'application/pdf' })
+  if (error) throw new Error(`Fixture cv upload failed: ${error.message}`)
+  const versionId = readInsertedIdOrFail(
+    await client
+      .from('cv_versions')
+      .insert({
+        user_id: userId,
+        cv_id: cvId,
+        label,
+        storage_path: storagePath,
+        file_name: `${label}.pdf`,
+        byte_size: pdfBytes.byteLength,
+        uploaded_at: '2026-09-20T10:00:00.123456+00:00',
+      })
+      .select('id')
+      .single(),
+  )
+  return { versionId, storagePath }
+}
+
+const seedCvWithSentVersion = async (testUser: TestUser, jobApplicationId: string) => {
+  const { client, userId } = testUser
+  const cvId = readInsertedIdOrFail(
+    await client
+      .from('cvs')
+      .insert({ user_id: userId, label: 'CV React', reviewed_at: '2026-09-25T08:00:00.654321+00:00' })
+      .select('id')
+      .single(),
+  )
+  const sentVersion = await insertCvVersionWithFile(testUser, cvId, 'CV React ancien', SENT_CV_PDF_BYTES)
+  const currentVersion = await insertCvVersionWithFile(testUser, cvId, 'CV React actuel', CURRENT_CV_PDF_BYTES)
+  failOnError(await client.from('cvs').update({ current_version_id: currentVersion.versionId }).eq('id', cvId))
+  failOnError(
+    await client.from('job_applications').update({ sent_cv_version_id: sentVersion.versionId }).eq('id', jobApplicationId),
+  )
+  return {
+    cvId,
+    sentCvVersionId: sentVersion.versionId,
+    currentCvVersionId: currentVersion.versionId,
+    sentCvStoragePath: sentVersion.storagePath,
+    currentCvStoragePath: currentVersion.storagePath,
+  }
 }
 
 export const seedEveryUserTable = async (testUser: TestUser): Promise<SeededUserData> => {
@@ -201,5 +273,6 @@ export const seedEveryUserTable = async (testUser: TestUser): Promise<SeededUser
       generated_at: '2026-10-11T14:00:00.654321+00:00',
     }),
   )
-  return { jobApplicationId, pdfStoragePath }
+  const seededCv = await seedCvWithSentVersion(testUser, jobApplicationId)
+  return { jobApplicationId, pdfStoragePath, ...seededCv }
 }

@@ -73,7 +73,7 @@ rm ~/Downloads/cle.json
 
 ## Navigation et fonctionnalités
 
-Menu : « Mes candidatures », « Mes contacts », « Mon calendrier », « Mes opportunités », « Préférences ».
+Menu : « Mes candidatures », « Mes contacts », « Mon calendrier », « Mes opportunités », « Mes CV », « Préférences ».
 
 | Route | Contenu |
 | --- | --- |
@@ -83,6 +83,7 @@ Menu : « Mes candidatures », « Mes contacts », « Mon calendrier », « Mes 
 | `/calendar` | « Mon calendrier » |
 | `/candidatures/<id>` | page de la candidature, en lecture d'abord, avec un crayon pour modifier chaque bloc (en-tête, infos mission, contact, stack) |
 | `/opportunites` | « Mes opportunités », avec recherche par titre, entreprise ou lieu |
+| `/cv` | « Mes CV » : bibliothèque de 10 CV maximum (PDF de 4 Mo), versions conservées tant qu'une candidature les a envoyées, rappel après 90 jours |
 | `/preferences` | préférences, clé API Claude, export des données (`/settings` redirige définitivement vers `/preferences`) |
 
 - **Stack** : sur « J'ai postulé », la stack de la mission est extraite par l'IA.
@@ -148,7 +149,7 @@ Un profil est créé automatiquement pour chaque nouveau compte.
 
 ## Export et sauvegardes
 
-- **Export manuel** : Préférences (`/preferences`) → « Exporter mes données » télécharge `freeclutch-export-<AAAA-MM-JJ>.json` avec toutes les données de l'utilisateur connecté, PDF de fiches métier inclus (en base64). La clé API Claude n'y figure jamais.
+- **Export manuel** : Préférences (`/preferences`) → « Exporter mes données » télécharge `freeclutch-export-<AAAA-MM-JJ>.json` avec toutes les données de l'utilisateur connecté, PDF de fiches métier et CV (toutes leurs versions) inclus (en base64). La clé API Claude n'y figure jamais.
 - **Sauvegarde automatique** : le cron Vercel (`vercel.json`) appelle `/api/cron/backup` le lundi et le jeudi à 3 h UTC. Pour chaque utilisateur, un fichier au même format est créé dans `gs://<GCS_BACKUP_BUCKET>/backups/<AAAA-MM-JJ>/<userId>.json` (date de Paris). L'échec d'un utilisateur n'arrête pas les autres ; il apparaît dans les logs (`User data backup failed`, avec l'identifiant de l'utilisateur). Ces appels réguliers évitent aussi la mise en pause du projet Supabase gratuit.
 
 Un objet déjà présent n'est jamais écrasé : relancer la sauvegarde le même jour échoue pour les utilisateurs déjà sauvegardés ce jour-là. Pour garder un historique borné, configurer une règle de cycle de vie sur le bucket (par exemple, suppression après 90 jours).

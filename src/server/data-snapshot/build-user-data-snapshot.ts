@@ -1,4 +1,5 @@
 import 'server-only'
+import { CVS_BUCKET } from '@/domain/cv-library'
 import { JOB_SPECS_BUCKET } from '@/domain/job-spec'
 import type { OpportunityDecision } from '@/domain/opportunities'
 import { toRepositoryError } from '@/server/repositories/repository-error'
@@ -12,6 +13,8 @@ export type UserDataSnapshotProfile = Omit<
 >
 
 export type UserDataSnapshotJobSpec = Tables<'job_specs'> & { pdfBase64: string | null }
+
+export type UserDataSnapshotCvVersion = Tables<'cv_versions'> & { pdfBase64: string }
 
 export type UserDataSnapshotOpportunityDecision = {
   source: string
@@ -38,6 +41,8 @@ export type UserDataSnapshot = {
   opportunityDecisions: UserDataSnapshotOpportunityDecision[]
   endClientBriefs: Tables<'end_client_briefs'>[]
   interviewQuestions: Tables<'interview_questions'>[]
+  cvs: Tables<'cvs'>[]
+  cvVersions: UserDataSnapshotCvVersion[]
 }
 
 const SNAPSHOT_PROFILE_COLUMNS = 'id, first_name, last_name, email, links, follow_up_delay_days, created_at, updated_at'
@@ -69,6 +74,23 @@ const attachJobSpecPdfs = (
     jobSpecRows.map(async (jobSpecRow) => ({
       ...jobSpecRow,
       pdfBase64: await downloadJobSpecPdfAsBase64(supabase, jobSpecRow.storage_path),
+    })),
+  )
+
+const downloadCvPdfAsBase64 = async (supabase: FreeclutchSupabaseClient, storagePath: string): Promise<string> => {
+  const { data, error } = await supabase.storage.from(CVS_BUCKET).download(storagePath)
+  if (error) throw new Error(`Cv pdf download failed with status ${error.status ?? 'unknown'}`)
+  return Buffer.from(await data.arrayBuffer()).toString('base64')
+}
+
+const attachCvVersionPdfs = (
+  supabase: FreeclutchSupabaseClient,
+  cvVersionRows: Tables<'cv_versions'>[],
+): Promise<UserDataSnapshotCvVersion[]> =>
+  Promise.all(
+    cvVersionRows.map(async (cvVersionRow) => ({
+      ...cvVersionRow,
+      pdfBase64: await downloadCvPdfAsBase64(supabase, cvVersionRow.storage_path),
     })),
   )
 
@@ -111,6 +133,8 @@ export const buildUserDataSnapshot = async (
     opportunityDecisions,
     endClientBriefs,
     interviewQuestions,
+    cvs,
+    cvVersionRows,
   ] = await Promise.all([
     fetchSnapshotProfile(supabase, userId),
     fetchEveryRow('fetchSnapshotIntermediaries', (firstRowIndex, lastRowIndex) =>
@@ -172,6 +196,12 @@ export const buildUserDataSnapshot = async (
         .order('id')
         .range(firstRowIndex, lastRowIndex),
     ),
+    fetchEveryRow('fetchSnapshotCvs', (firstRowIndex, lastRowIndex) =>
+      supabase.from('cvs').select('*').eq('user_id', userId).order('id').range(firstRowIndex, lastRowIndex),
+    ),
+    fetchEveryRow('fetchSnapshotCvVersions', (firstRowIndex, lastRowIndex) =>
+      supabase.from('cv_versions').select('*').eq('user_id', userId).order('id').range(firstRowIndex, lastRowIndex),
+    ),
   ])
 
   return {
@@ -191,5 +221,7 @@ export const buildUserDataSnapshot = async (
     opportunityDecisions,
     endClientBriefs,
     interviewQuestions,
+    cvs,
+    cvVersions: await attachCvVersionPdfs(supabase, cvVersionRows),
   }
 }

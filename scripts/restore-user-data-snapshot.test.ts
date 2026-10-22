@@ -32,6 +32,8 @@ const EMPTY_SNAPSHOT: UserDataSnapshot = {
   opportunityDecisions: [],
   endClientBriefs: [],
   interviewQuestions: [],
+  cvs: [],
+  cvVersions: [],
 }
 
 const buildEndClientRow = (overrides: Partial<Tables<'end_clients'>>): Tables<'end_clients'> => ({
@@ -114,6 +116,17 @@ describe('parseUserDataSnapshot', () => {
     expect(parsedSnapshot.endClientBriefs).toEqual([
       expect.objectContaining({ sources: [], generated_at: endClientWithPartialBrief.updated_at }),
     ])
+  })
+
+  it('still parses a snapshot written before the cv library', () => {
+    const snapshotJson: Record<string, unknown> = { ...EMPTY_SNAPSHOT }
+    delete snapshotJson.cvs
+    delete snapshotJson.cvVersions
+
+    const parsedSnapshot = parseUserDataSnapshot(snapshotJson)
+
+    expect(parsedSnapshot.cvs).toEqual([])
+    expect(parsedSnapshot.cvVersions).toEqual([])
   })
 
   it('keeps the briefs by language and the interview questions of a current snapshot', () => {

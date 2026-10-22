@@ -1,12 +1,16 @@
 import { randomUUID } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { CVS_BUCKET } from '@/domain/cv-library'
 import { JOB_SPECS_BUCKET } from '@/domain/job-spec'
 import { buildUserDataSnapshot, type UserDataSnapshot } from '@/server/data-snapshot/build-user-data-snapshot'
 import type { Database } from '@/server/supabase/database-types'
 import { parseUserDataSnapshot, restoreUserDataSnapshot } from '../../scripts/restore-user-data-snapshot'
 import { createServiceRoleTestClient, createSignedInTestClient } from './create-test-user'
 import {
+  CURRENT_CV_PDF_BYTES,
+  SENT_CV_PDF_BYTES,
   seedEveryUserTable,
+  type SeededUserData,
   STORED_API_KEY_LAST_FOUR,
   STORED_ENCRYPTED_API_KEY,
   STORED_PDF_BYTES,
@@ -16,6 +20,8 @@ import {
 jest.mock('server-only', () => ({}))
 
 const USER_OWNED_TABLES_CHILDREN_FIRST = [
+  'cvs',
+  'cv_versions',
   'opportunity_decisions',
   'opportunity_filters',
   'interview_questions',
@@ -30,19 +36,23 @@ const USER_OWNED_TABLES_CHILDREN_FIRST = [
   'end_clients',
 ] as const
 
-const createSeededTestUser = async (): Promise<TestUser & { pdfStoragePath: string }> => {
+const createSeededTestUser = async (): Promise<TestUser & SeededUserData> => {
   const testUser = await createSignedInTestClient(`data-snapshot-${randomUUID()}@test.local`)
-  const { pdfStoragePath } = await seedEveryUserTable(testUser)
-  return { ...testUser, pdfStoragePath }
+  const seededUserData = await seedEveryUserTable(testUser)
+  return { ...testUser, ...seededUserData }
 }
 
 const deleteEveryUserRowAndFile = async (
   serviceRoleClient: SupabaseClient<Database>,
   userId: string,
-  pdfStoragePath: string,
+  { pdfStoragePath, sentCvStoragePath, currentCvStoragePath }: SeededUserData,
 ): Promise<void> => {
   const { error: fileRemovalError } = await serviceRoleClient.storage.from(JOB_SPECS_BUCKET).remove([pdfStoragePath])
   if (fileRemovalError) throw fileRemovalError
+  const { error: cvFileRemovalError } = await serviceRoleClient.storage
+    .from(CVS_BUCKET)
+    .remove([sentCvStoragePath, currentCvStoragePath])
+  if (cvFileRemovalError) throw cvFileRemovalError
   for (const tableName of USER_OWNED_TABLES_CHILDREN_FIRST) {
     const { error } = await serviceRoleClient.from(tableName).delete().eq('user_id', userId)
     if (error) throw error
@@ -67,10 +77,28 @@ const countRemainingUserRows = async (serviceRoleClient: SupabaseClient<Database
 const downloadStoredPdfBytes = async (
   serviceRoleClient: SupabaseClient<Database>,
   pdfStoragePath: string,
+  bucketName: string = JOB_SPECS_BUCKET,
 ): Promise<Uint8Array> => {
-  const { data, error } = await serviceRoleClient.storage.from(JOB_SPECS_BUCKET).download(pdfStoragePath)
+  const { data, error } = await serviceRoleClient.storage.from(bucketName).download(pdfStoragePath)
   if (error) throw error
   return new Uint8Array(await data.arrayBuffer())
+}
+
+const keepUpdatedAtOfRowsRewrittenByRestore = (
+  restoredSnapshot: UserDataSnapshot,
+  originalSnapshot: UserDataSnapshot,
+): UserDataSnapshot => {
+  const originalUpdatedAtById = new Map(
+    [...originalSnapshot.cvs, ...originalSnapshot.jobApplications].map((row) => [row.id, row.updated_at]),
+  )
+  const withOriginalUpdatedAt = <Row extends { id: string; updated_at: string }>(rows: Row[]): Row[] =>
+    rows.map((row) => ({ ...row, updated_at: originalUpdatedAtById.get(row.id) ?? row.updated_at }))
+  return {
+    ...restoredSnapshot,
+    exportedAt: originalSnapshot.exportedAt,
+    cvs: withOriginalUpdatedAt(restoredSnapshot.cvs),
+    jobApplications: withOriginalUpdatedAt(restoredSnapshot.jobApplications),
+  }
 }
 
 const collectSnapshotRowOwnerIds = (snapshot: UserDataSnapshot): string[] => [
@@ -87,6 +115,8 @@ const collectSnapshotRowOwnerIds = (snapshot: UserDataSnapshot): string[] => [
     ...snapshot.opportunityFilters,
     ...snapshot.endClientBriefs,
     ...snapshot.interviewQuestions,
+    ...snapshot.cvs,
+    ...snapshot.cvVersions,
   ].map((snapshotRow) => snapshotRow.user_id),
 ]
 
@@ -169,9 +199,13 @@ const seedOpportunityFiltersAndDecisions = async (
 const createSeededUserWithOpportunities = async () => {
   const serviceRoleClient = createServiceRoleTestClient()
   const testUser = await createSignedInTestClient(`data-snapshot-${randomUUID()}@test.local`)
-  const { pdfStoragePath, jobApplicationId } = await seedEveryUserTable(testUser)
-  const seededOpportunities = await seedOpportunityFiltersAndDecisions(serviceRoleClient, testUser, jobApplicationId)
-  return { ...testUser, pdfStoragePath, jobApplicationId, seededOpportunities, serviceRoleClient }
+  const seededUserData = await seedEveryUserTable(testUser)
+  const seededOpportunities = await seedOpportunityFiltersAndDecisions(
+    serviceRoleClient,
+    testUser,
+    seededUserData.jobApplicationId,
+  )
+  return { ...testUser, ...seededUserData, seededOpportunities, serviceRoleClient }
 }
 
 describe('user data snapshot', () => {
@@ -196,6 +230,8 @@ describe('user data snapshot', () => {
       alertSnoozes: snapshot.alertSnoozes.length,
       endClientBriefs: snapshot.endClientBriefs.length,
       interviewQuestions: snapshot.interviewQuestions.length,
+      cvs: snapshot.cvs.length,
+      cvVersions: snapshot.cvVersions.length,
     }).toEqual({
       intermediaries: 1,
       contacts: 1,
@@ -207,6 +243,8 @@ describe('user data snapshot', () => {
       alertSnoozes: 1,
       endClientBriefs: 1,
       interviewQuestions: 1,
+      cvs: 1,
+      cvVersions: 2,
     })
     expect(Buffer.from(snapshot.jobSpecs[0].pdfBase64 ?? '', 'base64')).toEqual(Buffer.from(STORED_PDF_BYTES))
   })
@@ -227,7 +265,7 @@ describe('user data snapshot', () => {
     const owner = await createSeededTestUser()
     const serviceRoleClient = createServiceRoleTestClient()
     const originalSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
-    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner.pdfStoragePath)
+    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner)
     expect(await countRemainingUserRows(serviceRoleClient, owner.userId)).toBe(0)
 
     await restoreUserDataSnapshot(serviceRoleClient, {
@@ -236,7 +274,7 @@ describe('user data snapshot', () => {
     })
 
     const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
-    expect({ ...restoredSnapshot, exportedAt: originalSnapshot.exportedAt }).toEqual(originalSnapshot)
+    expect(keepUpdatedAtOfRowsRewrittenByRestore(restoredSnapshot, originalSnapshot)).toEqual(originalSnapshot)
     expect(await downloadStoredPdfBytes(serviceRoleClient, owner.pdfStoragePath)).toEqual(STORED_PDF_BYTES)
   })
 
@@ -249,7 +287,72 @@ describe('user data snapshot', () => {
     await restoreUserDataSnapshot(serviceRoleClient, originalSnapshot)
 
     const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
-    expect({ ...restoredSnapshot, exportedAt: originalSnapshot.exportedAt }).toEqual(originalSnapshot)
+    expect(keepUpdatedAtOfRowsRewrittenByRestore(restoredSnapshot, originalSnapshot)).toEqual(originalSnapshot)
+  })
+
+  it('exports cvs and their versions with the pdf in base64', async () => {
+    const owner = await createSeededTestUser()
+
+    const snapshot = await buildUserDataSnapshot(createServiceRoleTestClient(), owner.userId)
+
+    expect(snapshot.cvs).toEqual([
+      expect.objectContaining({ id: owner.cvId, user_id: owner.userId, current_version_id: owner.currentCvVersionId }),
+    ])
+    const exportedVersionsById = new Map(snapshot.cvVersions.map((cvVersion) => [cvVersion.id, cvVersion]))
+    expect(exportedVersionsById.get(owner.sentCvVersionId)).toMatchObject({
+      cv_id: owner.cvId,
+      storage_path: owner.sentCvStoragePath,
+    })
+    expect(Buffer.from(exportedVersionsById.get(owner.sentCvVersionId)?.pdfBase64 ?? '', 'base64')).toEqual(
+      Buffer.from(SENT_CV_PDF_BYTES),
+    )
+    expect(Buffer.from(exportedVersionsById.get(owner.currentCvVersionId)?.pdfBase64 ?? '', 'base64')).toEqual(
+      Buffer.from(CURRENT_CV_PDF_BYTES),
+    )
+    expect(snapshot.jobApplications[0].sent_cv_version_id).toBe(owner.sentCvVersionId)
+  })
+
+  it('restores a cv with a version sent to a job application after the user data was deleted', async () => {
+    const owner = await createSeededTestUser()
+    const serviceRoleClient = createServiceRoleTestClient()
+    const originalSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner)
+
+    await restoreUserDataSnapshot(serviceRoleClient, originalSnapshot)
+
+    const { data: restoredCv } = await serviceRoleClient.from('cvs').select('current_version_id').eq('id', owner.cvId).single()
+    const { data: restoredJobApplication } = await serviceRoleClient
+      .from('job_applications')
+      .select('sent_cv_version_id')
+      .eq('id', owner.jobApplicationId)
+      .single()
+    expect(restoredCv).toEqual({ current_version_id: owner.currentCvVersionId })
+    expect(restoredJobApplication).toEqual({ sent_cv_version_id: owner.sentCvVersionId })
+    expect(await downloadStoredPdfBytes(serviceRoleClient, owner.sentCvStoragePath, CVS_BUCKET)).toEqual(
+      SENT_CV_PDF_BYTES,
+    )
+    expect(await downloadStoredPdfBytes(serviceRoleClient, owner.currentCvStoragePath, CVS_BUCKET)).toEqual(
+      CURRENT_CV_PDF_BYTES,
+    )
+  })
+
+  it('restores over the current data of a user who has 10 cvs', async () => {
+    const owner = await createSeededTestUser()
+    const serviceRoleClient = createServiceRoleTestClient()
+    const nineMoreCvs = Array.from({ length: 9 }, (_unused, cvIndex) => ({
+      user_id: owner.userId,
+      label: `CV supplémentaire ${cvIndex}`,
+    }))
+    const { error: cvInsertionError } = await owner.client.from('cvs').insert(nineMoreCvs)
+    expect(cvInsertionError).toBeNull()
+    const originalSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    expect(originalSnapshot.cvs).toHaveLength(10)
+
+    await restoreUserDataSnapshot(serviceRoleClient, originalSnapshot)
+
+    const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    expect(restoredSnapshot.cvs.map((cv) => cv.id)).toEqual(originalSnapshot.cvs.map((cv) => cv.id))
+    expect(restoredSnapshot.cvVersions).toEqual(originalSnapshot.cvVersions)
   })
 
   it('recreates the account with the same id and email when the user no longer exists', async () => {
@@ -266,8 +369,7 @@ describe('user data snapshot', () => {
     expect(recreatedUserData.user?.email).toBe(originalSnapshot.profile.email)
     const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
     expect({
-      ...restoredSnapshot,
-      exportedAt: originalSnapshot.exportedAt,
+      ...keepUpdatedAtOfRowsRewrittenByRestore(restoredSnapshot, originalSnapshot),
       profile: { ...restoredSnapshot.profile, updated_at: originalSnapshot.profile.updated_at },
     }).toEqual(originalSnapshot)
     expect(await downloadStoredPdfBytes(serviceRoleClient, owner.pdfStoragePath)).toEqual(STORED_PDF_BYTES)
@@ -330,6 +432,50 @@ describe('user data snapshot', () => {
 
     expect(await downloadStoredPdfBytes(serviceRoleClient, victim.pdfStoragePath)).toEqual(STORED_PDF_BYTES)
     expect(await downloadStoredPdfBytes(serviceRoleClient, owner.pdfStoragePath)).toEqual(STORED_PDF_BYTES)
+    const { data: profileAfterRefusal } = await serviceRoleClient
+      .from('profiles')
+      .select('first_name')
+      .eq('id', owner.userId)
+      .single()
+    expect(profileAfterRefusal).toEqual({ first_name: 'Camille' })
+  })
+
+  it.each([
+    [
+      'stored in the folder of another user',
+      (_ownerId: string, victimCvPath: string) => ({ storage_path: victimCvPath }),
+    ],
+    [
+      'escaping the owner folder with a .. segment',
+      (ownerId: string, victimCvPath: string) => ({ storage_path: `${ownerId}/../${victimCvPath}` }),
+    ],
+    ['heavier than 4 MB', () => ({ pdfBase64: PDF_LIMIT_PLUS_ONE_BYTE_BASE64 })],
+    ['not a base64 string', () => ({ pdfBase64: 42 as unknown as string })],
+  ])('refuses a cv version %s, writing nothing', async (_caseName, buildCvVersionTampering) => {
+    const owner = await createSeededTestUser()
+    const victim = await createSeededTestUser()
+    const serviceRoleClient = createServiceRoleTestClient()
+    const originalSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
+    const tamperedSnapshot: UserDataSnapshot = {
+      ...originalSnapshot,
+      profile: { ...originalSnapshot.profile, first_name: 'Modifié' },
+      cvVersions: originalSnapshot.cvVersions.map((cvVersion) => ({
+        ...cvVersion,
+        pdfBase64: Buffer.from('%PDF-1.4 contenu falsifié').toString('base64'),
+        ...buildCvVersionTampering(owner.userId, victim.currentCvStoragePath),
+      })),
+    }
+
+    await expect(restoreUserDataSnapshot(serviceRoleClient, tamperedSnapshot)).rejects.toThrow(
+      'Snapshot cv version files must stay in the snapshot user folder and weigh at most 4 MB',
+    )
+
+    expect(await downloadStoredPdfBytes(serviceRoleClient, victim.currentCvStoragePath, CVS_BUCKET)).toEqual(
+      CURRENT_CV_PDF_BYTES,
+    )
+    expect(await downloadStoredPdfBytes(serviceRoleClient, owner.sentCvStoragePath, CVS_BUCKET)).toEqual(
+      SENT_CV_PDF_BYTES,
+    )
     const { data: profileAfterRefusal } = await serviceRoleClient
       .from('profiles')
       .select('first_name')
@@ -411,7 +557,7 @@ describe('user data snapshot', () => {
   it('restores the opportunity filters and decisions identically after the user data was deleted', async () => {
     const owner = await createSeededUserWithOpportunities()
     const originalSnapshot = await buildUserDataSnapshot(owner.serviceRoleClient, owner.userId)
-    await deleteEveryUserRowAndFile(owner.serviceRoleClient, owner.userId, owner.pdfStoragePath)
+    await deleteEveryUserRowAndFile(owner.serviceRoleClient, owner.userId, owner)
 
     const { skippedOpportunityDecisionCount } = await restoreUserDataSnapshot(owner.serviceRoleClient, {
       ...originalSnapshot,
@@ -420,14 +566,14 @@ describe('user data snapshot', () => {
 
     expect(skippedOpportunityDecisionCount).toBe(0)
     const restoredSnapshot = await buildUserDataSnapshot(owner.serviceRoleClient, owner.userId)
-    expect({ ...restoredSnapshot, exportedAt: originalSnapshot.exportedAt }).toEqual(originalSnapshot)
+    expect(keepUpdatedAtOfRowsRewrittenByRestore(restoredSnapshot, originalSnapshot)).toEqual(originalSnapshot)
     expect(restoredSnapshot.opportunityDecisions).toHaveLength(2)
   })
 
   it('skips a decision whose mission no longer exists without failing the restoration', async () => {
     const owner = await createSeededUserWithOpportunities()
     const originalSnapshot = await buildUserDataSnapshot(owner.serviceRoleClient, owner.userId)
-    await deleteEveryUserRowAndFile(owner.serviceRoleClient, owner.userId, owner.pdfStoragePath)
+    await deleteEveryUserRowAndFile(owner.serviceRoleClient, owner.userId, owner)
     const { error: opportunityDeletionError } = await owner.serviceRoleClient
       .from('opportunities')
       .delete()
@@ -516,7 +662,7 @@ describe('user data snapshot', () => {
     const earlierSnapshot: Partial<UserDataSnapshot> = { ...currentSnapshot }
     delete earlierSnapshot.opportunityFilters
     delete earlierSnapshot.opportunityDecisions
-    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner.pdfStoragePath)
+    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner)
 
     const parsedSnapshot = parseUserDataSnapshot(JSON.parse(JSON.stringify(earlierSnapshot)))
     await restoreUserDataSnapshot(serviceRoleClient, {
@@ -527,14 +673,14 @@ describe('user data snapshot', () => {
     expect(parsedSnapshot.opportunityFilters).toEqual([])
     expect(parsedSnapshot.opportunityDecisions).toEqual([])
     const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
-    expect({ ...restoredSnapshot, exportedAt: currentSnapshot.exportedAt }).toEqual(currentSnapshot)
+    expect(keepUpdatedAtOfRowsRewrittenByRestore(restoredSnapshot, currentSnapshot)).toEqual(currentSnapshot)
   })
 
   it('restores the briefs by language and the interview questions after the user data was deleted', async () => {
     const owner = await createSeededTestUser()
     const serviceRoleClient = createServiceRoleTestClient()
     const originalSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
-    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner.pdfStoragePath)
+    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner)
 
     await restoreUserDataSnapshot(serviceRoleClient, {
       ...originalSnapshot,
@@ -555,7 +701,7 @@ describe('user data snapshot', () => {
     const owner = await createSeededTestUser()
     const serviceRoleClient = createServiceRoleTestClient()
     const originalSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
-    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner.pdfStoragePath)
+    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner)
 
     await restoreUserDataSnapshot(serviceRoleClient, {
       ...originalSnapshot,
@@ -571,14 +717,14 @@ describe('user data snapshot', () => {
         summary: 'Appel sans candidature',
       }),
     )
-    expect({ ...restoredSnapshot, exportedAt: originalSnapshot.exportedAt }).toEqual(originalSnapshot)
+    expect(keepUpdatedAtOfRowsRewrittenByRestore(restoredSnapshot, originalSnapshot)).toEqual(originalSnapshot)
   })
 
   it('assigns agencies to restored contacts without one', async () => {
     const owner = await createSeededTestUser()
     const serviceRoleClient = createServiceRoleTestClient()
     const originalSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
-    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner.pdfStoragePath)
+    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner)
 
     await restoreUserDataSnapshot(serviceRoleClient, {
       ...originalSnapshot,
@@ -652,7 +798,7 @@ describe('user data snapshot', () => {
     const owner = await createSeededTestUser()
     const serviceRoleClient = createServiceRoleTestClient()
     const currentSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
-    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner.pdfStoragePath)
+    await deleteEveryUserRowAndFile(serviceRoleClient, owner.userId, owner)
 
     const parsedSnapshot = parseUserDataSnapshot(buildSnapshotWrittenBeforeBriefsByLanguage(currentSnapshot))
     await restoreUserDataSnapshot(serviceRoleClient, {
@@ -664,8 +810,7 @@ describe('user data snapshot', () => {
     expect(removeBriefIds(restoredSnapshot.endClientBriefs)).toEqual(removeBriefIds(currentSnapshot.endClientBriefs))
     expect(restoredSnapshot.interviewQuestions).toEqual([])
     expect({
-      ...restoredSnapshot,
-      exportedAt: currentSnapshot.exportedAt,
+      ...keepUpdatedAtOfRowsRewrittenByRestore(restoredSnapshot, currentSnapshot),
       endClientBriefs: currentSnapshot.endClientBriefs,
       interviewQuestions: currentSnapshot.interviewQuestions,
     }).toEqual(currentSnapshot)

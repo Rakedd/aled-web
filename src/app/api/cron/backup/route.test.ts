@@ -45,6 +45,8 @@ const buildFakeSnapshot = (userId: string): UserDataSnapshot => ({
   opportunityDecisions: [],
   endClientBriefs: [],
   interviewQuestions: [],
+  cvs: [],
+  cvVersions: [],
 })
 
 const mockProfileIds = (profileIds: string[]): void => {
