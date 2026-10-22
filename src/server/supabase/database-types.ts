@@ -444,7 +444,7 @@ isOneToOne: false
           }
           Functions: {
             "assign_missing_contact_intermediaries":
-{ Args: Record<PropertyKey, never>; Returns: undefined
+{ Args: { "target_user_id"?: string }; Returns: undefined
                            },
 "delete_contact":
 { Args: { "target_contact_id": string }; Returns: boolean

@@ -57,7 +57,7 @@ begin
 end;
 $$;
 
-create function public.assign_missing_contact_intermediaries()
+create function public.assign_missing_contact_intermediaries(target_user_id uuid default null)
 returns void
 language sql
 security invoker
@@ -70,10 +70,14 @@ as $$
       job_application.contact_id,
       job_application.intermediary_id
     from public.job_applications as job_application
-    where job_application.contact_id is not null and job_application.intermediary_id is not null
+    where job_application.contact_id is not null
+      and job_application.intermediary_id is not null
+      and (target_user_id is null or job_application.user_id = target_user_id)
     order by job_application.contact_id, job_application.applied_on desc, job_application.created_at desc
   ) as latest_job_application
-  where contact.id = latest_job_application.contact_id and contact.intermediary_id is null;
+  where contact.id = latest_job_application.contact_id
+    and contact.intermediary_id is null
+    and (target_user_id is null or contact.user_id = target_user_id);
 $$;
 
 create view public.exchanges_overview
@@ -103,10 +107,20 @@ as
 select
   contact.*,
   intermediary.name as intermediary_name,
-  (
-    select max(exchange.occurred_at)
-    from public.exchanges_overview as exchange
-    where exchange.effective_contact_id = contact.id
+  greatest(
+    (
+      select max(entry.occurred_at)
+      from public.activity_log_entries as entry
+      where entry.contact_id = contact.id and entry.kind <> 'status_change'
+    ),
+    (
+      select max(entry.occurred_at)
+      from public.job_applications as job_application
+      join public.activity_log_entries as entry on entry.job_application_id = job_application.id
+      where job_application.contact_id = contact.id
+        and entry.contact_id is null
+        and entry.kind <> 'status_change'
+    )
   ) as last_exchange_at,
   (
     select count(*)
@@ -135,11 +149,28 @@ select
     from public.job_applications as job_application
     where job_application.intermediary_id = intermediary.id
   ) as proposed_mission_count,
-  (
-    select max(exchange.occurred_at)
-    from public.exchanges_overview as exchange
-    where exchange.contact_intermediary_id = intermediary.id
-      or exchange.job_application_intermediary_id = intermediary.id
+  greatest(
+    (
+      select max(entry.occurred_at)
+      from public.contacts as contact
+      join public.activity_log_entries as entry on entry.contact_id = contact.id
+      where contact.intermediary_id = intermediary.id and entry.kind <> 'status_change'
+    ),
+    (
+      select max(entry.occurred_at)
+      from public.contacts as contact
+      join public.job_applications as job_application on job_application.contact_id = contact.id
+      join public.activity_log_entries as entry on entry.job_application_id = job_application.id
+      where contact.intermediary_id = intermediary.id
+        and entry.contact_id is null
+        and entry.kind <> 'status_change'
+    ),
+    (
+      select max(entry.occurred_at)
+      from public.job_applications as job_application
+      join public.activity_log_entries as entry on entry.job_application_id = job_application.id
+      where job_application.intermediary_id = intermediary.id and entry.kind <> 'status_change'
+    )
   ) as last_exchange_at
 from public.intermediaries as intermediary;
 
@@ -156,8 +187,8 @@ grant select on
 to authenticated, service_role;
 
 revoke execute on function public.delete_contact(uuid) from public, anon;
-revoke execute on function public.assign_missing_contact_intermediaries() from public, anon;
+revoke execute on function public.assign_missing_contact_intermediaries(uuid) from public, anon;
 grant execute on function public.delete_contact(uuid) to authenticated, service_role;
-grant execute on function public.assign_missing_contact_intermediaries() to authenticated, service_role;
+grant execute on function public.assign_missing_contact_intermediaries(uuid) to authenticated, service_role;
 
 select public.assign_missing_contact_intermediaries();

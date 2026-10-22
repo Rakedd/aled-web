@@ -274,4 +274,26 @@ describe('contacts and agencies schema', () => {
     expect(contacts?.find((contact) => contact.id === contactWithoutAgencyId)?.intermediary_id).toBe(recentIntermediaryId)
     expect(contacts?.find((contact) => contact.id === contactWithAgencyId)?.intermediary_id).toBe(keptIntermediaryId)
   })
+
+  it('only touches the contacts of the given user when a user id is passed', async () => {
+    const targetUser = await createTestUser()
+    const otherUser = await createTestUser()
+    const serviceRoleClient = createServiceRoleTestClient()
+    const contactIdsByUser = new Map<TestUser, string>()
+    for (const user of [targetUser, otherUser]) {
+      const intermediaryId = await insertIntermediaryOrFail(user)
+      const contactId = await insertContactOrFail(user)
+      const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
+      await linkJobApplication(user, jobApplicationId, { contactId, intermediaryId })
+      contactIdsByUser.set(user, contactId)
+    }
+
+    const { error } = await serviceRoleClient.rpc('assign_missing_contact_intermediaries', { target_user_id: targetUser.userId })
+    expect(error).toBeNull()
+
+    const { data: targetContact } = await targetUser.client.from('contacts').select('intermediary_id').eq('id', contactIdsByUser.get(targetUser) ?? '').single()
+    const { data: otherContact } = await otherUser.client.from('contacts').select('intermediary_id').eq('id', contactIdsByUser.get(otherUser) ?? '').single()
+    expect(targetContact?.intermediary_id).not.toBeNull()
+    expect(otherContact?.intermediary_id).toBeNull()
+  })
 })
