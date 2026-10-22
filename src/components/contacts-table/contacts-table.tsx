@@ -5,7 +5,9 @@ import { Link as LinkIcon } from 'lucide-react'
 import { formatInTimeZone } from 'date-fns-tz'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { isExternalLinkUrl } from '@/domain/client-brief'
 import type { ContactsSortKey } from '@/domain/contact-search'
+import { toPhoneHref } from '@/domain/job-application-display'
 import { PARIS_TIME_ZONE } from '@/domain/paris-time'
 import { contactRoute, intermediaryRoute } from '@/domain/routes'
 import { useController } from './controller'
@@ -17,10 +19,6 @@ const SORTABLE_COLUMNS: { sortKey: ContactsSortKey; label: string }[] = [
 ]
 
 const EMPTY_CELL = '—'
-
-const NON_DIALABLE_CHARACTERS_PATTERN = /[^\d+]/g
-
-const toTelephoneHref = (phone: string): string => `tel:${phone.replace(NON_DIALABLE_CHARACTERS_PATTERN, '')}`
 
 export const ContactsTable = ({ contacts }: ContactsTableProps) => {
   const { query, setQuery, sort, toggleSort, visibleContacts } = useController({ contacts })
@@ -96,13 +94,13 @@ export const ContactsTable = ({ contacts }: ContactsTableProps) => {
                     {contact.phone === null ? (
                       EMPTY_CELL
                     ) : (
-                      <a href={toTelephoneHref(contact.phone)} className="hover:underline focus-visible:underline">
+                      <a href={toPhoneHref(contact.phone)} className="hover:underline focus-visible:underline">
                         {contact.phone}
                       </a>
                     )}
                   </td>
                   <td className="px-3 py-2">
-                    {contact.linkedinUrl === null ? (
+                    {contact.linkedinUrl === null || !isExternalLinkUrl(contact.linkedinUrl) ? (
                       EMPTY_CELL
                     ) : (
                       <a

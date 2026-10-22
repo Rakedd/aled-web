@@ -5,15 +5,12 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { NewContactForm } from '@/components/new-contact-form'
 import { Button } from '@/components/ui/button'
+import { toPhoneHref } from '@/domain/job-application-display'
 import { PARIS_TIME_ZONE } from '@/domain/paris-time'
 import { contactRoute } from '@/domain/routes'
 import type { IntermediaryContactsListProps } from './interfaces'
 
 const NEW_CONTACT_FORM_ID = 'intermediary-new-contact-form'
-
-const NON_DIALABLE_CHARACTERS_PATTERN = /[^\d+]/g
-
-const toTelephoneHref = (phone: string): string => `tel:${phone.replace(NON_DIALABLE_CHARACTERS_PATTERN, '')}`
 
 export const IntermediaryContactsList = ({
   contacts,
@@ -36,7 +33,7 @@ export const IntermediaryContactsList = ({
               </Link>
               <span className="flex flex-wrap items-baseline gap-x-4 text-muted-foreground">
                 {contact.phone !== null && (
-                  <a href={toTelephoneHref(contact.phone)} className="hover:underline focus-visible:underline">
+                  <a href={toPhoneHref(contact.phone)} className="hover:underline focus-visible:underline">
                     {contact.phone}
                   </a>
                 )}

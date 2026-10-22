@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
 import { type ContactProfileInput, validateContactProfileInput } from '@/domain/contacts'
+import { toNullableText } from '@/domain/form-values'
 import { contactRoute } from '@/domain/routes'
 import type { NewContactFormControllerParameters, NewContactFormValues } from './interfaces'
 
@@ -11,8 +12,6 @@ const EMPTY_FORM_VALUES: NewContactFormValues = {
   email: '',
   linkedinUrl: '',
 }
-
-const toNullableText = (text: string): string | null => (text.trim().length === 0 ? null : text)
 
 const toContactProfileCandidate = (formValues: NewContactFormValues) => ({
   fullName: formValues.fullName,

@@ -4,6 +4,7 @@ import { MAX_PASTED_TEXT_LENGTH, type JobPostingExtraction } from '@/domain/job-
 import { AI_ERROR_MESSAGES } from '@/domain/ai-errors'
 import type { ContactDetailFieldName } from '@/domain/contacts'
 import type { EntitySuggestion } from '@/domain/entities'
+import { toNullableText } from '@/domain/form-values'
 import { type JobApplicationInput, validateJobApplicationInput } from '@/domain/job-application'
 import type { JobApplicationStatus } from '@/domain/job-application-status'
 import { formatParisCalendarDate, parseParisCalendarDate } from '@/domain/paris-time'
@@ -64,8 +65,6 @@ const CONTACT_DETAIL_FIELD_BY_FORM_VALUE_NAME: Partial<Record<TextFormValueName,
   contactEmail: 'email',
   contactLinkedinUrl: 'linkedinUrl',
 }
-
-const toNullableText = (text: string): string | null => (text.trim().length === 0 ? null : text)
 
 const toNullableDailyRate = (dailyRateText: string): number | null =>
   dailyRateText.trim().length === 0 ? null : Number(dailyRateText)

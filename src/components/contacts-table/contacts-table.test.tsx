@@ -24,6 +24,22 @@ describe('ContactsTable', () => {
     expect(cells.map((cell) => cell.textContent)).toEqual(['Jeanne Martin', '—', '—', '—', '—', '0'])
   })
 
+  it('only links LinkedIn profiles with an external url', () => {
+    render(
+      <ContactsTable
+        contacts={[
+          buildContact({ id: 'safe', fullName: 'Jeanne Martin', linkedinUrl: 'https://www.linkedin.com/in/jeanne' }),
+          buildContact({ id: 'unsafe', fullName: 'Paul Durand', linkedinUrl: 'javascript:alert(1)' }),
+        ]}
+      />,
+    )
+    expect(screen.getByRole('link', { name: 'Profil LinkedIn de Jeanne Martin' })).toHaveAttribute(
+      'href',
+      'https://www.linkedin.com/in/jeanne',
+    )
+    expect(screen.queryByRole('link', { name: 'Profil LinkedIn de Paul Durand' })).not.toBeInTheDocument()
+  })
+
   it('links the name to the contact page and the agency to the agency page', () => {
     render(
       <ContactsTable
