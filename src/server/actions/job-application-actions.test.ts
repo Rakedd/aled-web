@@ -7,7 +7,7 @@ import {
   recordActivityLogEntry,
 } from '@/server/repositories/activity-log-repository'
 import { listActiveAlertSnoozes, snoozeJobApplicationAlert } from '@/server/repositories/alert-snoozes-repository'
-import { findSentCvVersionId, releaseCvVersions } from '@/server/repositories/cvs-repository'
+import { findCvRow, findSentCvVersionId, releaseCvVersions, setSentCvVersion } from '@/server/repositories/cvs-repository'
 import { isJobApplicationOwnedByUser } from '@/server/repositories/job-application-ownership'
 import {
   changeJobApplicationStatusRow,
@@ -45,7 +45,12 @@ jest.mock('@/server/repositories/job-applications-repository', () => ({
   changeJobApplicationStatusRow: jest.fn(),
   deleteJobApplicationRow: jest.fn(),
 }))
-jest.mock('@/server/repositories/cvs-repository', () => ({ findSentCvVersionId: jest.fn(), releaseCvVersions: jest.fn() }))
+jest.mock('@/server/repositories/cvs-repository', () => ({
+  findCvRow: jest.fn(),
+  findSentCvVersionId: jest.fn(),
+  releaseCvVersions: jest.fn(),
+  setSentCvVersion: jest.fn(),
+}))
 jest.mock('@/server/repositories/job-application-ownership', () => ({ isJobApplicationOwnedByUser: jest.fn() }))
 jest.mock('@/server/repositories/job-specs-repository', () => ({
   findJobSpecStoragePath: jest.fn(),
@@ -135,16 +140,76 @@ describe('createJobApplication', () => {
     jest.mocked(insertJobApplication).mockResolvedValue({ ok: true, data: { id: jobApplicationId } })
     const forgedInput = { ...validJobApplicationInput, user_id: 'user-2', id: 'forged' }
 
-    await expect(createJobApplication(forgedInput)).resolves.toEqual({ ok: true, data: { id: jobApplicationId } })
+    await expect(createJobApplication(forgedInput, null)).resolves.toEqual({ ok: true, data: { id: jobApplicationId } })
     expect(insertJobApplication).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', validJobApplicationInput)
   })
 
   it('rejects an invalid input without touching the database', async () => {
-    await expect(createJobApplication({ ...validJobApplicationInput, title: ' ' })).resolves.toEqual({
+    await expect(createJobApplication({ ...validJobApplicationInput, title: ' ' }, null)).resolves.toEqual({
       ok: false,
       errorMessage: 'Le titre est obligatoire',
     })
     expect(insertJobApplication).not.toHaveBeenCalled()
+  })
+
+  describe('with a sent cv', () => {
+    const cvId = '0b6f2c1e-3a4d-4e5f-8a9b-1c2d3e4f5a6b'
+
+    beforeEach(() => {
+      jest.mocked(insertJobApplication).mockResolvedValue({ ok: true, data: { id: jobApplicationId } })
+      jest.mocked(setSentCvVersion).mockResolvedValue({ ok: true, data: { previousVersionId: null } })
+    })
+
+    it('attaches the current version of the chosen cv at creation', async () => {
+      jest.mocked(findCvRow).mockResolvedValue({ ok: true, data: { label: 'CV React', currentVersionId: 'version-1' } })
+
+      await expect(createJobApplication(validJobApplicationInput, cvId)).resolves.toEqual({
+        ok: true,
+        data: { id: jobApplicationId },
+      })
+      expect(findCvRow).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', cvId)
+      expect(setSentCvVersion).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', jobApplicationId, 'version-1')
+    })
+
+    it('creates the job application without cv when the chosen cv no longer exists', async () => {
+      jest.mocked(findCvRow).mockResolvedValue({ ok: false, errorMessage: 'CV introuvable' })
+
+      await expect(createJobApplication(validJobApplicationInput, cvId)).resolves.toEqual({
+        ok: true,
+        data: { id: jobApplicationId },
+      })
+      expect(setSentCvVersion).not.toHaveBeenCalled()
+    })
+
+    it('creates the job application without cv when the chosen cv has no current version', async () => {
+      jest.mocked(findCvRow).mockResolvedValue({ ok: true, data: { label: 'CV React', currentVersionId: null } })
+
+      await expect(createJobApplication(validJobApplicationInput, cvId)).resolves.toEqual({
+        ok: true,
+        data: { id: jobApplicationId },
+      })
+      expect(setSentCvVersion).not.toHaveBeenCalled()
+    })
+
+    it('still returns the created id when attaching the cv throws', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+      jest.mocked(findCvRow).mockRejectedValue(new Error('database down'))
+
+      await expect(createJobApplication(validJobApplicationInput, cvId)).resolves.toEqual({
+        ok: true,
+        data: { id: jobApplicationId },
+      })
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Sent cv attachment failed at creation', expect.anything())
+      consoleErrorSpy.mockRestore()
+    })
+
+    it('rejects a malformed sent cv id without creating the job application', async () => {
+      await expect(createJobApplication(validJobApplicationInput, 'not-a-uuid')).resolves.toEqual({
+        ok: false,
+        errorMessage: 'CV introuvable',
+      })
+      expect(insertJobApplication).not.toHaveBeenCalled()
+    })
   })
 })
 

@@ -4,7 +4,8 @@ import 'server-only'
 import type { ActionResult } from '@/domain/action-result'
 import { type ActivityLogEntry, type ActivityLogEntryInput, validateActivityLogEntryInput } from '@/domain/activity-log'
 import { type SnoozeDurationInDays, validateSnoozeAlertArguments } from '@/domain/alert-snoozes'
-import { rejectWith } from '@/domain/input-validation'
+import { CV_MESSAGES } from '@/domain/cv-library'
+import { rejectWith, validateUuid } from '@/domain/input-validation'
 import {
   JOB_APPLICATION_NOT_FOUND_MESSAGE,
   JOB_APPLICATION_VALIDATION_MESSAGES,
@@ -23,7 +24,7 @@ import {
   recordActivityLogEntry,
 } from '@/server/repositories/activity-log-repository'
 import { listActiveAlertSnoozes, snoozeJobApplicationAlert } from '@/server/repositories/alert-snoozes-repository'
-import { findSentCvVersionId, releaseCvVersions } from '@/server/repositories/cvs-repository'
+import { findCvRow, findSentCvVersionId, setSentCvVersion } from '@/server/repositories/cvs-repository'
 import { isJobApplicationOwnedByUser } from '@/server/repositories/job-application-ownership'
 import {
   changeJobApplicationStatusRow,
@@ -36,6 +37,7 @@ import {
 import { findJobSpecStoragePath, removeJobSpecFile } from '@/server/repositories/job-specs-repository'
 import { deleteAppliedOpportunityDecisionsOfJobApplication } from '@/server/repositories/opportunity-decisions-repository'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
+import { releaseCvVersionsWithoutFailing } from './release-cv-versions-without-failing'
 import { NO_ARGUMENTS, runAuthenticatedOperation } from './run-authenticated-operation'
 
 const LOAD_FAILURE_MESSAGE = 'Impossible de charger les candidatures pour le moment. Réessaie dans quelques minutes.'
@@ -48,19 +50,6 @@ const removeJobSpecFileWithoutFailing = async (supabase: FreeclutchSupabaseClien
   } catch (removalError) {
     console.error('Job spec file removal failed after job application deletion', {
       errorName: removalError instanceof Error ? removalError.name : typeof removalError,
-    })
-  }
-}
-
-const releaseCvVersionsWithoutFailing = async (
-  supabase: FreeclutchSupabaseClient,
-  candidateVersionIds: (string | null)[],
-): Promise<void> => {
-  try {
-    await releaseCvVersions(supabase, candidateVersionIds)
-  } catch (releaseError) {
-    console.error('Cv version release failed after job application deletion', {
-      errorName: releaseError instanceof Error ? releaseError.name : typeof releaseError,
     })
   }
 }
@@ -78,7 +67,11 @@ const deleteJobApplicationWithFiles = async (
   const isDeleted = await deleteJobApplicationRow(supabase, userId, jobApplicationId)
   if (!isDeleted) return rejectWith(JOB_APPLICATION_NOT_FOUND_MESSAGE)
   if (jobSpecStoragePath !== null) await removeJobSpecFileWithoutFailing(supabase, jobSpecStoragePath)
-  await releaseCvVersionsWithoutFailing(supabase, [sentCvVersionId])
+  await releaseCvVersionsWithoutFailing(
+    supabase,
+    [sentCvVersionId],
+    'Cv version release failed after job application deletion',
+  )
   return { ok: true, data: null }
 }
 
@@ -99,12 +92,50 @@ export const getJobApplication = async (jobApplicationId: string): Promise<Actio
       findJobApplicationOverview(supabase, userId, validatedJobApplicationId),
   })
 
-export const createJobApplication = async (input: JobApplicationInput): Promise<ActionResult<{ id: string }>> =>
+const validateCreationArguments = (
+  input: JobApplicationInput,
+  sentCvId: string | null,
+): ActionResult<{ input: JobApplicationInput; sentCvId: string | null }> => {
+  const inputValidation = validateJobApplicationInput(input)
+  if (!inputValidation.ok) return inputValidation
+  if (sentCvId === null) return { ok: true, data: { input: inputValidation.data, sentCvId: null } }
+  const sentCvIdValidation = validateUuid(sentCvId, CV_MESSAGES.cvNotFound)
+  if (!sentCvIdValidation.ok) return sentCvIdValidation
+  return { ok: true, data: { input: inputValidation.data, sentCvId: sentCvIdValidation.data } }
+}
+
+const attachCurrentCvVersionWithoutFailingCreation = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  jobApplicationId: string,
+  sentCvId: string,
+): Promise<void> => {
+  try {
+    const cvRowResult = await findCvRow(supabase, userId, sentCvId)
+    if (!cvRowResult.ok || cvRowResult.data.currentVersionId === null) return
+    await setSentCvVersion(supabase, userId, jobApplicationId, cvRowResult.data.currentVersionId)
+  } catch (attachmentError) {
+    console.error('Sent cv attachment failed at creation', {
+      errorMessage: attachmentError instanceof Error ? attachmentError.message : typeof attachmentError,
+    })
+  }
+}
+
+export const createJobApplication = async (
+  input: JobApplicationInput,
+  sentCvId: string | null,
+): Promise<ActionResult<{ id: string }>> =>
   runAuthenticatedOperation({
     operationName: 'createJobApplication',
     failureMessage: SAVE_FAILURE_MESSAGE,
-    validateArguments: () => validateJobApplicationInput(input),
-    operation: (supabase, userId, validatedInput) => insertJobApplication(supabase, userId, validatedInput),
+    validateArguments: () => validateCreationArguments(input, sentCvId),
+    operation: async (supabase, userId, validatedArguments) => {
+      const insertionResult = await insertJobApplication(supabase, userId, validatedArguments.input)
+      if (insertionResult.ok && validatedArguments.sentCvId !== null) {
+        await attachCurrentCvVersionWithoutFailingCreation(supabase, userId, insertionResult.data.id, validatedArguments.sentCvId)
+      }
+      return insertionResult
+    },
   })
 
 export const updateJobApplication = async (

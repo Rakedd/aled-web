@@ -203,7 +203,7 @@ export const useController = ({
 
   const createFromValidatedInput = async (validatedInput: JobApplicationInput) => {
     try {
-      return await createJobApplication(validatedInput)
+      return await createJobApplication(validatedInput, null)
     } catch {
       return { ok: false, errorMessage: GENERIC_ACTION_ERROR_MESSAGE } as const
     }

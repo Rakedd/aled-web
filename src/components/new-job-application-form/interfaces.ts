@@ -7,7 +7,7 @@ import type { SearchEntities } from '@/components/entity-autocomplete/interfaces
 
 export type ExtractJobPosting = (rawText: string) => Promise<ActionResult<JobPostingExtraction>>
 
-export type CreateJobApplication = (input: JobApplicationInput) => Promise<ActionResult<{ id: string }>>
+export type CreateJobApplication = (input: JobApplicationInput, sentCvId: string | null) => Promise<ActionResult<{ id: string }>>
 
 export type NewJobApplicationStep = 'paste' | 'form'
 

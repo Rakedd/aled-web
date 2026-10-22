@@ -244,6 +244,7 @@ describe('new-job-application-form useController', () => {
         postingRawText: null,
         stack: [],
       }),
+      null,
     )
     expect(navigateTo).toHaveBeenCalledTimes(1)
     expect(navigateTo).toHaveBeenCalledWith('/candidatures/application-1')
@@ -360,6 +361,7 @@ describe('new-job-application-form useController', () => {
         contactLinkedinUrl: 'https://www.linkedin.com/in/jeanne',
         userEditedContactFields: ['linkedinUrl'],
       }),
+      null,
     )
   })
 })
