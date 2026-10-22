@@ -81,11 +81,11 @@ describe('SentCvEditForm useController', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('sends addToLibrary false when the checkbox is cleared', async () => {
+  it('does not add a tailored cv to the library unless asked', async () => {
     const { result, uploadTailoredCvForJobApplication } = renderSentCvController()
+    expect(result.current.isAddedToLibrary).toBe(false)
     act(() => result.current.setSource('tailored'))
     act(() => result.current.selectTailoredPdfFile(createPdfFile()))
-    act(() => result.current.setIsAddedToLibrary(false))
     await act(() => result.current.save())
     const sentFormData = uploadTailoredCvForJobApplication.mock.calls[0][1] as FormData
     expect(sentFormData.get(CV_FORM_FIELD_NAMES.addToLibrary)).toBe('false')

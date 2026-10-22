@@ -23,7 +23,7 @@ export const useController = ({
   const [selectedCvId, setSelectedCvId] = useState('')
   const [tailoredLabel, setTailoredLabel] = useState(() => buildDefaultTailoredCvLabel(jobApplicationTitle))
   const [tailoredPdfFile, setTailoredPdfFile] = useState<File | null>(null)
-  const [isAddedToLibrary, setIsAddedToLibrary] = useState(true)
+  const [isAddedToLibrary, setIsAddedToLibrary] = useState(false)
   const [libraryNoticeMessage, setLibraryNoticeMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
