@@ -35,7 +35,8 @@ export const ACTIVITY_LOG_VALIDATION_MESSAGES = {
   futureOccurredAt: "La date de l'échange ne peut pas être dans le futur",
 } as const
 
-const SUMMARY_TEXT_FIELD_RULE = { label: 'Résumé', maximumLength: 2000 }
+export const MAXIMUM_ACTIVITY_SUMMARY_LENGTH = 2000
+const SUMMARY_TEXT_FIELD_RULE = { label: 'Résumé', maximumLength: MAXIMUM_ACTIVITY_SUMMARY_LENGTH }
 const CLOCK_DIFFERENCE_TOLERANCE_IN_MILLISECONDS = 5 * 60 * 1000
 
 export const formatStatusChangeSummary = (

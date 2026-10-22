@@ -6,6 +6,7 @@ import {
   type CallJobApplicationFields,
   type CallNoteExtraction,
 } from './call-log'
+import { MAXIMUM_ACTIVITY_SUMMARY_LENGTH } from './activity-log'
 import { normalizePhoneNumberForSearch } from './contact-search'
 import type { ContactListItem } from './contacts'
 import type { CvOption } from './cv-library'
@@ -165,7 +166,7 @@ export const buildCallDraft = ({
       email: extraction.contactEmail,
     },
     exchange: {
-      summary: trimmedSummary === '' ? input.text : trimmedSummary,
+      summary: trimmedSummary === '' ? input.text.slice(0, MAXIMUM_ACTIVITY_SUMMARY_LENGTH) : trimmedSummary,
       occurredAt: input.occurredAt.toISOString(),
     },
     jobApplication,

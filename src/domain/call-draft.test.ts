@@ -168,6 +168,16 @@ describe('buildCallDraft', () => {
     expect(draft.exchange).toEqual({ summary: 'Appel avec Jean-Marc', occurredAt: '2026-10-22T09:30:00.000Z' })
   })
 
+  it('cuts the fallback summary to the exchange summary limit', () => {
+    const draft = buildCallDraft({
+      input: { ...callInput, text: 'a'.repeat(3000) },
+      extraction: { ...emptyExtraction, summary: '' },
+      contacts: [],
+      cvOptions: [],
+    })
+    expect(draft.exchange.summary).toHaveLength(2000)
+  })
+
   it('rounds the daily rate and drops an out of range one', () => {
     const buildRate = (dailyRate: number) =>
       buildCallDraft({
