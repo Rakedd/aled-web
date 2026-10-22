@@ -1,11 +1,12 @@
 import { formatInTimeZone } from 'date-fns-tz'
 import { fr } from 'date-fns/locale'
+import { formatCvOutdatedMessage } from '@/domain/cv-library'
 import { JOB_APPLICATION_STATUS_LABELS } from '@/domain/job-application-status'
 import { pluralizeFrench } from '@/domain/french-plural'
 import { PARIS_TIME_ZONE, countParisCalendarDaysBetween } from '@/domain/paris-time'
-import type { AlertInterview, TodoAlert } from '@/domain/todo-alerts'
+import { isJobApplicationTodoAlert, type AlertInterview, type JobApplicationTodoAlert, type TodoAlert, type TodoAlertKind } from '@/domain/todo-alerts'
 import type { PillTone } from '@/components/pill/interfaces'
-import type { AlertKind, InterviewKind } from '@/domain/types'
+import type { InterviewKind } from '@/domain/types'
 import type { TodoBannerJobApplicationSummary } from './interfaces'
 
 const INTERVIEW_KIND_LABELS: Record<InterviewKind, string> = {
@@ -14,23 +15,25 @@ const INTERVIEW_KIND_LABELS: Record<InterviewKind, string> = {
   other: 'Entretien',
 }
 
-export const TODO_ALERT_KIND_TAG_LABELS: Record<AlertKind, string> = {
+export const TODO_ALERT_KIND_TAG_LABELS: Record<TodoAlertKind, string> = {
   follow_up_due: 'Relance',
   job_spec_missing: 'Fiche métier',
   end_client_unknown: 'Client inconnu',
   no_news_suggestion: 'Sans nouvelles',
   upcoming_interview: 'Entretien à venir',
+  cv_outdated: 'CV à revoir',
 }
 
-export const TODO_ALERT_KIND_TONES: Record<AlertKind, PillTone> = {
+export const TODO_ALERT_KIND_TONES: Record<TodoAlertKind, PillTone> = {
   follow_up_due: 'peach',
   job_spec_missing: 'lilac',
   end_client_unknown: 'lilac',
   no_news_suggestion: 'clay',
   upcoming_interview: 'sage',
+  cv_outdated: 'peach-soft',
 }
 
-export const formatTodoAlertKindCount = (kind: AlertKind, count: number): string => {
+export const formatTodoAlertKindCount = (kind: TodoAlertKind, count: number): string => {
   switch (kind) {
     case 'follow_up_due':
       return `${count} ${pluralizeFrench(count, 'relance', 'relances')}`
@@ -42,14 +45,18 @@ export const formatTodoAlertKindCount = (kind: AlertKind, count: number): string
       return `${count} ${pluralizeFrench(count, 'client inconnu', 'clients inconnus')}`
     case 'upcoming_interview':
       return `${count} ${pluralizeFrench(count, 'entretien à venir', 'entretiens à venir')}`
+    case 'cv_outdated':
+      return `${count} CV à revoir`
   }
 }
 
 export const getTodoAlertKey = (alert: TodoAlert): string =>
-  `${alert.jobApplicationId}:${alert.kind}:${alert.interviewId ?? ''}`
+  isJobApplicationTodoAlert(alert)
+    ? `${alert.jobApplicationId}:${alert.kind}:${alert.interviewId ?? ''}`
+    : `cv:${alert.cvId}:${alert.kind}`
 
 const formatFollowUpMessage = (
-  alert: TodoAlert,
+  alert: JobApplicationTodoAlert,
   summary: TodoBannerJobApplicationSummary | undefined,
   now: Date,
 ): string => {
@@ -62,7 +69,7 @@ const formatFollowUpMessage = (
   return `Relancer ${recipientName} : ${messageParts.join(' ')}`
 }
 
-const formatInterviewMessage = (alert: TodoAlert, interviews: AlertInterview[]): string => {
+const formatInterviewMessage = (alert: JobApplicationTodoAlert, interviews: AlertInterview[]): string => {
   const interview = interviews.find((candidateInterview) => candidateInterview.id === alert.interviewId)
   const interviewLabel = interview ? INTERVIEW_KIND_LABELS[interview.kind] : INTERVIEW_KIND_LABELS.other
   const formattedStart = formatInTimeZone(alert.referenceDate, PARIS_TIME_ZONE, "EEEE d MMMM 'à' HH'h'mm", { locale: fr })
@@ -86,5 +93,7 @@ export const formatTodoAlertMessage = (
       return formatInterviewMessage(alert, interviews)
     case 'no_news_suggestion':
       return `Sans nouvelles depuis ${countParisCalendarDaysBetween(alert.referenceDate, now)} j : ${alert.jobApplicationTitle}. La clore ?`
+    case 'cv_outdated':
+      return formatCvOutdatedMessage(alert.cvLabel, alert.referenceDate, now)
   }
 }

@@ -6,12 +6,15 @@ import type { InterviewWithJobApplication } from '@/domain/interviews'
 import type { JobApplicationListItem } from '@/domain/job-application'
 import type { ProfileSettings } from '@/domain/profile-settings'
 import { computeTodoAlerts, type AlertSnooze, type TodoAlert } from '@/domain/todo-alerts'
+import type { CvLibraryItem } from '@/domain/cv-library'
+import { listCvs } from '@/server/actions/cv-actions'
 import { listUpcomingInterviews } from '@/server/actions/interview-actions'
 import { listAlertSnoozes, listJobApplications } from '@/server/actions/job-application-actions'
 import { getProfileSettings } from '@/server/actions/settings-actions'
 import { loadTodoReminders } from './load-todo-reminders'
 
 jest.mock('server-only', () => ({}))
+jest.mock('@/server/actions/cv-actions', () => ({ listCvs: jest.fn() }))
 jest.mock('@/server/actions/interview-actions', () => ({ listUpcomingInterviews: jest.fn() }))
 jest.mock('@/server/actions/job-application-actions', () => ({
   listJobApplications: jest.fn(),
@@ -38,6 +41,12 @@ const upcomingInterview = {
   jobApplicationTitle: 'Dev React',
   location: 'Paris',
 } as InterviewWithJobApplication
+const cvReviewedAt = new Date('2026-06-01T10:00:00.000Z')
+const cvUploadedAt = new Date('2026-08-01T10:00:00.000Z')
+const libraryCvs = [
+  { id: 'cv-1', label: 'CV DevOps', reviewedAt: cvReviewedAt, currentVersion: { id: 'version-1', uploadedAt: cvUploadedAt, fileName: 'cv.pdf' } },
+  { id: 'cv-2', label: 'CV vide', reviewedAt: cvReviewedAt, currentVersion: null },
+] as CvLibraryItem[]
 const computedAlerts = [{ kind: 'follow_up_due', jobApplicationId: 'application-1' }] as TodoAlert[]
 
 const failure = (errorMessage: string): ActionResult<never> => ({ ok: false, errorMessage })
@@ -51,6 +60,7 @@ beforeEach(() => {
   jest.mocked(getProfileSettings).mockResolvedValue({ ok: true, data: profileSettings })
   jest.mocked(listAlertSnoozes).mockResolvedValue({ ok: true, data: alertSnoozes })
   jest.mocked(listUpcomingInterviews).mockResolvedValue({ ok: true, data: [upcomingInterview] })
+  jest.mocked(listCvs).mockResolvedValue({ ok: true, data: libraryCvs })
   jest.mocked(computeTodoAlerts).mockReturnValue(computedAlerts)
 })
 
@@ -94,9 +104,32 @@ describe('loadTodoReminders', () => {
         },
       ],
       snoozes: alertSnoozes,
+      cvs: expect.any(Array),
       now: NOW,
       followUpDelayDays: 5,
     })
+  })
+
+  it('feeds the alert computation with the cv review dates', async () => {
+    await loadTodoReminders(NOW, LOOKAHEAD_DAYS)
+
+    expect(computeTodoAlerts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cvs: [
+          { id: 'cv-1', label: 'CV DevOps', reviewedAt: cvReviewedAt, currentVersionUploadedAt: cvUploadedAt },
+          { id: 'cv-2', label: 'CV vide', reviewedAt: cvReviewedAt, currentVersionUploadedAt: null },
+        ],
+      }),
+    )
+  })
+
+  it('still computes job application alerts when the cv library fails to load', async () => {
+    jest.mocked(listCvs).mockResolvedValue(failure('cvs failed'))
+
+    const result = await loadTodoReminders(NOW, LOOKAHEAD_DAYS)
+
+    expect(result.ok).toBe(true)
+    expect(computeTodoAlerts).toHaveBeenCalledWith(expect.objectContaining({ cvs: [] }))
   })
 
   it('returns every loaded collection together with the computed alerts', async () => {

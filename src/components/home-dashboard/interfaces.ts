@@ -1,4 +1,4 @@
-import type { ChangeJobApplicationStatus, SnoozeAlert, TodoBannerJobApplicationSummary } from '@/components/todo-banner/interfaces'
+import type { ChangeJobApplicationStatus, ConfirmCvStillGood, SnoozeAlert, TodoBannerJobApplicationSummary } from '@/components/todo-banner/interfaces'
 import type { InterviewWithJobApplication } from '@/domain/interviews'
 import type { ApplyToOpportunity, OpportunityListItem } from '@/domain/opportunities'
 import type { AlertInterview, TodoAlert } from '@/domain/todo-alerts'
@@ -23,5 +23,6 @@ export type HomeDashboardProps = Omit<HomeDashboardControllerParameters, 'onData
   opportunitiesToProcessCount: number
   recentOpportunityCount: number
   snoozeAlert: SnoozeAlert
+  confirmCvStillGood: ConfirmCvStillGood
   changeJobApplicationStatus: ChangeJobApplicationStatus
 }

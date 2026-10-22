@@ -1,3 +1,4 @@
+import { findCvLastChangeDate, isCvDueForReview, type CvReviewDates } from './cv-library'
 import { isActiveStatus, type JobApplicationStatus } from './job-application-status'
 import { countParisCalendarDaysBetween } from './paris-time'
 import type { AlertKind, InterviewKind } from './types'
@@ -29,15 +30,25 @@ export type AlertSnooze = {
   snoozedUntil: Date
 }
 
+export type AlertCv = CvReviewDates & {
+  id: string
+  label: string
+}
+
 export type TodoAlertInput = {
   jobApplications: AlertJobApplication[]
   interviews: AlertInterview[]
   snoozes: AlertSnooze[]
+  cvs: AlertCv[]
   now: Date
   followUpDelayDays: number
 }
 
-export type TodoAlert = {
+export type CvOutdatedAlertKind = 'cv_outdated'
+
+export type TodoAlertKind = AlertKind | CvOutdatedAlertKind
+
+export type JobApplicationTodoAlert = {
   kind: AlertKind
   jobApplicationId: string
   jobApplicationTitle: string
@@ -45,24 +56,38 @@ export type TodoAlert = {
   interviewId?: string
 }
 
-const ALERT_KIND_DISPLAY_ORDER: readonly AlertKind[] = [
+export type CvOutdatedTodoAlert = {
+  kind: CvOutdatedAlertKind
+  cvId: string
+  cvLabel: string
+  referenceDate: Date
+}
+
+export type TodoAlert = JobApplicationTodoAlert | CvOutdatedTodoAlert
+
+export const isJobApplicationTodoAlert = (alert: TodoAlert): alert is JobApplicationTodoAlert =>
+  alert.kind !== 'cv_outdated'
+
+const ALERT_KIND_DISPLAY_ORDER: readonly TodoAlertKind[] = [
   'upcoming_interview',
   'follow_up_due',
   'job_spec_missing',
   'end_client_unknown',
   'no_news_suggestion',
+  'cv_outdated',
 ]
 
-export const TODO_SUMMARY_KIND_ORDER: readonly AlertKind[] = [
+export const TODO_SUMMARY_KIND_ORDER: readonly TodoAlertKind[] = [
   'follow_up_due',
   'no_news_suggestion',
   'job_spec_missing',
   'end_client_unknown',
   'upcoming_interview',
+  'cv_outdated',
 ]
 
 export type TodoAlertKindCount = {
-  kind: AlertKind
+  kind: TodoAlertKind
   count: number
 }
 
@@ -107,7 +132,7 @@ const computeJobApplicationAlertKinds = (
   return alertKindsWithConditions.filter(([, isRaised]) => isRaised).map(([alertKind]) => alertKind)
 }
 
-const isSnoozed = (alert: TodoAlert, snoozes: AlertSnooze[], now: Date): boolean =>
+const isSnoozed = (alert: JobApplicationTodoAlert, snoozes: AlertSnooze[], now: Date): boolean =>
   snoozes.some(
     (snooze) =>
       snooze.jobApplicationId === alert.jobApplicationId &&
@@ -123,6 +148,7 @@ export const computeTodoAlerts = ({
   jobApplications,
   interviews,
   snoozes,
+  cvs,
   now,
   followUpDelayDays,
 }: TodoAlertInput): TodoAlert[] => {
@@ -130,7 +156,7 @@ export const computeTodoAlerts = ({
   const activeJobApplicationsById = new Map(
     activeJobApplications.map((jobApplication) => [jobApplication.id, jobApplication]),
   )
-  const upcomingInterviewAlerts = interviews.flatMap((interview): TodoAlert[] => {
+  const upcomingInterviewAlerts = interviews.flatMap((interview): JobApplicationTodoAlert[] => {
     const jobApplication = activeJobApplicationsById.get(interview.jobApplicationId)
     const isWithinWindow =
       interview.startsAt >= now &&
@@ -150,7 +176,7 @@ export const computeTodoAlerts = ({
   const snoozableAlerts = activeJobApplications
     .flatMap((jobApplication) =>
       computeJobApplicationAlertKinds(jobApplication, now, followUpDelayDays).map(
-        (alertKind): TodoAlert => ({
+        (alertKind): JobApplicationTodoAlert => ({
           kind: alertKind,
           jobApplicationId: jobApplication.id,
           jobApplicationTitle: jobApplication.title,
@@ -160,5 +186,12 @@ export const computeTodoAlerts = ({
     )
     .filter((alert) => !isSnoozed(alert, snoozes, now))
 
-  return [...upcomingInterviewAlerts, ...snoozableAlerts].sort(compareTodoAlerts)
+  const cvOutdatedAlerts: CvOutdatedTodoAlert[] =
+    activeJobApplications.length === 0
+      ? []
+      : cvs
+          .filter((cv) => isCvDueForReview(cv, now))
+          .map((cv) => ({ kind: 'cv_outdated', cvId: cv.id, cvLabel: cv.label, referenceDate: findCvLastChangeDate(cv) }))
+
+  return [...upcomingInterviewAlerts, ...snoozableAlerts, ...cvOutdatedAlerts].sort(compareTodoAlerts)
 }

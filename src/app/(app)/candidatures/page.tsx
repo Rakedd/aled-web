@@ -6,6 +6,7 @@ import { TodoBanner } from '@/components/todo-banner'
 import { buttonVariants } from '@/components/ui/button'
 import { JOB_APPLICATION_DELETED_SEARCH_PARAMETER, NEW_JOB_APPLICATION_ROUTE } from '@/domain/routes'
 import { PAGE_TITLE_CLASS_NAME } from '@/lib/typography-class-names'
+import { confirmCvStillGood } from '@/server/actions/cv-actions'
 import { changeJobApplicationStatus, snoozeAlert } from '@/server/actions/job-application-actions'
 import { loadTodoReminders } from '@/server/todo-reminders/load-todo-reminders'
 
@@ -49,6 +50,7 @@ const JobApplicationsPage = async ({ searchParams }: PageProps<'/candidatures'>)
       title="Tous les rappels"
       initialAlerts={alerts}
       snoozeAlert={snoozeAlert}
+      confirmCvStillGood={confirmCvStillGood}
       changeJobApplicationStatus={changeJobApplicationStatus}
       jobApplicationSummaries={jobApplications.map(({ id, status, contactName, intermediaryName }) => ({
         id,

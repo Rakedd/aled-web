@@ -41,6 +41,7 @@ export const HomeDashboard = ({
   opportunitiesToProcessCount,
   recentOpportunityCount,
   snoozeAlert,
+  confirmCvStillGood,
   changeJobApplicationStatus,
   applyToOpportunity,
 }: HomeDashboardProps) => {
@@ -113,6 +114,7 @@ export const HomeDashboard = ({
             title="À faire"
             initialAlerts={initialAlerts.slice(0, MAXIMUM_VISIBLE_ALERTS)}
             snoozeAlert={snoozeAlert}
+            confirmCvStillGood={confirmCvStillGood}
             changeJobApplicationStatus={changeJobApplicationStatus}
             jobApplicationSummaries={jobApplicationSummaries}
             interviews={alertInterviews}

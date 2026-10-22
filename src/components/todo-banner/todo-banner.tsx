@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useId } from 'react'
 import { Pill } from '@/components/pill'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { SNOOZE_DURATIONS_IN_DAYS, isSnoozableAlertKind } from '@/domain/alert-snoozes'
+import { isJobApplicationTodoAlert, type TodoAlertKind } from '@/domain/todo-alerts'
 import { cn } from '@/lib/utils'
-import { jobApplicationRoute } from '@/domain/routes'
-import type { AlertKind } from '@/domain/types'
+import { CV_LIBRARY_ROUTE, jobApplicationRoute } from '@/domain/routes'
 import { useController } from './controller'
 import {
   TODO_ALERT_KIND_TAG_LABELS,
@@ -18,18 +18,20 @@ import {
 } from './format-todo-alert'
 import type { TodoBannerProps } from './interfaces'
 
-const TODO_ALERT_CARD_CLASS_NAMES: Record<AlertKind, string> = {
+const TODO_ALERT_CARD_CLASS_NAMES: Record<TodoAlertKind, string> = {
   follow_up_due: 'bg-peach-tint',
   job_spec_missing: 'bg-lilac-tint',
   end_client_unknown: 'bg-lilac-tint',
   no_news_suggestion: 'bg-clay-tint',
   upcoming_interview: 'bg-hairline',
+  cv_outdated: 'bg-peach-tint',
 }
 
 export const TodoBanner = ({
   title,
   initialAlerts,
   snoozeAlert,
+  confirmCvStillGood,
   changeJobApplicationStatus,
   jobApplicationSummaries,
   interviews,
@@ -38,9 +40,10 @@ export const TodoBanner = ({
 }: TodoBannerProps) => {
   const router = useRouter()
   const titleId = useId()
-  const { alerts, errorMessage, isAlertPending, snooze, closeAsNoNews } = useController({
+  const { alerts, errorMessage, isAlertPending, snooze, confirmStillGood, closeAsNoNews } = useController({
     initialAlerts,
     snoozeAlert,
+    confirmCvStillGood,
     changeJobApplicationStatus,
     onDataChanged: router.refresh,
   })
@@ -60,6 +63,30 @@ export const TodoBanner = ({
       ) : (
         <ul className="flex flex-wrap gap-2.5">
           {alerts.map((alert) => {
+            if (!isJobApplicationTodoAlert(alert)) {
+              return (
+                <li
+                  key={getTodoAlertKey(alert)}
+                  className={cn('flex min-w-0 flex-[1_1_14rem] flex-col gap-3 rounded-xl p-3.5', TODO_ALERT_CARD_CLASS_NAMES[alert.kind])}
+                >
+                  <Link
+                    href={CV_LIBRARY_ROUTE}
+                    className="flex flex-col items-start gap-1.5 text-sm hover:underline focus-visible:underline"
+                  >
+                    <Pill tone={TODO_ALERT_KIND_TONES[alert.kind]}>{TODO_ALERT_KIND_TAG_LABELS[alert.kind]}</Pill>
+                    {formatTodoAlertMessage(alert, undefined, interviews, now)}
+                  </Link>
+                  <div className="flex flex-wrap gap-2">
+                    <Link href={CV_LIBRARY_ROUTE} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                      Mettre à jour
+                    </Link>
+                    <Button type="button" size="sm" variant="secondary" disabled={isAlertPending(alert)} onClick={() => void confirmStillGood(alert)}>
+                      Il est encore bon
+                    </Button>
+                  </div>
+                </li>
+              )
+            }
             const summary = jobApplicationSummaries.find(({ id }) => id === alert.jobApplicationId)
             return (
               <li

@@ -1,4 +1,4 @@
-import type { TodoAlert } from '@/domain/todo-alerts'
+import type { CvOutdatedTodoAlert, JobApplicationTodoAlert } from '@/domain/todo-alerts'
 import {
   TODO_ALERT_KIND_TAG_LABELS,
   TODO_ALERT_KIND_TONES,
@@ -9,11 +9,19 @@ import {
 
 const now = new Date('2026-10-17T10:00:00Z')
 
-const buildAlert = (overrides: Partial<TodoAlert>): TodoAlert => ({
+const buildAlert = (overrides: Partial<JobApplicationTodoAlert>): JobApplicationTodoAlert => ({
   kind: 'job_spec_missing',
   jobApplicationId: 'application-1',
   jobApplicationTitle: 'Dev React',
   referenceDate: new Date('2026-10-10T10:00:00Z'),
+  ...overrides,
+})
+
+const buildCvAlert = (overrides: Partial<CvOutdatedTodoAlert> = {}): CvOutdatedTodoAlert => ({
+  kind: 'cv_outdated',
+  cvId: 'cv-1',
+  cvLabel: 'CV DevOps',
+  referenceDate: new Date('2026-07-17T10:00:00Z'),
   ...overrides,
 })
 
@@ -75,6 +83,16 @@ describe('formatTodoAlertMessage', () => {
     expect(message).toBe('Sans nouvelles depuis 27 j : Dev React. La clore ?')
   })
 
+  it('writes the cv reminder message', () => {
+    const message = formatTodoAlertMessage(buildCvAlert(), undefined, [], now)
+    expect(message).toBe("Ton CV DevOps n'a pas bougé depuis 3 mois. Un coup de neuf ?")
+  })
+
+  it('builds a cv reminder key per cv', () => {
+    expect(getTodoAlertKey(buildCvAlert())).toBe('cv:cv-1:cv_outdated')
+    expect(getTodoAlertKey(buildCvAlert({ cvId: 'cv-2' }))).not.toBe(getTodoAlertKey(buildCvAlert()))
+  })
+
   it('builds a distinct key per alert', () => {
     expect(getTodoAlertKey(buildAlert({}))).not.toBe(getTodoAlertKey(buildAlert({ kind: 'end_client_unknown' })))
   })
@@ -87,6 +105,7 @@ describe('TODO_ALERT_KIND_TAG_LABELS', () => {
     ['end_client_unknown', 'Client inconnu'],
     ['no_news_suggestion', 'Sans nouvelles'],
     ['upcoming_interview', 'Entretien à venir'],
+    ['cv_outdated', 'CV à revoir'],
   ] as const)('labels %s as %s', (alertKind, label) => {
     expect(TODO_ALERT_KIND_TAG_LABELS[alertKind]).toBe(label)
   })
@@ -99,6 +118,7 @@ describe('TODO_ALERT_KIND_TONES', () => {
     ['end_client_unknown', 'lilac'],
     ['no_news_suggestion', 'clay'],
     ['upcoming_interview', 'sage'],
+    ['cv_outdated', 'peach-soft'],
   ] as const)('gives %s the %s tone', (alertKind, tone) => {
     expect(TODO_ALERT_KIND_TONES[alertKind]).toBe(tone)
   })
@@ -116,6 +136,8 @@ describe('formatTodoAlertKindCount', () => {
     ['end_client_unknown', 4, '4 clients inconnus'],
     ['upcoming_interview', 1, '1 entretien à venir'],
     ['upcoming_interview', 2, '2 entretiens à venir'],
+    ['cv_outdated', 1, '1 CV à revoir'],
+    ['cv_outdated', 3, '3 CV à revoir'],
   ] as const)('formats %s x%i as "%s"', (kind, count, expected) => {
     expect(formatTodoAlertKindCount(kind, count)).toBe(expected)
   })

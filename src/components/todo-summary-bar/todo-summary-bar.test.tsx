@@ -67,4 +67,15 @@ describe('TodoSummaryBar', () => {
     expect(screen.queryByRole('button', { name: 'Tout déplier' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
+
+  it('links the cv count to Mes CV instead of filtering job applications', async () => {
+    const props = buildProps({ kindCounts: [{ kind: 'follow_up_due', count: 2 }, { kind: 'cv_outdated', count: 1 }] })
+    render(<TodoSummaryBar {...props} />)
+    expect(screen.getByRole('heading', { name: 'À faire · 3' })).toBeInTheDocument()
+    const cvLink = screen.getByRole('link', { name: '1 CV à revoir' })
+    expect(cvLink).toHaveAttribute('href', '/cv')
+    expect(screen.queryByRole('button', { name: '1 CV à revoir' })).not.toBeInTheDocument()
+    await userEvent.click(cvLink)
+    expect(props.onToggleAlertKind).not.toHaveBeenCalled()
+  })
 })

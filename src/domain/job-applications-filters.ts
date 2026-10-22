@@ -1,6 +1,6 @@
 import { ALL_JOB_APPLICATION_STATUSES, isTerminalStatus, type JobApplicationStatus } from './job-application-status'
 import type { JobApplicationListItem } from './job-application'
-import type { TodoAlert } from './todo-alerts'
+import { isJobApplicationTodoAlert, type TodoAlert } from './todo-alerts'
 import type { AlertKind } from './types'
 import { normalizeEntityName } from './entity-names'
 
@@ -48,7 +48,9 @@ const matchesSearchText = (jobApplication: JobApplicationListItem, searchText: s
 }
 
 const hasAlertOfKind = (jobApplication: JobApplicationListItem, alertKind: AlertKind, alerts: TodoAlert[]): boolean =>
-  alerts.some((alert) => alert.jobApplicationId === jobApplication.id && alert.kind === alertKind)
+  alerts.some(
+    (alert) => isJobApplicationTodoAlert(alert) && alert.jobApplicationId === jobApplication.id && alert.kind === alertKind,
+  )
 
 const matchesFilters = (
   jobApplication: JobApplicationListItem,

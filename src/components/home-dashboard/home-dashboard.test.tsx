@@ -77,6 +77,7 @@ const buildDashboard = (overrides: Partial<HomeDashboardProps> = {}) => (
     opportunitiesToProcessCount={0}
     recentOpportunityCount={0}
     snoozeAlert={jest.fn()}
+    confirmCvStillGood={jest.fn()}
     changeJobApplicationStatus={jest.fn()}
     applyToOpportunity={jest.fn()}
     {...overrides}

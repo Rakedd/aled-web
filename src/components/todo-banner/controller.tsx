@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
 import type { SnoozeDurationInDays } from '@/domain/alert-snoozes'
-import type { TodoAlert } from '@/domain/todo-alerts'
+import { isJobApplicationTodoAlert, type CvOutdatedTodoAlert, type JobApplicationTodoAlert, type TodoAlert } from '@/domain/todo-alerts'
 import { getTodoAlertKey } from './format-todo-alert'
 import type { TodoBannerControllerParameters } from './interfaces'
 
 export const useController = ({
   initialAlerts,
   snoozeAlert,
+  confirmCvStillGood,
   changeJobApplicationStatus,
   onDataChanged,
 }: TodoBannerControllerParameters) => {
@@ -18,7 +19,8 @@ export const useController = ({
 
   const alerts = initialAlerts.filter(
     (alert) =>
-      !dismissedAlertKeys.includes(getTodoAlertKey(alert)) && !closedJobApplicationIds.includes(alert.jobApplicationId),
+      !dismissedAlertKeys.includes(getTodoAlertKey(alert)) &&
+      !(isJobApplicationTodoAlert(alert) && closedJobApplicationIds.includes(alert.jobApplicationId)),
   )
 
   const isAlertPending = (alert: TodoAlert): boolean => pendingAlertKeys.includes(getTodoAlertKey(alert))
@@ -38,7 +40,7 @@ export const useController = ({
     }
   }
 
-  const snooze = async (alert: TodoAlert, days: SnoozeDurationInDays) => {
+  const snooze = async (alert: JobApplicationTodoAlert, days: SnoozeDurationInDays) => {
     const alertKey = getTodoAlertKey(alert)
     setErrorMessage(null)
     setDismissedAlertKeys((currentKeys) => [...currentKeys, alertKey])
@@ -51,7 +53,20 @@ export const useController = ({
     setErrorMessage(failureMessage)
   }
 
-  const closeAsNoNews = async (alert: TodoAlert) => {
+  const confirmStillGood = async (alert: CvOutdatedTodoAlert) => {
+    const alertKey = getTodoAlertKey(alert)
+    setErrorMessage(null)
+    setDismissedAlertKeys((currentKeys) => [...currentKeys, alertKey])
+    const failureMessage = await runServerAction(alertKey, () => confirmCvStillGood(alert.cvId))
+    if (failureMessage === null) {
+      onDataChanged()
+      return
+    }
+    setDismissedAlertKeys((currentKeys) => currentKeys.filter((currentKey) => currentKey !== alertKey))
+    setErrorMessage(failureMessage)
+  }
+
+  const closeAsNoNews = async (alert: JobApplicationTodoAlert) => {
     setErrorMessage(null)
     const failureMessage = await runServerAction(getTodoAlertKey(alert), () =>
       changeJobApplicationStatus(alert.jobApplicationId, 'no_news_abandoned'),
@@ -64,5 +79,5 @@ export const useController = ({
     onDataChanged()
   }
 
-  return { alerts, errorMessage, isAlertPending, snooze, closeAsNoNews }
+  return { alerts, errorMessage, isAlertPending, snooze, confirmStillGood, closeAsNoNews }
 }

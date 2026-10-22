@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { HomeDashboard } from '@/components/home-dashboard'
 import { countActiveJobApplications } from '@/domain/job-application-status'
 import { PAGE_TITLE_CLASS_NAME } from '@/lib/typography-class-names'
+import { confirmCvStillGood } from '@/server/actions/cv-actions'
 import { changeJobApplicationStatus, snoozeAlert } from '@/server/actions/job-application-actions'
 import { applyToOpportunity, countOpportunitiesToProcess, listHighlightedOpportunities } from '@/server/actions/opportunity-actions'
 import { loadTodoReminders } from '@/server/todo-reminders/load-todo-reminders'
@@ -54,6 +55,7 @@ const HomePage = async () => {
       opportunitiesToProcessCount={opportunitiesToProcessCountResult.ok ? opportunitiesToProcessCountResult.data : 0}
       recentOpportunityCount={highlightedOpportunitiesResult.ok ? highlightedOpportunitiesResult.data.recentOpportunityCount : 0}
       snoozeAlert={snoozeAlert}
+      confirmCvStillGood={confirmCvStillGood}
       changeJobApplicationStatus={changeJobApplicationStatus}
       applyToOpportunity={applyToOpportunity}
     />

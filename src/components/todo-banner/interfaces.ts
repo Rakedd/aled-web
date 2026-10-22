@@ -12,6 +12,8 @@ export type SnoozeAlert = (
   days: SnoozeDurationInDays,
 ) => Promise<ActionResult<null>>
 
+export type ConfirmCvStillGood = (cvId: string) => Promise<ActionResult<null>>
+
 export type ChangeJobApplicationStatus = (
   jobApplicationId: string,
   newStatus: JobApplicationStatus,
@@ -25,6 +27,7 @@ export type TodoBannerJobApplicationSummary = Pick<
 export type TodoBannerControllerParameters = {
   initialAlerts: TodoAlert[]
   snoozeAlert: SnoozeAlert
+  confirmCvStillGood: ConfirmCvStillGood
   changeJobApplicationStatus: ChangeJobApplicationStatus
   onDataChanged: () => void
 }

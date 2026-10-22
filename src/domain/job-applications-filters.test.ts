@@ -1,6 +1,7 @@
 import { filterAndSortJobApplications, type JobApplicationsTableFilters } from './job-applications-filters'
 import type { JobApplicationListItem } from './job-application'
-import type { TodoAlert } from './todo-alerts'
+import type { JobApplicationTodoAlert } from './todo-alerts'
+import type { AlertKind } from './types'
 
 const buildJobApplication = (overrides: Partial<JobApplicationListItem>): JobApplicationListItem => ({
   id: 'id',
@@ -120,7 +121,7 @@ describe('filterAndSortJobApplications', () => {
   })
 
   describe('alert kind filter', () => {
-    const buildAlert = (jobApplicationId: string, kind: TodoAlert['kind']): TodoAlert => ({
+    const buildAlert = (jobApplicationId: string, kind: AlertKind): JobApplicationTodoAlert => ({
       kind,
       jobApplicationId,
       jobApplicationTitle: 'Dev',
