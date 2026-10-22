@@ -154,6 +154,20 @@ describe('cvs repository', () => {
     expect(await listCvLibraryItems(user.client, user.userId)).toEqual([])
   })
 
+  it('releases the current version of a cv even when that version lost its cv link', async () => {
+    const user = await createTestUser()
+    const { cvId, versionId } = await addCvOrFail(user, 'Principal')
+    const { error } = await createServiceRoleTestClient().from('cv_versions').update({ cv_id: null }).eq('id', versionId)
+    if (error) throw error
+
+    const { versionIds } = unwrapOrFail(await deleteCvRow(user.client, user.userId, cvId))
+    await releaseCvVersions(user.client, versionIds)
+
+    expect(versionIds).toEqual([versionId])
+    expect(await isVersionStored(versionId)).toBe(false)
+    expect(await isFileStored(user, versionId)).toBe(false)
+  })
+
   it('deletes the previously sent tailored version when another cv is sent', async () => {
     const user = await createTestUser()
     const tailoredVersionId = await storeVersionOrFail(user, 'Sur mesure', 'tailored')

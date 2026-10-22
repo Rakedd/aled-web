@@ -73,7 +73,7 @@ rm ~/Downloads/cle.json
 
 ## Navigation et fonctionnalités
 
-Menu : « Mes candidatures », « Mes contacts », « Mon calendrier », « Mes opportunités », « Mes CV », « Préférences ».
+Menu : « Mes candidatures », « Mes contacts », « Mes CV », « Mon calendrier », « Mes opportunités », « Préférences ».
 
 | Route | Contenu |
 | --- | --- |

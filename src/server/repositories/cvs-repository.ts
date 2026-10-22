@@ -228,10 +228,18 @@ export const deleteCvRow = async (
     .eq('user_id', userId)
     .eq('cv_id', cvId)
   if (versionsError) throw toRepositoryError('deleteCvRow', versionsError)
-  const { data, error } = await supabase.from('cvs').delete().eq('id', cvId).eq('user_id', userId).select('id').maybeSingle()
+  const { data, error } = await supabase
+    .from('cvs')
+    .delete()
+    .eq('id', cvId)
+    .eq('user_id', userId)
+    .select('id, current_version_id')
+    .maybeSingle()
   if (error) throw toRepositoryError('deleteCvRow', error)
   if (data === null) return rejectWith(CV_MESSAGES.cvNotFound)
-  return { ok: true, data: { versionIds: versionRows.map((versionRow) => versionRow.id) } }
+  const releasedVersionIds = new Set(versionRows.map((versionRow) => versionRow.id))
+  if (data.current_version_id !== null) releasedVersionIds.add(data.current_version_id)
+  return { ok: true, data: { versionIds: [...releasedVersionIds] } }
 }
 
 export const markCvReviewed = async (
