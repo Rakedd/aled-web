@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { NextRequest } from 'next/server'
-import { GET } from '@/app/api/cvs/versions/[versionId]/pdf/route'
+import { GET } from '@/app/api/cv/versions/[versionId]/pdf/route'
 import { createCvFromVersion, storeCvVersion } from '@/server/repositories/cvs-repository'
 import { createServerSupabaseClient } from '@/server/supabase/create-server-supabase-client'
 import type { Database } from '@/server/supabase/database-types'
@@ -18,7 +18,7 @@ const createTestUser = () => createSignedInTestClient(`cv-pdf-route-${randomUUID
 
 const requestCvPdfAs = (client: SupabaseClient<Database>, versionId: string) => {
   jest.mocked(createServerSupabaseClient).mockResolvedValue(client)
-  return GET(new NextRequest(`http://localhost:3000/api/cvs/versions/${versionId}/pdf`), {
+  return GET(new NextRequest(`http://localhost:3000/api/cv/versions/${versionId}/pdf`), {
     params: Promise.resolve({ versionId }),
   })
 }
@@ -35,7 +35,7 @@ const storeCvWithPdfOrFail = async (user: TestUser): Promise<string> => {
   return versionId
 }
 
-describe('GET /api/cvs/versions/[versionId]/pdf', () => {
+describe('GET /api/cv/versions/[versionId]/pdf', () => {
   it('answers 401 without redirecting when nobody is signed in', async () => {
     const owner = await createTestUser()
     const versionId = await storeCvWithPdfOrFail(owner)

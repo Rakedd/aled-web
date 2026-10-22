@@ -68,7 +68,7 @@ export const readCvFileName = (pdfFile: Blob): string => {
 
 export const buildCvStoragePath = (userId: string, versionId: string): string => `${userId}/${versionId}.pdf`
 
-export const buildCvVersionPdfPath = (versionId: string): string => `/api/cvs/versions/${versionId}/pdf`
+export const buildCvVersionPdfPath = (versionId: string): string => `/api/cv/versions/${versionId}/pdf`
 
 export const buildDefaultTailoredCvLabel = (jobApplicationTitle: string): string =>
   `CV sur mesure · ${jobApplicationTitle}`.slice(0, MAXIMUM_CV_LABEL_LENGTH)

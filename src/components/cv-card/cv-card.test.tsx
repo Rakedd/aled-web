@@ -58,7 +58,7 @@ describe('CvCard', () => {
   it('opens the current pdf in a new tab', () => {
     renderCard(createCv())
     const pdfLink = screen.getByRole('link', { name: 'Voir' })
-    expect(pdfLink).toHaveAttribute('href', '/api/cvs/versions/version-current/pdf')
+    expect(pdfLink).toHaveAttribute('href', '/api/cv/versions/version-current/pdf')
     expect(pdfLink).toHaveAttribute('target', '_blank')
     expect(pdfLink).toHaveAttribute('rel', 'noopener noreferrer')
   })
@@ -72,7 +72,7 @@ describe('CvCard', () => {
     const disclosure = screen.getByText('Anciennes versions envoyées').closest('details') as HTMLElement
     expect(within(disclosure).getByText('Version du 05/01/2026')).toBeInTheDocument()
     const previousVersionLink = within(disclosure).getByRole('link', { name: 'Voir' })
-    expect(previousVersionLink).toHaveAttribute('href', '/api/cvs/versions/version-old/pdf')
+    expect(previousVersionLink).toHaveAttribute('href', '/api/cv/versions/version-old/pdf')
     expect(previousVersionLink).toHaveAttribute('target', '_blank')
     expect(previousVersionLink).toHaveAttribute('rel', 'noopener noreferrer')
     expect(within(disclosure).getByText('Envoyé dans 1 candidature')).toBeInTheDocument()

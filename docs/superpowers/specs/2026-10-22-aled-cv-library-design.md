@@ -146,7 +146,7 @@ Le CV sur mesure se dépose ensuite depuis la fiche candidature, pour ne pas alo
 
 ### 4.5 Ouverture des PDF
 
-Route `GET /api/cvs/versions/[versionId]/pdf`, sur le modèle de la route des fiches de poste : authentification par cookie, URL signée de 5 minutes, redirection 302, 404 si la version n'appartient pas à l'utilisateur.
+Route `GET /api/cv/versions/[versionId]/pdf`, sur le modèle de la route des fiches de poste : authentification par cookie, URL signée de 5 minutes, redirection 302, 404 si la version n'appartient pas à l'utilisateur.
 
 ### 4.6 Fiches contact et agence
 

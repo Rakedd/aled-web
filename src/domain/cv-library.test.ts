@@ -108,7 +108,7 @@ describe('formatting', () => {
 describe('paths and options', () => {
   it('builds the storage path and the pdf route of a version', () => {
     expect(buildCvStoragePath('u1', 'v1')).toBe('u1/v1.pdf')
-    expect(buildCvVersionPdfPath('v1')).toBe('/api/cvs/versions/v1/pdf')
+    expect(buildCvVersionPdfPath('v1')).toBe('/api/cv/versions/v1/pdf')
   })
 
   it('lists only cvs with a current version as options', () => {

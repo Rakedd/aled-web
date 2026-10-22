@@ -6,7 +6,7 @@ describe('SentCvView', () => {
     render(<SentCvView sentCv={{ versionId: 'version-1', label: 'CV DevOps', uploadedAt: new Date('2026-03-12T10:00:00Z') }} />)
     expect(screen.getByText('CV DevOps · version du 12/03/2026')).toBeInTheDocument()
     const openLink = screen.getByRole('link', { name: 'Voir' })
-    expect(openLink).toHaveAttribute('href', '/api/cvs/versions/version-1/pdf')
+    expect(openLink).toHaveAttribute('href', '/api/cv/versions/version-1/pdf')
     expect(openLink).toHaveAttribute('target', '_blank')
     expect(openLink).toHaveAttribute('rel', 'noopener noreferrer')
   })

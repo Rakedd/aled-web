@@ -15,7 +15,7 @@ const respondWithStatus = (status: number): NextResponse =>
 
 export const GET = async (
   _request: NextRequest,
-  routeContext: RouteContext<'/api/cvs/versions/[versionId]/pdf'>,
+  routeContext: RouteContext<'/api/cv/versions/[versionId]/pdf'>,
 ): Promise<NextResponse> => {
   const { versionId } = await routeContext.params
   try {
