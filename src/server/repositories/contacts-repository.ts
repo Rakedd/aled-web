@@ -46,6 +46,23 @@ const resolveOptionalIntermediaryId = (
 ): Promise<string | null> =>
   intermediaryName === null ? Promise.resolve(null) : resolveIntermediaryId(supabase, userId, intermediaryName)
 
+const isContactNameTaken = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  fullName: string,
+  excludedContactId: string | null,
+): Promise<boolean> => {
+  let namesakeQuery = supabase
+    .from('contacts')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('normalized_name', normalizeEntityName(fullName))
+  if (excludedContactId !== null) namesakeQuery = namesakeQuery.neq('id', excludedContactId)
+  const { data, error } = await namesakeQuery.limit(1)
+  if (error) throw toRepositoryError('isContactNameTaken', error)
+  return data.length > 0
+}
+
 export const listContactListItems = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
@@ -90,6 +107,9 @@ export const insertContact = async (
   userId: string,
   input: ContactProfileInput,
 ): Promise<ActionResult<{ id: string }>> => {
+  if (await isContactNameTaken(supabase, userId, input.fullName, null)) {
+    return { ok: false, errorMessage: CONTACT_NAME_ALREADY_TAKEN_MESSAGE }
+  }
   const intermediaryId = await resolveOptionalIntermediaryId(supabase, userId, input.intermediaryName)
   const { data, error } = await supabase
     .from('contacts')
@@ -119,6 +139,9 @@ export const saveContactProfile = async (
   contactId: string,
   input: ContactProfileInput,
 ): Promise<ActionResult<null>> => {
+  if (await isContactNameTaken(supabase, userId, input.fullName, contactId)) {
+    return { ok: false, errorMessage: CONTACT_NAME_ALREADY_TAKEN_MESSAGE }
+  }
   const intermediaryId = await resolveOptionalIntermediaryId(supabase, userId, input.intermediaryName)
   const { data, error } = await supabase
     .from('contacts')

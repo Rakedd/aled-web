@@ -101,6 +101,23 @@ describe('contacts repositories', () => {
     ).resolves.toEqual({ ok: false, errorMessage: CONTACT_NAME_ALREADY_TAKEN_MESSAGE })
   })
 
+  it('does not leave an empty agency behind when the contact name is already taken', async () => {
+    const user = await createTestUser()
+    await insertContactOrFail(user, { fullName: 'Hélène Martin' })
+    const otherContactId = await insertContactOrFail(user, { fullName: 'Paul Durand' })
+
+    await insertContact(user.client, user.userId, buildContactProfileInput({ fullName: 'Helene Martin', intermediaryName: 'Agence Fantôme' }))
+    await saveContactProfile(
+      user.client,
+      user.userId,
+      otherContactId,
+      buildContactProfileInput({ fullName: 'Helene Martin', intermediaryName: 'Agence Fantôme' }),
+    )
+
+    const intermediaries = await listIntermediaryListItems(user.client, user.userId)
+    expect(intermediaries).toEqual([])
+  })
+
   it('lets a contact change the case of its own name', async () => {
     const user = await createTestUser()
     const contactId = await insertContactOrFail(user, { fullName: 'hélène martin' })
