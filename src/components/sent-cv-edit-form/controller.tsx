@@ -18,7 +18,7 @@ export const useController = ({
   detachSentCvFromJobApplication,
   onDataChanged,
   onClose,
-}: Omit<SentCvEditFormProps, 'sentCv'>) => {
+}: Omit<SentCvEditFormProps, 'sentCv' | 'hasCvLoadFailed'>) => {
   const [source, setSourceState] = useState<SentCvSource>(cvOptions.length > 0 ? 'library' : 'tailored')
   const [selectedCvId, setSelectedCvId] = useState('')
   const [tailoredLabel, setTailoredLabel] = useState(() => buildDefaultTailoredCvLabel(jobApplicationTitle))
@@ -27,6 +27,7 @@ export const useController = ({
   const [libraryNoticeMessage, setLibraryNoticeMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDetachDialogOpen, setIsDetachDialogOpen] = useState(false)
   const isRequestInFlightRef = useRef(false)
 
   const setSource = (nextSource: SentCvSource) => {
@@ -99,6 +100,7 @@ export const useController = ({
   const save = () => (source === 'library' ? saveLibraryCv() : saveTailoredCv())
 
   const detach = async () => {
+    setIsDetachDialogOpen(false)
     const detachmentResult = await runRequest(() => detachSentCvFromJobApplication(jobApplicationId))
     if (detachmentResult?.ok) finishAndClose()
   }
@@ -119,5 +121,7 @@ export const useController = ({
     isSaving,
     save,
     detach,
+    isDetachDialogOpen,
+    setIsDetachDialogOpen,
   }
 }

@@ -121,6 +121,14 @@ describe('SentCvEditForm useController', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  it('closes the confirmation dialog when removing the sent cv', async () => {
+    const { result } = renderSentCvController()
+    act(() => result.current.setIsDetachDialogOpen(true))
+    expect(result.current.isDetachDialogOpen).toBe(true)
+    await act(() => result.current.detach())
+    expect(result.current.isDetachDialogOpen).toBe(false)
+  })
+
   it('shows the server error and keeps the form open', async () => {
     const { result, attachLibraryCvToJobApplication, onDataChanged, onClose } = renderSentCvController()
     attachLibraryCvToJobApplication.mockResolvedValue({ ok: false, errorMessage: CV_MESSAGES.cvNotFound })

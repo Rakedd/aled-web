@@ -17,6 +17,7 @@ export type SentCvEditFormProps = {
   jobApplicationTitle: string
   sentCv: SentCv | null
   cvOptions: CvOption[]
+  hasCvLoadFailed: boolean
   attachLibraryCvToJobApplication: AttachLibraryCvToJobApplication
   uploadTailoredCvForJobApplication: UploadTailoredCvForJobApplication
   detachSentCvFromJobApplication: DetachSentCvFromJobApplication

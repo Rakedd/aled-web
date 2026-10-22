@@ -135,6 +135,7 @@ describe('JobApplicationBlock', () => {
             jobApplicationTitle: 'Développeur React',
             sentCv: null,
             cvOptions: [{ id: 'cv-1', label: 'CV DevOps' }],
+            hasCvLoadFailed: false,
             attachLibraryCvToJobApplication: jest.fn(),
             uploadTailoredCvForJobApplication: jest.fn(),
             detachSentCvFromJobApplication: jest.fn(),

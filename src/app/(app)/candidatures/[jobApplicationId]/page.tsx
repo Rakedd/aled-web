@@ -255,6 +255,7 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
                         jobApplicationTitle: jobApplication.title,
                         sentCv: jobApplication.sentCv,
                         cvOptions,
+                        hasCvLoadFailed: !cvsResult.ok,
                         attachLibraryCvToJobApplication,
                         uploadTailoredCvForJobApplication,
                         detachSentCvFromJobApplication,
