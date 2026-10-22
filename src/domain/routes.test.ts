@@ -1,4 +1,5 @@
 import {
+  CV_LIBRARY_ROUTE,
   INTERMEDIARIES_LIST_ROUTE,
   NEW_JOB_APPLICATION_ROUTE,
   OPPORTUNITY_PREFERENCES_ROUTE,
@@ -31,5 +32,11 @@ describe('contacts routes', () => {
 
   it('points to the intermediaries view of the contacts list', () => {
     expect(INTERMEDIARIES_LIST_ROUTE).toBe('/contacts?vue=agences')
+  })
+})
+
+describe('cv library route', () => {
+  it('points to the cv library page', () => {
+    expect(CV_LIBRARY_ROUTE).toBe('/cv')
   })
 })
