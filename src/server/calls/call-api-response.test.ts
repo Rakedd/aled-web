@@ -5,6 +5,7 @@ import {
   UNAUTHORIZED_CALL_API_ERROR,
   callApiErrorResponse,
   callApiSuccessResponse,
+  invalidJsonRequestBodyResponse,
   readJsonRequestBody,
 } from './call-api-response'
 
@@ -45,10 +46,31 @@ describe('call api response', () => {
     expect(UNAUTHORIZED_CALL_API_ERROR).toEqual(toCallApiError('unauthorized', CALL_LOG_MESSAGES.unauthorized))
   })
 
-  it('returns null for a body that is not JSON', async () => {
+  it('reports a body that is not JSON as malformed', async () => {
     const invalidRequest = new Request('http://localhost/x', { method: 'POST', body: 'pas du json' })
-    expect(await readJsonRequestBody(invalidRequest)).toBeNull()
+    expect(await readJsonRequestBody(invalidRequest)).toEqual({ ok: false, failure: 'malformed' })
     const validRequest = new Request('http://localhost/x', { method: 'POST', body: '{"a":1}' })
-    expect(await readJsonRequestBody(validRequest)).toEqual({ body: { a: 1 } })
+    expect(await readJsonRequestBody(validRequest)).toEqual({ ok: true, body: { a: 1 } })
+  })
+
+  it('refuses a body over 64 KB, declared or read', async () => {
+    const declaredRequest = new Request('http://localhost/x', {
+      method: 'POST',
+      body: '{}',
+      headers: { 'content-length': String(64 * 1024 + 1) },
+    })
+    expect(await readJsonRequestBody(declaredRequest)).toEqual({ ok: false, failure: 'too_large' })
+    const oversizedBody = JSON.stringify({ text: 'a'.repeat(64 * 1024) })
+    const readRequest = new Request('http://localhost/x', { method: 'POST', body: oversizedBody })
+    expect(await readJsonRequestBody(readRequest)).toEqual({ ok: false, failure: 'too_large' })
+  })
+
+  it('answers 413 for a body that is too large and 400 for a malformed one', async () => {
+    const tooLargeResponse = invalidJsonRequestBodyResponse('too_large')
+    expect(tooLargeResponse.status).toBe(413)
+    expect(await tooLargeResponse.json()).toEqual({
+      error: toCallApiError('invalid_request', CALL_LOG_MESSAGES.requestTooLarge),
+    })
+    expect(invalidJsonRequestBodyResponse('malformed').status).toBe(400)
   })
 })

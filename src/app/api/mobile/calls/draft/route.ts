@@ -4,6 +4,7 @@ import {
   UNAUTHORIZED_CALL_API_ERROR,
   callApiErrorResponse,
   callApiSuccessResponse,
+  invalidJsonRequestBodyResponse,
   readJsonRequestBody,
 } from '@/server/calls/call-api-response'
 import { prepareCallDraft } from '@/server/calls/prepare-call-draft'
@@ -31,9 +32,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   if (authentication === null) return callApiErrorResponse(UNAUTHORIZED_CALL_API_ERROR)
 
   const jsonBody = await readJsonRequestBody(request)
-  if (jsonBody === null) {
-    return callApiErrorResponse(toCallApiError('invalid_request', CALL_LOG_MESSAGES.malformedRequest), BAD_REQUEST_STATUS)
-  }
+  if (!jsonBody.ok) return invalidJsonRequestBodyResponse(jsonBody.failure)
   const validation = validateCallDraftRequest(jsonBody.body, new Date())
   if (!validation.ok) {
     return callApiErrorResponse(toCallApiError('invalid_request', validation.errorMessage), BAD_REQUEST_STATUS)

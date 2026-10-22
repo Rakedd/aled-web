@@ -52,6 +52,16 @@ describe('POST /api/mobile/calls', () => {
     expect(recordCallMock).not.toHaveBeenCalled()
   })
 
+  it('answers 413 without recording anything for an oversized body', async () => {
+    const response = await requestRecord(JSON.stringify({ contact: {}, padding: 'a'.repeat(70_000) }))
+    expect(response.status).toBe(413)
+    expect((await response.json()).error).toMatchObject({
+      kind: 'invalid_request',
+      message: CALL_LOG_MESSAGES.requestTooLarge,
+    })
+    expect(recordCallMock).not.toHaveBeenCalled()
+  })
+
   it('answers the contact id and the job application id of the recorded call', async () => {
     recordCallMock.mockResolvedValue({ ok: true, data: { contactId: 'contact-1', jobApplicationId: 'job-1' } })
     const response = await requestRecord(buildValidBody())

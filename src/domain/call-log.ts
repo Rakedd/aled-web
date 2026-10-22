@@ -59,6 +59,7 @@ export const CALL_LOG_MESSAGES = {
   saveFailed: "Impossible d'enregistrer l'appel pour le moment. Ce que tu as saisi est gardé : réessaie.",
   missingCallNote: "Raconte l'appel en quelques mots.",
   malformedRequest: 'Appel invalide',
+  requestTooLarge: 'Requête trop volumineuse.',
   missingContactChoice: 'Choisis un contact ou crée-en un.',
   unauthorized: 'Ta session a expiré. Reconnecte-toi puis réessaie.',
   network: 'Pas de connexion. Ce que tu as saisi est gardé : réessaie dans un instant.',

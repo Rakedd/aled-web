@@ -23,7 +23,12 @@ export const CALL_API_ERROR_STATUSES: Record<ServerCallApiErrorKind, number> = {
 }
 
 const NO_STORE_HEADERS = { 'Cache-Control': 'private, no-store' }
+const MAXIMUM_REQUEST_BODY_LENGTH = 64 * 1024
+const PAYLOAD_TOO_LARGE_STATUS = 413
 const SUCCESS_STATUS = 200
+
+type JsonRequestBodyFailure = 'malformed' | 'too_large'
+type JsonRequestBodyReading = { ok: true; body: unknown } | { ok: false; failure: JsonRequestBodyFailure }
 const UNEXPECTED_ERROR_STATUS = 502
 
 export const UNAUTHORIZED_CALL_API_ERROR = toCallApiError('unauthorized', CALL_LOG_MESSAGES.unauthorized)
@@ -36,10 +41,19 @@ export const callApiErrorResponse = (error: CallApiError, status?: number): Next
 export const callApiSuccessResponse = <Data>(data: Data): NextResponse =>
   NextResponse.json(data, { status: SUCCESS_STATUS, headers: NO_STORE_HEADERS })
 
-export const readJsonRequestBody = async (request: Request): Promise<{ body: unknown } | null> => {
+export const readJsonRequestBody = async (request: Request): Promise<JsonRequestBodyReading> => {
+  const declaredLength = Number(request.headers.get('content-length'))
+  if (declaredLength > MAXIMUM_REQUEST_BODY_LENGTH) return { ok: false, failure: 'too_large' }
   try {
-    return { body: await request.json() }
+    const bodyText = await request.text()
+    if (bodyText.length > MAXIMUM_REQUEST_BODY_LENGTH) return { ok: false, failure: 'too_large' }
+    return { ok: true, body: JSON.parse(bodyText) }
   } catch {
-    return null
+    return { ok: false, failure: 'malformed' }
   }
 }
+
+export const invalidJsonRequestBodyResponse = (failure: JsonRequestBodyFailure): NextResponse =>
+  failure === 'too_large'
+    ? callApiErrorResponse(toCallApiError('invalid_request', CALL_LOG_MESSAGES.requestTooLarge), PAYLOAD_TOO_LARGE_STATUS)
+    : callApiErrorResponse(toCallApiError('invalid_request', CALL_LOG_MESSAGES.malformedRequest))

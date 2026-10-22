@@ -51,6 +51,16 @@ describe('POST /api/mobile/calls/draft', () => {
     expect(prepareCallDraftMock).not.toHaveBeenCalled()
   })
 
+  it('answers 413 without preparing anything for an oversized body', async () => {
+    const response = await requestDraft(JSON.stringify({ text: 'a'.repeat(70_000), occurredAt: OCCURRED_AT }))
+    expect(response.status).toBe(413)
+    expect((await response.json()).error).toMatchObject({
+      kind: 'invalid_request',
+      message: CALL_LOG_MESSAGES.requestTooLarge,
+    })
+    expect(prepareCallDraftMock).not.toHaveBeenCalled()
+  })
+
   it('passes the validated request to the draft preparation and answers the draft', async () => {
     const draft = { contactCandidates: [] } as unknown as CallDraft
     prepareCallDraftMock.mockResolvedValue({ ok: true, data: draft })
