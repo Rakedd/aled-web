@@ -1,6 +1,7 @@
 import 'server-only'
 import type Anthropic from '@anthropic-ai/sdk'
 import type { StopReason } from '@anthropic-ai/sdk/resources/messages'
+import type { CallNoteExtraction } from '@/domain/call-log'
 import type { JobPostingExtraction } from '@/domain/job-posting-extraction'
 import { getDecryptedAnthropicApiKeyForUser } from '@/server/repositories/profile-repository'
 import { createAnthropicClient } from '../create-anthropic-client'
@@ -18,6 +19,25 @@ export const emptyExtraction: JobPostingExtraction = {
   desiredStart: null,
   duration: null,
   stack: [],
+}
+
+export const emptyCallNoteExtraction: CallNoteExtraction = {
+  contactName: null,
+  intermediaryName: null,
+  contactPhone: null,
+  contactEmail: null,
+  summary: '',
+  missionProposed: false,
+  missionTitle: null,
+  endClientName: null,
+  dailyRate: null,
+  location: null,
+  remotePolicy: null,
+  desiredStart: null,
+  duration: null,
+  stack: [],
+  outcome: 'discussed',
+  cvLabel: null,
 }
 
 export const createFakeAnthropicClientReturning = (
