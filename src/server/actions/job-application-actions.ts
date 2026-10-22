@@ -23,6 +23,7 @@ import {
   recordActivityLogEntry,
 } from '@/server/repositories/activity-log-repository'
 import { listActiveAlertSnoozes, snoozeJobApplicationAlert } from '@/server/repositories/alert-snoozes-repository'
+import { findSentCvVersionId, releaseCvVersions } from '@/server/repositories/cvs-repository'
 import { isJobApplicationOwnedByUser } from '@/server/repositories/job-application-ownership'
 import {
   changeJobApplicationStatusRow,
@@ -51,6 +52,19 @@ const removeJobSpecFileWithoutFailing = async (supabase: FreeclutchSupabaseClien
   }
 }
 
+const releaseCvVersionsWithoutFailing = async (
+  supabase: FreeclutchSupabaseClient,
+  candidateVersionIds: (string | null)[],
+): Promise<void> => {
+  try {
+    await releaseCvVersions(supabase, candidateVersionIds)
+  } catch (releaseError) {
+    console.error('Cv version release failed after job application deletion', {
+      errorName: releaseError instanceof Error ? releaseError.name : typeof releaseError,
+    })
+  }
+}
+
 const deleteJobApplicationWithFiles = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
@@ -59,10 +73,12 @@ const deleteJobApplicationWithFiles = async (
   const isOwnedByUser = await isJobApplicationOwnedByUser(supabase, userId, jobApplicationId)
   if (!isOwnedByUser) return rejectWith(JOB_APPLICATION_NOT_FOUND_MESSAGE)
   const jobSpecStoragePath = await findJobSpecStoragePath(supabase, userId, jobApplicationId)
+  const sentCvVersionId = await findSentCvVersionId(supabase, userId, jobApplicationId)
   await deleteAppliedOpportunityDecisionsOfJobApplication(supabase, userId, jobApplicationId)
   const isDeleted = await deleteJobApplicationRow(supabase, userId, jobApplicationId)
   if (!isDeleted) return rejectWith(JOB_APPLICATION_NOT_FOUND_MESSAGE)
   if (jobSpecStoragePath !== null) await removeJobSpecFileWithoutFailing(supabase, jobSpecStoragePath)
+  await releaseCvVersionsWithoutFailing(supabase, [sentCvVersionId])
   return { ok: true, data: null }
 }
 

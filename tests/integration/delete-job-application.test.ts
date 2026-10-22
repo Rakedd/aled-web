@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { buildCvStoragePath, CVS_BUCKET } from '@/domain/cv-library'
 import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from '@/domain/job-application'
 import { JOB_SPECS_BUCKET } from '@/domain/job-spec'
 import { EMPTY_OPPORTUNITY_FILTERS } from '@/domain/opportunity-filters'
 import { deleteJobApplication } from '@/server/actions/job-application-actions'
 import { listOpportunities, saveOpportunityFilters } from '@/server/actions/opportunity-actions'
 import { recordActivityLogEntry } from '@/server/repositories/activity-log-repository'
+import { createCvFromVersion, setSentCvVersion, storeCvVersion } from '@/server/repositories/cvs-repository'
 import { findJobApplicationOverview } from '@/server/repositories/job-applications-repository'
 import { saveJobSpecContent, uploadJobSpecPdfFile } from '@/server/repositories/job-specs-repository'
 import { upsertOpportunityDecision } from '@/server/repositories/opportunity-decisions-repository'
@@ -162,6 +164,32 @@ const listToProcessOpportunityIdsOrFail = async (): Promise<string[]> => {
   return listingResult.data.items.map((listItem) => listItem.id)
 }
 
+const storeCvVersionOrFail = (user: TestUser, cvId: string | null): Promise<string> =>
+  storeCvVersion(user.client, user.userId, {
+    cvId,
+    label: 'CV envoyé',
+    pdfBytes: new TextEncoder().encode('%PDF-1.7 cv'),
+    fileName: 'cv.pdf',
+  })
+
+const isCvFileStored = async (user: TestUser, versionId: string): Promise<boolean> => {
+  const { error } = await createServiceRoleTestClient()
+    .storage.from(CVS_BUCKET)
+    .download(buildCvStoragePath(user.userId, versionId))
+  return error === null
+}
+
+const isCvVersionStored = async (versionId: string): Promise<boolean> => {
+  const { data, error } = await createServiceRoleTestClient().from('cv_versions').select('id').eq('id', versionId).maybeSingle()
+  if (error) throw error
+  return data !== null
+}
+
+const sendCvVersionOrFail = async (user: TestUser, jobApplicationId: string, versionId: string): Promise<void> => {
+  const sendResult = await setSentCvVersion(user.client, user.userId, jobApplicationId, versionId)
+  if (!sendResult.ok) throw new Error(sendResult.errorMessage)
+}
+
 const buildUniqueKeyword = (): string => `tok${randomUUID().replaceAll('-', '').slice(0, 12)}`
 
 let consoleErrorSpy: jest.SpyInstance
@@ -198,6 +226,34 @@ describe('deleteJobApplication', () => {
       .select('markdown')
       .eq('end_client_id', endClientId)
     expect(remainingBriefs).toEqual([{ markdown: '## Chiffres clés' }])
+  })
+
+  it('deletes the tailored cv sent by a deleted job application with its file', async () => {
+    const user = await createTestUser()
+    actAs(user)
+    const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
+    const tailoredVersionId = await storeCvVersionOrFail(user, null)
+    await sendCvVersionOrFail(user, jobApplicationId, tailoredVersionId)
+
+    await expect(deleteJobApplication(jobApplicationId)).resolves.toEqual({ ok: true, data: null })
+
+    expect(await isCvVersionStored(tailoredVersionId)).toBe(false)
+    expect(await isCvFileStored(user, tailoredVersionId)).toBe(false)
+  })
+
+  it('keeps the library cv version sent by a deleted job application', async () => {
+    const user = await createTestUser()
+    actAs(user)
+    const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
+    const libraryVersionId = await storeCvVersionOrFail(user, null)
+    const cvCreation = await createCvFromVersion(user.client, user.userId, 'Principal', libraryVersionId)
+    if (!cvCreation.ok) throw new Error(cvCreation.errorMessage)
+    await sendCvVersionOrFail(user, jobApplicationId, libraryVersionId)
+
+    await expect(deleteJobApplication(jobApplicationId)).resolves.toEqual({ ok: true, data: null })
+
+    expect(await isCvVersionStored(libraryVersionId)).toBe(true)
+    expect(await isCvFileStored(user, libraryVersionId)).toBe(true)
   })
 
   it('puts the opportunity the application came from back in « À traiter »', async () => {

@@ -7,6 +7,7 @@ import {
   recordActivityLogEntry,
 } from '@/server/repositories/activity-log-repository'
 import { listActiveAlertSnoozes, snoozeJobApplicationAlert } from '@/server/repositories/alert-snoozes-repository'
+import { findSentCvVersionId, releaseCvVersions } from '@/server/repositories/cvs-repository'
 import { isJobApplicationOwnedByUser } from '@/server/repositories/job-application-ownership'
 import {
   changeJobApplicationStatusRow,
@@ -44,6 +45,7 @@ jest.mock('@/server/repositories/job-applications-repository', () => ({
   changeJobApplicationStatusRow: jest.fn(),
   deleteJobApplicationRow: jest.fn(),
 }))
+jest.mock('@/server/repositories/cvs-repository', () => ({ findSentCvVersionId: jest.fn(), releaseCvVersions: jest.fn() }))
 jest.mock('@/server/repositories/job-application-ownership', () => ({ isJobApplicationOwnedByUser: jest.fn() }))
 jest.mock('@/server/repositories/job-specs-repository', () => ({
   findJobSpecStoragePath: jest.fn(),
@@ -274,6 +276,8 @@ describe('deleteJobApplication', () => {
     jest.mocked(deleteAppliedOpportunityDecisionsOfJobApplication).mockResolvedValue(undefined)
     jest.mocked(deleteJobApplicationRow).mockResolvedValue(true)
     jest.mocked(removeJobSpecFile).mockResolvedValue(undefined)
+    jest.mocked(findSentCvVersionId).mockResolvedValue(null)
+    jest.mocked(releaseCvVersions).mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -319,6 +323,26 @@ describe('deleteJobApplication', () => {
     )
     expect(deleteJobApplicationRow).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', jobApplicationId)
     expect(removeJobSpecFile).toHaveBeenCalledWith(fakeSupabaseClient, storagePath)
+  })
+
+  it('releases the sent cv version after the application row is deleted', async () => {
+    jest.mocked(findSentCvVersionId).mockResolvedValue('version-1')
+    jest.mocked(releaseCvVersions).mockImplementation(async () => {
+      expect(deleteJobApplicationRow).toHaveBeenCalled()
+    })
+
+    await expect(deleteJobApplication(jobApplicationId)).resolves.toEqual(succeeded)
+
+    expect(findSentCvVersionId).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', jobApplicationId)
+    expect(releaseCvVersions).toHaveBeenCalledWith(fakeSupabaseClient, ['version-1'])
+  })
+
+  it('still succeeds and logs when the cv version release throws', async () => {
+    jest.mocked(releaseCvVersions).mockRejectedValue(new Error('Repository failure'))
+
+    await expect(deleteJobApplication(jobApplicationId)).resolves.toEqual(succeeded)
+
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1)
   })
 
   it('does not touch the storage when the application has no pdf', async () => {
