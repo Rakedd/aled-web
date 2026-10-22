@@ -44,8 +44,9 @@ describe('bearer supabase client', () => {
   it('refuses a tampered token', async () => {
     const owner = await createTestUser()
     const accessToken = await readAccessToken(owner)
-    const lastCharacter = accessToken.slice(-1)
-    const tamperedToken = accessToken.slice(0, -1) + (lastCharacter === 'A' ? 'B' : 'A')
+    const tokenParts = accessToken.split('.')
+    tokenParts[2] = 'x'.repeat(tokenParts[2].length)
+    const tamperedToken = tokenParts.join('.')
 
     const request = new Request('http://localhost/api/calls', {
       headers: { authorization: `Bearer ${tamperedToken}` },

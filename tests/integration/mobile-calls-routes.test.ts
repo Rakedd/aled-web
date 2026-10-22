@@ -96,8 +96,9 @@ describe('mobile calls routes', () => {
 
   it('answers 401 to a tampered token on both routes', async () => {
     const user = await createTestUser()
-    const lastCharacter = user.accessToken.slice(-1)
-    const tamperedToken = user.accessToken.slice(0, -1) + (lastCharacter === 'A' ? 'B' : 'A')
+    const tokenParts = user.accessToken.split('.')
+    tokenParts[2] = 'x'.repeat(tokenParts[2].length)
+    const tamperedToken = tokenParts.join('.')
 
     const draftResponse = await callRoute(callDraftRoute, '/draft', tamperedToken, {})
     const recordResponse = await callRoute(recordCallRoute, '', tamperedToken, {})
