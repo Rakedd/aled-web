@@ -95,6 +95,58 @@ isOneToOne: false
       referencedColumns: ["user_id","id"]
     }
                   ]
+                },"cv_versions": {
+                  Row: {
+                    "byte_size": number,"created_at": string,"cv_id": string | null,"file_name": string,"id": string,"label": string,"storage_path": string,"uploaded_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "byte_size": number,"created_at"?: string,"cv_id"?: string | null,"file_name": string,"id"?: string,"label": string,"storage_path": string,"uploaded_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "byte_size"?: number,"created_at"?: string,"cv_id"?: string | null,"file_name"?: string,"id"?: string,"label"?: string,"storage_path"?: string,"uploaded_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "cv_versions_user_id_cv_id_fkey"
+      columns: ["user_id","cv_id"]
+isOneToOne: false
+      referencedRelation: "cvs"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "cv_versions_user_id_cv_id_fkey"
+      columns: ["user_id","cv_id"]
+isOneToOne: false
+      referencedRelation: "cvs_overview"
+      referencedColumns: ["user_id","id"]
+    }
+                  ]
+                },"cvs": {
+                  Row: {
+                    "created_at": string,"current_version_id": string | null,"id": string,"label": string,"reviewed_at": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"current_version_id"?: string | null,"id"?: string,"label": string,"reviewed_at"?: string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"current_version_id"?: string | null,"id"?: string,"label"?: string,"reviewed_at"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "cvs_user_id_current_version_id_fkey"
+      columns: ["user_id","current_version_id"]
+isOneToOne: false
+      referencedRelation: "cv_versions"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "cvs_user_id_current_version_id_fkey"
+      columns: ["user_id","current_version_id"]
+isOneToOne: false
+      referencedRelation: "cv_versions_overview"
+      referencedColumns: ["user_id","id"]
+    }
+                  ]
                 },"end_client_briefs": {
                   Row: {
                     "end_client_id": string,"generated_at": string,"id": string,"language": string,"markdown": string,"sources": NonNullable<Json>,"user_id": string
@@ -203,14 +255,14 @@ isOneToOne: false
                   ]
                 },"job_applications": {
                   Row: {
-                    "actual_start_date": string | null,"applied_on": string,"contact_id": string | null,"created_at": string,"desired_start": string | null,"duration": string | null,"end_client_id": string | null,"id": string,"intermediary_id": string | null,"location": string | null,"notes": string | null,"posted_daily_rate": number | null,"posting_raw_text": string | null,"posting_url": string | null,"remote_policy": string | null,"requested_daily_rate": number | null,"source": string | null,"stack": NonNullable<Json>,"status": Database["public"]['Enums']["job_application_status"],"title": string,"updated_at": string,"user_id": string
+                    "actual_start_date": string | null,"applied_on": string,"contact_id": string | null,"created_at": string,"desired_start": string | null,"duration": string | null,"end_client_id": string | null,"id": string,"intermediary_id": string | null,"location": string | null,"notes": string | null,"posted_daily_rate": number | null,"posting_raw_text": string | null,"posting_url": string | null,"remote_policy": string | null,"requested_daily_rate": number | null,"sent_cv_version_id": string | null,"source": string | null,"stack": NonNullable<Json>,"status": Database["public"]['Enums']["job_application_status"],"title": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "actual_start_date"?: string | null,"applied_on"?: string,"contact_id"?: string | null,"created_at"?: string,"desired_start"?: string | null,"duration"?: string | null,"end_client_id"?: string | null,"id"?: string,"intermediary_id"?: string | null,"location"?: string | null,"notes"?: string | null,"posted_daily_rate"?: number | null,"posting_raw_text"?: string | null,"posting_url"?: string | null,"remote_policy"?: string | null,"requested_daily_rate"?: number | null,"source"?: string | null,"stack"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["job_application_status"],"title": string,"updated_at"?: string,"user_id": string
+                    "actual_start_date"?: string | null,"applied_on"?: string,"contact_id"?: string | null,"created_at"?: string,"desired_start"?: string | null,"duration"?: string | null,"end_client_id"?: string | null,"id"?: string,"intermediary_id"?: string | null,"location"?: string | null,"notes"?: string | null,"posted_daily_rate"?: number | null,"posting_raw_text"?: string | null,"posting_url"?: string | null,"remote_policy"?: string | null,"requested_daily_rate"?: number | null,"sent_cv_version_id"?: string | null,"source"?: string | null,"stack"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["job_application_status"],"title": string,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "actual_start_date"?: string | null,"applied_on"?: string,"contact_id"?: string | null,"created_at"?: string,"desired_start"?: string | null,"duration"?: string | null,"end_client_id"?: string | null,"id"?: string,"intermediary_id"?: string | null,"location"?: string | null,"notes"?: string | null,"posted_daily_rate"?: number | null,"posting_raw_text"?: string | null,"posting_url"?: string | null,"remote_policy"?: string | null,"requested_daily_rate"?: number | null,"source"?: string | null,"stack"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["job_application_status"],"title"?: string,"updated_at"?: string,"user_id"?: string
+                    "actual_start_date"?: string | null,"applied_on"?: string,"contact_id"?: string | null,"created_at"?: string,"desired_start"?: string | null,"duration"?: string | null,"end_client_id"?: string | null,"id"?: string,"intermediary_id"?: string | null,"location"?: string | null,"notes"?: string | null,"posted_daily_rate"?: number | null,"posting_raw_text"?: string | null,"posting_url"?: string | null,"remote_policy"?: string | null,"requested_daily_rate"?: number | null,"sent_cv_version_id"?: string | null,"source"?: string | null,"stack"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["job_application_status"],"title"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -242,6 +294,18 @@ isOneToOne: false
       columns: ["user_id","intermediary_id"]
 isOneToOne: false
       referencedRelation: "intermediaries_overview"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "job_applications_user_id_sent_cv_version_id_fkey"
+      columns: ["user_id","sent_cv_version_id"]
+isOneToOne: false
+      referencedRelation: "cv_versions"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "job_applications_user_id_sent_cv_version_id_fkey"
+      columns: ["user_id","sent_cv_version_id"]
+isOneToOne: false
+      referencedRelation: "cv_versions_overview"
       referencedColumns: ["user_id","id"]
     }
                   ]
@@ -368,6 +432,52 @@ isOneToOne: false
       referencedColumns: ["user_id","id"]
     }
                   ]
+                },"cv_versions_overview": {
+                  Row: {
+                    "byte_size": number | null,"created_at": string | null,"cv_id": string | null,"file_name": string | null,"id": string | null,"label": string | null,"sent_count": number | null,"storage_path": string | null,"uploaded_at": string | null,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                           "byte_size"?: number | null,"created_at"?: string | null,"cv_id"?: string | null,"file_name"?: string | null,"id"?: string | null,"label"?: string | null,"sent_count"?: never,"storage_path"?: string | null,"uploaded_at"?: string | null,"user_id"?: string | null
+                         }
+                        Update: {
+                           "byte_size"?: number | null,"created_at"?: string | null,"cv_id"?: string | null,"file_name"?: string | null,"id"?: string | null,"label"?: string | null,"sent_count"?: never,"storage_path"?: string | null,"uploaded_at"?: string | null,"user_id"?: string | null
+                         }
+                        Relationships: [
+                    {
+      foreignKeyName: "cv_versions_user_id_cv_id_fkey"
+      columns: ["user_id","cv_id"]
+isOneToOne: false
+      referencedRelation: "cvs"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "cv_versions_user_id_cv_id_fkey"
+      columns: ["user_id","cv_id"]
+isOneToOne: false
+      referencedRelation: "cvs_overview"
+      referencedColumns: ["user_id","id"]
+    }
+                  ]
+                },"cvs_overview": {
+                  Row: {
+                    "created_at": string | null,"current_version_file_name": string | null,"current_version_id": string | null,"current_version_storage_path": string | null,"current_version_uploaded_at": string | null,"id": string | null,"label": string | null,"reviewed_at": string | null,"sent_count": number | null,"updated_at": string | null,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "cvs_user_id_current_version_id_fkey"
+      columns: ["user_id","current_version_id"]
+isOneToOne: false
+      referencedRelation: "cv_versions"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "cvs_user_id_current_version_id_fkey"
+      columns: ["user_id","current_version_id"]
+isOneToOne: false
+      referencedRelation: "cv_versions_overview"
+      referencedColumns: ["user_id","id"]
+    }
+                  ]
                 },"exchanges_overview": {
                   Row: {
                     "contact_intermediary_id": string | null,"contact_name": string | null,"created_at": string | null,"effective_contact_id": string | null,"id": string | null,"job_application_id": string | null,"job_application_intermediary_id": string | null,"job_application_title": string | null,"kind": Database["public"]['Enums']["activity_kind"] | null,"occurred_at": string | null,"summary": string | null,"user_id": string | null
@@ -404,7 +514,7 @@ isOneToOne: false
                   ]
                 },"job_applications_overview": {
                   Row: {
-                    "actual_start_date": string | null,"applied_on": string | null,"contact_id": string | null,"contact_name": string | null,"created_at": string | null,"desired_start": string | null,"duration": string | null,"end_client_id": string | null,"end_client_name": string | null,"end_client_parent_name": string | null,"has_job_spec": boolean | null,"id": string | null,"intermediary_id": string | null,"intermediary_kind": Database["public"]['Enums']["intermediary_kind"] | null,"intermediary_name": string | null,"last_activity_at": string | null,"location": string | null,"notes": string | null,"posted_daily_rate": number | null,"posting_raw_text": string | null,"posting_url": string | null,"remote_policy": string | null,"requested_daily_rate": number | null,"source": string | null,"stack": Json | null,"status": Database["public"]['Enums']["job_application_status"] | null,"title": string | null,"updated_at": string | null,"user_id": string | null
+                    "actual_start_date": string | null,"applied_on": string | null,"contact_id": string | null,"contact_name": string | null,"created_at": string | null,"desired_start": string | null,"duration": string | null,"end_client_id": string | null,"end_client_name": string | null,"end_client_parent_name": string | null,"has_job_spec": boolean | null,"id": string | null,"intermediary_id": string | null,"intermediary_kind": Database["public"]['Enums']["intermediary_kind"] | null,"intermediary_name": string | null,"last_activity_at": string | null,"location": string | null,"notes": string | null,"posted_daily_rate": number | null,"posting_raw_text": string | null,"posting_url": string | null,"remote_policy": string | null,"requested_daily_rate": number | null,"sent_cv_label": string | null,"sent_cv_uploaded_at": string | null,"sent_cv_version_id": string | null,"source": string | null,"stack": Json | null,"status": Database["public"]['Enums']["job_application_status"] | null,"title": string | null,"updated_at": string | null,"user_id": string | null
                   }
                   ComputedFields: never
                   Relationships: [
@@ -438,6 +548,18 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "intermediaries_overview"
       referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "job_applications_user_id_sent_cv_version_id_fkey"
+      columns: ["user_id","sent_cv_version_id"]
+isOneToOne: false
+      referencedRelation: "cv_versions"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "job_applications_user_id_sent_cv_version_id_fkey"
+      columns: ["user_id","sent_cv_version_id"]
+isOneToOne: false
+      referencedRelation: "cv_versions_overview"
+      referencedColumns: ["user_id","id"]
     }
                   ]
                 }
@@ -448,6 +570,9 @@ isOneToOne: false
                            },
 "delete_contact":
 { Args: { "target_contact_id": string }; Returns: boolean
+                           },
+"delete_unreferenced_cv_versions":
+{ Args: { "candidate_version_ids": (string)[] }; Returns: string[]
                            }
           }
           Enums: {

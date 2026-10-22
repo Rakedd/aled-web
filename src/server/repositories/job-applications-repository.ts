@@ -25,7 +25,10 @@ import { toRepositoryError } from './repository-error'
 
 type JobApplicationOverviewRow = Tables<'job_applications_overview'>
 
-type JobApplicationListItemRow = Omit<JobApplicationOverviewRow, 'posting_raw_text'>
+type JobApplicationListItemRow = Omit<
+  JobApplicationOverviewRow,
+  'posting_raw_text' | 'sent_cv_version_id' | 'sent_cv_label' | 'sent_cv_uploaded_at'
+>
 
 type JobApplicationColumns = Omit<
   TablesUpdate<'job_applications'>,
