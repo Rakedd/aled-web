@@ -9,7 +9,7 @@ import { extractedStackItemSchema, toStackItems } from './extracted-stack-item-s
 import { readStructuredOutputText } from './read-structured-output-text'
 
 const CALL_NOTE_EXTRACTION_MAX_OUTPUT_TOKENS = 4_000
-const CALL_NOTE_EXTRACTION_TIMEOUT_IN_MILLISECONDS = 25_000
+const CALL_NOTE_EXTRACTION_TIMEOUT_IN_MILLISECONDS = 20_000
 const CALL_NOTE_EXTRACTION_MAX_RETRIES = 1
 
 const CALL_NOTE_EXTRACTION_SYSTEM_PROMPT = `You extract structured data from a short note a French freelancer wrote or dictated right after a phone call with a recruiter, an agency, an IT services company (ESN) or a client. The note is in French, informal, often without punctuation, and may contain dictation mistakes.
@@ -39,7 +39,7 @@ const extractedCallNoteSchema = z.object({
   desiredStart: z.string().nullable().describe('Desired start date or delay'),
   duration: z.string().nullable().describe('Mission duration'),
   stack: z.array(extractedStackItemSchema),
-  outcome: z.enum(CALL_OUTCOMES).catch('discussed').describe('Outcome of the call'),
+  outcome: z.enum(CALL_OUTCOMES).describe('Outcome of the call').catch('discussed'),
   cvLabel: z.string().nullable().describe('CV the user mentions, as written'),
 })
 

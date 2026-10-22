@@ -45,7 +45,7 @@ describe('extractCallNote', () => {
     })
   })
 
-  it('asks claude haiku for a low effort structured output within 25 seconds and one retry', async () => {
+  it('asks claude haiku for a low effort structured output within 20 seconds and one retry', async () => {
     const client = createFakeAnthropicClientReturning(emptyCallNoteExtraction)
     await extractCallNote(client, 'Jean-Marc a appelé')
     const [requestParameters, requestOptions] = readCreateCall(client)
@@ -53,7 +53,15 @@ describe('extractCallNote', () => {
     expect(requestParameters.max_tokens).toBe(4_000)
     expect(requestParameters.output_config?.effort).toBe('low')
     expect(requestParameters.output_config?.format?.type).toBe('json_schema')
-    expect(requestOptions).toEqual(expect.objectContaining({ maxRetries: 1, timeout: 25_000 }))
+    expect(requestOptions).toEqual(expect.objectContaining({ maxRetries: 1, timeout: 20_000 }))
+  })
+
+  it('keeps the outcome description in the output schema', async () => {
+    const client = createFakeAnthropicClientReturning(emptyCallNoteExtraction)
+    await extractCallNote(client, 'Jean-Marc a appelé')
+    const [requestParameters] = readCreateCall(client)
+    const outputSchema = requestParameters.output_config?.format?.schema as { properties: Record<string, { description?: string }> }
+    expect(outputSchema.properties.outcome.description).toContain('Outcome of the call')
   })
 
   it('puts the call note inside call_note tags and declares it as data in the system prompt', async () => {
