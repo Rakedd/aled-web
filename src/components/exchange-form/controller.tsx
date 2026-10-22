@@ -4,14 +4,14 @@ import { USER_LOGGABLE_ACTIVITY_KINDS } from '@/domain/activity-log'
 import { validateContactExchangeInput } from '@/domain/contacts'
 import { formatParisLocalDateTime, parisLocalDateTimeToUtc } from '@/domain/paris-time'
 import type { ActivityKind } from '@/domain/types'
-import type { ExchangesSectionControllerParameters } from './interfaces'
+import type { ExchangeFormControllerParameters } from './interfaces'
 
 export const useController = ({
   contactId,
   addContactExchange,
   now,
   onDataChanged,
-}: ExchangesSectionControllerParameters) => {
+}: ExchangeFormControllerParameters) => {
   const [kind, setKind] = useState<ActivityKind>('call')
   const [summary, setSummary] = useState('')
   const [jobApplicationId, setJobApplicationId] = useState('')
@@ -27,6 +27,7 @@ export const useController = ({
   }
 
   const resetForm = () => {
+    setKind('call')
     setSummary('')
     setJobApplicationId('')
     setOccurredAtLocalDateTimeValue(formatParisLocalDateTime(new Date()))

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ACTIVITY_KIND_LABELS } from '@/domain/activity-log'
 import { formatParisDateTime } from '@/domain/paris-time'
 import { jobApplicationRoute } from '@/domain/routes'
-import { ExchangeForm } from './exchange-form'
+import { ExchangeForm } from '@/components/exchange-form'
 import type { ExchangesSectionProps } from './interfaces'
 
 export const ExchangesSection = ({ exchanges, showsContactName, exchangeForm }: ExchangesSectionProps) => (

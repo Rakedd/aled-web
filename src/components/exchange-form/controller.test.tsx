@@ -15,7 +15,7 @@ const renderExchangeController = (addResult: ActionResult<null> = { ok: true, da
   return { ...renderedHook, addContactExchange, onDataChanged }
 }
 
-describe('exchanges-section useController', () => {
+describe('exchange-form useController', () => {
   it('defaults to a call happening now', async () => {
     const { result, addContactExchange, onDataChanged } = renderExchangeController()
     expect(result.current.kind).toBe('call')
@@ -29,6 +29,14 @@ describe('exchanges-section useController', () => {
     })
     expect(onDataChanged).toHaveBeenCalledTimes(1)
     expect(result.current.summary).toBe('')
+  })
+
+  it('resets the kind to call after a successful add', async () => {
+    const { result } = renderExchangeController()
+    act(() => result.current.setKind('email'))
+    act(() => result.current.setSummary('Café'))
+    await act(() => result.current.addExchange())
+    expect(result.current.kind).toBe('call')
   })
 
   it('requires a summary', async () => {
