@@ -5,11 +5,12 @@ import {
   type RecordCallResult,
   CALL_LOG_MESSAGES,
 } from '@/domain/call-log'
+import { CONTACT_EXCHANGE_JOB_APPLICATION_MISMATCH_MESSAGE } from '@/domain/contacts'
 import { insertContact } from '@/server/repositories/contacts-repository'
 import { findCvRow, setSentCvVersion } from '@/server/repositories/cvs-repository'
 import { applyContactDetails } from '@/server/repositories/entities-repository'
 import { recordContactExchange } from '@/server/repositories/exchanges-repository'
-import { insertJobApplication } from '@/server/repositories/job-applications-repository'
+import { findJobApplicationOverview, insertJobApplication } from '@/server/repositories/job-applications-repository'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 
 export type RecordCallOutcome = { ok: true; data: RecordCallResult } | { ok: false; error: CallApiError }
@@ -41,6 +42,17 @@ const attachSentCv = async (
   }
 }
 
+const belongsToExistingContact = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  input: RecordCallInput,
+  existingJobApplicationId: string,
+): Promise<boolean> => {
+  if (input.contact.kind !== 'existing') return false
+  const jobApplicationLookup = await findJobApplicationOverview(supabase, userId, existingJobApplicationId)
+  return jobApplicationLookup.ok && jobApplicationLookup.data.contactId === input.contact.contactId
+}
+
 export const recordCall = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
@@ -49,6 +61,12 @@ export const recordCall = async (
   const createdIds: CreatedIds = { createdContactId: null, createdJobApplicationId: null }
   let step: RecordCallStep = 'contact'
   try {
+    if (
+      input.existingJobApplicationId !== null &&
+      !(await belongsToExistingContact(supabase, userId, input, input.existingJobApplicationId))
+    ) {
+      return toFailure('rejected', CONTACT_EXCHANGE_JOB_APPLICATION_MISMATCH_MESSAGE, createdIds)
+    }
     let contactId: string
     let contactFullName: string
     if (input.contact.kind === 'existing') {

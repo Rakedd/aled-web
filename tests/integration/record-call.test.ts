@@ -243,21 +243,61 @@ describe('recordCall', () => {
   it('refuses an existing job application of another user and writes nothing', async () => {
     const user = await createTestUser()
     const otherUser = await createTestUser()
-    const contactId = await insertContactOrFail(user)
+    const contactId = await insertContactOrFail(user, { phone: '0611111111' })
     const foreignJobApplicationId = await createJobApplicationOrFail(otherUser.client, otherUser.userId)
 
     const outcome = await recordCall(
       user.client,
       user.userId,
-      buildInput({ contact: { kind: 'existing', contactId }, existingJobApplicationId: foreignJobApplicationId }),
+      buildInput({
+        contact: { kind: 'existing', contactId },
+        contactDetails: { phone: '0622222222', email: 'helene@agence.fr', linkedinUrl: null },
+        userEditedContactFields: ['phone'],
+        existingJobApplicationId: foreignJobApplicationId,
+      }),
     )
 
     expect(outcome).toMatchObject({
       ok: false,
       error: { kind: 'rejected', message: CONTACT_EXCHANGE_JOB_APPLICATION_MISMATCH_MESSAGE },
     })
+    await expect(findContactProfile(user.client, user.userId, contactId)).resolves.toMatchObject({
+      ok: true,
+      data: { phone: '0611111111', email: null },
+    })
     await expect(listExchangesForContact(user.client, user.userId, contactId)).resolves.toHaveLength(0)
     await expect(listJobApplicationItems(otherUser.client, otherUser.userId)).resolves.toHaveLength(1)
+  })
+
+  it('refuses an existing job application of another contact without touching the contact', async () => {
+    const user = await createTestUser()
+    const contactId = await insertContactOrFail(user, { phone: '0611111111' })
+    const otherContactName = 'Paul Durand'
+    await insertContactOrFail(user, { fullName: otherContactName })
+    const otherContactJobApplicationId = await createJobApplicationOrFail(user.client, user.userId, {
+      contactName: otherContactName,
+    })
+
+    const outcome = await recordCall(
+      user.client,
+      user.userId,
+      buildInput({
+        contact: { kind: 'existing', contactId },
+        contactDetails: { phone: '0622222222', email: 'helene@agence.fr', linkedinUrl: null },
+        userEditedContactFields: ['phone'],
+        existingJobApplicationId: otherContactJobApplicationId,
+      }),
+    )
+
+    expect(outcome).toMatchObject({
+      ok: false,
+      error: { kind: 'rejected', message: CONTACT_EXCHANGE_JOB_APPLICATION_MISMATCH_MESSAGE },
+    })
+    await expect(findContactProfile(user.client, user.userId, contactId)).resolves.toMatchObject({
+      ok: true,
+      data: { phone: '0611111111', email: null },
+    })
+    await expect(listExchangesForContact(user.client, user.userId, contactId)).resolves.toHaveLength(0)
   })
 
   it('reuses the created contact and job application on retry without duplicates', async () => {

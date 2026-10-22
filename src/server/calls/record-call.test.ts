@@ -6,15 +6,18 @@ import { applyContactDetails } from '@/server/repositories/entities-repository'
 import { recordContactExchange } from '@/server/repositories/exchanges-repository'
 import { findCvRow, setSentCvVersion } from '@/server/repositories/cvs-repository'
 import { insertContact } from '@/server/repositories/contacts-repository'
-import { insertJobApplication } from '@/server/repositories/job-applications-repository'
-import type { JobApplicationInput } from '@/domain/job-application'
+import { findJobApplicationOverview, insertJobApplication } from '@/server/repositories/job-applications-repository'
+import type { JobApplicationInput, JobApplicationOverview } from '@/domain/job-application'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 import { recordCall } from './record-call'
 
 jest.mock('server-only', () => ({}))
 jest.mock('@/server/repositories/entities-repository', () => ({ applyContactDetails: jest.fn() }))
 jest.mock('@/server/repositories/contacts-repository', () => ({ insertContact: jest.fn() }))
-jest.mock('@/server/repositories/job-applications-repository', () => ({ insertJobApplication: jest.fn() }))
+jest.mock('@/server/repositories/job-applications-repository', () => ({
+  insertJobApplication: jest.fn(),
+  findJobApplicationOverview: jest.fn(),
+}))
 jest.mock('@/server/repositories/exchanges-repository', () => ({ recordContactExchange: jest.fn() }))
 jest.mock('@/server/repositories/cvs-repository', () => ({ findCvRow: jest.fn(), setSentCvVersion: jest.fn() }))
 
@@ -101,6 +104,10 @@ describe('recordCall', () => {
   })
 
   it('creates no job application when an existing one is given', async () => {
+    jest.mocked(findJobApplicationOverview).mockResolvedValue({
+      ok: true,
+      data: { contactId: 'contact-9' } as JobApplicationOverview,
+    })
     jest.mocked(applyContactDetails).mockResolvedValue({
       ok: true,
       data: { id: 'contact-9', fullName: 'Jean-Marc Dupont', ...emptyContactDetails },
