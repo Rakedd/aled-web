@@ -27,6 +27,7 @@ export const INITIAL_INTERMEDIARIES_SORT: ListSort<IntermediariesSortKey> = {
 const MINIMUM_PHONE_SEARCH_DIGIT_COUNT = 3
 const NON_DIGIT_PATTERN = /\D/g
 const INTERNATIONAL_FRENCH_PREFIX_PATTERN = /^(?:0033|33)/
+const INTERNATIONAL_QUERY_PATTERN = /^\s*(?:\+|00)/
 
 export const toggleListSort = <SortKey extends string>(
   currentSort: ListSort<SortKey>,
@@ -46,9 +47,12 @@ const matchesNormalizedText = (text: string | null, normalizedQuery: string): bo
   text !== null && normalizeEntityName(text).includes(normalizedQuery)
 
 const matchesPhoneNumber = (phoneNumber: string | null, query: string): boolean => {
-  const hasEnoughDigits = query.replace(NON_DIGIT_PATTERN, '').length >= MINIMUM_PHONE_SEARCH_DIGIT_COUNT
-  if (phoneNumber === null || !hasEnoughDigits) return false
-  return normalizePhoneNumberForSearch(phoneNumber).includes(normalizePhoneNumberForSearch(query))
+  const queryDigits = query.replace(NON_DIGIT_PATTERN, '')
+  if (phoneNumber === null || queryDigits.length < MINIMUM_PHONE_SEARCH_DIGIT_COUNT) return false
+  const comparableQueryDigits = INTERNATIONAL_QUERY_PATTERN.test(query)
+    ? normalizePhoneNumberForSearch(query)
+    : queryDigits
+  return normalizePhoneNumberForSearch(phoneNumber).includes(comparableQueryDigits)
 }
 
 export const filterContacts = (contacts: ContactListItem[], query: string): ContactListItem[] => {

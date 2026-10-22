@@ -78,6 +78,21 @@ describe('filterContacts', () => {
     expect(filterContacts(storedLocally, '+33 6 12 34').map((contact) => contact.id)).toEqual(['a'])
   })
 
+  it('finds a fragment starting with 33 inside a stored local number', () => {
+    const storedLocally = [buildContact({ id: 'a', phone: '06 12 33 45 67' })]
+    expect(filterContacts(storedLocally, '3345').map((contact) => contact.id)).toEqual(['a'])
+  })
+
+  it('does not rewrite a bare 336 fragment into a 06 prefix', () => {
+    const storedLocally = [buildContact({ id: 'a', phone: '06 12 34 56 78' })]
+    expect(filterContacts(storedLocally, '336')).toEqual([])
+  })
+
+  it('finds a contact stored as 06 when searching with a 0033 number', () => {
+    const storedLocally = [buildContact({ id: 'a', phone: '06 12 34 56 78' })]
+    expect(filterContacts(storedLocally, '0033 6 12').map((contact) => contact.id)).toEqual(['a'])
+  })
+
   it('finds a contact by name', () => {
     expect(filterContacts(contacts, 'DURAND').map((contact) => contact.id)).toEqual(['b'])
   })
