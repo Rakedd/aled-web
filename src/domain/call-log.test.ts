@@ -67,7 +67,7 @@ describe('looksLikePhoneNumber', () => {
     },
   )
 
-  it.each(['', 'Rappeler Jean-Marc au 06 12 34 56 78', 'https://www.hays.fr', '1234', '0'.repeat(60)])(
+  it.each(['', 'Rappeler Jean-Marc au 06 12 34 56 78', 'https://www.hays.fr', '1234', '0'.repeat(60), '((((', '-----', '+ ( ) .'])(
     'does not take %p for a phone number',
     (text) => {
       expect(looksLikePhoneNumber(text)).toBe(false)
@@ -78,6 +78,7 @@ describe('looksLikePhoneNumber', () => {
 describe('toCallDraftAiErrorMessage', () => {
   it('words the AI errors for the call screen', () => {
     expect(toCallDraftAiErrorMessage('missing_api_key')).toBe(CALL_LOG_MESSAGES.missingApiKey)
+    expect(toCallDraftAiErrorMessage('invalid_api_key')).toBe(CALL_LOG_MESSAGES.invalidApiKey)
     expect(toCallDraftAiErrorMessage('unknown')).toBe(CALL_LOG_MESSAGES.aiFailed)
     expect(toCallDraftAiErrorMessage('rate_limited')).toBe(AI_ERROR_MESSAGES.rate_limited)
   })

@@ -53,6 +53,7 @@ export const CALL_JOB_APPLICATION_STATUSES: readonly JobApplicationStatus[] = [
 
 export const CALL_LOG_MESSAGES = {
   missingApiKey: "Ajoute ta clé Claude dans les préférences de l'app web pour utiliser l'IA. Tu peux aussi noter l'appel sans IA.",
+  invalidApiKey: "Ta clé Claude est refusée. Remplace-la dans les préférences de l'app web, ou note l'appel sans IA.",
   aiFailed: "L'IA n'a pas pu analyser l'appel. Ton texte est gardé : réessaie ou note-le sans IA.",
   draftFailed: "Impossible de préparer l'appel pour le moment. Ton texte est gardé : réessaie ou note-le sans IA.",
   saveFailed: "Impossible d'enregistrer l'appel pour le moment. Ce que tu as saisi est gardé : réessaie.",
@@ -173,6 +174,7 @@ export const toCallApiError = (kind: CallApiErrorKind, message: string): CallApi
 
 export const toCallDraftAiErrorMessage = (aiErrorKind: AiErrorKind): string => {
   if (aiErrorKind === 'missing_api_key') return CALL_LOG_MESSAGES.missingApiKey
+  if (aiErrorKind === 'invalid_api_key') return CALL_LOG_MESSAGES.invalidApiKey
   if (aiErrorKind === 'refused' || aiErrorKind === 'unknown' || aiErrorKind === 'input_too_long') {
     return CALL_LOG_MESSAGES.aiFailed
   }
