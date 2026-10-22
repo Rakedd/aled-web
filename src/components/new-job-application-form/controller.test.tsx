@@ -364,4 +364,21 @@ describe('new-job-application-form useController', () => {
       null,
     )
   })
+
+  it('sends the chosen cv id with the job application', async () => {
+    const { result, createJobApplication } = renderNewJobApplicationFormController()
+    act(() => result.current.setTextFormValue('title', 'Mission'))
+    act(() => result.current.setSentCvId('cv-1'))
+    await act(() => result.current.submit())
+    expect(createJobApplication).toHaveBeenCalledWith(expect.objectContaining({ title: 'Mission' }), 'cv-1')
+  })
+
+  it('sends null when Aucun is kept', async () => {
+    const { result, createJobApplication } = renderNewJobApplicationFormController()
+    act(() => result.current.setTextFormValue('title', 'Mission'))
+    act(() => result.current.setSentCvId('cv-1'))
+    act(() => result.current.setSentCvId(''))
+    await act(() => result.current.submit())
+    expect(createJobApplication).toHaveBeenCalledWith(expect.objectContaining({ title: 'Mission' }), null)
+  })
 })

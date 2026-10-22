@@ -1,10 +1,18 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NewJobApplicationForm } from './new-job-application-form'
 
 jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }) }))
 
-const renderNewJobApplicationForm = ({ hasAnthropicApiKey = true }: { hasAnthropicApiKey?: boolean } = {}) => {
+const CV_OPTIONS = [
+  { id: 'cv-1', label: 'CV Front' },
+  { id: 'cv-2', label: 'CV Full-stack' },
+]
+
+const renderNewJobApplicationForm = ({
+  hasAnthropicApiKey = true,
+  cvOptions = CV_OPTIONS,
+}: { hasAnthropicApiKey?: boolean; cvOptions?: { id: string; label: string }[] } = {}) => {
   const extractJobPosting = jest.fn().mockResolvedValue({
     ok: true,
     data: {
@@ -30,6 +38,7 @@ const renderNewJobApplicationForm = ({ hasAnthropicApiKey = true }: { hasAnthrop
       createJobApplication={createJobApplication}
       searchEntities={searchEntities}
       hasAnthropicApiKey={hasAnthropicApiKey}
+      cvOptions={cvOptions}
     />,
   )
   return { extractJobPosting, createJobApplication }
@@ -113,5 +122,25 @@ describe('NewJobApplicationForm', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Créer la candidature' }))
     expect(screen.getByRole('alert')).toHaveTextContent('TJM invalide')
     expect(createJobApplication).not.toHaveBeenCalled()
+  })
+
+  it('offers Aucun then the library cvs in the CV envoyé field', async () => {
+    renderNewJobApplicationForm()
+    await userEvent.click(screen.getByRole('button', { name: 'Saisie manuelle' }))
+
+    const cvSelect = screen.getByLabelText('CV envoyé')
+    expect(within(cvSelect).getAllByRole('option').map((option) => option.textContent)).toEqual([
+      'Aucun',
+      'CV Front',
+      'CV Full-stack',
+    ])
+    expect(cvSelect).toHaveValue('')
+  })
+
+  it('hides the CV envoyé field when the library is empty', async () => {
+    renderNewJobApplicationForm({ cvOptions: [] })
+    await userEvent.click(screen.getByRole('button', { name: 'Saisie manuelle' }))
+
+    expect(screen.queryByLabelText('CV envoyé')).not.toBeInTheDocument()
   })
 })

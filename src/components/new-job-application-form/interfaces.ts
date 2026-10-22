@@ -3,6 +3,7 @@ import type { JobApplicationInput } from '@/domain/job-application'
 import type { JobApplicationStatus } from '@/domain/job-application-status'
 import type { JobPostingExtraction } from '@/domain/job-posting-extraction'
 import type { StackItem } from '@/domain/types'
+import type { CvOption } from '@/domain/cv-library'
 import type { SearchEntities } from '@/components/entity-autocomplete/interfaces'
 
 export type ExtractJobPosting = (rawText: string) => Promise<ActionResult<JobPostingExtraction>>
@@ -30,10 +31,11 @@ export type JobApplicationFormValues = {
   desiredStart: string
   duration: string
   appliedOn: string
+  sentCvId: string
   stack: StackItem[]
 }
 
-export type TextFormValueName = Exclude<keyof JobApplicationFormValues, 'stack' | 'status'>
+export type TextFormValueName = Exclude<keyof JobApplicationFormValues, 'stack' | 'status' | 'sentCvId'>
 
 export type NewJobApplicationFormControllerParameters = {
   extractJobPosting: ExtractJobPosting
@@ -44,4 +46,5 @@ export type NewJobApplicationFormControllerParameters = {
 
 export type NewJobApplicationFormProps = Omit<NewJobApplicationFormControllerParameters, 'navigateTo'> & {
   searchEntities: SearchEntities
+  cvOptions: CvOption[]
 }

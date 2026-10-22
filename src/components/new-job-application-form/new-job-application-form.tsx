@@ -29,6 +29,7 @@ export const NewJobApplicationForm = ({
   createJobApplication,
   searchEntities,
   hasAnthropicApiKey,
+  cvOptions,
 }: NewJobApplicationFormProps) => {
   const router = useRouter()
   const {
@@ -46,6 +47,7 @@ export const NewJobApplicationForm = ({
     setTextFormValue,
     selectContactSuggestion,
     setStatus,
+    setSentCvId,
     setStack,
     submit,
   } = useController({
@@ -209,6 +211,23 @@ export const NewJobApplicationForm = ({
               ))}
             </select>
           </FormField>
+          {cvOptions.length > 0 && (
+            <FormField htmlFor="new-job-application-sentCvId" label="CV envoyé">
+              <select
+                id="new-job-application-sentCvId"
+                className={NATIVE_SELECT_CLASS_NAME}
+                value={formValues.sentCvId}
+                onChange={(changeEvent) => setSentCvId(changeEvent.target.value)}
+              >
+                <option value="">Aucun</option>
+                {cvOptions.map((cvOption) => (
+                  <option key={cvOption.id} value={cvOption.id}>
+                    {cvOption.label}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+          )}
           {renderTextInput('appliedOn', 'Date de candidature', { type: 'date' })}
         </fieldset>
         <fieldset className="grid gap-4 sm:grid-cols-2">

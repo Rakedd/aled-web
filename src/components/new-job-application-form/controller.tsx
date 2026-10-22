@@ -38,6 +38,7 @@ const createEmptyFormValues = (): JobApplicationFormValues => ({
   desiredStart: '',
   duration: '',
   appliedOn: formatParisCalendarDate(new Date()),
+  sentCvId: '',
   stack: [],
 })
 
@@ -199,11 +200,13 @@ export const useController = ({
   const setStatus = (status: JobApplicationStatus) =>
     setFormValues((currentFormValues) => ({ ...currentFormValues, status }))
 
+  const setSentCvId = (sentCvId: string) => setFormValues((currentFormValues) => ({ ...currentFormValues, sentCvId }))
+
   const setStack = (stack: StackItem[]) => setFormValues((currentFormValues) => ({ ...currentFormValues, stack }))
 
-  const createFromValidatedInput = async (validatedInput: JobApplicationInput) => {
+  const createFromValidatedInput = async (validatedInput: JobApplicationInput, sentCvId: string) => {
     try {
-      return await createJobApplication(validatedInput, null)
+      return await createJobApplication(validatedInput, toNullableText(sentCvId))
     } catch {
       return { ok: false, errorMessage: GENERIC_ACTION_ERROR_MESSAGE } as const
     }
@@ -219,7 +222,7 @@ export const useController = ({
     }
     isSubmissionInFlightRef.current = true
     setIsSubmitting(true)
-    const creationResult = await createFromValidatedInput(validationResult.data)
+    const creationResult = await createFromValidatedInput(validationResult.data, formValues.sentCvId)
     if (!creationResult.ok) {
       setErrorMessage(creationResult.errorMessage)
       setIsSubmitting(false)
@@ -245,6 +248,7 @@ export const useController = ({
     selectContactSuggestion,
     userEditedContactFields,
     setStatus,
+    setSentCvId,
     setStack,
     submit,
   }
