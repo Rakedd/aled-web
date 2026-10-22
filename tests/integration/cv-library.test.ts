@@ -228,6 +228,26 @@ describe('cvs repository', () => {
     expect((await readVersionRowOrFail(sentVersionId)).label).toBe('Principal')
   })
 
+  it('removes the uploaded file when the version row cannot be inserted', async () => {
+    const user = await createTestUser()
+    const listUserFolder = async () => {
+      const { data, error } = await createServiceRoleTestClient().storage.from(CVS_BUCKET).list(user.userId)
+      if (error) throw error
+      return data.map((storedFile) => storedFile.name)
+    }
+    const fileNamesBefore = await listUserFolder()
+
+    await expect(storeVersionOrFail(user, 'Orpheline', 'contenu', randomUUID())).rejects.toThrow()
+
+    expect(await listUserFolder()).toEqual(fileNamesBefore)
+    const { count, error } = await createServiceRoleTestClient()
+      .from('cv_versions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.userId)
+    if (error) throw error
+    expect(count).toBe(0)
+  })
+
   it('maps the database limit to the full library message', async () => {
     const user = await createTestUser()
     for (let index = 0; index < MAXIMUM_CV_COUNT; index += 1) await addCvOrFail(user, `CV ${index}`)

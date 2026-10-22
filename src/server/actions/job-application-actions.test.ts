@@ -327,14 +327,14 @@ describe('deleteJobApplication', () => {
 
   it('releases the sent cv version after the application row is deleted', async () => {
     jest.mocked(findSentCvVersionId).mockResolvedValue('version-1')
-    jest.mocked(releaseCvVersions).mockImplementation(async () => {
-      expect(deleteJobApplicationRow).toHaveBeenCalled()
-    })
 
     await expect(deleteJobApplication(jobApplicationId)).resolves.toEqual(succeeded)
 
     expect(findSentCvVersionId).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', jobApplicationId)
     expect(releaseCvVersions).toHaveBeenCalledWith(fakeSupabaseClient, ['version-1'])
+    expect(jest.mocked(deleteJobApplicationRow).mock.invocationCallOrder[0]).toBeLessThan(
+      jest.mocked(releaseCvVersions).mock.invocationCallOrder[0] as number,
+    )
   })
 
   it('still succeeds and logs when the cv version release throws', async () => {
