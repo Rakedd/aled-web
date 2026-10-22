@@ -177,6 +177,20 @@ describe('new-job-application-form useController', () => {
     })
   })
 
+  it('forgets edited contact fields when the form is prefilled again by the AI', async () => {
+    const { result, extractJobPosting } = renderNewJobApplicationFormController({
+      extractionResult: { ok: false, errorMessage: 'Claude est saturé, réessaie dans une minute.' },
+    })
+    act(() => result.current.setPastedText('Annonce React'))
+    await act(() => result.current.extract())
+    act(() => result.current.setTextFormValue('contactPhone', '0699999999'))
+    expect(result.current.userEditedContactFields).toEqual(['phone'])
+    extractJobPosting.mockResolvedValue({ ok: true, data: EXTRACTION })
+    await act(() => result.current.extract())
+    expect(result.current.formValues.contactPhone).toBe('0102030405')
+    expect(result.current.userEditedContactFields).toEqual([])
+  })
+
   it('applies the same guards when retrying with a blank posting text', async () => {
     const { result, extractJobPosting } = renderNewJobApplicationFormController({
       extractionResult: { ok: false, errorMessage: 'Claude est saturé, réessaie dans une minute.' },

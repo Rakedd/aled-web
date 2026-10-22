@@ -120,6 +120,8 @@ export const useController = ({
 
   const showForm = (initialFormValues: JobApplicationFormValues, initialErrorMessage: string | null) => {
     setFormValues(initialFormValues)
+    setUserEditedContactFields([])
+    setIsContactPrefilledFromSuggestion(false)
     setErrorMessage(initialErrorMessage)
     setStep('form')
   }
