@@ -76,28 +76,21 @@ export const resolveIntermediaryId = async (
   return findEntityIdByNormalizedName(supabase, userId, 'intermediaries', normalizedName)
 }
 
-const resolveContactId = async (
+export const applyContactDetails = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
-  contactName: string,
+  contactId: string,
   submittedContactDetails: ContactDetailValues,
   userEditedFields: readonly ContactDetailFieldName[],
-): Promise<string> => {
-  const normalizedName = normalizeEntityName(contactName)
-  const { error } = await supabase
-    .from('contacts')
-    .upsert(
-      { user_id: userId, full_name: contactName, normalized_name: normalizedName },
-      { onConflict: NAME_UNIQUENESS_CONFLICT_TARGET, ignoreDuplicates: true },
-    )
-  if (error) throw toRepositoryError('resolveContactId', error)
+): Promise<ActionResult<ContactDetails>> => {
   const { data: currentContact, error: readError } = await supabase
     .from('contacts')
-    .select('id, phone, email, linkedin_url')
+    .select('id, full_name, phone, email, linkedin_url')
+    .eq('id', contactId)
     .eq('user_id', userId)
-    .eq('normalized_name', normalizedName)
-    .single()
-  if (readError) throw toRepositoryError('resolveContactId read', readError)
+    .maybeSingle()
+  if (readError) throw toRepositoryError('applyContactDetails read', readError)
+  if (currentContact === null) return { ok: false, errorMessage: ENTITY_NOT_FOUND_MESSAGES.contact }
   const mergedContactDetails = mergeContactDetailValues(
     { phone: currentContact.phone, email: currentContact.email, linkedinUrl: currentContact.linkedin_url },
     submittedContactDetails,
@@ -115,9 +108,39 @@ const resolveContactId = async (
       .update(contactColumnsToWrite)
       .eq('id', currentContact.id)
       .eq('user_id', userId)
-    if (updateError) throw toRepositoryError('resolveContactId update', updateError)
+    if (updateError) throw toRepositoryError('applyContactDetails update', updateError)
   }
-  return currentContact.id
+  return {
+    ok: true,
+    data: {
+      id: currentContact.id,
+      fullName: currentContact.full_name,
+      phone: mergedContactDetails.phone ?? currentContact.phone,
+      email: mergedContactDetails.email ?? currentContact.email,
+      linkedinUrl: mergedContactDetails.linkedinUrl ?? currentContact.linkedin_url,
+    },
+  }
+}
+
+const resolveContactId = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  contactName: string,
+  submittedContactDetails: ContactDetailValues,
+  userEditedFields: readonly ContactDetailFieldName[],
+): Promise<string> => {
+  const normalizedName = normalizeEntityName(contactName)
+  const { error } = await supabase
+    .from('contacts')
+    .upsert(
+      { user_id: userId, full_name: contactName, normalized_name: normalizedName },
+      { onConflict: NAME_UNIQUENESS_CONFLICT_TARGET, ignoreDuplicates: true },
+    )
+  if (error) throw toRepositoryError('resolveContactId', error)
+  const contactId = await findEntityIdByNormalizedName(supabase, userId, 'contacts', normalizedName)
+  const applyResult = await applyContactDetails(supabase, userId, contactId, submittedContactDetails, userEditedFields)
+  if (!applyResult.ok) throw new Error('Contact vanished during resolution')
+  return contactId
 }
 
 export const assignContactIntermediaryIfMissing = async (

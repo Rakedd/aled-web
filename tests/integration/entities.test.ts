@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import {
+  applyContactDetails,
   assignEndClientParent,
   findContactDetails,
   saveContactDetails,
@@ -324,5 +325,86 @@ describe('entities repository', () => {
     })
     const { data: ownerIntermediaryAfterAttempt } = await owner.client.from('intermediaries').select('kind').single()
     expect(ownerIntermediaryAfterAttempt).toEqual({ kind: null })
+  })
+
+  describe('applyContactDetails', () => {
+    const insertContact = async (user: TestUser, fullName: string, phone: string | null): Promise<string> => {
+      const { data, error } = await user.client
+        .from('contacts')
+        .insert({ user_id: user.userId, full_name: fullName, normalized_name: fullName.toLowerCase(), phone })
+        .select('id')
+        .single()
+      if (error) throw new Error(error.message)
+      return data.id
+    }
+
+    it('fills only the empty contact details with values the user did not edit', async () => {
+      const user = await createTestUser()
+      const contactId = await insertContact(user, 'Jean Martin', '06 11 11 11 11')
+
+      await applyContactDetails(
+        user.client,
+        user.userId,
+        contactId,
+        { phone: '06 22 22 22 22', email: 'jm@hays.fr', linkedinUrl: null },
+        [],
+      )
+
+      const { data: storedContact } = await user.client.from('contacts').select('phone, email').eq('id', contactId).single()
+      expect(storedContact).toEqual({ phone: '06 11 11 11 11', email: 'jm@hays.fr' })
+    })
+
+    it('overwrites the contact details the user edited', async () => {
+      const user = await createTestUser()
+      const contactId = await insertContact(user, 'Jean Martin', '06 11 11 11 11')
+
+      await applyContactDetails(
+        user.client,
+        user.userId,
+        contactId,
+        { phone: '06 22 22 22 22', email: null, linkedinUrl: null },
+        ['phone'],
+      )
+
+      const { data: storedContact } = await user.client.from('contacts').select('phone').eq('id', contactId).single()
+      expect(storedContact).toEqual({ phone: '06 22 22 22 22' })
+    })
+
+    it('returns the contact with its merged details', async () => {
+      const user = await createTestUser()
+      const contactId = await insertContact(user, 'Jean Martin', '06 11 11 11 11')
+
+      await expect(
+        applyContactDetails(
+          user.client,
+          user.userId,
+          contactId,
+          { phone: '06 22 22 22 22', email: 'jm@hays.fr', linkedinUrl: null },
+          [],
+        ),
+      ).resolves.toEqual({
+        ok: true,
+        data: { id: contactId, fullName: 'Jean Martin', phone: '06 11 11 11 11', email: 'jm@hays.fr', linkedinUrl: null },
+      })
+    })
+
+    it('returns not found for a contact of another user without writing', async () => {
+      const owner = await createTestUser()
+      const intruder = await createTestUser()
+      const ownerContactId = await insertContact(owner, 'Jean Martin', null)
+
+      await expect(
+        applyContactDetails(
+          intruder.client,
+          intruder.userId,
+          ownerContactId,
+          { phone: '06 22 22 22 22', email: null, linkedinUrl: null },
+          ['phone'],
+        ),
+      ).resolves.toEqual({ ok: false, errorMessage: 'Contact introuvable' })
+
+      const { data: ownerContact } = await owner.client.from('contacts').select('phone').eq('id', ownerContactId).single()
+      expect(ownerContact).toEqual({ phone: null })
+    })
   })
 })
