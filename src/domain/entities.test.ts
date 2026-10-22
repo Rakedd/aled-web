@@ -1,5 +1,6 @@
 import {
   END_CLIENT_PARENT_CYCLE_MESSAGE,
+  validateContactDetailValues,
   validateContactDetailsInput,
   validateEntitySearchArguments,
   validateIntermediaryKind,
@@ -135,5 +136,21 @@ describe('validateEntitySearchArguments', () => {
       ok: false,
       errorMessage: 'Recherche invalide',
     })
+  })
+})
+
+describe('validateContactDetailValues', () => {
+  it('validates contact detail values without a name', () => {
+    expect(
+      validateContactDetailValues({ phone: ' 06 12 34 56 78 ', email: '', linkedinUrl: null, fullName: 'ignored' }),
+    ).toEqual({ ok: true, data: { phone: '06 12 34 56 78', email: null, linkedinUrl: null } })
+  })
+
+  it('applies the phone, e-mail and LinkedIn rules', () => {
+    expect(validateContactDetailValues({ phone: null, email: 'nope', linkedinUrl: null })).toEqual({
+      ok: false,
+      errorMessage: 'E-mail invalide',
+    })
+    expect(validateContactDetailValues('nope')).toEqual({ ok: false, errorMessage: 'Contact invalide' })
   })
 })

@@ -110,17 +110,8 @@ export const validateOptionalEntityName = (
     : rejectWith(formatInvalidEntityNameMessage(textFieldRule))
 }
 
-export const validateContactDetailsInput = (candidate: unknown): ActionResult<ContactDetailsInput> => {
+export const validateContactDetailValues = (candidate: unknown): ActionResult<ContactDetailValues> => {
   if (!isRecord(candidate)) return rejectWith(ENTITY_VALIDATION_MESSAGES.malformedContact)
-  const fullNameValidation = validateRequiredText(
-    candidate.fullName,
-    CONTACT_FULL_NAME_TEXT_FIELD_RULE,
-    ENTITY_VALIDATION_MESSAGES.missingContactName,
-  )
-  if (!fullNameValidation.ok) return fullNameValidation
-  if (!hasNonEmptyNormalizedName(fullNameValidation.data)) {
-    return rejectWith(formatInvalidEntityNameMessage(CONTACT_FULL_NAME_TEXT_FIELD_RULE))
-  }
   const phoneValidation = validateOptionalText(
     candidate.phone,
     { label: 'Téléphone', maximumLength: MAXIMUM_PHONE_LENGTH },
@@ -137,13 +128,24 @@ export const validateContactDetailsInput = (candidate: unknown): ActionResult<Co
   if (!linkedinUrlValidation.ok) return linkedinUrlValidation
   return {
     ok: true,
-    data: {
-      fullName: fullNameValidation.data,
-      phone: phoneValidation.data,
-      email: emailValidation.data,
-      linkedinUrl: linkedinUrlValidation.data,
-    },
+    data: { phone: phoneValidation.data, email: emailValidation.data, linkedinUrl: linkedinUrlValidation.data },
   }
+}
+
+export const validateContactDetailsInput = (candidate: unknown): ActionResult<ContactDetailsInput> => {
+  if (!isRecord(candidate)) return rejectWith(ENTITY_VALIDATION_MESSAGES.malformedContact)
+  const fullNameValidation = validateRequiredText(
+    candidate.fullName,
+    CONTACT_FULL_NAME_TEXT_FIELD_RULE,
+    ENTITY_VALIDATION_MESSAGES.missingContactName,
+  )
+  if (!fullNameValidation.ok) return fullNameValidation
+  if (!hasNonEmptyNormalizedName(fullNameValidation.data)) {
+    return rejectWith(formatInvalidEntityNameMessage(CONTACT_FULL_NAME_TEXT_FIELD_RULE))
+  }
+  const contactDetailValuesValidation = validateContactDetailValues(candidate)
+  if (!contactDetailValuesValidation.ok) return contactDetailValuesValidation
+  return { ok: true, data: { fullName: fullNameValidation.data, ...contactDetailValuesValidation.data } }
 }
 
 export const validateIntermediaryKind = (candidate: unknown): ActionResult<IntermediaryKind> => {
