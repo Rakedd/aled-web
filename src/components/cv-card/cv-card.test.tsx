@@ -30,6 +30,21 @@ describe('CvCard', () => {
     expect(screen.getByText(/Envoyé dans 2 candidatures/)).toBeInTheDocument()
   })
 
+  it('shows the upload date of the current version even when the cv was reviewed later', () => {
+    renderCard(
+      createCv({
+        reviewedAt: new Date('2026-03-18T10:00:00Z'),
+        currentVersion: { id: 'version-current', uploadedAt: new Date('2026-03-02T10:00:00Z'), fileName: 'cv.pdf' },
+      }),
+    )
+    expect(screen.getByText(/Mis à jour le 02\/03\/2026/)).toBeInTheDocument()
+  })
+
+  it('falls back to the review date when there is no current version', () => {
+    renderCard(createCv({ currentVersion: null, reviewedAt: new Date('2026-03-18T10:00:00Z') }))
+    expect(screen.getByText(/Mis à jour le 18\/03\/2026/)).toBeInTheDocument()
+  })
+
   it('shows the À revoir badge only after 90 days', () => {
     const { unmount } = render(
       <CvCard cv={createCv()} now={NOW} replaceCvFile={jest.fn()} renameCv={jest.fn()} deleteCv={jest.fn()} />,
@@ -42,7 +57,7 @@ describe('CvCard', () => {
 
   it('opens the current pdf in a new tab', () => {
     renderCard(createCv())
-    const pdfLink = screen.getByRole('link', { name: 'Ouvrir le PDF' })
+    const pdfLink = screen.getByRole('link', { name: 'Voir' })
     expect(pdfLink).toHaveAttribute('href', '/api/cvs/versions/version-current/pdf')
     expect(pdfLink).toHaveAttribute('target', '_blank')
     expect(pdfLink).toHaveAttribute('rel', 'noopener noreferrer')
@@ -55,10 +70,11 @@ describe('CvCard', () => {
       }),
     )
     const disclosure = screen.getByText('Anciennes versions envoyées').closest('details') as HTMLElement
-    expect(within(disclosure).getByRole('link', { name: 'Version du 05/01/2026' })).toHaveAttribute(
-      'href',
-      '/api/cvs/versions/version-old/pdf',
-    )
+    expect(within(disclosure).getByText('Version du 05/01/2026')).toBeInTheDocument()
+    const previousVersionLink = within(disclosure).getByRole('link', { name: 'Voir' })
+    expect(previousVersionLink).toHaveAttribute('href', '/api/cvs/versions/version-old/pdf')
+    expect(previousVersionLink).toHaveAttribute('target', '_blank')
+    expect(previousVersionLink).toHaveAttribute('rel', 'noopener noreferrer')
     expect(within(disclosure).getByText('Envoyé dans 1 candidature')).toBeInTheDocument()
   })
 

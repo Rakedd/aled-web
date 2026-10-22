@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import {
   buildCvVersionPdfPath,
   CV_PDF_MIME_TYPE,
-  findCvLastChangeDate,
   formatCvSentCount,
   isCvDueForReview,
   MAXIMUM_CV_LABEL_LENGTH,
@@ -69,7 +68,7 @@ export const CvCard = ({ cv, now, replaceCvFile, renameCv, deleteCv }: CvCardPro
         {isCvDueForReview(reviewDates, now) && <Pill tone="peach-soft">À revoir</Pill>}
       </div>
       <p className="text-sm text-muted-foreground">
-        Mis à jour le {formatParisDate(findCvLastChangeDate(reviewDates))} · {formatCvSentCount(cv.sentCount)}
+        Mis à jour le {formatParisDate(cv.currentVersion?.uploadedAt ?? cv.reviewedAt)} · {formatCvSentCount(cv.sentCount)}
       </p>
       {errorMessage && (
         <p role="alert" className="text-sm text-destructive">
@@ -84,7 +83,7 @@ export const CvCard = ({ cv, now, replaceCvFile, renameCv, deleteCv }: CvCardPro
             rel="noopener noreferrer"
             className={buttonVariants({ variant: 'outline', size: 'sm' })}
           >
-            Ouvrir le PDF
+            Voir
           </a>
         )}
         <Button
@@ -126,13 +125,14 @@ export const CvCard = ({ cv, now, replaceCvFile, renameCv, deleteCv }: CvCardPro
           <ul className="mt-2 flex flex-col gap-1">
             {cv.previousSentVersions.map((previousVersion) => (
               <li key={previousVersion.id} className="flex flex-wrap items-center gap-2">
+                <span>Version du {formatParisDate(previousVersion.uploadedAt)}</span>
                 <a
                   href={buildCvVersionPdfPath(previousVersion.id)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline"
                 >
-                  Version du {formatParisDate(previousVersion.uploadedAt)}
+                  Voir
                 </a>
                 <span className="text-muted-foreground">{formatCvSentCount(previousVersion.sentCount)}</span>
               </li>
