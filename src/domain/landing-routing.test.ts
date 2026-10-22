@@ -80,6 +80,8 @@ describe('isAppPathname', () => {
     '/candidatures/42',
     '/calendar',
     '/contacts',
+    '/cv',
+    '/cv/anything',
     '/agences/x',
     '/opportunites',
     '/preferences/opportunites',

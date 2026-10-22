@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import {
   CALENDAR_ROUTE,
   CONTACTS_ROUTE,
+  CV_LIBRARY_ROUTE,
   HOME_ROUTE,
   INTERMEDIARIES_ROUTE,
   JOB_APPLICATIONS_ROUTE,
@@ -33,6 +34,7 @@ const NAVIGATION_ITEMS: AppShellNavigationItem[] = [
     isActiveForPathname: (pathname) =>
       isPathnameWithinRoute(pathname, CONTACTS_ROUTE) || isPathnameWithinRoute(pathname, INTERMEDIARIES_ROUTE),
   },
+  { label: 'Mes CV', href: CV_LIBRARY_ROUTE, isActiveForPathname: (pathname) => isPathnameWithinRoute(pathname, CV_LIBRARY_ROUTE) },
   { label: 'Mon calendrier', href: CALENDAR_ROUTE, isActiveForPathname: (pathname) => isPathnameWithinRoute(pathname, CALENDAR_ROUTE) },
   {
     label: 'Mes opportunités',

@@ -22,10 +22,21 @@ describe('AppShell', () => {
     expect(Array.from(menuLinks).map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
       ['Mes candidatures', '/candidatures'],
       ['Mes contacts', '/contacts'],
+      ['Mes CV', '/cv'],
       ['Mon calendrier', '/calendar'],
       ['Mes opportunités', '/opportunites'],
       ['Préférences', '/preferences'],
     ])
+  })
+
+  it('links to Mes CV between Mes contacts and Mon calendrier', () => {
+    renderShell(0, '/cv')
+    const menuLabels = Array.from(
+      screen.getByRole('navigation', { name: 'Navigation principale' }).querySelectorAll('a'),
+    ).map((link) => link.textContent)
+    expect(menuLabels.indexOf('Mes CV')).toBe(menuLabels.indexOf('Mes contacts') + 1)
+    expect(menuLabels.indexOf('Mon calendrier')).toBe(menuLabels.indexOf('Mes CV') + 1)
+    expect(screen.getByRole('link', { name: 'Mes CV' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('points the logo to the home page', () => {
