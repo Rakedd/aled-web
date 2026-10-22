@@ -226,7 +226,7 @@ describe('recordCall', () => {
       }),
     )
 
-    expect(outcome).toMatchObject({ ok: false, error: { kind: 'rejected', createdContactId: null, createdJobApplicationId: null } })
+    expect(outcome).toMatchObject({ ok: false, error: { kind: 'not_found', message: ENTITY_NOT_FOUND_MESSAGES.contact, createdContactId: null, createdJobApplicationId: null } })
     await expect(listJobApplicationItems(user.client, user.userId)).resolves.toHaveLength(0)
     await expect(listExchangesForContact(otherUser.client, otherUser.userId, foreignContactId)).resolves.toHaveLength(0)
   })

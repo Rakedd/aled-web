@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import { CALL_LOG_MESSAGES, type RecordCallInput } from '@/domain/call-log'
+import { ENTITY_NOT_FOUND_MESSAGES } from '@/domain/entities'
 import { applyContactDetails } from '@/server/repositories/entities-repository'
 import { recordContactExchange } from '@/server/repositories/exchanges-repository'
 import { findCvRow, setSentCvVersion } from '@/server/repositories/cvs-repository'
@@ -130,5 +131,17 @@ describe('recordCall', () => {
       expect.objectContaining({ jobApplicationId: 'job-9' }),
     )
     expect(outcome).toEqual({ ok: true, data: { contactId: 'contact-9', jobApplicationId: 'job-9' } })
+  })
+
+  it('answers not_found for an unknown or foreign contact', async () => {
+    jest.mocked(applyContactDetails).mockResolvedValue({ ok: false, errorMessage: ENTITY_NOT_FOUND_MESSAGES.contact })
+
+    const outcome = await recordCall(supabase, userId, buildInput({ contact: { kind: 'existing', contactId: 'contact-9' } }))
+
+    expect(outcome).toEqual({
+      ok: false,
+      error: { kind: 'not_found', message: ENTITY_NOT_FOUND_MESSAGES.contact, createdContactId: null, createdJobApplicationId: null },
+    })
+    expect(recordContactExchange).not.toHaveBeenCalled()
   })
 })

@@ -5,6 +5,7 @@ import {
   type RecordCallResult,
   CALL_LOG_MESSAGES,
 } from '@/domain/call-log'
+import { ENTITY_NOT_FOUND_MESSAGES } from '@/domain/entities'
 import { CONTACT_EXCHANGE_JOB_APPLICATION_MISMATCH_MESSAGE } from '@/domain/contacts'
 import { insertContact } from '@/server/repositories/contacts-repository'
 import { findCvRow, setSentCvVersion } from '@/server/repositories/cvs-repository'
@@ -19,7 +20,7 @@ type RecordCallStep = 'contact' | 'jobApplication' | 'exchange'
 
 type CreatedIds = { createdContactId: string | null; createdJobApplicationId: string | null }
 
-const toFailure = (kind: 'rejected' | 'save_failed', message: string, createdIds: CreatedIds): RecordCallOutcome => ({
+const toFailure = (kind: 'rejected' | 'not_found' | 'save_failed', message: string, createdIds: CreatedIds): RecordCallOutcome => ({
   ok: false,
   error: { kind, message, ...createdIds },
 })
@@ -77,7 +78,10 @@ export const recordCall = async (
         input.contactDetails,
         input.userEditedContactFields,
       )
-      if (!detailsApplication.ok) return toFailure('rejected', detailsApplication.errorMessage, createdIds)
+      if (!detailsApplication.ok) {
+        const failureKind = detailsApplication.errorMessage === ENTITY_NOT_FOUND_MESSAGES.contact ? 'not_found' : 'rejected'
+        return toFailure(failureKind, detailsApplication.errorMessage, createdIds)
+      }
       contactId = detailsApplication.data.id
       contactFullName = detailsApplication.data.fullName
     } else {
