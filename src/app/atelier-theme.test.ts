@@ -409,6 +409,13 @@ describe('atelier theme', () => {
     })
   })
 
+  it('draws the native select chevron in the muted ink of each theme', () => {
+    const chevronStrokes = [...GLOBALS_CSS.matchAll(/--select-chevron:\s*url\("data:image\/svg\+xml,[^"]*stroke='%23([0-9A-F]{6})'/g)].map(
+      (match) => `#${match[1]}`,
+    )
+    expect(chevronStrokes).toEqual([LIGHT_THEME_COLOURS['ink-muted'], DARK_THEME_COLOURS['ink-muted']])
+  })
+
   it('keeps hex colours inside globals.css', () => {
     const sourceFiles = listSourceFiles(path.join(__dirname, '..'), ['.ts', '.tsx', '.css']).filter(
       (filePath) => !/\.test\.(tsx?|css)$/.test(filePath) && !filePath.endsWith('globals.css'),
