@@ -52,8 +52,8 @@ const fillLibrary = async (user: TestUser, cvCount: number) => {
   }
 }
 
-const sendVersion = async (user: TestUser, versionId: string): Promise<string> => {
-  const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
+const sendVersion = async (user: TestUser, versionId: string, intermediaryName: string | null = null): Promise<string> => {
+  const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId, { intermediaryName })
   const { error } = await user.client.from('job_applications').update({ sent_cv_version_id: versionId }).eq('id', jobApplicationId)
   if (error) throw error
   return jobApplicationId
@@ -221,7 +221,13 @@ describe('cv library schema', () => {
   it('adds the sent cv label and upload date to job_applications_overview and keeps its columns', async () => {
     const user = await createTestUser()
     const version = await insertVersionOrFail(user, 'Envoyé en octobre')
-    const jobApplicationId = await sendVersion(user, version.id)
+    const jobApplicationId = await sendVersion(user, version.id, 'Agence test')
+    const { data: jobApplicationRow } = await user.client
+      .from('job_applications')
+      .select('intermediary_id')
+      .eq('id', jobApplicationId)
+      .single()
+    await user.client.from('intermediaries').update({ kind: 'esn' }).eq('id', jobApplicationRow?.intermediary_id as string)
 
     const { data, error } = await user.client
       .from('job_applications_overview')
@@ -233,6 +239,28 @@ describe('cv library schema', () => {
     expect(data?.sent_cv_label).toBe('Envoyé en octobre')
     expect(data?.sent_cv_uploaded_at).toBe(version.uploaded_at)
     expect(data?.has_job_spec).toBe(false)
+    expect(data?.intermediary_kind).toBe('esn')
+  })
+
+  it('deletes a user who owns cvs, versions and a job application with a sent cv', async () => {
+    const user = await createTestUser()
+    await insertCvWithVersion(user, 'Principal')
+    const sentVersion = await insertVersionOrFail(user, 'Ancienne')
+    await sendVersion(user, sentVersion.id)
+    await insertVersionOrFail(user, 'Sur mesure')
+    const serviceRoleClient = createServiceRoleTestClient()
+
+    const { error } = await serviceRoleClient.auth.admin.deleteUser(user.userId)
+
+    expect(error).toBeNull()
+    const [cvs, versions, jobApplications] = await Promise.all([
+      serviceRoleClient.from('cvs').select('id').eq('user_id', user.userId),
+      serviceRoleClient.from('cv_versions').select('id').eq('user_id', user.userId),
+      serviceRoleClient.from('job_applications').select('id').eq('user_id', user.userId),
+    ])
+    expect(cvs.data).toEqual([])
+    expect(versions.data).toEqual([])
+    expect(jobApplications.data).toEqual([])
   })
 
   it('hides cvs, versions and the cv overviews of another user', async () => {
