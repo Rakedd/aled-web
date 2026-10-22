@@ -1,4 +1,5 @@
 import type { ActionResult } from './action-result'
+import type { SentCv } from './cv-library'
 import { type ContactDetailFieldName, validateUserEditedContactFields } from './contacts'
 import {
   ENTITY_VALIDATION_MESSAGES,
@@ -52,9 +53,10 @@ export type JobApplicationOverview = {
   endClientName: string | null
   endClientParentName: string | null
   endClientLabel: string | null
+  sentCv: SentCv | null
 }
 
-export type JobApplicationListItem = Omit<JobApplicationOverview, 'postingRawText'>
+export type JobApplicationListItem = Omit<JobApplicationOverview, 'postingRawText' | 'sentCv'>
 
 export type JobApplicationInput = {
   title: string

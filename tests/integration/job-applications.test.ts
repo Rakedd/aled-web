@@ -67,6 +67,43 @@ describe('job applications repository', () => {
     expect(overviewResult.ok && overviewResult.data.createdAt).toBeInstanceOf(Date)
   })
 
+  it('reads the sent cv of a job application with the label of its version', async () => {
+    const user = await createTestUser()
+    const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
+    const versionId = randomUUID()
+    const { error: versionError } = await user.client.from('cv_versions').insert({
+      id: versionId,
+      user_id: user.userId,
+      label: 'CV DevOps',
+      storage_path: `${user.userId}/${versionId}.pdf`,
+      file_name: 'cv-devops.pdf',
+      byte_size: 1024,
+    })
+    if (versionError) throw versionError
+    const { error: sendError } = await user.client
+      .from('job_applications')
+      .update({ sent_cv_version_id: versionId })
+      .eq('id', jobApplicationId)
+    if (sendError) throw sendError
+
+    const overviewResult = await findJobApplicationOverview(user.client, user.userId, jobApplicationId)
+
+    expect(overviewResult.ok && overviewResult.data.sentCv).toEqual({
+      versionId,
+      label: 'CV DevOps',
+      uploadedAt: expect.any(Date),
+    })
+  })
+
+  it('reads a job application without sent cv as null', async () => {
+    const user = await createTestUser()
+    const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
+
+    const overviewResult = await findJobApplicationOverview(user.client, user.userId, jobApplicationId)
+
+    expect(overviewResult.ok && overviewResult.data.sentCv).toBeNull()
+  })
+
   it('lists job applications without their posting raw text', async () => {
     const user = await createTestUser()
     const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId, {

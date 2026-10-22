@@ -209,6 +209,8 @@ describe('contacts repositories', () => {
         endClientLabel: 'BNP Paribas AM (BNP Paribas)',
         contactName: 'Paul Durand',
         status: 'applied',
+        sentCvLabel: null,
+        sentCvUploadedAt: null,
       },
     ])
     await expect(findIntermediaryListItem(user.client, user.userId, intermediaryId)).resolves.toMatchObject({
@@ -234,6 +236,39 @@ describe('contacts repositories', () => {
     const missions = await listProposedMissionsForContact(user.client, user.userId, contactId)
 
     expect(missions.map((mission) => mission.title)).toEqual(['Récente', 'Ancienne'])
+  })
+
+  it('lists proposed missions with the cv sent', async () => {
+    const user = await createTestUser()
+    const contactId = await insertContactOrFail(user)
+    const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId, { contactName: 'Hélène Martin' })
+    await createJobApplicationOrFail(user.client, user.userId, {
+      title: 'Sans CV',
+      contactName: 'Hélène Martin',
+      appliedOn: new Date('2026-01-01T10:00:00Z'),
+    })
+    const versionId = randomUUID()
+    const { error: versionError } = await user.client.from('cv_versions').insert({
+      id: versionId,
+      user_id: user.userId,
+      label: 'CV DevOps',
+      storage_path: `${user.userId}/${versionId}.pdf`,
+      file_name: 'cv-devops.pdf',
+      byte_size: 1024,
+    })
+    if (versionError) throw versionError
+    const { error: sendError } = await user.client
+      .from('job_applications')
+      .update({ sent_cv_version_id: versionId })
+      .eq('id', jobApplicationId)
+    if (sendError) throw sendError
+
+    const missions = await listProposedMissionsForContact(user.client, user.userId, contactId)
+
+    expect(missions.map((mission) => [mission.sentCvLabel, mission.sentCvUploadedAt])).toEqual([
+      ['CV DevOps', expect.any(Date)],
+      [null, null],
+    ])
   })
 
   it('records an exchange without job application', async () => {

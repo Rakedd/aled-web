@@ -32,6 +32,7 @@ export const buildJobApplicationOverview = (overrides: Partial<JobApplicationOve
   endClientName: 'Société Générale',
   endClientParentName: 'Groupe SG',
   endClientLabel: 'Société Générale (Groupe SG)',
+  sentCv: null,
   ...overrides,
 })
 

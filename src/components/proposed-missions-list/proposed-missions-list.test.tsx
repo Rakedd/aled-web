@@ -9,6 +9,8 @@ const MISSION: ProposedMission = {
   endClientLabel: 'Société Générale',
   contactName: 'Jeanne Martin',
   status: 'cv_submitted',
+  sentCvLabel: null,
+  sentCvUploadedAt: null,
 }
 
 describe('ProposedMissionsList', () => {
@@ -24,6 +26,17 @@ describe('ProposedMissionsList', () => {
   it('shows the contact name when asked to', () => {
     render(<ProposedMissionsList proposedMissions={[MISSION]} showsContactName />)
     expect(screen.getByText('Jeanne Martin')).toBeInTheDocument()
+  })
+
+  it('shows the cv sent for a mission', () => {
+    const missionWithCv = { ...MISSION, sentCvLabel: 'CV DevOps', sentCvUploadedAt: new Date('2026-03-12T10:00:00Z') }
+    render(<ProposedMissionsList proposedMissions={[missionWithCv]} showsContactName={false} />)
+    expect(screen.getByText('CV : CV DevOps (12/03/2026)')).toBeInTheDocument()
+  })
+
+  it('shows no cv line when none was sent', () => {
+    render(<ProposedMissionsList proposedMissions={[MISSION]} showsContactName={false} />)
+    expect(screen.queryByText(/^CV :/)).not.toBeInTheDocument()
   })
 
   it('explains that there is no mission yet', () => {

@@ -74,6 +74,8 @@ export type ProposedMission = {
   endClientLabel: string | null
   contactName: string | null
   status: JobApplicationStatus
+  sentCvLabel: string | null
+  sentCvUploadedAt: Date | null
 }
 
 export type ContactExchangeInput = ActivityLogEntryInput & {

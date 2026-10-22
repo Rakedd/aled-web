@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { StatusBadge } from '@/components/status-badge'
+import { formatProposedMissionSentCv } from '@/domain/cv-library'
 import { jobApplicationRoute } from '@/domain/routes'
 import { formatParisDate } from '@/domain/paris-time'
 import type { ProposedMissionsListProps } from './interfaces'
@@ -23,6 +24,11 @@ export const ProposedMissionsList = ({ proposedMissions, showsContactName }: Pro
             <span className="text-xs text-muted-foreground">
               <time dateTime={mission.appliedOn.toISOString()}>{formatParisDate(mission.appliedOn)}</time>
             </span>
+            {mission.sentCvLabel !== null && mission.sentCvUploadedAt !== null && (
+              <span className="text-xs text-muted-foreground">
+                {formatProposedMissionSentCv(mission.sentCvLabel, mission.sentCvUploadedAt)}
+              </span>
+            )}
             {mission.endClientLabel !== null && <span className="text-sm break-words">{mission.endClientLabel}</span>}
             {showsContactName && mission.contactName !== null && (
               <span className="text-sm text-muted-foreground">{mission.contactName}</span>

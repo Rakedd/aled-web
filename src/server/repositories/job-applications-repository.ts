@@ -87,6 +87,14 @@ const toJobApplicationListItem = (overviewRow: JobApplicationListItemRow): JobAp
 const toJobApplicationOverview = (overviewRow: JobApplicationOverviewRow): JobApplicationOverview => ({
   ...toJobApplicationListItem(overviewRow),
   postingRawText: overviewRow.posting_raw_text,
+  sentCv:
+    overviewRow.sent_cv_version_id === null
+      ? null
+      : {
+          versionId: overviewRow.sent_cv_version_id,
+          label: requireOverviewValue(overviewRow.sent_cv_label, 'sent_cv_label'),
+          uploadedAt: new Date(requireOverviewValue(overviewRow.sent_cv_uploaded_at, 'sent_cv_uploaded_at')),
+        },
 })
 
 const toJobApplicationColumns = (input: Partial<JobApplicationInput>): JobApplicationColumns => ({
@@ -126,11 +134,19 @@ export const listJobApplicationItems = async (
   return data.map(toJobApplicationListItem)
 }
 
-const PROPOSED_MISSION_COLUMNS = 'id, title, applied_on, status, contact_name, end_client_name, end_client_parent_name'
+const PROPOSED_MISSION_COLUMNS = 'id, title, applied_on, status, contact_name, end_client_name, end_client_parent_name, sent_cv_label, sent_cv_uploaded_at'
 
 type ProposedMissionRow = Pick<
   JobApplicationOverviewRow,
-  'id' | 'title' | 'applied_on' | 'status' | 'contact_name' | 'end_client_name' | 'end_client_parent_name'
+  | 'id'
+  | 'title'
+  | 'applied_on'
+  | 'status'
+  | 'contact_name'
+  | 'end_client_name'
+  | 'end_client_parent_name'
+  | 'sent_cv_label'
+  | 'sent_cv_uploaded_at'
 >
 
 const toProposedMission = (overviewRow: ProposedMissionRow): ProposedMission => ({
@@ -143,6 +159,8 @@ const toProposedMission = (overviewRow: ProposedMissionRow): ProposedMission => 
       : formatEndClientLabel(overviewRow.end_client_name, overviewRow.end_client_parent_name),
   contactName: overviewRow.contact_name,
   status: requireOverviewValue(overviewRow.status, 'status'),
+  sentCvLabel: overviewRow.sent_cv_label,
+  sentCvUploadedAt: toDateOrNull(overviewRow.sent_cv_uploaded_at),
 })
 
 export const listProposedMissionsForContact = async (

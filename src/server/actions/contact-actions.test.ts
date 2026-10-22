@@ -114,6 +114,8 @@ const proposedMission: ProposedMission = {
   endClientLabel: null,
   contactName: 'Jean Dupont',
   status: 'applied',
+  sentCvLabel: null,
+  sentCvUploadedAt: null,
 }
 
 beforeEach(() => {
