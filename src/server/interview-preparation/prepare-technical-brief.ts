@@ -7,6 +7,7 @@ import {
   TECHNICAL_BRIEF_AI_ERROR_MESSAGES,
   TECHNICAL_BRIEF_MESSAGES,
   type TechnicalBriefGenerationOutcome,
+  type TechnicalBriefRequest,
   type TechnicalBriefView,
   toTechnicalBriefView,
 } from '@/domain/technical-brief'
@@ -31,8 +32,6 @@ export type TechnicalBriefDependencies = {
   generateTechnicalBrief: (apiKey: string, technicalBriefInput: TechnicalBriefInput) => Promise<GeneratedTechnicalBrief>
   now: () => Date
 }
-
-export type TechnicalBriefRequest = { jobApplicationId: string; language: BriefLanguage }
 
 type TechnicalBriefContext = { jobApplication: JobApplicationOverview; view: TechnicalBriefView }
 

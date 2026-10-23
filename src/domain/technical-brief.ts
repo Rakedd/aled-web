@@ -1,6 +1,9 @@
+import type { ActionResult } from '@/domain/action-result'
 import type { AiErrorKind } from '@/domain/ai-errors'
 import { CLIENT_BRIEF_AI_ERROR_MESSAGES } from '@/domain/client-brief'
-import type { BriefLanguage } from '@/domain/interview-preparation'
+import { isRecord, validateUuid } from '@/domain/input-validation'
+import { type BriefLanguage, validateBriefLanguage } from '@/domain/interview-preparation'
+import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from '@/domain/job-application'
 import { formatParisDate } from '@/domain/paris-time'
 
 export const TECHNICAL_BRIEF_EMPHASES = ['lean_on', 'intro', 'skim'] as const
@@ -55,6 +58,8 @@ export type TechnicalBriefGenerationOutcome =
   | { kind: 'cv_missing_information' }
   | { kind: 'cv_unreadable' }
 
+export type TechnicalBriefRequest = { jobApplicationId: string; language: BriefLanguage }
+
 export const TECHNICAL_BRIEF_LIMITS = {
   storySteps: 5,
   maxMissions: 6,
@@ -88,6 +93,10 @@ export const TECHNICAL_BRIEF_MESSAGES = {
   whyLabel: 'Pourquoi :',
   reflectionQuestionsLabel: 'Pour préparer ton récit :',
   skimPrefix: 'Passe vite sur :',
+  loading: 'Chargement du brief technique…',
+  generationFailure: "Impossible d'enregistrer le brief technique pour le moment. Réessaie dans quelques minutes.",
+  sessionExpired: 'Ta session a expiré. Reconnecte-toi puis réessaie.',
+  invalidRequest: 'Demande de brief technique invalide.',
 } as const
 
 export const TECHNICAL_BRIEF_AI_ERROR_MESSAGES: Record<AiErrorKind, string> = {
@@ -96,9 +105,6 @@ export const TECHNICAL_BRIEF_AI_ERROR_MESSAGES: Record<AiErrorKind, string> = {
 }
 
 type TextLengthKey = keyof typeof TECHNICAL_BRIEF_LIMITS.textLengths
-
-const isRecord = (candidate: unknown): candidate is Record<string, unknown> =>
-  typeof candidate === 'object' && candidate !== null && !Array.isArray(candidate)
 
 const isEmphasis = (candidate: unknown): candidate is TechnicalBriefEmphasis =>
   (TECHNICAL_BRIEF_EMPHASES as readonly unknown[]).includes(candidate)
@@ -204,3 +210,14 @@ export const toTechnicalBriefView = (input: {
 
 export const formatTechnicalBriefSource = (brief: TechnicalBrief): string =>
   `Basé sur : ${brief.cvLabel} · version du ${formatParisDate(brief.cvUploadedAt)} (le CV envoyé)`
+
+export const validateTechnicalBriefRequest = (
+  jobApplicationId: unknown,
+  language: unknown,
+): ActionResult<TechnicalBriefRequest> => {
+  const jobApplicationIdValidation = validateUuid(jobApplicationId, JOB_APPLICATION_NOT_FOUND_MESSAGE)
+  if (!jobApplicationIdValidation.ok) return jobApplicationIdValidation
+  const languageValidation = validateBriefLanguage(language)
+  if (!languageValidation.ok) return languageValidation
+  return { ok: true, data: { jobApplicationId: jobApplicationIdValidation.data, language: languageValidation.data } }
+}

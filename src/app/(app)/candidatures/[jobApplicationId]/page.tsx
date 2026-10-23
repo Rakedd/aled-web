@@ -45,7 +45,7 @@ import {
   updateInterview,
 } from '@/server/actions/interview-actions'
 import { generateInterviewPreparation, getInterviewPreparation } from '@/server/actions/interview-preparation-actions'
-import { generateTechnicalBrief, getTechnicalBriefView } from '@/server/actions/technical-brief-actions'
+import { getTechnicalBriefView } from '@/server/actions/technical-brief-actions'
 import {
   addActivityLogEntry,
   changeJobApplicationStatus,
@@ -207,7 +207,6 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
                 generateInterviewPreparation={generateInterviewPreparation}
                 updateEndClientNotes={updateEndClientNotes}
                 getTechnicalBriefView={getTechnicalBriefView}
-                generateTechnicalBrief={generateTechnicalBrief}
                 hasAnthropicApiKey={hasAnthropicApiKey}
               />
             }

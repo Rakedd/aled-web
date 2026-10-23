@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { BRIEF_LANGUAGES, BRIEF_LANGUAGE_LABELS, isBriefLanguage } from '@/domain/interview-preparation'
 import { NATIVE_SELECT_CLASS_NAME } from '@/lib/control-class-names'
+import { requestTechnicalBriefGeneration } from '@/lib/technical-brief/request-technical-brief-generation'
 import { useController } from './controller'
 import type { InterviewPreparationButtonProps } from './interfaces'
 
@@ -37,7 +38,7 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
     notesErrorMessage,
     retryNotesSave,
   } = useController({ ...controllerParameters, onDataChanged: router.refresh })
-  const { jobApplicationId, hasAnthropicApiKey, getTechnicalBriefView, generateTechnicalBrief } = controllerParameters
+  const { jobApplicationId, hasAnthropicApiKey, getTechnicalBriefView } = controllerParameters
 
   return (
     <section aria-labelledby="interview-preparation-title" className="flex min-w-0 flex-col gap-3">
@@ -100,7 +101,7 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
             language={preparation.language}
             hasAnthropicApiKey={hasAnthropicApiKey}
             getTechnicalBriefView={getTechnicalBriefView}
-            generateTechnicalBrief={generateTechnicalBrief}
+            generateTechnicalBrief={requestTechnicalBriefGeneration}
           />
         }
         finalFocusRef={openingButtonRef}

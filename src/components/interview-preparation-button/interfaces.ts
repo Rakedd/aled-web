@@ -1,6 +1,6 @@
 import type { ActionResult } from '@/domain/action-result'
 import type { BriefLanguage, InterviewPreparation } from '@/domain/interview-preparation'
-import type { GenerateTechnicalBrief, GetTechnicalBriefView } from '@/components/technical-brief-section/interfaces'
+import type { GetTechnicalBriefView } from '@/components/technical-brief-section/interfaces'
 
 export type UpdateEndClientNotes = (endClientId: string, notes: string) => Promise<ActionResult<null>>
 
@@ -27,5 +27,4 @@ export type InterviewPreparationButtonControllerParameters = {
 
 export type InterviewPreparationButtonProps = Omit<InterviewPreparationButtonControllerParameters, 'onDataChanged'> & {
   getTechnicalBriefView: GetTechnicalBriefView
-  generateTechnicalBrief: GenerateTechnicalBrief
 }

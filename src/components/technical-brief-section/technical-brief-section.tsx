@@ -175,6 +175,11 @@ export const TechnicalBriefSection = (sectionProps: TechnicalBriefSectionProps) 
         {view !== null && brief !== null && view.availability === 'missing_sent_cv' && chooseSentCvLink}
       </div>
       {!hasAnthropicApiKey && <MissingAnthropicApiKeyNotice featureDescription="la préparation du pitch" />}
+      {isLoading && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {TECHNICAL_BRIEF_MESSAGES.loading}
+        </p>
+      )}
       {view !== null && view.isCvOutdated && (
         <p className="text-sm text-muted-foreground">{TECHNICAL_BRIEF_MESSAGES.cvOutdated}</p>
       )}

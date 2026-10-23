@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import type { ComponentProps, ReactElement } from 'react'
 import type Markdown from 'react-markdown'
 import type { BriefLanguage, InterviewPreparation } from '@/domain/interview-preparation'
+import { requestTechnicalBriefGeneration } from '@/lib/technical-brief/request-technical-brief-generation'
 import { InterviewPreparationButton } from './interview-preparation-button'
 
 type MarkdownProps = ComponentProps<typeof Markdown>
@@ -12,6 +13,9 @@ jest.mock('react-markdown', () => ({
   default: (markdownProps: MarkdownProps): ReactElement => <div data-testid="brief-markdown">{markdownProps.children}</div>,
 }))
 jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
+jest.mock('@/lib/technical-brief/request-technical-brief-generation', () => ({
+  requestTechnicalBriefGeneration: jest.fn().mockResolvedValue({ ok: true, data: { kind: 'cv_unreadable' } }),
+}))
 
 const JOB_APPLICATION_ID = '4f1e0a52-1b3c-4d5e-8f60-71829304a5b6'
 
@@ -43,7 +47,6 @@ const renderButton = (initialPreparation: InterviewPreparation, hasAnthropicApiK
     ok: true,
     data: { language, availability: 'ready', brief: null, isCvOutdated: false },
   }))
-  const generateTechnicalBrief = jest.fn()
   render(
     <InterviewPreparationButton
       jobApplicationId={JOB_APPLICATION_ID}
@@ -52,7 +55,6 @@ const renderButton = (initialPreparation: InterviewPreparation, hasAnthropicApiK
       generateInterviewPreparation={generateInterviewPreparation}
       updateEndClientNotes={jest.fn().mockResolvedValue({ ok: true, data: null })}
       getTechnicalBriefView={getTechnicalBriefView}
-      generateTechnicalBrief={generateTechnicalBrief}
       hasAnthropicApiKey={hasAnthropicApiKey}
     />,
   )
@@ -67,6 +69,13 @@ describe('InterviewPreparationButton', () => {
     expect(getTechnicalBriefView).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'fr')
     await userEvent.selectOptions(screen.getByLabelText('Langue du brief'), 'en')
     await waitFor(() => expect(getTechnicalBriefView).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'en'))
+  })
+
+  it('generates the technical brief through the route handler fetch, not a server action', async () => {
+    renderButton(completePreparation)
+    await userEvent.click(screen.getByRole('button', { name: 'Brief généré · voir mon brief' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Préparer mon pitch' }))
+    expect(requestTechnicalBriefGeneration).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'fr')
   })
 
   it('generates the preparation then shows it in the modal', async () => {

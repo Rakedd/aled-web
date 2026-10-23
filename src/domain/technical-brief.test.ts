@@ -1,7 +1,10 @@
+import { INTERVIEW_PREPARATION_MESSAGES } from './interview-preparation'
+import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from './job-application'
 import {
   formatTechnicalBriefSource,
   normalizeTechnicalBriefContent,
   toTechnicalBriefView,
+  validateTechnicalBriefRequest,
   type TechnicalBrief,
   type TechnicalBriefContent,
 } from './technical-brief'
@@ -188,5 +191,27 @@ describe('formatTechnicalBriefSource', () => {
     expect(formatTechnicalBriefSource(buildBrief({ cvUploadedAt: new Date('2026-03-05T23:30:00Z') }))).toBe(
       'Basé sur : CV Freelance · version du 06/03/2026 (le CV envoyé)',
     )
+  })
+})
+
+describe('validateTechnicalBriefRequest', () => {
+  const jobApplicationId = '4f1e0a52-1b3c-4d5e-8f60-71829304a5b6'
+
+  it('accepts a uuid and a known language', () => {
+    expect(validateTechnicalBriefRequest(jobApplicationId, 'en')).toEqual({
+      ok: true,
+      data: { jobApplicationId, language: 'en' },
+    })
+  })
+
+  it('refuses a malformed job application id, then an unknown language', () => {
+    expect(validateTechnicalBriefRequest('pas-un-uuid', 'de')).toEqual({
+      ok: false,
+      errorMessage: JOB_APPLICATION_NOT_FOUND_MESSAGE,
+    })
+    expect(validateTechnicalBriefRequest(jobApplicationId, 'de')).toEqual({
+      ok: false,
+      errorMessage: INTERVIEW_PREPARATION_MESSAGES.invalidLanguage,
+    })
   })
 })

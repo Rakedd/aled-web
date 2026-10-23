@@ -73,6 +73,20 @@ const renderSection = (
 }
 
 describe('TechnicalBriefSection', () => {
+  it('announces the loading of the view, then removes the loading line', async () => {
+    let finishLoading: (value: unknown) => void = () => undefined
+    const getTechnicalBriefView = jest.fn().mockReturnValue(
+      new Promise((resolve) => {
+        finishLoading = resolve
+      }),
+    )
+    renderSection(buildView(), { getTechnicalBriefView })
+    expect(screen.getByRole('status')).toHaveTextContent('Chargement du brief technique…')
+    finishLoading({ ok: true, data: buildView() })
+    expect(await screen.findByText(/croise ton CV envoyé/)).toBeInTheDocument()
+    expect(screen.queryByText('Chargement du brief technique…')).not.toBeInTheDocument()
+  })
+
   it('shows the key notice without a key and no generation button', async () => {
     renderSection(buildView(), { hasAnthropicApiKey: false })
     expect(await screen.findByRole('note')).toHaveTextContent('la préparation du pitch')
