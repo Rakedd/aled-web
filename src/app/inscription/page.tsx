@@ -14,16 +14,18 @@ const SignUpPage = () => {
 
   return (
     <AuthPageLayout title="Créer un compte">
-      <OAuthSignInButtons
-        startOAuthSignIn={startOAuthSignIn}
-        termsOfUseHref={termsOfUseHref}
-        privacyPolicyHref={privacyPolicyHref}
-      />
       <SignUpForm
         signUpWithPassword={signUpWithPassword}
         resendSignUpConfirmation={resendSignUpConfirmation}
         termsOfUseHref={termsOfUseHref}
         privacyPolicyHref={privacyPolicyHref}
+        oauthSignInButtons={
+          <OAuthSignInButtons
+            startOAuthSignIn={startOAuthSignIn}
+            termsOfUseHref={termsOfUseHref}
+            privacyPolicyHref={privacyPolicyHref}
+          />
+        }
       />
     </AuthPageLayout>
   )

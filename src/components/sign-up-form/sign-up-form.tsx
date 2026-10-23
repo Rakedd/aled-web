@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { SIGN_IN_PATHNAME } from '@/domain/landing-routing'
 import {
   LEGAL_LINK_LABELS,
+  MINIMUM_PASSWORD_LENGTH,
   PROFESSIONAL_STATUSES,
   PROFESSIONAL_STATUS_LABELS,
   SIGN_UP_MESSAGES,
@@ -17,6 +18,7 @@ import { useController } from './controller'
 import type { SignUpFormProps } from './interfaces'
 
 const ERROR_MESSAGE_ELEMENT_ID = 'sign-up-form-error-message'
+const PASSWORD_HINT_ELEMENT_ID = 'sign-up-form-password-hint'
 const LEGAL_LINK_CLASS_NAME = 'text-accent-text underline underline-offset-4'
 const CHOICE_LABEL_CLASS_NAME = 'min-h-11 cursor-pointer text-base font-normal leading-normal text-ink'
 const CHOICE_INPUT_CLASS_NAME = 'size-5 shrink-0 accent-primary'
@@ -27,6 +29,7 @@ export const SignUpForm = ({
   resendSignUpConfirmation,
   termsOfUseHref,
   privacyPolicyHref,
+  oauthSignInButtons,
 }: SignUpFormProps) => {
   const {
     firstName,
@@ -104,105 +107,112 @@ export const SignUpForm = ({
 
   const hasError = status === 'error'
   const errorMessageElementId = errorMessage ? ERROR_MESSAGE_ELEMENT_ID : undefined
+  const passwordDescribedBy = [PASSWORD_HINT_ELEMENT_ID, errorMessageElementId].filter(Boolean).join(' ')
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="sign-up-form-first-name">Prénom</Label>
-        <Input
-          id="sign-up-form-first-name"
-          type="text"
-          name="firstName"
-          autoComplete="given-name"
-          required
-          value={firstName}
-          onChange={(changeEvent) => setFirstName(changeEvent.target.value)}
-          aria-invalid={hasError}
-          aria-describedby={errorMessageElementId}
-        />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="sign-up-form-email">Adresse e-mail</Label>
-        <Input
-          id="sign-up-form-email"
-          type="email"
-          name="email"
-          autoComplete="email"
-          inputMode="email"
-          required
-          value={email}
-          onChange={(changeEvent) => setEmail(changeEvent.target.value)}
-          aria-invalid={hasError}
-          aria-describedby={errorMessageElementId}
-        />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="sign-up-form-password">Mot de passe</Label>
-        <div className="flex gap-2">
+    <>
+      {oauthSignInButtons}
+      <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="sign-up-form-first-name">Prénom</Label>
           <Input
-            id="sign-up-form-password"
-            type={isPasswordVisible ? 'text' : 'password'}
-            name="password"
-            autoComplete="new-password"
+            id="sign-up-form-first-name"
+            type="text"
+            name="firstName"
+            autoComplete="given-name"
             required
-            value={password}
-            onChange={(changeEvent) => setPassword(changeEvent.target.value)}
+            value={firstName}
+            onChange={(changeEvent) => setFirstName(changeEvent.target.value)}
             aria-invalid={hasError}
             aria-describedby={errorMessageElementId}
           />
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            aria-controls="sign-up-form-password"
-            onClick={togglePasswordVisibility}
-          >
-            {isPasswordVisible ? 'Masquer' : 'Afficher'}
-          </Button>
         </div>
-      </div>
-      <fieldset className="flex flex-col">
-        <legend className="mb-1 text-sm font-semibold text-ink-muted">Je suis</legend>
-        {PROFESSIONAL_STATUSES.map((candidateStatus) => (
-          <Label key={candidateStatus} className={CHOICE_LABEL_CLASS_NAME}>
-            <input
-              type="radio"
-              name="professionalStatus"
-              value={candidateStatus}
-              checked={professionalStatus === candidateStatus}
-              onChange={() => setProfessionalStatus(candidateStatus)}
-              aria-describedby={errorMessageElementId}
-              className={CHOICE_INPUT_CLASS_NAME}
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="sign-up-form-email">Adresse e-mail</Label>
+          <Input
+            id="sign-up-form-email"
+            type="email"
+            name="email"
+            autoComplete="email"
+            inputMode="email"
+            required
+            value={email}
+            onChange={(changeEvent) => setEmail(changeEvent.target.value)}
+            aria-invalid={hasError}
+            aria-describedby={errorMessageElementId}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="sign-up-form-password">Mot de passe</Label>
+          <div className="flex gap-2">
+            <Input
+              id="sign-up-form-password"
+              type={isPasswordVisible ? 'text' : 'password'}
+              name="password"
+              autoComplete="new-password"
+              required
+              value={password}
+              onChange={(changeEvent) => setPassword(changeEvent.target.value)}
+              aria-invalid={hasError}
+              aria-describedby={passwordDescribedBy}
             />
-            {PROFESSIONAL_STATUS_LABELS[candidateStatus]}
-          </Label>
-        ))}
-      </fieldset>
-      <Label className={CHOICE_LABEL_CLASS_NAME}>
-        <input
-          type="checkbox"
-          name="hasAcceptedTerms"
-          checked={hasAcceptedTerms}
-          onChange={(changeEvent) => setHasAcceptedTerms(changeEvent.target.checked)}
-          aria-describedby={errorMessageElementId}
-          className={CHOICE_INPUT_CLASS_NAME}
-        />
-        <span>
-          J&apos;accepte les{' '}
-          <a href={termsOfUseHref} target="_blank" rel="noopener noreferrer" className={LEGAL_LINK_CLASS_NAME}>
-            {LEGAL_LINK_LABELS.termsOfUse}
-          </a>{' '}
-          et la{' '}
-          <a href={privacyPolicyHref} target="_blank" rel="noopener noreferrer" className={LEGAL_LINK_CLASS_NAME}>
-            {LEGAL_LINK_LABELS.privacyPolicy}
-          </a>
-        </span>
-      </Label>
-      {errorParagraph}
-      <Button type="submit" size="lg" disabled={status === 'submitting'}>
-        {status === 'submitting' ? 'Création en cours…' : 'Créer mon compte'}
-      </Button>
-      {signInPrompt}
-    </form>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              aria-controls="sign-up-form-password"
+              onClick={togglePasswordVisibility}
+            >
+              {isPasswordVisible ? 'Masquer' : 'Afficher'}
+            </Button>
+          </div>
+          <p id={PASSWORD_HINT_ELEMENT_ID} className="text-sm text-ink-secondary">
+            {MINIMUM_PASSWORD_LENGTH} caractères minimum.
+          </p>
+        </div>
+        <fieldset className="flex flex-col">
+          <legend className="mb-1 text-sm font-semibold text-ink-muted">Je suis</legend>
+          {PROFESSIONAL_STATUSES.map((candidateStatus) => (
+            <Label key={candidateStatus} className={CHOICE_LABEL_CLASS_NAME}>
+              <input
+                type="radio"
+                name="professionalStatus"
+                value={candidateStatus}
+                checked={professionalStatus === candidateStatus}
+                onChange={() => setProfessionalStatus(candidateStatus)}
+                aria-describedby={errorMessageElementId}
+                className={CHOICE_INPUT_CLASS_NAME}
+              />
+              {PROFESSIONAL_STATUS_LABELS[candidateStatus]}
+            </Label>
+          ))}
+        </fieldset>
+        <Label className={CHOICE_LABEL_CLASS_NAME}>
+          <input
+            type="checkbox"
+            name="hasAcceptedTerms"
+            checked={hasAcceptedTerms}
+            onChange={(changeEvent) => setHasAcceptedTerms(changeEvent.target.checked)}
+            aria-describedby={errorMessageElementId}
+            className={CHOICE_INPUT_CLASS_NAME}
+          />
+          <span>
+            J&apos;accepte les{' '}
+            <a href={termsOfUseHref} target="_blank" rel="noopener noreferrer" className={LEGAL_LINK_CLASS_NAME}>
+              {LEGAL_LINK_LABELS.termsOfUse}
+            </a>{' '}
+            et la{' '}
+            <a href={privacyPolicyHref} target="_blank" rel="noopener noreferrer" className={LEGAL_LINK_CLASS_NAME}>
+              {LEGAL_LINK_LABELS.privacyPolicy}
+            </a>
+          </span>
+        </Label>
+        {errorParagraph}
+        <Button type="submit" size="lg" disabled={status === 'submitting'}>
+          {status === 'submitting' ? 'Création en cours…' : 'Créer mon compte'}
+        </Button>
+        {signInPrompt}
+      </form>
+    </>
   )
 }

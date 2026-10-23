@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { ActionResult } from '@/domain/action-result'
 import type { SignUpInput } from '@/domain/sign-up'
 
@@ -17,4 +18,5 @@ export type SignUpFormProps = {
   resendSignUpConfirmation: ResendSignUpConfirmation
   termsOfUseHref: string
   privacyPolicyHref: string
+  oauthSignInButtons: ReactNode
 }

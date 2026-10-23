@@ -15,6 +15,7 @@ const renderForm = (signUpWithPassword = succeed(), resendSignUpConfirmation = s
       resendSignUpConfirmation={resendSignUpConfirmation}
       termsOfUseHref={TERMS_HREF}
       privacyPolicyHref={PRIVACY_HREF}
+      oauthSignInButtons={<button type="button">Continuer avec Google</button>}
     />,
   )
   return user
@@ -90,6 +91,21 @@ describe('SignUpForm', () => {
     expect(screen.getByLabelText('Mot de passe')).toHaveAttribute('type', 'password')
   })
 
+  it('describes the password field with the minimum length hint', () => {
+    renderForm()
+
+    expect(screen.getByText('8 caractères minimum.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Mot de passe')).toHaveAccessibleDescription('8 caractères minimum.')
+  })
+
+  it('keeps the minimum length hint in the password description next to an error', async () => {
+    const user = renderForm()
+
+    await user.click(screen.getByRole('button', { name: 'Créer mon compte' }))
+
+    expect(screen.getByLabelText('Mot de passe')).toHaveAccessibleDescription('8 caractères minimum. Saisis ton prénom.')
+  })
+
   it('announces a validation error and flags the fields as invalid', async () => {
     const signUpWithPassword = succeed()
     const user = renderForm(signUpWithPassword)
@@ -111,6 +127,17 @@ describe('SignUpForm', () => {
     expect(await screen.findByText("Vérifie ta boîte mail : on t'a envoyé un lien pour activer ton compte.")).toBeInTheDocument()
     expect(screen.getByText('camille@example.com')).toBeInTheDocument()
     expect(screen.queryByLabelText('Prénom')).not.toBeInTheDocument()
+  })
+
+  it('shows the OAuth buttons with the form and hides them on the inbox screen', async () => {
+    const user = renderForm()
+    expect(screen.getByRole('button', { name: 'Continuer avec Google' })).toBeInTheDocument()
+    await fillValidForm(user)
+
+    await user.click(screen.getByRole('button', { name: 'Créer mon compte' }))
+
+    expect(await screen.findByText(/Vérifie ta boîte mail/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Continuer avec Google' })).not.toBeInTheDocument()
   })
 
   it('disables the resend button with a countdown, then enables it and confirms the resend', async () => {
