@@ -1,3 +1,4 @@
+import type { FollowUpMessageButtonProps } from '@/components/follow-up-message-button/interfaces'
 import type { ActionResult } from '@/domain/action-result'
 import type { JobApplicationOverview } from '@/domain/job-application'
 import type { JobApplicationStatus } from '@/domain/job-application-status'
@@ -15,4 +16,5 @@ export type JobApplicationHeaderControllerParameters = {
   onDataChanged: () => void
 }
 
-export type JobApplicationHeaderProps = Omit<JobApplicationHeaderControllerParameters, 'onDataChanged'>
+export type JobApplicationHeaderProps = Omit<JobApplicationHeaderControllerParameters, 'onDataChanged'> &
+  Pick<FollowUpMessageButtonProps, 'hasAnthropicApiKey' | 'addActivityLogEntry'>

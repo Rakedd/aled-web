@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE, type ActionResult } from '@/domain/action-result'
 import type { SnoozeDurationInDays } from '@/domain/alert-snoozes'
+import { FOLLOW_UP_MESSAGES } from '@/domain/follow-up-message'
 import { isJobApplicationTodoAlert, type CvOutdatedTodoAlert, type JobApplicationTodoAlert, type TodoAlert } from '@/domain/todo-alerts'
 import { getTodoAlertKey } from './format-todo-alert'
 import type { TodoBannerControllerParameters } from './interfaces'
@@ -16,6 +17,7 @@ export const useController = ({
   const [closedJobApplicationIds, setClosedJobApplicationIds] = useState<string[]>([])
   const [pendingAlertKeys, setPendingAlertKeys] = useState<string[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [followUpSentAnnouncement, setFollowUpSentAnnouncement] = useState('')
 
   const alerts = initialAlerts.filter(
     (alert) =>
@@ -79,5 +81,20 @@ export const useController = ({
     onDataChanged()
   }
 
-  return { alerts, errorMessage, isAlertPending, snooze, confirmStillGood, closeAsNoNews }
+  const markFollowUpSent = (alert: JobApplicationTodoAlert) => {
+    setDismissedAlertKeys((currentKeys) => [...currentKeys, getTodoAlertKey(alert)])
+    setFollowUpSentAnnouncement(FOLLOW_UP_MESSAGES.sentAnnouncement)
+    onDataChanged()
+  }
+
+  return {
+    alerts,
+    errorMessage,
+    isAlertPending,
+    snooze,
+    confirmStillGood,
+    closeAsNoNews,
+    markFollowUpSent,
+    followUpSentAnnouncement,
+  }
 }

@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useId } from 'react'
+import { useId, useRef } from 'react'
+import { FollowUpMessageButton } from '@/components/follow-up-message-button'
 import { Pill } from '@/components/pill'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { SNOOZE_DURATIONS_IN_DAYS, isSnoozableAlertKind } from '@/domain/alert-snoozes'
@@ -33,6 +34,8 @@ export const TodoBanner = ({
   snoozeAlert,
   confirmCvStillGood,
   changeJobApplicationStatus,
+  hasAnthropicApiKey,
+  addActivityLogEntry,
   jobApplicationSummaries,
   interviews,
   now,
@@ -40,7 +43,17 @@ export const TodoBanner = ({
 }: TodoBannerProps) => {
   const router = useRouter()
   const titleId = useId()
-  const { alerts, errorMessage, isAlertPending, snooze, confirmStillGood, closeAsNoNews } = useController({
+  const titleRef = useRef<HTMLHeadingElement | null>(null)
+  const {
+    alerts,
+    errorMessage,
+    isAlertPending,
+    snooze,
+    confirmStillGood,
+    closeAsNoNews,
+    markFollowUpSent,
+    followUpSentAnnouncement,
+  } = useController({
     initialAlerts,
     snoozeAlert,
     confirmCvStillGood,
@@ -50,9 +63,12 @@ export const TodoBanner = ({
 
   return (
     <section aria-labelledby={titleId} className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-6">
-      <h2 id={titleId} className="font-heading text-xl font-extrabold">
+      <h2 id={titleId} ref={titleRef} tabIndex={-1} className="font-heading text-xl font-extrabold outline-none">
         {title}
       </h2>
+      <p role="status" className="sr-only">
+        {followUpSentAnnouncement}
+      </p>
       {errorMessage && (
         <p role="alert" className="text-sm text-destructive">
           {errorMessage}
@@ -102,6 +118,16 @@ export const TodoBanner = ({
                 </Link>
                 {isSnoozableAlertKind(alert.kind) && (
                   <div className="flex flex-wrap gap-2">
+                    {alert.kind === 'follow_up_due' && (
+                      <FollowUpMessageButton
+                        jobApplicationId={alert.jobApplicationId}
+                        hasAnthropicApiKey={hasAnthropicApiKey}
+                        addActivityLogEntry={addActivityLogEntry}
+                        label={{ variant: 'compact', jobApplicationTitle: alert.jobApplicationTitle }}
+                        onFollowUpSent={() => markFollowUpSent(alert)}
+                        finalFocusRef={titleRef}
+                      />
+                    )}
                     {SNOOZE_DURATIONS_IN_DAYS.map((days) => (
                       <Button key={days} type="button" size="sm" variant="outline" disabled={isAlertPending(alert)} onClick={() => void snooze(alert, days)}>
                         Reporter {days} j

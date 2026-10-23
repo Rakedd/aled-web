@@ -53,7 +53,10 @@ export const readJsonRequestBody = async (request: Request): Promise<JsonRequest
   }
 }
 
-export const invalidJsonRequestBodyResponse = (failure: JsonRequestBodyFailure): NextResponse =>
+export const invalidJsonRequestBodyResponse = (
+  failure: JsonRequestBodyFailure,
+  malformedMessage: string = CALL_LOG_MESSAGES.malformedRequest,
+): NextResponse =>
   failure === 'too_large'
     ? callApiErrorResponse(toCallApiError('invalid_request', CALL_LOG_MESSAGES.requestTooLarge), PAYLOAD_TOO_LARGE_STATUS)
-    : callApiErrorResponse(toCallApiError('invalid_request', CALL_LOG_MESSAGES.malformedRequest))
+    : callApiErrorResponse(toCallApiError('invalid_request', malformedMessage))

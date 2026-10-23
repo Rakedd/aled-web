@@ -145,4 +145,13 @@ describe('todo-banner useController', () => {
     expect(result.current.errorMessage).toBe('Impossible de confirmer')
     expect(onDataChanged).not.toHaveBeenCalled()
   })
+
+  it('dismisses the reminder of a sent follow up, announces it and refreshes the data', () => {
+    const { result, onDataChanged } = renderTodoBannerController()
+    expect(result.current.followUpSentAnnouncement).toBe('')
+    act(() => result.current.markFollowUpSent(followUpAlert))
+    expect(result.current.alerts).toEqual([noNewsAlert, otherApplicationAlert, cvAlert])
+    expect(result.current.followUpSentAnnouncement).toBe('Relance notée dans le journal.')
+    expect(onDataChanged).toHaveBeenCalledTimes(1)
+  })
 })

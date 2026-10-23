@@ -201,7 +201,12 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
               },
             }}
           />
-          <JobApplicationHeader jobApplication={jobApplication} changeJobApplicationStatus={changeJobApplicationStatus} />
+          <JobApplicationHeader
+            jobApplication={jobApplication}
+            changeJobApplicationStatus={changeJobApplicationStatus}
+            hasAnthropicApiKey={hasAnthropicApiKey}
+            addActivityLogEntry={addActivityLogEntry}
+          />
         </div>
         <div className="min-w-0 lg:col-span-2">
           <JobApplicationHighlights

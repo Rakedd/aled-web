@@ -1,9 +1,11 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { FollowUpMessageButton } from '@/components/follow-up-message-button'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { StatusBadge } from '@/components/status-badge'
+import { canDraftFollowUp } from '@/domain/follow-up-message'
 import {
   ALL_JOB_APPLICATION_STATUSES,
   JOB_APPLICATION_STATUS_LABELS,
@@ -27,7 +29,12 @@ const getStepState = (step: JobApplicationStatus, currentStatus: JobApplicationS
   return currentIndex !== -1 && stepIndex < currentIndex ? 'done' : 'upcoming'
 }
 
-export const JobApplicationHeader = ({ jobApplication, changeJobApplicationStatus }: JobApplicationHeaderProps) => {
+export const JobApplicationHeader = ({
+  jobApplication,
+  changeJobApplicationStatus,
+  hasAnthropicApiKey,
+  addActivityLogEntry,
+}: JobApplicationHeaderProps) => {
   const router = useRouter()
   const {
     nextStatus,
@@ -50,16 +57,25 @@ export const JobApplicationHeader = ({ jobApplication, changeJobApplicationStatu
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <StatusBadge status={jobApplication.status} />
         {pipelineStep !== null && <span className="text-ink-muted">{pipelineStep}</span>}
-        <Button
-          type="button"
-          variant="outline"
-          className="ml-auto font-bold"
-          aria-expanded={isStatusControlsOpen}
-          aria-controls={STATUS_CONTROLS_ID}
-          onClick={toggleStatusControls}
-        >
-          Changer le statut
-        </Button>
+        <div className="ml-auto flex flex-wrap gap-2">
+          {canDraftFollowUp(jobApplication.status) && (
+            <FollowUpMessageButton
+              jobApplicationId={jobApplication.id}
+              hasAnthropicApiKey={hasAnthropicApiKey}
+              addActivityLogEntry={addActivityLogEntry}
+            />
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            className="font-bold"
+            aria-expanded={isStatusControlsOpen}
+            aria-controls={STATUS_CONTROLS_ID}
+            onClick={toggleStatusControls}
+          >
+            Changer le statut
+          </Button>
+        </div>
       </div>
       <div id={STATUS_CONTROLS_ID} hidden={!isStatusControlsOpen} className="flex flex-col gap-4">
         <ol className="flex gap-1 overflow-x-auto pb-1" aria-label="Avancement de la candidature">

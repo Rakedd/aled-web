@@ -73,4 +73,13 @@ describe('call api response', () => {
     })
     expect(invalidJsonRequestBodyResponse('malformed').status).toBe(400)
   })
+
+  it('answers a malformed body with the call wording by default and with the given wording otherwise', async () => {
+    expect((await invalidJsonRequestBodyResponse('malformed').json()).error.message).toBe(CALL_LOG_MESSAGES.malformedRequest)
+    const customResponse = invalidJsonRequestBodyResponse('malformed', 'Demande de relance invalide.')
+    expect(customResponse.status).toBe(400)
+    expect(await customResponse.json()).toEqual({
+      error: toCallApiError('invalid_request', 'Demande de relance invalide.'),
+    })
+  })
 })

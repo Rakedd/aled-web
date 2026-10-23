@@ -44,6 +44,8 @@ export const HomeDashboard = ({
   snoozeAlert,
   confirmCvStillGood,
   changeJobApplicationStatus,
+  hasAnthropicApiKey,
+  addActivityLogEntry,
   applyToOpportunity,
 }: HomeDashboardProps) => {
   const router = useRouter()
@@ -121,6 +123,8 @@ export const HomeDashboard = ({
             snoozeAlert={snoozeAlert}
             confirmCvStillGood={confirmCvStillGood}
             changeJobApplicationStatus={changeJobApplicationStatus}
+            hasAnthropicApiKey={hasAnthropicApiKey}
+            addActivityLogEntry={addActivityLogEntry}
             jobApplicationSummaries={jobApplicationSummaries}
             interviews={alertInterviews}
             now={now}

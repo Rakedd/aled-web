@@ -81,6 +81,8 @@ const buildDashboard = (overrides: Partial<HomeDashboardProps> = {}) => (
     snoozeAlert={jest.fn()}
     confirmCvStillGood={jest.fn()}
     changeJobApplicationStatus={jest.fn()}
+    hasAnthropicApiKey
+    addActivityLogEntry={jest.fn()}
     applyToOpportunity={jest.fn()}
     {...overrides}
   />
@@ -161,6 +163,18 @@ describe('HomeDashboard', () => {
     expect(reminderLinks[0]).toHaveAttribute('href', '/candidatures/application-1')
     expect(within(reminderLinks[0]).getByText('Relance')).toHaveAttribute('data-tone', 'peach')
     expect(within(remindersSection).getByRole('link', { name: 'Voir mes candidatures' })).toHaveAttribute('href', '/candidatures')
+  })
+
+  it('offers to draft a follow up from each follow up due reminder, with the key state and the journal action', async () => {
+    const addActivityLogEntry = jest.fn().mockResolvedValue({ ok: true, data: null })
+    renderDashboard({ initialAlerts: [1, 2].map(buildAlert), hasAnthropicApiKey: false, addActivityLogEntry })
+    const remindersSection = screen.getByRole('region', { name: 'À faire' })
+    expect(within(remindersSection).getAllByRole('button', { name: /^Rédiger une relance pour/ })).toHaveLength(2)
+    await userEvent.click(within(remindersSection).getByRole('button', { name: 'Rédiger une relance pour « Mission 1 »' }))
+    const dialog = screen.getByRole('dialog', { name: 'Relance' })
+    expect(within(dialog).getByRole('note')).toHaveTextContent('la rédaction des relances')
+    await userEvent.click(within(dialog).getByRole('button', { name: "J'ai envoyé la relance" }))
+    expect(addActivityLogEntry).toHaveBeenCalledWith('application-1', { kind: 'message', summary: 'Relance envoyée' })
   })
 
   it.each([

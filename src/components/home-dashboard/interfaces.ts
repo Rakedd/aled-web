@@ -1,3 +1,4 @@
+import type { FollowUpMessageButtonProps } from '@/components/follow-up-message-button/interfaces'
 import type { ChangeJobApplicationStatus, ConfirmCvStillGood, SnoozeAlert, TodoBannerJobApplicationSummary } from '@/components/todo-banner/interfaces'
 import type { InterviewWithJobApplication } from '@/domain/interviews'
 import type { ApplyToOpportunity, OpportunityListItem } from '@/domain/opportunities'
@@ -11,7 +12,8 @@ export type HomeDashboardControllerParameters = {
   onDataChanged: () => void
 }
 
-export type HomeDashboardProps = Omit<HomeDashboardControllerParameters, 'onDataChanged'> & {
+export type HomeDashboardProps = Omit<HomeDashboardControllerParameters, 'onDataChanged'> &
+  Pick<FollowUpMessageButtonProps, 'hasAnthropicApiKey' | 'addActivityLogEntry'> & {
   firstName: string
   titleElementId: string
   now: Date

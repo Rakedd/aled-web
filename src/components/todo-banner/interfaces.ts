@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { FollowUpMessageButtonProps } from '@/components/follow-up-message-button/interfaces'
 import type { ActionResult } from '@/domain/action-result'
 import type { JobApplicationListItem } from '@/domain/job-application'
 import type { JobApplicationStatus } from '@/domain/job-application-status'
@@ -32,7 +33,8 @@ export type TodoBannerControllerParameters = {
   onDataChanged: () => void
 }
 
-export type TodoBannerProps = Omit<TodoBannerControllerParameters, 'onDataChanged'> & {
+export type TodoBannerProps = Omit<TodoBannerControllerParameters, 'onDataChanged'> &
+  Pick<FollowUpMessageButtonProps, 'hasAnthropicApiKey' | 'addActivityLogEntry'> & {
   title: string
   jobApplicationSummaries: TodoBannerJobApplicationSummary[]
   interviews: AlertInterview[]

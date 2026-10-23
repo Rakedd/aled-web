@@ -7,10 +7,13 @@ jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) 
 
 const renderJobApplicationHeader = (status: JobApplicationStatus) => {
   const changeJobApplicationStatus = jest.fn().mockResolvedValue({ ok: true, data: null })
+  const addActivityLogEntry = jest.fn().mockResolvedValue({ ok: true, data: null })
   render(
     <JobApplicationHeader
       jobApplication={{ id: 'application-1', status }}
       changeJobApplicationStatus={changeJobApplicationStatus}
+      hasAnthropicApiKey
+      addActivityLogEntry={addActivityLogEntry}
     />,
   )
   return { changeJobApplicationStatus }
@@ -46,5 +49,17 @@ describe('JobApplicationHeader', () => {
     await user.click(screen.getByRole('button', { name: 'Changer le statut' }))
     await user.selectOptions(screen.getByLabelText('Choisir un statut'), 'signed')
     expect(changeJobApplicationStatus).toHaveBeenCalledWith('application-1', 'signed')
+  })
+
+  it('offers to draft a follow up right before Changer le statut for an active status', () => {
+    renderJobApplicationHeader('cv_submitted')
+    const draftButton = screen.getByRole('button', { name: 'Rédiger une relance' })
+    const changeStatusButton = screen.getByRole('button', { name: 'Changer le statut' })
+    expect(draftButton.compareDocumentPosition(changeStatusButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('does not offer to draft a follow up for a closed job application', () => {
+    renderJobApplicationHeader('signed')
+    expect(screen.queryByRole('button', { name: 'Rédiger une relance' })).not.toBeInTheDocument()
   })
 })

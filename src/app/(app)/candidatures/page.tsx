@@ -7,7 +7,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { JOB_APPLICATION_DELETED_SEARCH_PARAMETER, NEW_JOB_APPLICATION_ROUTE } from '@/domain/routes'
 import { PAGE_TITLE_CLASS_NAME } from '@/lib/typography-class-names'
 import { confirmCvStillGood } from '@/server/actions/cv-actions'
-import { changeJobApplicationStatus, snoozeAlert } from '@/server/actions/job-application-actions'
+import { addActivityLogEntry, changeJobApplicationStatus, snoozeAlert } from '@/server/actions/job-application-actions'
 import { loadTodoReminders } from '@/server/todo-reminders/load-todo-reminders'
 
 export const metadata: Metadata = { title: 'Mes candidatures · Aled' }
@@ -43,7 +43,7 @@ const JobApplicationsPage = async ({ searchParams }: PageProps<'/candidatures'>)
     )
   }
 
-  const { jobApplications, alertInterviews, alerts } = todoRemindersResult.data
+  const { jobApplications, profileSettings, alertInterviews, alerts } = todoRemindersResult.data
 
   const todoDetails = (
     <TodoBanner
@@ -52,6 +52,8 @@ const JobApplicationsPage = async ({ searchParams }: PageProps<'/candidatures'>)
       snoozeAlert={snoozeAlert}
       confirmCvStillGood={confirmCvStillGood}
       changeJobApplicationStatus={changeJobApplicationStatus}
+      hasAnthropicApiKey={profileSettings.anthropicApiKeyLastFour !== null}
+      addActivityLogEntry={addActivityLogEntry}
       jobApplicationSummaries={jobApplications.map(({ id, status, contactName, intermediaryName }) => ({
         id,
         status,

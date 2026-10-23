@@ -6,7 +6,7 @@ import { countActiveJobApplications } from '@/domain/job-application-status'
 import { PASSWORD_UPDATED_SEARCH_PARAMETER, PASSWORD_UPDATED_SEARCH_VALUE } from '@/domain/routes'
 import { PAGE_TITLE_CLASS_NAME } from '@/lib/typography-class-names'
 import { confirmCvStillGood } from '@/server/actions/cv-actions'
-import { changeJobApplicationStatus, snoozeAlert } from '@/server/actions/job-application-actions'
+import { addActivityLogEntry, changeJobApplicationStatus, snoozeAlert } from '@/server/actions/job-application-actions'
 import { applyToOpportunity, countOpportunitiesToProcess, listHighlightedOpportunities } from '@/server/actions/opportunity-actions'
 import { saveProfessionalStatus } from '@/server/actions/settings-actions'
 import { loadTodoReminders } from '@/server/todo-reminders/load-todo-reminders'
@@ -82,6 +82,8 @@ const HomePage = async ({ searchParams }: PageProps<'/'>) => {
           snoozeAlert={snoozeAlert}
           confirmCvStillGood={confirmCvStillGood}
           changeJobApplicationStatus={changeJobApplicationStatus}
+          hasAnthropicApiKey={profileSettings.anthropicApiKeyLastFour !== null}
+          addActivityLogEntry={addActivityLogEntry}
           applyToOpportunity={applyToOpportunity}
         />
       </div>
