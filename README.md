@@ -29,7 +29,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-L'application tourne sur http://localhost:3000. Les e-mails (invitation, lien de connexion) arrivent dans Mailpit : http://127.0.0.1:54324.
+L'application tourne sur http://localhost:3000. Les e-mails (confirmation d'inscription, récupération de mot de passe, invitation, lien de connexion) arrivent dans Mailpit : http://127.0.0.1:54324. Les modèles en français sont dans `supabase/templates/` (`confirmation.html` et `recovery.html` pour l'inscription).
 
 Commandes utiles :
 
@@ -139,14 +139,75 @@ Ne jamais coller le jeton dans un fichier suivi par git ni dans une commande qui
 
 ## Créer un compte utilisateur
 
-L'inscription publique est désactivée. Les comptes se connectent par e-mail et mot de passe, sur le web (`/login`) comme sur l'application mobile. Pour ouvrir l'accès à quelqu'un :
+L'inscription est publique : chacun crée son compte lui-même, par e-mail et mot de passe ou avec Google ou LinkedIn. Les comptes se connectent ensuite sur le web (`/login`) comme sur l'application mobile.
 
-1. Dans le tableau de bord Supabase du projet : **Authentication → Users → Add user → Create new user**, saisir son adresse e-mail et un mot de passe, et cocher **Auto Confirm User**. Sans cette case, la connexion est refusée avec « Ton compte n'est pas encore activé. ». En local, la même action se fait depuis Supabase Studio (http://127.0.0.1:54323).
-2. Transmettre le mot de passe à la personne par un canal privé. L'application ne permet pas encore de le changer ni de le réinitialiser : en cas d'oubli, le modifier depuis la fiche de l'utilisateur dans Supabase.
+Parcours d'une inscription :
 
-La route `/auth/confirm` reste en place pour les liens envoyés par Supabase (invitation, lien magique). Sur le projet hébergé, les modèles d'e-mail correspondants doivent reprendre les liens de `supabase/templates/invite.html` et `supabase/templates/magic-link.html` (`{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=...`), et la **Site URL** doit être l'URL de production.
+1. Sur `/inscription` (web) ou depuis l'écran d'inscription de l'application, la personne saisit son prénom, son e-mail, un mot de passe d'au moins 8 caractères, son statut (freelance ou salarié) et accepte les conditions d'utilisation.
+2. Elle reçoit un e-mail de confirmation. Le lien ouvre `/auth/confirm`, qui vérifie le jeton et ouvre la session.
+3. Avec Google ou LinkedIn, le retour passe par `/auth/callback` (échange de code PKCE) et aucun e-mail de confirmation n'est nécessaire.
+4. En cas d'oubli, `/mot-de-passe-oublie` envoie un lien de récupération ; `/mot-de-passe/nouveau` permet de choisir le nouveau mot de passe.
 
-Un profil est créé automatiquement pour chaque nouveau compte.
+Routes concernées : `/inscription`, `/mot-de-passe-oublie`, `/mot-de-passe/nouveau`, `/auth/confirm` (types `email`, `invite`, `signup`, `recovery`) et `/auth/callback`.
+
+Un profil est créé automatiquement pour chaque nouveau compte. Il garde le statut professionnel (`professional_status`) et la date d'acceptation des conditions (`terms_accepted_at`).
+
+Secours, création manuelle (par exemple si l'inscription est coupée ou pour un compte de test) :
+
+1. Dans le tableau de bord Supabase du projet : **Authentication → Users → Add user → Create new user**, saisir l'adresse e-mail et un mot de passe, et cocher **Auto Confirm User**. Sans cette case, la connexion est refusée avec « Ton compte n'est pas encore activé. ». En local, la même action se fait depuis Supabase Studio (http://127.0.0.1:54323).
+2. Transmettre le mot de passe à la personne par un canal privé. Elle pourra ensuite le changer depuis l'application ou passer par `/mot-de-passe-oublie`.
+
+Sur le projet hébergé, la mise en route de l'inscription est décrite dans « Mettre en production les inscriptions ».
+
+## Mettre en production les inscriptions
+
+Le code et la configuration locale (`supabase/config.toml`) sont prêts. Les réglages du projet Supabase hébergé, de Google et de LinkedIn se font à la main, dans cet ordre.
+
+### 1. Réglages Supabase
+
+1. **Authentication > Sign In / Providers** : activer **Allow new users to sign up** et **Confirm email**, puis fixer la longueur minimale du mot de passe à 8.
+2. **Authentication > URL Configuration** :
+   - **Site URL** : `https://app.aled.work` ;
+   - **Redirect URLs** : `https://app.aled.work/auth/callback` et `aled://auth/callback` (le schéma `aled://` sert à l'application mobile).
+3. **Authentication > Email Templates** : coller le contenu de `supabase/templates/confirmation.html` dans **Confirm signup** et celui de `supabase/templates/recovery.html` dans **Reset password**, avec les mêmes objets que ceux du fichier.
+4. **Authentication > Rate Limits** : Resend est déjà le SMTP du projet, donc relever la limite d'envoi d'e-mails (« Rate limit for sending emails »), par exemple à 30 par heure. Garder un intervalle minimal entre deux e-mails d'au moins 60 secondes : en dessous, des demandes répétées rapidement se comportent différemment selon que le compte existe ou non, ce qui permet de le deviner. Attention : Supabase voit l'IP du serveur Vercel, pas celle de l'utilisateur. Les limites par IP s'appliquent donc à tous les utilisateurs ensemble.
+5. Variables Vercel (Production) : `APP_ORIGIN` et `LANDING_HOSTNAMES` (voir « Projet Vercel »). Sans hôte de landing, les liens légaux pointent vers `/vitrine/...`, qui est une 404 sur l'hôte de l'application, et l'application journalise `Landing hostname missing for legal links` (`console.error`).
+
+### 2. Google
+
+1. Ouvrir la [Google Cloud Console](https://console.cloud.google.com), créer un projet ou choisir celui existant.
+2. **APIs & Services > OAuth consent screen** : type **External**, nom de l'application `Aled`, e-mail d'assistance, domaine `aled.work`, URL de la politique de confidentialité `https://aled.work/confidentialite` et URL des conditions d'utilisation `https://aled.work/conditions-utilisation`.
+3. **APIs & Services > Credentials > Create credentials > OAuth client ID**, type **Web application**.
+4. Dans **Authorized redirect URIs**, ajouter `https://<référence-du-projet>.supabase.co/auth/v1/callback`.
+5. Copier le **Client ID** et le **Client secret**.
+6. Dans Supabase, **Authentication > Sign In / Providers > Google** : activer le fournisseur, coller l'identifiant et le secret, enregistrer.
+
+### 3. LinkedIn
+
+1. Ouvrir [LinkedIn Developers](https://www.linkedin.com/developers/apps) et **Create app**. L'app doit être rattachée à une page entreprise LinkedIn.
+2. Onglet **Products** : demander **Sign In with LinkedIn using OpenID Connect**.
+3. Onglet **Auth** : ajouter l'URL de redirection `https://<référence-du-projet>.supabase.co/auth/v1/callback`.
+4. Copier le **Client ID** et le **Primary Client Secret**.
+5. Dans Supabase, **Authentication > Sign In / Providers > LinkedIn (OIDC)** : activer le fournisseur, coller l'identifiant et le secret, enregistrer.
+
+### 4. Application mobile
+
+Un nouveau build de développement est nécessaire : `expo-clipboard` et `expo-crypto` sont des modules natifs, absents des builds existants. Le schéma `aled://auth/callback` doit être dans les **Redirect URLs** de Supabase (étape 1.2).
+
+### 5. Avant le lancement
+
+La page `/conditions-utilisation` contient des marqueurs `[À COMPLÉTER …]`. Le porteur doit les remplir avant d'ouvrir les inscriptions. Vérifier ensuite un parcours complet : inscription par e-mail, confirmation, déconnexion, récupération du mot de passe, puis Google et LinkedIn.
+
+### Activer Google et LinkedIn en local
+
+Les blocs `[auth.external.google]` et `[auth.external.linkedin_oidc]` de `supabase/config.toml` sont désactivés (`enabled = false`). Pour les essayer en local :
+
+1. Créer les identifiants comme ci-dessus, avec l'URI de redirection `http://127.0.0.1:54321/auth/v1/callback`.
+2. Exporter les variables lues par la configuration : `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID`, `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`, `SUPABASE_AUTH_EXTERNAL_LINKEDIN_OIDC_CLIENT_ID` et `SUPABASE_AUTH_EXTERNAL_LINKEDIN_OIDC_SECRET`.
+3. Passer `enabled = true` dans le bloc voulu.
+4. Redémarrer Supabase : `npx supabase stop && npx supabase start`.
+
+Réglages locaux déjà en place : inscriptions et confirmations activées, mot de passe de 8 caractères minimum, `email_sent` à 30 et intervalle minimal d'une seconde entre deux e-mails (`max_frequency`).
 
 ## Export et sauvegardes
 
@@ -222,15 +283,17 @@ La première mise en place se fait à la main, dans cet ordre : Supabase, Google
    npx supabase db push
    ```
 
-3. Dans **Authentication > Sign In / Providers** (ou **Settings**), désactiver les inscriptions (« Allow new users to sign up »). C'est l'équivalent de `enable_signup = false` dans `supabase/config.toml` : seuls les comptes créés depuis le tableau de bord existent.
+3. Les inscriptions, les fournisseurs Google et LinkedIn et les modèles d'inscription se règlent dans « Mettre en production les inscriptions ».
 4. Dans **Authentication > URL Configuration** :
    - **Site URL** : `https://app.aled.work` ;
-   - **Redirect URLs** : ajouter `https://app.aled.work/auth/confirm`.
+   - **Redirect URLs** : ajouter `https://app.aled.work/auth/confirm`, `https://app.aled.work/auth/callback` et `aled://auth/callback`.
 5. Dans **Authentication > Email Templates**, reproduire ce que `supabase/config.toml` fait en local (les fichiers sont dans `supabase/templates/`). Le lien de chaque modèle doit être :
    - **Magic link** : `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`
    - **Invite user** : `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite`
+   - **Confirm signup** : `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`
+   - **Reset password** : `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`
 
-   Le plus simple est de copier le contenu de `supabase/templates/magic-link.html` et `supabase/templates/invite.html` dans les deux modèles, avec les mêmes objets.
+   Le plus simple est de copier le contenu de `supabase/templates/magic-link.html` et `supabase/templates/invite.html` dans les modèles, avec les mêmes objets ; `confirmation.html` et `recovery.html` servent aux deux autres.
 6. Configurer un serveur SMTP personnalisé avant d'envoyer des e-mails Supabase (invitation, lien magique). La connexion par mot de passe n'envoie aucun e-mail et fonctionne sans. Le service d'e-mail intégré de Supabase n'envoie qu'aux adresses des membres de l'équipe du projet Supabase, avec une limite de quelques e-mails par heure : sans SMTP personnalisé, ces e-mails n'arrivent jamais, sans aucune erreur visible.
    - Créer un compte chez un fournisseur gratuit, par exemple [Resend](https://resend.com) (3 000 e-mails par mois) ou [Brevo](https://www.brevo.com) (300 e-mails par jour).
    - Chez ce fournisseur, vérifier le domaine d'envoi (enregistrements DNS SPF et DKIM) ou, à défaut, l'adresse d'expéditeur.
