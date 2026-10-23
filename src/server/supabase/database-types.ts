@@ -409,6 +409,44 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"technical_briefs": {
+                  Row: {
+                    "content": NonNullable<Json>,"cv_label": string,"cv_uploaded_at": string,"cv_version_id": string | null,"generated_at": string,"id": string,"job_application_id": string,"language": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "content": NonNullable<Json>,"cv_label": string,"cv_uploaded_at": string,"cv_version_id"?: string | null,"generated_at": string,"id"?: string,"job_application_id": string,"language": string,"user_id": string
+                  }
+                  Update: {
+                    "content"?: NonNullable<Json>,"cv_label"?: string,"cv_uploaded_at"?: string,"cv_version_id"?: string | null,"generated_at"?: string,"id"?: string,"job_application_id"?: string,"language"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "technical_briefs_user_id_cv_version_id_fkey"
+      columns: ["user_id","cv_version_id"]
+isOneToOne: false
+      referencedRelation: "cv_versions"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "technical_briefs_user_id_cv_version_id_fkey"
+      columns: ["user_id","cv_version_id"]
+isOneToOne: false
+      referencedRelation: "cv_versions_overview"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "technical_briefs_user_id_job_application_id_fkey"
+      columns: ["user_id","job_application_id"]
+isOneToOne: false
+      referencedRelation: "job_applications"
+      referencedColumns: ["user_id","id"]
+    },{
+      foreignKeyName: "technical_briefs_user_id_job_application_id_fkey"
+      columns: ["user_id","job_application_id"]
+isOneToOne: false
+      referencedRelation: "job_applications_overview"
+      referencedColumns: ["user_id","id"]
+    }
+                  ]
                 }
           }
           Views: {

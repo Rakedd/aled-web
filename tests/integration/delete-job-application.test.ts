@@ -25,7 +25,7 @@ type TestUser = { client: SupabaseClient<Database>; userId: string }
 
 type SeededJobApplication = { jobApplicationId: string; endClientId: string; storagePath: string }
 
-const CHILD_TABLES = ['activity_log_entries', 'interviews', 'alert_snoozes', 'job_specs', 'interview_questions'] as const
+const CHILD_TABLES = ['activity_log_entries', 'interviews', 'alert_snoozes', 'job_specs', 'interview_questions', 'technical_briefs'] as const
 
 const createTestUser = (): Promise<TestUser> =>
   createSignedInTestClient(`delete-job-application-${randomUUID()}@test.local`)
@@ -74,6 +74,17 @@ const seedJobApplicationWithEverything = async (user: TestUser): Promise<SeededJ
       job_application_id: jobApplicationId,
       language: 'fr',
       questions: ['Quelle est la taille de l’équipe ?'],
+      generated_at: '2026-10-18T09:00:00+00:00',
+    }),
+  )
+  failOnError(
+    await user.client.from('technical_briefs').insert({
+      user_id: user.userId,
+      job_application_id: jobApplicationId,
+      language: 'fr',
+      cv_label: 'CV envoyé',
+      cv_uploaded_at: '2026-10-17T09:00:00+00:00',
+      content: { missions: [] },
       generated_at: '2026-10-18T09:00:00+00:00',
     }),
   )
@@ -219,6 +230,7 @@ describe('deleteJobApplication', () => {
       alert_snoozes: 0,
       job_specs: 0,
       interview_questions: 0,
+      technical_briefs: 0,
     })
     expect(await listStoredFileNames(toStorageFolder(storagePath))).toEqual([])
     const { data: remainingBriefs } = await user.client
@@ -312,6 +324,7 @@ describe('deleteJobApplication', () => {
       alert_snoozes: 1,
       job_specs: 1,
       interview_questions: 1,
+      technical_briefs: 1,
     })
     expect(await listStoredFileNames(toStorageFolder(storagePath))).toEqual([toFileName(storagePath)])
     const { data: remainingDecisions } = await createServiceRoleTestClient()
