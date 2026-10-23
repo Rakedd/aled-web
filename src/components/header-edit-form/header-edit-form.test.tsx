@@ -41,6 +41,6 @@ describe('HeaderEditForm', () => {
 
   it('shows no warning without a risky positioning', () => {
     renderHeaderEditForm([])
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.queryByText('Ce positionnement risque de faire doublon, attention.')).not.toBeInTheDocument()
   })
 })

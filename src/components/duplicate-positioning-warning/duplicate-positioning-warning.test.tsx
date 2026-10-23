@@ -12,9 +12,9 @@ const RISK: PositionedJobApplication = {
 }
 
 describe('DuplicatePositioningWarning', () => {
-  it('renders nothing without risk', () => {
-    const { container } = render(<DuplicatePositioningWarning risks={[]} />)
-    expect(container).toBeEmptyDOMElement()
+  it('keeps an empty status region mounted without risk', () => {
+    render(<DuplicatePositioningWarning risks={[]} />)
+    expect(screen.getByRole('status')).toBeEmptyDOMElement()
   })
 
   it('shows the warning, the detail and a link to each risky application', () => {

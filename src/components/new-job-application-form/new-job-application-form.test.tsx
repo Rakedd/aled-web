@@ -66,7 +66,7 @@ describe('NewJobApplicationForm', () => {
       ],
     })
     await userEvent.click(screen.getByRole('button', { name: 'Saisie manuelle' }))
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.queryByText('Ce positionnement risque de faire doublon, attention.')).not.toBeInTheDocument()
     await userEvent.type(screen.getByLabelText('Client final'), 'societe generale')
     const warning = screen.getByRole('status')
     expect(warning).toHaveTextContent('Ce positionnement risque de faire doublon, attention.')
