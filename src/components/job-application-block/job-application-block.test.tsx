@@ -112,6 +112,7 @@ describe('JobApplicationBlock', () => {
               setEndClientParent: jest.fn(),
               updateIntermediaryKind: jest.fn(),
               searchEntities: jest.fn(),
+              positionedJobApplications: [],
             },
           }}
         />

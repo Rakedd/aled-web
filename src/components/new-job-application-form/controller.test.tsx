@@ -1,7 +1,17 @@
 import { act, renderHook } from '@testing-library/react'
 import type { ActionResult } from '@/domain/action-result'
 import type { JobPostingExtraction } from '@/domain/job-posting-extraction'
+import type { PositionedJobApplication } from '@/domain/duplicate-positioning'
 import { useController } from './controller'
+
+const POSITIONED_BY_OTHER_AGENCY: PositionedJobApplication = {
+  id: 'application-9',
+  title: 'Lead React',
+  endClientName: 'Société Générale',
+  endClientParentName: null,
+  intermediaryName: 'Autre ESN',
+  appliedOn: new Date('2026-10-07T08:00:00Z'),
+}
 
 const EXTRACTION: JobPostingExtraction = {
   title: 'Développeur React senior',
@@ -22,15 +32,19 @@ const renderNewJobApplicationFormController = ({
   extractionResult = { ok: true, data: EXTRACTION },
   creationResult = { ok: true, data: { id: 'application-1' } },
   hasAnthropicApiKey = true,
+  positionedJobApplications = [],
 }: {
   extractionResult?: ActionResult<JobPostingExtraction>
   creationResult?: ActionResult<{ id: string }>
   hasAnthropicApiKey?: boolean
+  positionedJobApplications?: PositionedJobApplication[]
 } = {}) => {
   const extractJobPosting = jest.fn().mockResolvedValue(extractionResult)
   const createJobApplication = jest.fn().mockResolvedValue(creationResult)
   const navigateTo = jest.fn()
-  const { result } = renderHook(() => useController({ extractJobPosting, createJobApplication, navigateTo, hasAnthropicApiKey }))
+  const { result } = renderHook(() =>
+    useController({ extractJobPosting, createJobApplication, navigateTo, hasAnthropicApiKey, positionedJobApplications }),
+  )
   return { result, extractJobPosting, createJobApplication, navigateTo }
 }
 
@@ -39,6 +53,32 @@ describe('new-job-application-form useController', () => {
     jest.useFakeTimers({ now: new Date('2026-10-17T23:30:00Z') })
   })
   afterEach(() => jest.useRealTimers())
+
+  it('warns as soon as the typed end client was positioned by another agency 10 days ago', () => {
+    const { result } = renderNewJobApplicationFormController({ positionedJobApplications: [POSITIONED_BY_OTHER_AGENCY] })
+    act(() => result.current.switchToManualEntry())
+    expect(result.current.duplicatePositioningRisks).toEqual([])
+    act(() => result.current.setTextFormValue('intermediaryName', 'Free-Work'))
+    act(() => result.current.setTextFormValue('endClientName', 'societe generale'))
+    expect(result.current.duplicatePositioningRisks).toEqual([POSITIONED_BY_OTHER_AGENCY])
+  })
+
+  it('stops warning when the typed agency is the same', () => {
+    const { result } = renderNewJobApplicationFormController({ positionedJobApplications: [POSITIONED_BY_OTHER_AGENCY] })
+    act(() => result.current.switchToManualEntry())
+    act(() => result.current.setTextFormValue('endClientName', 'Société Générale'))
+    expect(result.current.duplicatePositioningRisks).toHaveLength(1)
+    act(() => result.current.setTextFormValue('intermediaryName', 'Autre ESN'))
+    expect(result.current.duplicatePositioningRisks).toEqual([])
+  })
+
+  it('does not warn when the application date is cleared', () => {
+    const { result } = renderNewJobApplicationFormController({ positionedJobApplications: [POSITIONED_BY_OTHER_AGENCY] })
+    act(() => result.current.switchToManualEntry())
+    act(() => result.current.setTextFormValue('endClientName', 'Société Générale'))
+    act(() => result.current.setTextFormValue('appliedOn', ''))
+    expect(result.current.duplicatePositioningRisks).toEqual([])
+  })
 
   it('starts on the paste step', () => {
     const { result } = renderNewJobApplicationFormController()

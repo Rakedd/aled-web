@@ -2,6 +2,7 @@ import { validateIntermediaryKind } from '@/domain/entities'
 import { findChangedFields, toFormText, toNullableText } from '@/domain/form-values'
 import type { JobApplicationOverview } from '@/domain/job-application'
 import { formatParisCalendarDate, parseParisCalendarDate } from '@/domain/paris-time'
+import { findDuplicatePositioningRisksForFormValues } from '@/lib/duplicate-positioning-risks'
 import { type SavePlan, planJobApplicationUpdate, useBlockForm } from '@/lib/use-block-form'
 import type { HeaderEditFormControllerParameters, HeaderEditFormValueName, HeaderEditFormValues } from './interfaces'
 
@@ -41,6 +42,7 @@ export const useController = ({
   updateJobApplication,
   setEndClientParent,
   updateIntermediaryKind,
+  positionedJobApplications,
   onDataChanged,
   onClose,
 }: HeaderEditFormControllerParameters) => {
@@ -90,6 +92,10 @@ export const useController = ({
     setFormValue,
     isEndClientParentDisabled: formValues.endClientName.trim().length === 0,
     isIntermediaryKindDisabled,
+    duplicatePositioningRisks: findDuplicatePositioningRisksForFormValues(
+      { jobApplicationId: jobApplication.id, ...formValues },
+      positionedJobApplications,
+    ),
     isSaving,
     errorMessage,
     save: () => save(planHeaderSave),

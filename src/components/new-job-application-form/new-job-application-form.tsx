@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import type { ComponentProps, FormEvent } from 'react'
+import { DuplicatePositioningWarning } from '@/components/duplicate-positioning-warning'
 import { EntityAutocomplete } from '@/components/entity-autocomplete'
 import { FormField } from '@/components/form-field'
 import { MissingAnthropicApiKeyNotice } from '@/components/missing-anthropic-api-key-notice'
@@ -30,6 +31,7 @@ export const NewJobApplicationForm = ({
   searchEntities,
   hasAnthropicApiKey,
   cvOptions,
+  positionedJobApplications,
 }: NewJobApplicationFormProps) => {
   const router = useRouter()
   const {
@@ -42,6 +44,7 @@ export const NewJobApplicationForm = ({
     hasExtractionFailed,
     isPrefilledByClaude,
     isSubmitting,
+    duplicatePositioningRisks,
     extract,
     switchToManualEntry,
     setTextFormValue,
@@ -55,6 +58,7 @@ export const NewJobApplicationForm = ({
     createJobApplication,
     navigateTo: router.push,
     hasAnthropicApiKey,
+    positionedJobApplications,
   })
 
   const errorAlert = errorMessage && (
@@ -239,6 +243,9 @@ export const NewJobApplicationForm = ({
           {renderTextInput('contactLinkedinUrl', 'LinkedIn du contact', { type: 'url', inputMode: 'url', placeholder: 'https://' })}
           {renderEntityField('endClientName', 'end_client', 'Client final')}
           {renderTextInput('endClientParentName', 'Groupe du client final')}
+          <div className="sm:col-span-2">
+            <DuplicatePositioningWarning risks={duplicatePositioningRisks} />
+          </div>
         </fieldset>
         <fieldset className="grid gap-4 sm:grid-cols-2">
           <legend className="mb-3 text-sm font-semibold">Les conditions</legend>

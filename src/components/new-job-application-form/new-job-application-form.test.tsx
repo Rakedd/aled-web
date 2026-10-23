@@ -39,6 +39,7 @@ const renderNewJobApplicationForm = ({
       searchEntities={searchEntities}
       hasAnthropicApiKey={hasAnthropicApiKey}
       cvOptions={cvOptions}
+      positionedJobApplications={[]}
     />,
   )
   return { extractJobPosting, createJobApplication }

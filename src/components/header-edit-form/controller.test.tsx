@@ -2,11 +2,24 @@ import { act, renderHook } from '@testing-library/react'
 import type { ActionResult } from '@/domain/action-result'
 import type { JobApplicationOverview } from '@/domain/job-application'
 import { buildJobApplicationOverview } from '@/test-fixtures/job-application-overview'
+import type { PositionedJobApplication } from '@/domain/duplicate-positioning'
 import { useController } from './controller'
+
+const OTHER_AGENCY_POSITIONING: PositionedJobApplication = {
+  id: 'application-9',
+  title: 'Lead React',
+  endClientName: 'Société Générale',
+  endClientParentName: null,
+  intermediaryName: 'Autre ESN',
+  appliedOn: new Date('2026-10-07T08:00:00Z'),
+}
 
 const SUCCESS: ActionResult<null> = { ok: true, data: null }
 
-const renderHeaderEditController = (jobApplication: JobApplicationOverview = buildJobApplicationOverview()) => {
+const renderHeaderEditController = (
+  jobApplication: JobApplicationOverview = buildJobApplicationOverview(),
+  positionedJobApplications: PositionedJobApplication[] = [],
+) => {
   const updateJobApplication = jest.fn().mockResolvedValue(SUCCESS)
   const setEndClientParent = jest.fn().mockResolvedValue(SUCCESS)
   const updateIntermediaryKind = jest.fn().mockResolvedValue(SUCCESS)
@@ -19,6 +32,7 @@ const renderHeaderEditController = (jobApplication: JobApplicationOverview = bui
         updateJobApplication,
         setEndClientParent,
         updateIntermediaryKind,
+        positionedJobApplications,
         onDataChanged,
         onClose,
       }),
@@ -28,6 +42,17 @@ const renderHeaderEditController = (jobApplication: JobApplicationOverview = bui
 }
 
 describe('header-edit-form useController', () => {
+  it('warns when another agency positioned the same end client recently', () => {
+    const { result } = renderHeaderEditController(undefined, [OTHER_AGENCY_POSITIONING])
+    expect(result.current.duplicatePositioningRisks).toEqual([OTHER_AGENCY_POSITIONING])
+  })
+
+  it('never flags the application being edited', () => {
+    const ownPositioning = { ...OTHER_AGENCY_POSITIONING, id: 'application-1' }
+    const { result } = renderHeaderEditController(undefined, [ownPositioning])
+    expect(result.current.duplicatePositioningRisks).toEqual([])
+  })
+
   it('fills the header fields from the application', () => {
     const { result } = renderHeaderEditController()
     expect(result.current.formValues).toEqual({

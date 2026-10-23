@@ -10,6 +10,7 @@ import type { JobApplicationStatus } from '@/domain/job-application-status'
 import { formatParisCalendarDate, parseParisCalendarDate } from '@/domain/paris-time'
 import { jobApplicationRoute } from '@/domain/routes'
 import type { StackItem } from '@/domain/types'
+import { findDuplicatePositioningRisksForFormValues } from '@/lib/duplicate-positioning-risks'
 import type {
   JobApplicationFormValues,
   NewJobApplicationFormControllerParameters,
@@ -104,6 +105,7 @@ export const useController = ({
   createJobApplication,
   navigateTo,
   hasAnthropicApiKey,
+  positionedJobApplications,
 }: NewJobApplicationFormControllerParameters) => {
   const [step, setStep] = useState<NewJobApplicationStep>('paste')
   const [pastedText, setPastedText] = useState('')
@@ -242,6 +244,10 @@ export const useController = ({
     hasExtractionFailed,
     isPrefilledByClaude,
     isSubmitting,
+    duplicatePositioningRisks: findDuplicatePositioningRisksForFormValues(
+      { jobApplicationId: null, ...formValues },
+      positionedJobApplications,
+    ),
     extract,
     switchToManualEntry,
     setTextFormValue,

@@ -1,6 +1,7 @@
 'use client'
 
 import { BlockForm } from '@/components/block-form'
+import { DuplicatePositioningWarning } from '@/components/duplicate-positioning-warning'
 import { EntityAutocomplete } from '@/components/entity-autocomplete'
 import { FormField } from '@/components/form-field'
 import { TextField } from '@/components/text-field'
@@ -21,6 +22,7 @@ export const HeaderEditForm = ({ searchEntities, ...controllerParameters }: Head
     setFormValue,
     isEndClientParentDisabled,
     isIntermediaryKindDisabled,
+    duplicatePositioningRisks,
     isSaving,
     errorMessage,
     save,
@@ -107,6 +109,9 @@ export const HeaderEditForm = ({ searchEntities, ...controllerParameters }: Head
           value={formValues.endClientParentName}
           onValueChange={(value) => setFormValue('endClientParentName', value)}
         />
+        <div className="sm:col-span-2">
+          <DuplicatePositioningWarning risks={duplicatePositioningRisks} />
+        </div>
         <TextField
           id="header-edit-appliedOn"
           label="Date de candidature"

@@ -1,5 +1,6 @@
 import type { SearchEntities } from '@/components/entity-autocomplete/interfaces'
 import type { ActionResult } from '@/domain/action-result'
+import type { PositionedJobApplication } from '@/domain/duplicate-positioning'
 import type { JobApplicationOverview, UpdateJobApplication } from '@/domain/job-application'
 import type { IntermediaryKind } from '@/domain/types'
 
@@ -25,6 +26,7 @@ export type HeaderEditFormControllerParameters = {
   updateJobApplication: UpdateJobApplication
   setEndClientParent: SetEndClientParent
   updateIntermediaryKind: UpdateIntermediaryKind
+  positionedJobApplications: PositionedJobApplication[]
   onDataChanged: () => void
   onClose: () => void
 }

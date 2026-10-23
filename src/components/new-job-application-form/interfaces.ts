@@ -3,6 +3,7 @@ import type { JobApplicationInput } from '@/domain/job-application'
 import type { JobApplicationStatus } from '@/domain/job-application-status'
 import type { JobPostingExtraction } from '@/domain/job-posting-extraction'
 import type { StackItem } from '@/domain/types'
+import type { PositionedJobApplication } from '@/domain/duplicate-positioning'
 import type { CvOption } from '@/domain/cv-library'
 import type { SearchEntities } from '@/components/entity-autocomplete/interfaces'
 
@@ -42,6 +43,7 @@ export type NewJobApplicationFormControllerParameters = {
   createJobApplication: CreateJobApplication
   navigateTo: (path: string) => void
   hasAnthropicApiKey: boolean
+  positionedJobApplications: PositionedJobApplication[]
 }
 
 export type NewJobApplicationFormProps = Omit<NewJobApplicationFormControllerParameters, 'navigateTo'> & {
