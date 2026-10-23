@@ -60,9 +60,9 @@ describe('TechnicalBriefButton', () => {
     expect(openingButton).toHaveFocus()
   })
 
-  it('loads the view once across several opens', async () => {
+  it('loads the view once across several opens, and not before the first one', async () => {
     const { getTechnicalBriefView } = renderButton()
-    await waitFor(() => expect(getTechnicalBriefView).toHaveBeenCalledTimes(1))
+    expect(getTechnicalBriefView).not.toHaveBeenCalled()
     for (let openCount = 0; openCount < 3; openCount += 1) {
       await userEvent.click(screen.getByRole('button', { name: 'Brief technique · voir' }))
       await screen.findByRole('button', { name: 'Préparer mon pitch' })
@@ -99,8 +99,19 @@ describe('TechnicalBriefButton', () => {
     expect(generateTechnicalBrief).toHaveBeenCalledTimes(1)
   })
 
-  it('reloads the view when the language changes', async () => {
+  it('announces the outcome in a status region when the generation ends with the dialog closed', async () => {
+    const generation = createDeferred<ActionResult<TechnicalBriefGenerationOutcome>>()
+    renderButton(jest.fn().mockReturnValue(generation.promise))
+    await userEvent.click(screen.getByRole('button', { name: 'Brief technique · voir' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Préparer mon pitch' }))
+    await userEvent.keyboard('{Escape}')
+    generation.resolve({ ok: true, data: { kind: 'generated', view: buildView('fr') } })
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Brief technique prêt.'))
+  })
+
+  it('reloads the view when the language changes after the first open', async () => {
     const { getTechnicalBriefView, rendering, renderProps } = renderButton()
+    await userEvent.click(screen.getByRole('button', { name: 'Brief technique · voir' }))
     await waitFor(() => expect(getTechnicalBriefView).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'fr'))
     rendering.rerender(<TechnicalBriefButton {...renderProps} language="en" />)
     await waitFor(() => expect(getTechnicalBriefView).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'en'))

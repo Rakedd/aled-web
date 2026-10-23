@@ -1,6 +1,6 @@
 import type { ActionResult } from '@/domain/action-result'
 import type { BriefLanguage, InterviewPreparation } from '@/domain/interview-preparation'
-import type { GetTechnicalBriefView } from '@/components/technical-brief-section/interfaces'
+import type { GetTechnicalBriefView } from '@/components/technical-brief-button/interfaces'
 
 export type UpdateEndClientNotes = (endClientId: string, notes: string) => Promise<ActionResult<null>>
 

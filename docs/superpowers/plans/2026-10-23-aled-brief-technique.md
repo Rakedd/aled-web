@@ -357,6 +357,9 @@
 
 ---
 
+> Évolution : le bloc a ensuite été déplacé dans son propre bouton et sa propre fenêtre (`technical-brief-button`).
+
+
 ### Task 7: Export, restauration et README
 
 **Files:**

@@ -67,6 +67,7 @@ describe('InterviewPreparationButton', () => {
     const preparationButton = screen.getByRole('button', { name: 'Brief généré · voir mon brief' })
     const technicalBriefButton = screen.getByRole('button', { name: 'Brief technique · voir' })
     expect(preparationButton.compareDocumentPosition(technicalBriefButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    await userEvent.click(technicalBriefButton)
     await waitFor(() => expect(getTechnicalBriefView).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'fr'))
     await userEvent.selectOptions(screen.getByLabelText('Langue du brief'), 'en')
     await waitFor(() => expect(getTechnicalBriefView).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'en'))

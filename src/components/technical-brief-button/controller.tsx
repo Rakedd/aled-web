@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { guardActionCall } from '@/domain/action-result'
 import { TECHNICAL_BRIEF_MESSAGES, type TechnicalBriefView } from '@/domain/technical-brief'
-import type { TransientOutcome } from '@/components/technical-brief-section/interfaces'
-import type { TechnicalBriefButtonControllerParameters } from './interfaces'
+import type { TechnicalBriefButtonControllerParameters, TransientOutcome } from './interfaces'
 
 export const useController = ({
   jobApplicationId,
@@ -12,6 +11,9 @@ export const useController = ({
   generateTechnicalBrief,
 }: TechnicalBriefButtonControllerParameters) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [hasBeenOpened, setHasBeenOpened] = useState(false)
+  const [closedDialogAnnouncement, setClosedDialogAnnouncement] = useState('')
+  const isDialogOpenRef = useRef(false)
   const [view, setView] = useState<TechnicalBriefView | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -37,6 +39,7 @@ export const useController = ({
   })
 
   useEffect(() => {
+    if (!hasBeenOpened) return
     activeRequestKeyRef.current = `${jobApplicationId}:${language}`
     latestRequestNumberRef.current += 1
     const requestNumber = latestRequestNumberRef.current
@@ -51,7 +54,7 @@ export const useController = ({
       setView(loadResult.data)
     }
     void loadView()
-  }, [jobApplicationId, language])
+  }, [jobApplicationId, language, hasBeenOpened])
 
   const generate = async () => {
     if (!hasAnthropicApiKey || isGenerationInFlightRef.current) return
@@ -60,26 +63,45 @@ export const useController = ({
     setIsGenerating(true)
     setErrorMessage(null)
     setTransientOutcome(null)
+    setClosedDialogAnnouncement('')
     const generationResult = await guardActionCall(() =>
       actionsRef.current.generateTechnicalBrief(jobApplicationId, language),
     )
     isGenerationInFlightRef.current = false
     setIsGenerating(false)
     if (requestKey !== activeRequestKeyRef.current) return
+    const announceWhenClosed = (message: string) => {
+      if (!isDialogOpenRef.current) setClosedDialogAnnouncement(message)
+    }
     if (!generationResult.ok) {
       setErrorMessage(generationResult.errorMessage)
+      announceWhenClosed(generationResult.errorMessage)
       return
     }
     if (generationResult.data.kind === 'generated') {
       setView(generationResult.data.view)
+      announceWhenClosed(TECHNICAL_BRIEF_MESSAGES.ready)
       return
     }
     setTransientOutcome(generationResult.data.kind)
+    announceWhenClosed(
+      generationResult.data.kind === 'cv_missing_information'
+        ? TECHNICAL_BRIEF_MESSAGES.cvMissingInformationTitle
+        : TECHNICAL_BRIEF_MESSAGES.cvUnreadable,
+    )
   }
 
-  const openDialog = () => setIsDialogOpen(true)
-  const closeDialog = () => setIsDialogOpen(false)
-  const buttonLabel = isGenerating ? TECHNICAL_BRIEF_MESSAGES.generationProgress : 'Brief technique · voir'
+  const openDialog = () => {
+    isDialogOpenRef.current = true
+    setIsDialogOpen(true)
+    setHasBeenOpened(true)
+    setClosedDialogAnnouncement('')
+  }
+  const closeDialog = () => {
+    isDialogOpenRef.current = false
+    setIsDialogOpen(false)
+  }
+  const buttonLabel = isGenerating ? TECHNICAL_BRIEF_MESSAGES.generationProgress : TECHNICAL_BRIEF_MESSAGES.openButton
 
   return {
     view,
@@ -92,5 +114,6 @@ export const useController = ({
     openDialog,
     closeDialog,
     buttonLabel,
+    closedDialogAnnouncement,
   }
 }

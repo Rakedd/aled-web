@@ -71,6 +71,8 @@ export const TECHNICAL_BRIEF_LIMITS = {
 
 export const TECHNICAL_BRIEF_MESSAGES = {
   title: 'Brief technique',
+  openButton: 'Brief technique · voir',
+  ready: 'Brief technique prêt.',
   readyIntroduction:
     "L'IA croise ton CV envoyé et la stack de la mission pour te dire quelles missions raconter et quoi préparer.",
   generate: 'Préparer mon pitch',

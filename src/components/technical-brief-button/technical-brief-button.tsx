@@ -11,7 +11,7 @@ import type { TechnicalBriefButtonProps } from './interfaces'
 
 export const TechnicalBriefButton = (controllerParameters: TechnicalBriefButtonProps) => {
   const openingButtonRef = useRef<HTMLButtonElement | null>(null)
-  const { isDialogOpen, openDialog, closeDialog, buttonLabel, ...sectionState } = useController(controllerParameters)
+  const { isDialogOpen, openDialog, closeDialog, buttonLabel, closedDialogAnnouncement, ...sectionState } = useController(controllerParameters)
   const { jobApplicationId, hasAnthropicApiKey } = controllerParameters
 
   return (
@@ -26,6 +26,9 @@ export const TechnicalBriefButton = (controllerParameters: TechnicalBriefButtonP
       >
         {buttonLabel}
       </Button>
+      <p role="status" className="sr-only">
+        {closedDialogAnnouncement}
+      </p>
       <Dialog.Root
         open={isDialogOpen}
         onOpenChange={(isDialogNowOpen) => {

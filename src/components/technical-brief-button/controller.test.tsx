@@ -34,10 +34,16 @@ const buildParameters = (overrides: Partial<Parameters<typeof useController>[0]>
   ...overrides,
 })
 
-describe('technical brief section controller', () => {
+const renderController = (initialProps: ReturnType<typeof buildParameters>) => {
+  const rendered = renderHook((props: ReturnType<typeof buildParameters>) => useController(props), { initialProps })
+  act(() => rendered.result.current.openDialog())
+  return rendered
+}
+
+describe('technical brief button controller', () => {
   it('loads the view of the current language and reloads it on a language change', async () => {
     const parameters = buildParameters()
-    const { result, rerender } = renderHook((props) => useController(props), { initialProps: parameters })
+    const { result, rerender } = renderController(parameters)
     expect(result.current.isLoading).toBe(true)
     await waitFor(() => expect(result.current.view?.language).toBe('fr'))
     expect(parameters.getTechnicalBriefView).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'fr')
@@ -54,7 +60,7 @@ describe('technical brief section controller', () => {
       .mockImplementationOnce(() => slowFrenchLoad.promise)
       .mockImplementation(async (_id: string, language: BriefLanguage) => ({ ok: true, data: buildView(language) }))
     const parameters = buildParameters({ getTechnicalBriefView })
-    const { result, rerender } = renderHook((props) => useController(props), { initialProps: parameters })
+    const { result, rerender } = renderController(parameters)
     rerender({ ...parameters, language: 'en' })
     await waitFor(() => expect(result.current.view?.language).toBe('en'))
     await act(async () => slowFrenchLoad.resolve({ ok: true, data: buildView('fr') }))
@@ -65,7 +71,7 @@ describe('technical brief section controller', () => {
     const slowGeneration = createDeferred<ActionResult<TechnicalBriefGenerationOutcome>>()
     const generateTechnicalBrief = jest.fn().mockReturnValue(slowGeneration.promise)
     const parameters = buildParameters({ generateTechnicalBrief })
-    const { result, rerender } = renderHook((props) => useController(props), { initialProps: parameters })
+    const { result, rerender } = renderController(parameters)
     await waitFor(() => expect(result.current.view?.language).toBe('fr'))
     act(() => {
       void result.current.generate()
@@ -82,7 +88,7 @@ describe('technical brief section controller', () => {
   it('keeps a generation answer when the actions get a new identity during the generation', async () => {
     const slowGeneration = createDeferred<ActionResult<TechnicalBriefGenerationOutcome>>()
     const parameters = buildParameters({ generateTechnicalBrief: jest.fn().mockReturnValue(slowGeneration.promise) })
-    const { result, rerender } = renderHook((props) => useController(props), { initialProps: parameters })
+    const { result, rerender } = renderController(parameters)
     await waitFor(() => expect(result.current.view).not.toBeNull())
     act(() => {
       void result.current.generate()
@@ -99,7 +105,7 @@ describe('technical brief section controller', () => {
     const slowGeneration = createDeferred<ActionResult<TechnicalBriefGenerationOutcome>>()
     const generateTechnicalBrief = jest.fn().mockReturnValue(slowGeneration.promise)
     const parameters = buildParameters({ generateTechnicalBrief })
-    const { result } = renderHook(() => useController(parameters))
+    const { result } = renderController(parameters)
     await waitFor(() => expect(result.current.view).not.toBeNull())
     act(() => {
       void result.current.generate()
@@ -117,7 +123,7 @@ describe('technical brief section controller', () => {
       .mockResolvedValueOnce({ ok: true, data: { kind: 'cv_missing_information' } })
       .mockResolvedValue({ ok: true, data: { kind: 'generated', view: buildView('fr') } })
     const parameters = buildParameters({ generateTechnicalBrief })
-    const { result, rerender } = renderHook((props) => useController(props), { initialProps: parameters })
+    const { result, rerender } = renderController(parameters)
     await waitFor(() => expect(result.current.view).not.toBeNull())
     await act(async () => result.current.generate())
     expect(result.current.transientOutcome).toBe('cv_missing_information')
@@ -136,7 +142,7 @@ describe('technical brief section controller', () => {
   it('shows the action error message', async () => {
     const generateTechnicalBrief = jest.fn().mockResolvedValue({ ok: false, errorMessage: 'Clé invalide' })
     const parameters = buildParameters({ generateTechnicalBrief })
-    const { result } = renderHook(() => useController(parameters))
+    const { result } = renderController(parameters)
     await waitFor(() => expect(result.current.view).not.toBeNull())
     await act(async () => result.current.generate())
     expect(result.current.errorMessage).toBe('Clé invalide')
@@ -145,9 +151,37 @@ describe('technical brief section controller', () => {
   it('shows the load error message when the view cannot be loaded', async () => {
     const getTechnicalBriefView = jest.fn().mockResolvedValue({ ok: false, errorMessage: 'Chargement impossible' })
     const parameters = buildParameters({ getTechnicalBriefView })
-    const { result } = renderHook(() => useController(parameters))
+    const { result } = renderController(parameters)
     await waitFor(() => expect(result.current.errorMessage).toBe('Chargement impossible'))
     expect(result.current.view).toBeNull()
     expect(result.current.isLoading).toBe(false)
+  })
+
+  it('does not load the view before the dialog is opened, loads it once on the first open and not on reopen', async () => {
+    const parameters = buildParameters()
+    const { result } = renderHook(() => useController(parameters))
+    expect(parameters.getTechnicalBriefView).not.toHaveBeenCalled()
+    act(() => result.current.openDialog())
+    await waitFor(() => expect(result.current.view).not.toBeNull())
+    act(() => result.current.closeDialog())
+    act(() => result.current.openDialog())
+    expect(parameters.getTechnicalBriefView).toHaveBeenCalledTimes(1)
+  })
+
+  it('announces the outcome only when the dialog is closed', async () => {
+    const generation = createDeferred<ActionResult<TechnicalBriefGenerationOutcome>>()
+    const parameters = buildParameters({ generateTechnicalBrief: jest.fn().mockReturnValue(generation.promise) })
+    const { result } = renderController(parameters)
+    await waitFor(() => expect(result.current.view).not.toBeNull())
+    act(() => {
+      void result.current.generate()
+    })
+    act(() => result.current.closeDialog())
+    await act(async () => generation.resolve({ ok: true, data: { kind: 'generated', view: buildView('fr') } }))
+    expect(result.current.closedDialogAnnouncement).toBe('Brief technique prêt.')
+    act(() => result.current.openDialog())
+    expect(result.current.closedDialogAnnouncement).toBe('')
+    await act(async () => result.current.generate())
+    expect(result.current.closedDialogAnnouncement).toBe('')
   })
 })

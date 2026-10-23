@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { BriefLanguage } from '@/domain/interview-preparation'
@@ -56,6 +57,10 @@ const buildView = (overrides: Partial<TechnicalBriefView> = {}): TechnicalBriefV
 
 const ControlledSection = (controllerParameters: TechnicalBriefButtonControllerParameters) => {
   const sectionState = useController(controllerParameters)
+  const { openDialog } = sectionState
+  useEffect(() => {
+    openDialog()
+  }, [openDialog])
   return (
     <TechnicalBriefSection
       jobApplicationId={controllerParameters.jobApplicationId}

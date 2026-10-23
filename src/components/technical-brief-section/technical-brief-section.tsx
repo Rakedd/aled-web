@@ -13,7 +13,8 @@ import {
   type TechnicalBriefMission,
 } from '@/domain/technical-brief'
 import { cn } from '@/lib/utils'
-import type { TechnicalBriefSectionProps, TransientOutcome } from './interfaces'
+import type { TransientOutcome } from '@/components/technical-brief-button/interfaces'
+import type { TechnicalBriefSectionProps } from './interfaces'
 
 const STORYLINE_TITLE_ID = 'technical-brief-storyline-title'
 const MISSIONS_TITLE_ID = 'technical-brief-missions-title'
