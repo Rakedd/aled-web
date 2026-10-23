@@ -535,18 +535,21 @@ describe('updatePassword', () => {
 })
 
 describe('startOAuthSignIn', () => {
-  it('redirects to the provider URL returned by Supabase with the callback route as return address', async () => {
+  it('returns the provider URL from Supabase without redirecting, with the callback route as return address', async () => {
     authSignInWithOAuth.mockResolvedValue({
       data: { provider: 'google', url: 'https://accounts.google.com/o/oauth2/auth?state=abc' },
       error: null,
     })
 
-    await expect(startOAuthSignIn('google')).rejects.toThrow('NEXT_REDIRECT')
+    await expect(startOAuthSignIn('google')).resolves.toEqual({
+      ok: true,
+      data: { url: 'https://accounts.google.com/o/oauth2/auth?state=abc' },
+    })
     expect(authSignInWithOAuth).toHaveBeenCalledWith({
       provider: 'google',
       options: { redirectTo: `${APP_ORIGIN}/auth/callback` },
     })
-    expect(redirect).toHaveBeenCalledWith('https://accounts.google.com/o/oauth2/auth?state=abc')
+    expect(redirect).not.toHaveBeenCalled()
   })
 
   it('rejects an unknown provider without calling Supabase', async () => {

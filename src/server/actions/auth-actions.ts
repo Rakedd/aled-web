@@ -40,7 +40,7 @@ const PASSWORD_UPDATE_ERROR_MESSAGES_BY_CODE: Partial<Record<string, string>> = 
 
 const ACTION_SUCCESS: ActionResult<null> = { ok: true, data: null }
 
-const toActionFailure = (errorMessage: string): ActionResult<null> => ({ ok: false, errorMessage })
+const toActionFailure = <Data>(errorMessage: string): ActionResult<Data> => ({ ok: false, errorMessage })
 
 const readAuthErrorDiagnostics = (authError: AuthError) => ({ code: authError.code, status: authError.status })
 
@@ -201,7 +201,7 @@ export const updatePassword = async (password: string, confirmation: string): Pr
   return toActionFailure(SIGN_UP_MESSAGES.passwordUpdateFailure)
 }
 
-export const startOAuthSignIn = async (provider: OAuthProvider): Promise<ActionResult<null>> => {
+export const startOAuthSignIn = async (provider: OAuthProvider): Promise<ActionResult<{ url: string }>> => {
   if (!isOAuthProvider(provider)) return toActionFailure(GENERIC_ACTION_ERROR_MESSAGE)
 
   const supabase = await createServerSupabaseClient()
@@ -220,5 +220,5 @@ export const startOAuthSignIn = async (provider: OAuthProvider): Promise<ActionR
     return toActionFailure(SIGN_UP_MESSAGES.oauthFailure)
   }
 
-  redirect(data.url)
+  return { ok: true, data: { url: data.url } }
 }

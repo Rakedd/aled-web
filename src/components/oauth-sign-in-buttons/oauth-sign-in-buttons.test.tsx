@@ -5,8 +5,15 @@ import { OAuthSignInButtons } from './oauth-sign-in-buttons'
 const TERMS_HREF = 'https://aled.work/conditions-utilisation'
 const PRIVACY_HREF = 'https://aled.work/confidentialite'
 
-const renderButtons = (startOAuthSignIn = jest.fn()) =>
-  render(<OAuthSignInButtons startOAuthSignIn={startOAuthSignIn} termsOfUseHref={TERMS_HREF} privacyPolicyHref={PRIVACY_HREF} />)
+const renderButtons = (startOAuthSignIn = jest.fn(), navigateToUrl = jest.fn()) =>
+  render(
+    <OAuthSignInButtons
+      startOAuthSignIn={startOAuthSignIn}
+      termsOfUseHref={TERMS_HREF}
+      privacyPolicyHref={PRIVACY_HREF}
+      navigateToUrl={navigateToUrl}
+    />,
+  )
 
 describe('OAuthSignInButtons', () => {
   it('offers the Google and LinkedIn buttons', () => {
@@ -50,6 +57,19 @@ describe('OAuthSignInButtons', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Continuer avec LinkedIn' }))
 
     expect(startOAuthSignIn).toHaveBeenCalledWith('linkedin_oidc')
+    expect(screen.getByRole('button', { name: 'Continuer avec Google' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Continuer avec LinkedIn' })).toBeDisabled()
+  })
+
+  it('opens the provider page without any alert and keeps both buttons disabled on success', async () => {
+    const providerUrl = 'https://accounts.google.com/o/oauth2/auth?state=abc'
+    const navigateToUrl = jest.fn()
+    renderButtons(jest.fn().mockResolvedValue({ ok: true, data: { url: providerUrl } }), navigateToUrl)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Continuer avec Google' }))
+
+    expect(navigateToUrl).toHaveBeenCalledWith(providerUrl)
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Continuer avec Google' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Continuer avec LinkedIn' })).toBeDisabled()
   })

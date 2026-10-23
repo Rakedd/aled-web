@@ -3,7 +3,7 @@ import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
 import type { OAuthProvider } from '@/domain/sign-up'
 import type { OAuthSignInButtonsControllerParameters } from './interfaces'
 
-export const useController = ({ startOAuthSignIn }: OAuthSignInButtonsControllerParameters) => {
+export const useController = ({ startOAuthSignIn, navigateToUrl }: OAuthSignInButtonsControllerParameters) => {
   const [pendingProvider, setPendingProvider] = useState<OAuthProvider | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const isSignInInFlightRef = useRef(false)
@@ -22,7 +22,11 @@ export const useController = ({ startOAuthSignIn }: OAuthSignInButtonsController
     setErrorMessage(null)
     try {
       const signInResult = await startOAuthSignIn(provider)
-      if (!signInResult.ok) releaseWithError(signInResult.errorMessage)
+      if (!signInResult.ok) {
+        releaseWithError(signInResult.errorMessage)
+        return
+      }
+      navigateToUrl(signInResult.data.url)
     } catch {
       releaseWithError(GENERIC_ACTION_ERROR_MESSAGE)
     }
