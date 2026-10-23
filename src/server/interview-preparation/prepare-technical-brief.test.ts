@@ -175,6 +175,33 @@ describe('generateTechnicalBriefForUser', () => {
   })
 
   it.each([
+    ['a text job spec without text', { sourceKind: 'text' as const, rawText: null }, null],
+    ['a pdf job spec that cannot be downloaded', { sourceKind: 'pdf' as const, rawText: null }, null],
+  ])('refuses an empty stack with %s and never calls the ai', async (_name, jobSpecFields, pdfBase64) => {
+    mockJobApplication({ stack: [], hasJobSpec: true })
+    jest.mocked(findJobSpec).mockResolvedValue({ ...jobSpecFields, pendingStack: null, updatedAt: NOW })
+    jest.mocked(downloadJobSpecPdfAsBase64).mockResolvedValue(pdfBase64)
+    const dependencies = buildDependencies()
+
+    const result = await generate(dependencies)
+
+    expect(result).toEqual({ ok: false, errorMessage: TECHNICAL_BRIEF_MESSAGES.missingMissionDetails })
+    expect(dependencies.generateTechnicalBrief).not.toHaveBeenCalled()
+    expect(saveTechnicalBrief).not.toHaveBeenCalled()
+  })
+
+  it('still calls the ai with a stack and no usable job spec', async () => {
+    const dependencies = buildDependencies()
+
+    await generate(dependencies)
+
+    expect(dependencies.generateTechnicalBrief).toHaveBeenCalledWith(
+      'sk-ant-test-key',
+      expect.objectContaining({ stack: STACK, jobSpec: null }),
+    )
+  })
+
+  it.each([
     ['missing_mission_stacks', 'cv_missing_information'],
     ['unreadable', 'cv_unreadable'],
   ])('maps %s to %s and saves nothing', async (cvStatus, expectedKind) => {

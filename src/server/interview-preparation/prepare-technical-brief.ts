@@ -129,6 +129,9 @@ export const generateTechnicalBriefForUser = async (
     findJobSpecForTechnicalBrief(supabase, userId, jobApplicationId),
     findEndClientBriefMarkdown(supabase, userId, jobApplication.endClientId, language),
   ])
+  if (jobApplication.stack.length === 0 && jobSpec === null) {
+    return rejectWith(TECHNICAL_BRIEF_MESSAGES.missingMissionDetails)
+  }
   const generationResult = await runTechnicalBriefGeneration(() =>
     dependencies.generateTechnicalBrief(apiKey, {
       language,
