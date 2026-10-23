@@ -24,7 +24,7 @@ export const MAXIMUM_FOLLOW_UP_DELAY_DAYS = 60
 export const MAXIMUM_PROFILE_LINK_COUNT = 10
 const REQUIRED_PROFILE_LINK_URL_PREFIX = 'https://'
 
-const MAXIMUM_NAME_LENGTH = 100
+export const MAXIMUM_NAME_LENGTH = 100
 const MAXIMUM_LINK_LABEL_LENGTH = 50
 const MAXIMUM_LINK_URL_LENGTH = 2048
 
@@ -38,7 +38,6 @@ export const PROFILE_SETTINGS_VALIDATION_MESSAGES = {
 } as const
 
 type ProfileSettingsInputShape = Omit<ProfileSettingsInput, 'followUpDelayDays'> & { followUpDelayDays: unknown }
-
 
 export const isProfileLink = (candidate: unknown): candidate is ProfileLink =>
   isRecord(candidate) && typeof candidate.label === 'string' && typeof candidate.url === 'string'

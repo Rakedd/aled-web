@@ -1,6 +1,7 @@
 import { INVALID_EMAIL_ADDRESS_MESSAGE } from '@/domain/email-address'
+import { MAXIMUM_NAME_LENGTH } from '@/domain/profile-settings'
+import * as signUpModule from '@/domain/sign-up'
 import {
-  MAXIMUM_FIRST_NAME_LENGTH,
   MINIMUM_PASSWORD_LENGTH,
   OAUTH_PROVIDERS,
   OAUTH_PROVIDER_LABELS,
@@ -30,11 +31,15 @@ const validSignUpInput: SignUpInput = {
 }
 
 describe('constants', () => {
+  it('reuses the profile name length limit instead of its own first name limit', () => {
+    expect(MAXIMUM_NAME_LENGTH).toBe(100)
+    expect(signUpModule).not.toHaveProperty('MAXIMUM_FIRST_NAME_LENGTH')
+  })
+
   it('exposes the expected values', () => {
     expect(PROFESSIONAL_STATUSES).toEqual(['freelance', 'employee'])
     expect(PROFESSIONAL_STATUS_LABELS).toEqual({ freelance: 'Freelance', employee: 'CDI' })
     expect(MINIMUM_PASSWORD_LENGTH).toBe(8)
-    expect(MAXIMUM_FIRST_NAME_LENGTH).toBe(100)
     expect(RESEND_COOLDOWN_SECONDS).toBe(60)
     expect(OAUTH_PROVIDERS).toEqual(['google', 'linkedin_oidc'])
     expect(OAUTH_PROVIDER_LABELS).toEqual({
@@ -75,13 +80,13 @@ describe('findSignUpInputError', () => {
 
   it('rejects a first name that is too long', () => {
     expect(
-      findSignUpInputError({ ...validSignUpInput, firstName: 'a'.repeat(MAXIMUM_FIRST_NAME_LENGTH + 1) }),
+      findSignUpInputError({ ...validSignUpInput, firstName: 'a'.repeat(MAXIMUM_NAME_LENGTH + 1) }),
     ).toBe('Ton prénom est trop long.')
   })
 
   it('accepts a first name of the maximum length', () => {
     expect(
-      findSignUpInputError({ ...validSignUpInput, firstName: 'a'.repeat(MAXIMUM_FIRST_NAME_LENGTH) }),
+      findSignUpInputError({ ...validSignUpInput, firstName: 'a'.repeat(MAXIMUM_NAME_LENGTH) }),
     ).toBeNull()
   })
 

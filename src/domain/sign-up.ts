@@ -1,4 +1,5 @@
 import { INVALID_EMAIL_ADDRESS_MESSAGE, isValidEmailAddress } from '@/domain/email-address'
+import { MAXIMUM_NAME_LENGTH } from '@/domain/profile-settings'
 
 export const PROFESSIONAL_STATUSES = ['freelance', 'employee'] as const
 
@@ -10,8 +11,6 @@ export const PROFESSIONAL_STATUS_LABELS: Record<ProfessionalStatus, string> = {
 }
 
 export const MINIMUM_PASSWORD_LENGTH = 8
-
-export const MAXIMUM_FIRST_NAME_LENGTH = 100
 
 export const RESEND_COOLDOWN_SECONDS = 60
 
@@ -88,7 +87,7 @@ export const isOAuthProvider = (candidate: unknown): candidate is OAuthProvider 
 export const findSignUpInputError = (input: SignUpInput): string | null => {
   const trimmedFirstName = input.firstName.trim()
   if (trimmedFirstName.length === 0) return MISSING_FIRST_NAME_MESSAGE
-  if (trimmedFirstName.length > MAXIMUM_FIRST_NAME_LENGTH) return FIRST_NAME_TOO_LONG_MESSAGE
+  if (trimmedFirstName.length > MAXIMUM_NAME_LENGTH) return FIRST_NAME_TOO_LONG_MESSAGE
   if (!isValidEmailAddress(input.email)) return INVALID_EMAIL_ADDRESS_MESSAGE
   if (input.password.length < MINIMUM_PASSWORD_LENGTH) return PASSWORD_TOO_SHORT_MESSAGE
   if (input.professionalStatus === null) return MISSING_PROFESSIONAL_STATUS_MESSAGE
