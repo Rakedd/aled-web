@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
 import { AnthropicApiKeyForm } from '@/components/anthropic-api-key-form'
+import { CalendarFeedSection } from '@/components/calendar-feed-section'
 import { ChangePasswordSection } from '@/components/change-password-section'
 import { ProfileForm } from '@/components/profile-form'
 import { SettingsNavigation } from '@/components/settings-navigation'
 import { buttonVariants } from '@/components/ui/button'
 import { PAGE_TITLE_CLASS_NAME } from '@/lib/typography-class-names'
+import { createCalendarFeed, disableCalendarFeed, getCalendarFeedStatus } from '@/server/actions/calendar-feed-actions'
 import {
   deleteAnthropicApiKey,
   getProfileSettings,
@@ -15,7 +17,10 @@ import {
 export const metadata: Metadata = { title: 'Préférences · Aled' }
 
 const SettingsPage = async () => {
-  const profileSettingsResult = await getProfileSettings()
+  const [profileSettingsResult, calendarFeedStatusResult] = await Promise.all([
+    getProfileSettings(),
+    getCalendarFeedStatus(),
+  ])
 
   return (
     <div className="flex w-full max-w-5xl flex-col gap-6">
@@ -41,6 +46,11 @@ const SettingsPage = async () => {
               />
             </section>
             <ChangePasswordSection />
+            <CalendarFeedSection
+              initialCalendarFeedStatusResult={calendarFeedStatusResult}
+              createCalendarFeed={createCalendarFeed}
+              disableCalendarFeed={disableCalendarFeed}
+            />
             <section aria-labelledby="settings-api-key-title" className="flex flex-col gap-4 rounded-2xl bg-deep-surface p-6 text-on-deep-surface focus-ring-on-dark">
               <div className="flex flex-col gap-1">
                 <h2 id="settings-api-key-title" className="text-lg font-semibold">

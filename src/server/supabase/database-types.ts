@@ -69,6 +69,20 @@ isOneToOne: false
       referencedColumns: ["user_id","id"]
     }
                   ]
+                },"calendar_feeds": {
+                  Row: {
+                    "created_at": string,"token_hash": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"token_hash": string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"token_hash"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"contacts": {
                   Row: {
                     "created_at": string,"email": string | null,"full_name": string,"id": string,"intermediary_id": string | null,"linkedin_url": string | null,"normalized_name": string,"notes": string | null,"phone": string | null,"referred_by": string | null,"updated_at": string,"user_id": string
