@@ -332,3 +332,37 @@ export const createCvVersionDownloadUrl = async (
   }
   return { ok: true, data: signedUrlData.signedUrl }
 }
+
+const STORAGE_OBJECT_NOT_FOUND_STATUSES = [400, 404]
+
+export type CvVersionForTechnicalBrief = { versionId: string; label: string; uploadedAt: Date; pdfBase64: string }
+
+export const findCvVersionForTechnicalBrief = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  versionId: string,
+): Promise<ActionResult<CvVersionForTechnicalBrief>> => {
+  const { data, error } = await supabase
+    .from('cv_versions')
+    .select('label, uploaded_at, storage_path')
+    .eq('id', versionId)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw toRepositoryError('findCvVersionForTechnicalBrief', error)
+  if (data === null) return rejectWith(CV_MESSAGES.cvVersionNotFound)
+  const { data: pdfBlob, error: downloadError } = await supabase.storage.from(CVS_BUCKET).download(data.storage_path)
+  if (downloadError) {
+    const downloadStatus = Number(downloadError.status)
+    if (STORAGE_OBJECT_NOT_FOUND_STATUSES.includes(downloadStatus)) return rejectWith(CV_MESSAGES.cvVersionNotFound)
+    throw new Error(`Storage operation findCvVersionForTechnicalBrief failed with status ${downloadError.status ?? 'unknown'}`)
+  }
+  return {
+    ok: true,
+    data: {
+      versionId,
+      label: data.label,
+      uploadedAt: new Date(data.uploaded_at),
+      pdfBase64: Buffer.from(await pdfBlob.arrayBuffer()).toString('base64'),
+    },
+  }
+}

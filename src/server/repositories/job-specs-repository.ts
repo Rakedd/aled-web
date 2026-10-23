@@ -170,3 +170,15 @@ export const createJobSpecDownloadUrl = async (
   if (error) throw toStorageRepositoryError('createJobSpecDownloadUrl', error)
   return { ok: true, data: data.signedUrl }
 }
+
+export const downloadJobSpecPdfAsBase64 = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  jobApplicationId: string,
+): Promise<string | null> => {
+  const storagePath = await findJobSpecStoragePath(supabase, userId, jobApplicationId)
+  if (storagePath === null) return null
+  const { data, error } = await supabase.storage.from(JOB_SPECS_BUCKET).download(storagePath)
+  if (error) throw toStorageRepositoryError('downloadJobSpecPdfAsBase64', error)
+  return Buffer.from(await data.arrayBuffer()).toString('base64')
+}
