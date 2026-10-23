@@ -36,17 +36,28 @@ describe('HomePage', () => {
   it('shows the password-updated banner for the flag', async () => {
     await renderHomePage({ 'mot-de-passe': 'modifie' })
 
+    expect(await screen.findByText('Mot de passe modifié.')).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Mot de passe modifié.')
   })
 
   it.each([{}, { 'mot-de-passe': 'autre' }, { 'mot-de-passe': ['modifie', 'x'] }])(
-    'shows no banner for %j',
+    'keeps the banner status region mounted but empty for %j',
     async (searchParameters) => {
       await renderHomePage(searchParameters)
 
-      expect(screen.queryByRole('status')).not.toBeInTheDocument()
+      expect(screen.getByRole('status')).toBeEmptyDOMElement()
     },
   )
+
+  it('keeps the banner status region mounted when the page fails to load', async () => {
+    jest.mocked(loadTodoReminders).mockResolvedValueOnce({ ok: false, errorMessage: 'Service indisponible' })
+
+    await renderHomePage({ 'mot-de-passe': 'modifie' })
+
+    expect(await screen.findByText('Mot de passe modifié.')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Mot de passe modifié.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Service indisponible')
+  })
 
   const mockMissingProfessionalStatus = () =>
     jest.mocked(loadTodoReminders).mockResolvedValueOnce({

@@ -23,8 +23,11 @@ const HOME_TITLE_ELEMENT_ID = 'home-dashboard-title'
 
 const HomePage = async ({ searchParams }: PageProps<'/'>) => {
   const searchParameters = await searchParams
-  const passwordUpdatedBanner =
-    searchParameters[PASSWORD_UPDATED_SEARCH_PARAMETER] === PASSWORD_UPDATED_SEARCH_VALUE ? <PasswordUpdatedBanner /> : null
+  const passwordUpdatedBanner = (
+    <PasswordUpdatedBanner
+      isPasswordUpdated={searchParameters[PASSWORD_UPDATED_SEARCH_PARAMETER] === PASSWORD_UPDATED_SEARCH_VALUE}
+    />
+  )
   const now = new Date()
   const [todoRemindersResult, highlightedOpportunitiesResult, opportunitiesToProcessCountResult] = await Promise.all([
     loadTodoReminders(now, UPCOMING_INTERVIEWS_LOOKAHEAD_DAYS),
@@ -34,51 +37,55 @@ const HomePage = async ({ searchParams }: PageProps<'/'>) => {
 
   if (!todoRemindersResult.ok) {
     return (
-      <div className="flex min-w-0 flex-col gap-6">
+      <>
         {passwordUpdatedBanner}
-        <h1 className={PAGE_TITLE_CLASS_NAME}>Bonjour</h1>
-        <p role="alert" className="text-sm text-destructive">
-          {todoRemindersResult.errorMessage || PAGE_LOAD_FAILURE_MESSAGE}
-        </p>
-      </div>
+        <div className="flex min-w-0 flex-col gap-6">
+          <h1 className={PAGE_TITLE_CLASS_NAME}>Bonjour</h1>
+          <p role="alert" className="text-sm text-destructive">
+            {todoRemindersResult.errorMessage || PAGE_LOAD_FAILURE_MESSAGE}
+          </p>
+        </div>
+      </>
     )
   }
 
   const { jobApplications, profileSettings, upcomingInterviews, alertInterviews, alerts } = todoRemindersResult.data
 
   return (
-    <div className="flex min-w-0 flex-col gap-5">
+    <>
       {passwordUpdatedBanner}
-      {profileSettings.professionalStatus === null && (
-        <ProfessionalStatusCard
-          saveProfessionalStatus={saveProfessionalStatus}
-          answeredFocusTargetId={HOME_TITLE_ELEMENT_ID}
+      <div className="flex min-w-0 flex-col gap-5">
+        {profileSettings.professionalStatus === null && (
+          <ProfessionalStatusCard
+            saveProfessionalStatus={saveProfessionalStatus}
+            answeredFocusTargetId={HOME_TITLE_ELEMENT_ID}
+          />
+        )}
+        <HomeDashboard
+          firstName={profileSettings.firstName}
+          titleElementId={HOME_TITLE_ELEMENT_ID}
+          now={now}
+          initialAlerts={alerts}
+          jobApplicationSummaries={jobApplications.map(({ id, status, contactName, intermediaryName }) => ({
+            id,
+            status,
+            contactName,
+            intermediaryName,
+          }))}
+          alertInterviews={alertInterviews}
+          upcomingInterviews={upcomingInterviews}
+          highlightedOpportunities={highlightedOpportunitiesResult.ok ? highlightedOpportunitiesResult.data.opportunities : []}
+          highlightedOpportunitiesErrorMessage={highlightedOpportunitiesResult.ok ? null : highlightedOpportunitiesResult.errorMessage}
+          activeJobApplicationCount={countActiveJobApplications(jobApplications)}
+          opportunitiesToProcessCount={opportunitiesToProcessCountResult.ok ? opportunitiesToProcessCountResult.data : 0}
+          recentOpportunityCount={highlightedOpportunitiesResult.ok ? highlightedOpportunitiesResult.data.recentOpportunityCount : 0}
+          snoozeAlert={snoozeAlert}
+          confirmCvStillGood={confirmCvStillGood}
+          changeJobApplicationStatus={changeJobApplicationStatus}
+          applyToOpportunity={applyToOpportunity}
         />
-      )}
-      <HomeDashboard
-        firstName={profileSettings.firstName}
-        titleElementId={HOME_TITLE_ELEMENT_ID}
-        now={now}
-        initialAlerts={alerts}
-        jobApplicationSummaries={jobApplications.map(({ id, status, contactName, intermediaryName }) => ({
-          id,
-          status,
-          contactName,
-          intermediaryName,
-        }))}
-        alertInterviews={alertInterviews}
-        upcomingInterviews={upcomingInterviews}
-        highlightedOpportunities={highlightedOpportunitiesResult.ok ? highlightedOpportunitiesResult.data.opportunities : []}
-        highlightedOpportunitiesErrorMessage={highlightedOpportunitiesResult.ok ? null : highlightedOpportunitiesResult.errorMessage}
-        activeJobApplicationCount={countActiveJobApplications(jobApplications)}
-        opportunitiesToProcessCount={opportunitiesToProcessCountResult.ok ? opportunitiesToProcessCountResult.data : 0}
-        recentOpportunityCount={highlightedOpportunitiesResult.ok ? highlightedOpportunitiesResult.data.recentOpportunityCount : 0}
-        snoozeAlert={snoozeAlert}
-        confirmCvStillGood={confirmCvStillGood}
-        changeJobApplicationStatus={changeJobApplicationStatus}
-        applyToOpportunity={applyToOpportunity}
-      />
-    </div>
+      </div>
+    </>
   )
 }
 
