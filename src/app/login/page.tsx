@@ -50,12 +50,13 @@ const LoginPage = async ({ searchParams }: PageProps<'/login'>) => {
           )}
         </div>
       )}
+      <LoginForm signInWithPassword={signInWithPassword} resendSignUpConfirmation={resendSignUpConfirmation} />
       <OAuthSignInButtons
         startOAuthSignIn={startOAuthSignIn}
         termsOfUseHref={buildLandingLegalHref(TERMS_OF_USE_PATHNAME)}
         privacyPolicyHref={buildLandingLegalHref(PRIVACY_POLICY_PATHNAME)}
+        separatorPlacement="top"
       />
-      <LoginForm signInWithPassword={signInWithPassword} resendSignUpConfirmation={resendSignUpConfirmation} />
     </AuthPageLayout>
   )
 }

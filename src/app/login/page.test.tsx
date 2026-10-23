@@ -43,6 +43,16 @@ describe('LoginPage', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
+  it('offers the Google and LinkedIn buttons below the email and password form, after the "ou" separator', async () => {
+    await renderLoginPage({})
+
+    const signInButton = screen.getByRole('button', { name: 'Se connecter' })
+    const separator = screen.getByText('ou')
+    const googleButton = screen.getByRole('button', { name: 'Continuer avec Google' })
+    expect(signInButton.compareDocumentPosition(separator) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(separator.compareDocumentPosition(googleButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('shows no error without an error parameter', async () => {
     await renderLoginPage({})
 

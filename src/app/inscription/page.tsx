@@ -24,6 +24,7 @@ const SignUpPage = () => {
             startOAuthSignIn={startOAuthSignIn}
             termsOfUseHref={termsOfUseHref}
             privacyPolicyHref={privacyPolicyHref}
+            separatorPlacement="bottom"
           />
         }
       />

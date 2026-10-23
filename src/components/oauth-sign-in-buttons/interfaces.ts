@@ -10,9 +10,12 @@ export type OAuthSignInButtonsControllerParameters = {
   navigateToUrl: NavigateToUrl
 }
 
+export type OAuthSeparatorPlacement = 'top' | 'bottom'
+
 export type OAuthSignInButtonsProps = {
   startOAuthSignIn: StartOAuthSignIn
   termsOfUseHref: string
   privacyPolicyHref: string
+  separatorPlacement: OAuthSeparatorPlacement
   navigateToUrl?: NavigateToUrl
 }

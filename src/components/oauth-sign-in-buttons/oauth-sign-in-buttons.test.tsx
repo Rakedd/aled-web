@@ -1,19 +1,28 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { OAuthSeparatorPlacement } from './interfaces'
 import { OAuthSignInButtons } from './oauth-sign-in-buttons'
 
 const TERMS_HREF = 'https://aled.work/conditions-utilisation'
 const PRIVACY_HREF = 'https://aled.work/confidentialite'
 
-const renderButtons = (startOAuthSignIn = jest.fn(), navigateToUrl = jest.fn()) =>
+const renderButtons = (
+  startOAuthSignIn = jest.fn(),
+  navigateToUrl = jest.fn(),
+  separatorPlacement: OAuthSeparatorPlacement = 'bottom',
+) =>
   render(
     <OAuthSignInButtons
       startOAuthSignIn={startOAuthSignIn}
       termsOfUseHref={TERMS_HREF}
       privacyPolicyHref={PRIVACY_HREF}
+      separatorPlacement={separatorPlacement}
       navigateToUrl={navigateToUrl}
     />,
   )
+
+const isBefore = (firstElement: Element, secondElement: Element): boolean =>
+  (firstElement.compareDocumentPosition(secondElement) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
 
 describe('OAuthSignInButtons', () => {
   it('offers the Google and LinkedIn buttons', () => {
@@ -21,6 +30,30 @@ describe('OAuthSignInButtons', () => {
 
     expect(screen.getByRole('button', { name: 'Continuer avec Google' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Continuer avec LinkedIn' })).toBeEnabled()
+  })
+
+  it.each(['Continuer avec Google', 'Continuer avec LinkedIn'])(
+    'shows the provider logo on the left of "%s" without changing its accessible name',
+    (buttonName) => {
+      renderButtons()
+
+      const button = screen.getByRole('button', { name: buttonName })
+      const logo = button.firstElementChild
+      expect(logo?.tagName.toLowerCase()).toBe('svg')
+      expect(logo).toHaveAttribute('aria-hidden', 'true')
+    },
+  )
+
+  it('puts the "ou" separator after the terms notice when placed at the bottom', () => {
+    renderButtons(jest.fn(), jest.fn(), 'bottom')
+
+    expect(isBefore(screen.getByRole('link', { name: 'politique de confidentialité' }), screen.getByText('ou'))).toBe(true)
+  })
+
+  it('puts the "ou" separator before the buttons when placed at the top', () => {
+    renderButtons(jest.fn(), jest.fn(), 'top')
+
+    expect(isBefore(screen.getByText('ou'), screen.getByRole('button', { name: 'Continuer avec Google' }))).toBe(true)
   })
 
   it('shows the terms notice with both legal links opening in a new tab', () => {

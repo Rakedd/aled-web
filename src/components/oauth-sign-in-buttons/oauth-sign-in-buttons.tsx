@@ -1,5 +1,6 @@
 'use client'
 
+import { OAuthProviderLogo } from '@/components/oauth-provider-logo'
 import { Button } from '@/components/ui/button'
 import { LEGAL_LINK_LABELS, OAUTH_PROVIDERS, OAUTH_PROVIDER_LABELS, SIGN_UP_MESSAGES } from '@/domain/sign-up'
 import { useController } from './controller'
@@ -12,16 +13,26 @@ const LEGAL_LINK_CLASS_NAME = 'text-accent-text underline underline-offset-4'
 
 const assignWindowLocation: NavigateToUrl = (url) => window.location.assign(url)
 
+const OrSeparator = () => (
+  <div className="flex items-center gap-3 text-sm text-ink-secondary">
+    <span className="h-px flex-1 bg-border" aria-hidden="true" />
+    <span>ou</span>
+    <span className="h-px flex-1 bg-border" aria-hidden="true" />
+  </div>
+)
+
 export const OAuthSignInButtons = ({
   startOAuthSignIn,
   termsOfUseHref,
   privacyPolicyHref,
+  separatorPlacement,
   navigateToUrl = assignWindowLocation,
 }: OAuthSignInButtonsProps) => {
   const { pendingProvider, errorMessage, signIn } = useController({ startOAuthSignIn, navigateToUrl })
 
   return (
     <div className="flex flex-col gap-4">
+      {separatorPlacement === 'top' && <OrSeparator />}
       <div className="flex flex-col gap-3">
         {OAUTH_PROVIDERS.map((provider) => (
           <Button
@@ -35,6 +46,7 @@ export const OAuthSignInButtons = ({
             aria-describedby={errorMessage ? ERROR_MESSAGE_ELEMENT_ID : undefined}
             onClick={() => void signIn(provider)}
           >
+            <OAuthProviderLogo provider={provider} />
             {OAUTH_PROVIDER_LABELS[provider]}
           </Button>
         ))}
@@ -55,11 +67,7 @@ export const OAuthSignInButtons = ({
         </a>
         {NOTICE_AFTER_LINKS}
       </p>
-      <div className="flex items-center gap-3 text-sm text-ink-secondary">
-        <span className="h-px flex-1 bg-border" aria-hidden="true" />
-        <span>ou</span>
-        <span className="h-px flex-1 bg-border" aria-hidden="true" />
-      </div>
+      {separatorPlacement === 'bottom' && <OrSeparator />}
     </div>
   )
 }
