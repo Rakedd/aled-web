@@ -60,8 +60,21 @@ describe('buildLandingLegalHref', () => {
     expect(buildLandingLegalHref('/conditions-utilisation')).toBe('https://aled.work/conditions-utilisation')
   })
 
-  it('falls back to the internal segment without a landing hostname', () => {
+  it('logs an error and falls back to the internal segment in production without a landing hostname', () => {
+    process.env.VERCEL_ENV = 'production'
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+
     expect(buildLandingLegalHref('/confidentialite')).toBe('/vitrine/confidentialite')
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Landing hostname missing for legal links')
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('falls back silently to the internal segment without a landing hostname outside production', () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    expect(buildLandingLegalHref('/confidentialite')).toBe('/vitrine/confidentialite')
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
+    consoleErrorSpy.mockRestore()
   })
 
   it('falls back to the internal segment outside production even with a landing hostname', () => {

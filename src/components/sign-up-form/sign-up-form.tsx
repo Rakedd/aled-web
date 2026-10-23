@@ -49,6 +49,8 @@ export const SignUpForm = ({
     isResending,
     hasResent,
     resend,
+    errorAlertReference,
+    confirmationReference,
   } = useController({ signUpWithPassword, resendSignUpConfirmation })
 
   const handleSubmit = (formEvent: FormEvent<HTMLFormElement>) => {
@@ -66,14 +68,20 @@ export const SignUpForm = ({
   )
 
   const errorParagraph = errorMessage && (
-    <p id={ERROR_MESSAGE_ELEMENT_ID} role="alert" className="text-sm text-destructive">
+    <p
+      id={ERROR_MESSAGE_ELEMENT_ID}
+      ref={errorAlertReference}
+      tabIndex={-1}
+      role="alert"
+      className="text-sm text-destructive outline-none"
+    >
       {errorMessage}
     </p>
   )
 
   if (status === 'sent') {
     return (
-      <div className="flex flex-col gap-4">
+      <div ref={confirmationReference} tabIndex={-1} className="flex flex-col gap-4 outline-none">
         <p className="text-base text-ink">{SIGN_UP_MESSAGES.checkInbox}</p>
         <p className="text-base font-semibold break-all text-ink">{submittedEmail}</p>
         <Button

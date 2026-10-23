@@ -17,6 +17,12 @@ export const buildLandingHref = (pathname: string): string =>
   isProductionDeployment() ? pathname : toLandingInternalPathname(pathname)
 
 export const buildLandingLegalHref = (pathname: string): string => {
+  if (!isProductionDeployment()) return toLandingInternalPathname(pathname)
+
   const landingOrigin = readLandingOrigin()
-  return isProductionDeployment() && landingOrigin ? `${landingOrigin.origin}${pathname}` : toLandingInternalPathname(pathname)
+  if (!landingOrigin) {
+    console.error('Landing hostname missing for legal links')
+    return toLandingInternalPathname(pathname)
+  }
+  return `${landingOrigin.origin}${pathname}`
 }

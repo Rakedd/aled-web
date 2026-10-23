@@ -1,11 +1,13 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { LEGAL_LINK_LABELS, OAUTH_PROVIDERS, OAUTH_PROVIDER_LABELS } from '@/domain/sign-up'
+import { LEGAL_LINK_LABELS, OAUTH_PROVIDERS, OAUTH_PROVIDER_LABELS, SIGN_UP_MESSAGES } from '@/domain/sign-up'
 import { useController } from './controller'
 import type { OAuthSignInButtonsProps } from './interfaces'
 
 const ERROR_MESSAGE_ELEMENT_ID = 'oauth-sign-in-buttons-error-message'
+const [NOTICE_BEFORE_TERMS, NOTICE_AFTER_TERMS] = SIGN_UP_MESSAGES.termsNotice.split(LEGAL_LINK_LABELS.termsOfUse)
+const [NOTICE_BETWEEN_LINKS, NOTICE_AFTER_LINKS] = NOTICE_AFTER_TERMS.split(LEGAL_LINK_LABELS.privacyPolicy)
 const LEGAL_LINK_CLASS_NAME = 'text-accent-text underline underline-offset-4'
 
 export const OAuthSignInButtons = ({ startOAuthSignIn, termsOfUseHref, privacyPolicyHref }: OAuthSignInButtonsProps) => {
@@ -36,17 +38,17 @@ export const OAuthSignInButtons = ({ startOAuthSignIn, termsOfUseHref, privacyPo
         </p>
       )}
       <p className="text-sm text-ink-secondary">
-        En continuant, tu acceptes les{' '}
+        {NOTICE_BEFORE_TERMS}
         <a href={termsOfUseHref} target="_blank" rel="noopener noreferrer" className={LEGAL_LINK_CLASS_NAME}>
           {LEGAL_LINK_LABELS.termsOfUse}
-        </a>{' '}
-        et la{' '}
+        </a>
+        {NOTICE_BETWEEN_LINKS}
         <a href={privacyPolicyHref} target="_blank" rel="noopener noreferrer" className={LEGAL_LINK_CLASS_NAME}>
           {LEGAL_LINK_LABELS.privacyPolicy}
         </a>
-        .
+        {NOTICE_AFTER_LINKS}
       </p>
-      <div className="flex items-center gap-3 text-sm text-ink-secondary" role="separator">
+      <div className="flex items-center gap-3 text-sm text-ink-secondary">
         <span className="h-px flex-1 bg-border" aria-hidden="true" />
         <span>ou</span>
         <span className="h-px flex-1 bg-border" aria-hidden="true" />

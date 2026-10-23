@@ -146,4 +146,46 @@ describe('SignUpForm', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Trop de tentatives, réessaie dans quelques minutes.')
   })
+
+  it('moves focus to the error alert after a validation error', async () => {
+    const user = renderForm()
+
+    await user.click(screen.getByRole('button', { name: 'Créer mon compte' }))
+
+    expect(await screen.findByRole('alert')).toHaveFocus()
+  })
+
+  it('moves focus to the error alert after a server error', async () => {
+    const user = renderForm(jest.fn().mockResolvedValue({ ok: false, errorMessage: 'Inscription impossible pour le moment.' }))
+    await fillValidForm(user)
+
+    await user.click(screen.getByRole('button', { name: 'Créer mon compte' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Inscription impossible pour le moment.')
+    expect(document.activeElement).toBe(alert)
+  })
+
+  it('moves focus to the inbox block once the account is created', async () => {
+    const user = renderForm()
+    await fillValidForm(user)
+
+    await user.click(screen.getByRole('button', { name: 'Créer mon compte' }))
+
+    const inboxText = await screen.findByText("Vérifie ta boîte mail : on t'a envoyé un lien pour activer ton compte.")
+    expect(document.activeElement).toBe(inboxText.parentElement)
+  })
+
+  it('keeps focus in the inbox block instead of a disabled button after a resend', async () => {
+    const user = renderForm()
+    await fillValidForm(user)
+    await user.click(screen.getByRole('button', { name: 'Créer mon compte' }))
+    const inboxBlock = (await screen.findByText("Vérifie ta boîte mail : on t'a envoyé un lien pour activer ton compte.")).parentElement
+    act(() => jest.advanceTimersByTime(60000))
+
+    await user.click(screen.getByRole('button', { name: "Renvoyer l'e-mail" }))
+
+    await screen.findByText('E-mail renvoyé.')
+    expect(document.activeElement).toBe(inboxBlock)
+  })
 })

@@ -23,7 +23,10 @@ export const useController = ({ signUpWithPassword, resendSignUpConfirmation }: 
   const [secondsBeforeResend, setSecondsBeforeResend] = useState(0)
   const [isResending, setIsResending] = useState(false)
   const [hasResent, setHasResent] = useState(false)
+  const [errorOccurrenceCount, setErrorOccurrenceCount] = useState(0)
   const isRequestInFlightRef = useRef(false)
+  const errorAlertReference = useRef<HTMLParagraphElement>(null)
+  const confirmationReference = useRef<HTMLDivElement>(null)
 
   const isResendCooldownActive = secondsBeforeResend > 0
 
@@ -36,11 +39,24 @@ export const useController = ({ signUpWithPassword, resendSignUpConfirmation }: 
     return () => clearInterval(countdownIntervalId)
   }, [isResendCooldownActive])
 
+  useEffect(() => {
+    if (errorOccurrenceCount > 0) errorAlertReference.current?.focus()
+  }, [errorOccurrenceCount])
+
+  useEffect(() => {
+    if (status === 'sent') confirmationReference.current?.focus()
+  }, [status])
+
   const togglePasswordVisibility = () => setIsPasswordVisible((previousVisibility) => !previousVisibility)
+
+  const announceError = (message: string) => {
+    setErrorMessage(message)
+    setErrorOccurrenceCount((previousCount) => previousCount + 1)
+  }
 
   const showError = (message: string) => {
     setStatus('error')
-    setErrorMessage(message)
+    announceError(message)
   }
 
   const submit = async () => {
@@ -84,18 +100,19 @@ export const useController = ({ signUpWithPassword, resendSignUpConfirmation }: 
 
     isRequestInFlightRef.current = true
     setIsResending(true)
+    confirmationReference.current?.focus()
     setHasResent(false)
     setErrorMessage(null)
     try {
       const resendResult = await resendSignUpConfirmation(submittedEmail)
       if (!resendResult.ok) {
-        setErrorMessage(resendResult.errorMessage)
+        announceError(resendResult.errorMessage)
         return
       }
       setHasResent(true)
       setSecondsBeforeResend(RESEND_COOLDOWN_SECONDS)
     } catch {
-      setErrorMessage(GENERIC_ACTION_ERROR_MESSAGE)
+      announceError(GENERIC_ACTION_ERROR_MESSAGE)
     } finally {
       isRequestInFlightRef.current = false
       setIsResending(false)
@@ -123,5 +140,7 @@ export const useController = ({ signUpWithPassword, resendSignUpConfirmation }: 
     isResending,
     hasResent,
     resend,
+    errorAlertReference,
+    confirmationReference,
   }
 }
