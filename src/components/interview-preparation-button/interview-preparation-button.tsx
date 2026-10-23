@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
 import { InterviewPreparationModal } from '@/components/interview-preparation-modal'
 import { MissingAnthropicApiKeyNotice } from '@/components/missing-anthropic-api-key-notice'
+import { TechnicalBriefSection } from '@/components/technical-brief-section'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { BRIEF_LANGUAGES, BRIEF_LANGUAGE_LABELS, isBriefLanguage } from '@/domain/interview-preparation'
@@ -36,7 +37,7 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
     notesErrorMessage,
     retryNotesSave,
   } = useController({ ...controllerParameters, onDataChanged: router.refresh })
-  const { hasAnthropicApiKey } = controllerParameters
+  const { jobApplicationId, hasAnthropicApiKey, getTechnicalBriefView, generateTechnicalBrief } = controllerParameters
 
   return (
     <section aria-labelledby="interview-preparation-title" className="flex min-w-0 flex-col gap-3">
@@ -93,6 +94,15 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
         notesSaveStatus={notesSaveStatus}
         notesErrorMessage={notesErrorMessage}
         retryNotesSave={retryNotesSave}
+        technicalBriefSlot={
+          <TechnicalBriefSection
+            jobApplicationId={jobApplicationId}
+            language={preparation.language}
+            hasAnthropicApiKey={hasAnthropicApiKey}
+            getTechnicalBriefView={getTechnicalBriefView}
+            generateTechnicalBrief={generateTechnicalBrief}
+          />
+        }
         finalFocusRef={openingButtonRef}
       />
     </section>

@@ -56,6 +56,7 @@ const renderModal = (overrides: Partial<ComponentProps<typeof InterviewPreparati
       notesSaveStatus="idle"
       notesErrorMessage={null}
       retryNotesSave={jest.fn()}
+      technicalBriefSlot={<section aria-label="Emplacement du brief technique" />}
       finalFocusRef={{ current: null }}
       {...overrides}
     />,
@@ -75,6 +76,20 @@ describe('InterviewPreparationModal', () => {
     expect(screen.getByLabelText("Mes notes sur l'entreprise")).toHaveValue('Parler de Kafka')
     expect(screen.getByText(/Brief généré le 17\/10\/2026 11:15/)).toBeInTheDocument()
     expect(screen.getByText(/Questions générées le 18\/10\/2026 10:00/)).toBeInTheDocument()
+  })
+
+  it('renders the technical brief slot after the interview questions and before the sources', () => {
+    renderModal()
+    const questionsTitle = screen.getByText('Questions à poser en entretien')
+    const slot = screen.getByRole('region', { name: 'Emplacement du brief technique' })
+    const sources = screen.getByText(/Voir les sources/)
+    expect(questionsTitle.compareDocumentPosition(slot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(slot.compareDocumentPosition(sources) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('renders the technical brief slot even without questions', () => {
+    renderModal({ preparation: buildPreparation({ questions: null }) })
+    expect(screen.getByRole('region', { name: 'Emplacement du brief technique' })).toBeInTheDocument()
   })
 
   it('boxes the key figures and key dates above the rest of the brief', () => {

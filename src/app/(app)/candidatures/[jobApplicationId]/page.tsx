@@ -45,6 +45,7 @@ import {
   updateInterview,
 } from '@/server/actions/interview-actions'
 import { generateInterviewPreparation, getInterviewPreparation } from '@/server/actions/interview-preparation-actions'
+import { generateTechnicalBrief, getTechnicalBriefView } from '@/server/actions/technical-brief-actions'
 import {
   addActivityLogEntry,
   changeJobApplicationStatus,
@@ -205,6 +206,8 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
                 getInterviewPreparation={getInterviewPreparation}
                 generateInterviewPreparation={generateInterviewPreparation}
                 updateEndClientNotes={updateEndClientNotes}
+                getTechnicalBriefView={getTechnicalBriefView}
+                generateTechnicalBrief={generateTechnicalBrief}
                 hasAnthropicApiKey={hasAnthropicApiKey}
               />
             }
@@ -244,7 +247,7 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
                     }}
                   />
                 </div>
-                <div className={PANEL_CARD_CLASS_NAME}>
+                <div id="cv-envoye" className={`${PANEL_CARD_CLASS_NAME} scroll-mt-24`}>
                   <JobApplicationBlock
                     title="CV envoyé"
                     view={<SentCvView sentCv={jobApplication.sentCv} />}

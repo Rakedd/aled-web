@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ComponentProps, ReactElement } from 'react'
 import type Markdown from 'react-markdown'
@@ -39,6 +39,11 @@ const renderButton = (initialPreparation: InterviewPreparation, hasAnthropicApiK
       ok: true,
       data: buildPreparation({ language }),
     }))
+  const getTechnicalBriefView = jest.fn().mockImplementation(async (_id: string, language: BriefLanguage) => ({
+    ok: true,
+    data: { language, availability: 'ready', brief: null, isCvOutdated: false },
+  }))
+  const generateTechnicalBrief = jest.fn()
   render(
     <InterviewPreparationButton
       jobApplicationId={JOB_APPLICATION_ID}
@@ -46,13 +51,24 @@ const renderButton = (initialPreparation: InterviewPreparation, hasAnthropicApiK
       getInterviewPreparation={getInterviewPreparation}
       generateInterviewPreparation={generateInterviewPreparation}
       updateEndClientNotes={jest.fn().mockResolvedValue({ ok: true, data: null })}
+      getTechnicalBriefView={getTechnicalBriefView}
+      generateTechnicalBrief={generateTechnicalBrief}
       hasAnthropicApiKey={hasAnthropicApiKey}
     />,
   )
-  return { generateInterviewPreparation, getInterviewPreparation }
+  return { generateInterviewPreparation, getInterviewPreparation, getTechnicalBriefView }
 }
 
 describe('InterviewPreparationButton', () => {
+  it('shows the technical brief block in the modal for the displayed language and follows the language change', async () => {
+    const { getTechnicalBriefView } = renderButton(completePreparation)
+    await userEvent.click(screen.getByRole('button', { name: 'Brief généré · voir mon brief' }))
+    expect(await screen.findByRole('region', { name: 'Brief technique' })).toBeInTheDocument()
+    expect(getTechnicalBriefView).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'fr')
+    await userEvent.selectOptions(screen.getByLabelText('Langue du brief'), 'en')
+    await waitFor(() => expect(getTechnicalBriefView).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'en'))
+  })
+
   it('generates the preparation then shows it in the modal', async () => {
     const { generateInterviewPreparation } = renderButton(buildPreparation())
     await userEvent.click(screen.getByRole('button', { name: 'Générer le brief' }))
