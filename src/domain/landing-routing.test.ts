@@ -88,11 +88,14 @@ describe('isAppPathname', () => {
     '/settings',
     '/api/export',
     '/inscription',
+    '/auth/callback',
+    '/mot-de-passe-oublie',
+    '/mot-de-passe/nouveau',
   ])('recognises the app pathname %s', (pathname) => {
     expect(isAppPathname(pathname)).toBe(true)
   })
 
-  it.each(['/', '/mentions-legales', '/confidentialite', '/robots.txt', '/loginx'])(
+  it.each(['/', '/mentions-legales', '/confidentialite', '/robots.txt', '/loginx', '/mot-de-passes'])(
     'keeps %s on the landing',
     (pathname) => {
       expect(isAppPathname(pathname)).toBe(false)

@@ -33,3 +33,11 @@ export const INTERMEDIARIES_VIEW = 'agences'
 export const INTERMEDIARIES_LIST_ROUTE = `${CONTACTS_ROUTE}?${CONTACTS_VIEW_SEARCH_PARAMETER}=${INTERMEDIARIES_VIEW}`
 
 export const CV_LIBRARY_ROUTE = '/cv'
+
+export const SIGN_UP_ROUTE = '/inscription'
+
+export const FORGOT_PASSWORD_ROUTE = '/mot-de-passe-oublie'
+
+export const PASSWORD_ROUTE = '/mot-de-passe'
+
+export const NEW_PASSWORD_ROUTE = `${PASSWORD_ROUTE}/nouveau`

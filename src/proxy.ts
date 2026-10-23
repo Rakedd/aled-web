@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import {
+  SIGN_IN_PATHNAME,
+  SIGN_UP_PATHNAME,
   isAppPathname,
   isLandingHostname,
   isLandingInternalPathname,
@@ -8,16 +10,30 @@ import {
   toBareLandingHost,
   toLandingInternalPathname,
 } from '@/domain/landing-routing'
+import { FORGOT_PASSWORD_ROUTE, HOME_ROUTE } from '@/domain/routes'
 import { isProductionDeployment, readAppOrigin, readLandingHostnames } from '@/lib/landing/landing-environment'
 import type { Database } from '@/server/supabase/database-types'
 import { readSupabaseEnvironmentVariable } from '@/server/supabase/supabase-environment'
 
-const PUBLIC_PATHNAMES = ['/login', '/auth/confirm', '/robots.txt', '/.well-known']
+const PUBLIC_PATHNAMES = [
+  SIGN_IN_PATHNAME,
+  SIGN_UP_PATHNAME,
+  FORGOT_PASSWORD_ROUTE,
+  '/auth/confirm',
+  '/auth/callback',
+  '/robots.txt',
+  '/.well-known',
+]
+
+const SIGNED_OUT_ONLY_PATHNAMES = [SIGN_IN_PATHNAME, SIGN_UP_PATHNAME]
 
 const PERMANENT_REDIRECT_STATUS = 308
 
 const isPublicPathname = (pathname: string): boolean =>
   PUBLIC_PATHNAMES.some((publicPathname) => pathname === publicPathname || pathname.startsWith(`${publicPathname}/`))
+
+const isSignedOutOnlyPageRequest = (request: NextRequest): boolean =>
+  request.method === 'GET' && SIGNED_OUT_ONLY_PATHNAMES.includes(request.nextUrl.pathname)
 
 const readRequestHost = (request: NextRequest): string => request.headers.get('host') ?? request.nextUrl.host
 
@@ -74,17 +90,20 @@ export const proxy = async (request: NextRequest) => {
   const { data } = await supabase.auth.getClaims()
   const isAuthenticated = Boolean(data?.claims)
 
-  if (!isAuthenticated && !isPublicPathname(request.nextUrl.pathname)) {
-    const loginUrl = request.nextUrl.clone()
-    loginUrl.pathname = '/login'
-    loginUrl.search = ''
-    const loginRedirectResponse = NextResponse.redirect(loginUrl)
-    sessionResponse.cookies.getAll().forEach((authCookie) => loginRedirectResponse.cookies.set(authCookie))
+  const redirectKeepingSession = (pathname: string): NextResponse => {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = pathname
+    redirectUrl.search = ''
+    const redirectResponse = NextResponse.redirect(redirectUrl)
+    sessionResponse.cookies.getAll().forEach((authCookie) => redirectResponse.cookies.set(authCookie))
     Object.entries(authCacheHeaders).forEach(([headerName, headerValue]) =>
-      loginRedirectResponse.headers.set(headerName, headerValue),
+      redirectResponse.headers.set(headerName, headerValue),
     )
-    return loginRedirectResponse
+    return redirectResponse
   }
+
+  if (!isAuthenticated && !isPublicPathname(request.nextUrl.pathname)) return redirectKeepingSession(SIGN_IN_PATHNAME)
+  if (isAuthenticated && isSignedOutOnlyPageRequest(request)) return redirectKeepingSession(HOME_ROUTE)
 
   return sessionResponse
 }

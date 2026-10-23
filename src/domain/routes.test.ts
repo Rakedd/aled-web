@@ -1,8 +1,11 @@
 import {
   CV_LIBRARY_ROUTE,
+  FORGOT_PASSWORD_ROUTE,
   INTERMEDIARIES_LIST_ROUTE,
   NEW_JOB_APPLICATION_ROUTE,
+  NEW_PASSWORD_ROUTE,
   OPPORTUNITY_PREFERENCES_ROUTE,
+  SIGN_UP_ROUTE,
   contactRoute,
   intermediaryRoute,
   jobApplicationRoute,
@@ -38,5 +41,13 @@ describe('contacts routes', () => {
 describe('cv library route', () => {
   it('points to the cv library page', () => {
     expect(CV_LIBRARY_ROUTE).toBe('/cv')
+  })
+})
+
+describe('account routes', () => {
+  it('points to the sign-up and password pages', () => {
+    expect(SIGN_UP_ROUTE).toBe('/inscription')
+    expect(FORGOT_PASSWORD_ROUTE).toBe('/mot-de-passe-oublie')
+    expect(NEW_PASSWORD_ROUTE).toBe('/mot-de-passe/nouveau')
   })
 })

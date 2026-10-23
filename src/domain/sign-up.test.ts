@@ -15,6 +15,7 @@ import {
   isAlreadyRegisteredSignUpError,
   isOAuthProvider,
   isProfessionalStatus,
+  isRateLimitSignUpError,
 } from '@/domain/sign-up'
 import type { SignUpInput } from '@/domain/sign-up'
 
@@ -172,6 +173,23 @@ describe('findSignUpErrorMessage', () => {
 
   it('maps an undefined code to failure', () => {
     expect(findSignUpErrorMessage(undefined)).toBe(SIGN_UP_MESSAGES.failure)
+  })
+
+  it.each(['toString', 'constructor', '__proto__', 'hasOwnProperty'])(
+    'maps the inherited object key %s to failure',
+    (code) => {
+      expect(findSignUpErrorMessage(code)).toBe(SIGN_UP_MESSAGES.failure)
+    },
+  )
+})
+
+describe('isRateLimitSignUpError', () => {
+  it.each(['over_email_send_rate_limit', 'over_request_rate_limit'])('returns true for %s', (code) => {
+    expect(isRateLimitSignUpError(code)).toBe(true)
+  })
+
+  it.each([['weak_password'], ['toString'], [undefined]])('returns false for %p', (code) => {
+    expect(isRateLimitSignUpError(code)).toBe(false)
   })
 })
 

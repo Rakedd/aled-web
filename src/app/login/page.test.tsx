@@ -20,6 +20,20 @@ describe('LoginPage', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Ce lien de connexion est invalide ou a expiré.')
   })
 
+  it('explains a failed Google or LinkedIn sign-in', async () => {
+    await renderLoginPage({ error: 'oauth' })
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "La connexion avec ce compte n'a pas abouti. Réessaie ou utilise ton e-mail.",
+    )
+  })
+
+  it.each(['toString', 'unknown'])('shows no error for the unknown error parameter %s', async (error) => {
+    await renderLoginPage({ error })
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
   it('shows no error without an error parameter', async () => {
     await renderLoginPage({})
 

@@ -27,7 +27,8 @@ const mockSupabaseSession = ({ claims, clearsAuthCookie }: { claims: { sub: stri
   })) as unknown as typeof createServerClient)
 }
 
-const buildRequest = (pathname: string) => new NextRequest(new URL(pathname, 'http://localhost:3000'))
+const buildRequest = (pathname: string, method = 'GET') =>
+  new NextRequest(new URL(pathname, 'http://localhost:3000'), { method })
 
 describe('proxy', () => {
   it('redirects an unauthenticated request for an app route to the login page', async () => {
@@ -49,10 +50,65 @@ describe('proxy', () => {
     expect(response.headers.get('cache-control')).toBe(AUTH_CACHE_HEADERS['Cache-Control'])
   })
 
-  it.each(['/login', '/auth/confirm', '/robots.txt', '/.well-known/assetlinks.json'])('lets an unauthenticated request reach the public path %s', async (pathname) => {
+  it.each([
+    '/login',
+    '/inscription',
+    '/mot-de-passe-oublie',
+    '/auth/confirm',
+    '/auth/callback',
+    '/robots.txt',
+    '/.well-known/assetlinks.json',
+  ])('lets an unauthenticated request reach the public path %s', async (pathname) => {
     mockSupabaseSession({ claims: null, clearsAuthCookie: false })
 
     const response = await proxy(buildRequest(pathname))
+
+    expect(response.headers.get('location')).toBeNull()
+    expect(response.headers.get('x-middleware-next')).toBe('1')
+  })
+
+  it('keeps the new password page behind the login', async () => {
+    mockSupabaseSession({ claims: null, clearsAuthCookie: false })
+
+    const response = await proxy(buildRequest('/mot-de-passe/nouveau'))
+
+    expect(response.headers.get('location')).toBe('http://localhost:3000/login')
+  })
+
+  it.each(['/login', '/login?error=oauth', '/inscription'])(
+    'sends an authenticated visitor of %s to the home page with the refreshed cookies',
+    async (pathname) => {
+      mockSupabaseSession({ claims: { sub: 'user-id' }, clearsAuthCookie: true })
+
+      const response = await proxy(buildRequest(pathname))
+
+      expect(response.status).toBe(307)
+      expect(response.headers.get('location')).toBe('http://localhost:3000/')
+      expect(response.cookies.get(EXPIRED_AUTH_COOKIE.name)).toMatchObject({ value: '' })
+      expect(response.headers.get('cache-control')).toBe(AUTH_CACHE_HEADERS['Cache-Control'])
+    },
+  )
+
+  it.each([
+    '/auth/confirm?token_hash=abc&type=recovery',
+    '/auth/confirm?token_hash=abc&type=email',
+    '/auth/callback?code=abc',
+    '/mot-de-passe-oublie',
+    '/mot-de-passe/nouveau',
+    '/login/elsewhere',
+  ])('lets an authenticated visitor reach %s without redirecting', async (pathname) => {
+    mockSupabaseSession({ claims: { sub: 'user-id' }, clearsAuthCookie: false })
+
+    const response = await proxy(buildRequest(pathname))
+
+    expect(response.headers.get('location')).toBeNull()
+    expect(response.headers.get('x-middleware-next')).toBe('1')
+  })
+
+  it('lets a server action posted from a stale login tab through for an authenticated user', async () => {
+    mockSupabaseSession({ claims: { sub: 'user-id' }, clearsAuthCookie: false })
+
+    const response = await proxy(buildRequest('/login', 'POST'))
 
     expect(response.headers.get('location')).toBeNull()
     expect(response.headers.get('x-middleware-next')).toBe('1')
@@ -129,6 +185,8 @@ describe('proxy on the landing domain', () => {
       'https://app.aled.work/auth/confirm?token_hash=abc&type=email',
     ],
     ['https://aled.work/candidatures/42', 'https://app.aled.work/candidatures/42'],
+    ['https://aled.work/auth/callback?code=abc', 'https://app.aled.work/auth/callback?code=abc'],
+    ['https://aled.work/mot-de-passe-oublie', 'https://app.aled.work/mot-de-passe-oublie'],
   ])('sends the old app link %s to the app', async (url, appUrl) => {
     const response = await proxy(buildRequestForUrl(url))
 

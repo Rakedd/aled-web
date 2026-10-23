@@ -1,15 +1,24 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import { LoginForm } from '@/components/login-form'
+import { SIGN_UP_MESSAGES } from '@/domain/sign-up'
 import { signInWithPassword } from '@/server/actions/auth-actions'
 
 export const metadata: Metadata = { title: 'Connexion · Aled' }
 
-const INVALID_LINK_MESSAGE = 'Ce lien de connexion est invalide ou a expiré. Connecte-toi avec ton mot de passe.'
+const LOGIN_ERROR_MESSAGES: Partial<Record<string, string>> = {
+  'invalid-link': 'Ce lien de connexion est invalide ou a expiré. Connecte-toi avec ton mot de passe.',
+  oauth: SIGN_UP_MESSAGES.oauthFailure,
+}
+
+const findLoginErrorMessage = (errorParameter: string | string[] | undefined): string | undefined =>
+  typeof errorParameter === 'string' && Object.hasOwn(LOGIN_ERROR_MESSAGES, errorParameter)
+    ? LOGIN_ERROR_MESSAGES[errorParameter]
+    : undefined
 
 const LoginPage = async ({ searchParams }: PageProps<'/login'>) => {
   const { error } = await searchParams
-  const hasInvalidLinkError = error === 'invalid-link'
+  const loginErrorMessage = findLoginErrorMessage(error)
 
   return (
     <main className="flex flex-1 flex-col lg:flex-row">
@@ -25,9 +34,9 @@ const LoginPage = async ({ searchParams }: PageProps<'/login'>) => {
       <section className="flex flex-1 items-center justify-center px-4 py-10 lg:w-1/2">
         <div className="flex w-full max-w-sm flex-col gap-6 rounded-2xl bg-card p-6">
           <h2 className="font-heading text-2xl font-bold text-ink">Connexion</h2>
-          {hasInvalidLinkError && (
+          {loginErrorMessage && (
             <p role="alert" className="text-sm text-destructive">
-              {INVALID_LINK_MESSAGE}
+              {loginErrorMessage}
             </p>
           )}
           <LoginForm signInWithPassword={signInWithPassword} />

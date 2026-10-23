@@ -2,15 +2,18 @@ import {
   CALENDAR_ROUTE,
   CONTACTS_ROUTE,
   CV_LIBRARY_ROUTE,
+  FORGOT_PASSWORD_ROUTE,
   INTERMEDIARIES_ROUTE,
   JOB_APPLICATIONS_ROUTE,
   OPPORTUNITIES_ROUTE,
+  PASSWORD_ROUTE,
   PREFERENCES_ROUTE,
+  SIGN_UP_ROUTE,
 } from './routes'
 
 export const LANDING_INTERNAL_PATH_PREFIX = '/vitrine'
 
-export const SIGN_UP_PATHNAME = '/inscription'
+export const SIGN_UP_PATHNAME = SIGN_UP_ROUTE
 
 export const SIGN_IN_PATHNAME = '/login'
 
@@ -23,6 +26,8 @@ const WWW_PREFIX = 'www.'
 const APP_PATH_PREFIXES = [
   SIGN_IN_PATHNAME,
   SIGN_UP_PATHNAME,
+  FORGOT_PASSWORD_ROUTE,
+  PASSWORD_ROUTE,
   '/auth',
   '/settings',
   '/api',
