@@ -177,12 +177,19 @@ export const HomeDashboard = ({
               {pluralizeFrench(activeJobApplicationCount, 'candidature en cours', 'candidatures en cours')}
             </p>
           </div>
-          <div className={cn(BENTO_TILE_CLASS_NAME, 'flex-1 justify-end bg-deep-surface text-on-deep-surface-soft')}>
-            <p className="font-heading text-5xl leading-none font-extrabold text-peach">{opportunitiesToProcessCount}</p>
-            <p className="text-sm font-semibold">
-              {pluralizeFrench(opportunitiesToProcessCount, 'mission à traiter', 'missions à traiter')}
-            </p>
-          </div>
+          <Link
+            href={OPPORTUNITIES_ROUTE}
+            className={cn(
+              BENTO_TILE_CLASS_NAME,
+              'flex-1 justify-end bg-peach text-on-peach outline-none transition-[filter] hover:brightness-95 focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none',
+            )}
+          >
+            <span className="font-heading text-5xl leading-none font-extrabold">{opportunitiesToProcessCount}</span>{' '}
+            <span className="text-sm font-semibold">
+              {pluralizeFrench(opportunitiesToProcessCount, 'nouvelle mission', 'nouvelles missions')}
+            </span>{' '}
+            <span className="text-sm">cette semaine, selon tes filtres</span>
+          </Link>
         </section>
       </div>
       <section aria-labelledby="home-opportunities-title" className={cn(BENTO_TILE_CLASS_NAME, 'gap-4 bg-card')}>

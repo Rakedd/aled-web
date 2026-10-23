@@ -180,12 +180,20 @@ describe('HomeDashboard', () => {
   it.each([
     [6, 'candidatures en cours', { activeJobApplicationCount: 6 }],
     [1, 'candidature en cours', { activeJobApplicationCount: 1 }],
-    [12, 'missions à traiter', { opportunitiesToProcessCount: 12 }],
-    [1, 'mission à traiter', { opportunitiesToProcessCount: 1 }],
+    [12, 'nouvelles missions', { opportunitiesToProcessCount: 12 }],
+    [1, 'nouvelle mission', { opportunitiesToProcessCount: 1 }],
   ])('shows the counter %s with its label %s', (count, label, overrides) => {
     renderDashboard(overrides)
     expect(screen.getByText(String(count))).toBeInTheDocument()
     expect(screen.getByText(label)).toBeInTheDocument()
+  })
+
+  it('links the new missions tile to the opportunities, on a peach background, with a name that explains the count', () => {
+    renderDashboard({ opportunitiesToProcessCount: 14 })
+
+    const newMissionsLink = screen.getByRole('link', { name: '14 nouvelles missions cette semaine, selon tes filtres' })
+    expect(newMissionsLink).toHaveAttribute('href', '/opportunites')
+    expect(newMissionsLink).toHaveClass('bg-peach', 'text-on-peach')
   })
 
   it('shows the empty reminders state and the empty missions state', () => {
