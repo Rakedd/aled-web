@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { AnthropicApiKeyForm } from '@/components/anthropic-api-key-form'
+import { ChangePasswordSection } from '@/components/change-password-section'
 import { ProfileForm } from '@/components/profile-form'
 import { SettingsNavigation } from '@/components/settings-navigation'
 import { buttonVariants } from '@/components/ui/button'
@@ -39,6 +40,7 @@ const SettingsPage = async () => {
                 updateProfileSettings={updateProfileSettings}
               />
             </section>
+            <ChangePasswordSection />
             <section aria-labelledby="settings-api-key-title" className="flex flex-col gap-4 rounded-2xl bg-deep-surface p-6 text-on-deep-surface focus-ring-on-dark">
               <div className="flex flex-col gap-1">
                 <h2 id="settings-api-key-title" className="text-lg font-semibold">

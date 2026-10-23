@@ -41,3 +41,9 @@ export const FORGOT_PASSWORD_ROUTE = '/mot-de-passe-oublie'
 export const PASSWORD_ROUTE = '/mot-de-passe'
 
 export const NEW_PASSWORD_ROUTE = `${PASSWORD_ROUTE}/nouveau`
+
+export const PASSWORD_UPDATED_SEARCH_PARAMETER = 'mot-de-passe'
+
+export const PASSWORD_UPDATED_SEARCH_VALUE = 'modifie'
+
+export const PASSWORD_UPDATED_HOME_ROUTE = `${HOME_ROUTE}?${PASSWORD_UPDATED_SEARCH_PARAMETER}=${PASSWORD_UPDATED_SEARCH_VALUE}`
