@@ -1,5 +1,6 @@
 import 'server-only'
 import type { PostgrestError } from '@supabase/supabase-js'
+import { isProfessionalStatus, type ProfessionalStatus } from '@/domain/sign-up'
 import { isProfileLink, type ProfileLink, type ProfileSettings, type ProfileSettingsInput } from '@/domain/profile-settings'
 import { decryptApiKey, readApiKeyEncryptionSecret } from '@/server/crypto/api-key-encryption'
 import { createServerSupabaseClient } from '@/server/supabase/create-server-supabase-client'
@@ -8,12 +9,12 @@ import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supa
 
 type ProfileSettingsRow = Pick<
   Tables<'profiles'>,
-  'first_name' | 'last_name' | 'email' | 'links' | 'follow_up_delay_days' | 'anthropic_api_key_last_four'
+  'first_name' | 'last_name' | 'email' | 'links' | 'follow_up_delay_days' | 'anthropic_api_key_last_four' | 'professional_status'
 >
 
 export type EncryptedAnthropicApiKey = { encryptedApiKey: string; apiKeyLastFour: string }
 
-const PROFILE_SETTINGS_COLUMNS = 'first_name, last_name, email, links, follow_up_delay_days, anthropic_api_key_last_four'
+const PROFILE_SETTINGS_COLUMNS = 'first_name, last_name, email, links, follow_up_delay_days, anthropic_api_key_last_four, professional_status'
 
 const toProfileRepositoryError = (operationName: string, postgrestError: PostgrestError): Error =>
   new Error(`Profile repository ${operationName} failed with code ${postgrestError.code}`)
@@ -27,6 +28,9 @@ const toProfileSettings = (profileSettingsRow: ProfileSettingsRow): ProfileSetti
   links: toProfileLinks(profileSettingsRow.links),
   followUpDelayDays: profileSettingsRow.follow_up_delay_days,
   anthropicApiKeyLastFour: profileSettingsRow.anthropic_api_key_last_four,
+  professionalStatus: isProfessionalStatus(profileSettingsRow.professional_status)
+    ? profileSettingsRow.professional_status
+    : null,
 })
 
 export const findProfileSettings = async (
@@ -50,12 +54,27 @@ export const updateProfileSettingsRow = async (
       last_name: profileSettingsInput.lastName,
       links: profileSettingsInput.links,
       follow_up_delay_days: profileSettingsInput.followUpDelayDays,
+      professional_status: profileSettingsInput.professionalStatus,
     })
     .eq('id', userId)
     .select(PROFILE_SETTINGS_COLUMNS)
     .single()
   if (error) throw toProfileRepositoryError('updateProfileSettingsRow', error)
   return toProfileSettings(data)
+}
+
+export const updateProfessionalStatus = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  professionalStatus: ProfessionalStatus,
+): Promise<void> => {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ professional_status: professionalStatus })
+    .eq('id', userId)
+    .select('id')
+    .single()
+  if (error) throw toProfileRepositoryError('updateProfessionalStatus', error)
 }
 
 export const storeEncryptedAnthropicApiKey = async (

@@ -4,6 +4,7 @@ import {
   findEncryptedAnthropicApiKey,
   findProfileSettings,
   storeEncryptedAnthropicApiKey,
+  updateProfessionalStatus,
   updateProfileSettingsRow,
 } from '@/server/repositories/profile-repository'
 import { createSignedInTestClient } from './create-test-user'
@@ -21,6 +22,7 @@ describe('profile repository', () => {
       links: [],
       followUpDelayDays: 7,
       anthropicApiKeyLastFour: null,
+      professionalStatus: null,
     })
   })
 
@@ -31,14 +33,25 @@ describe('profile repository', () => {
       lastName: 'Lovelace',
       links: [{ label: 'LinkedIn', url: 'https://www.linkedin.com/in/ada' }],
       followUpDelayDays: 14,
+      professionalStatus: 'employee',
     })
     expect(updatedProfileSettings).toMatchObject({
       firstName: 'Ada',
       lastName: 'Lovelace',
       links: [{ label: 'LinkedIn', url: 'https://www.linkedin.com/in/ada' }],
       followUpDelayDays: 14,
+      professionalStatus: 'employee',
     })
     await expect(findProfileSettings(user.client, user.userId)).resolves.toEqual(updatedProfileSettings)
+  })
+
+  it('saves the professional status of the user and refuses the status of another user', async () => {
+    const userA = await createSignedInTestClient(`status-${randomUUID()}@test.local`)
+    const userB = await createSignedInTestClient(`status-${randomUUID()}@test.local`)
+    await updateProfessionalStatus(userA.client, userA.userId, 'freelance')
+    await expect(findProfileSettings(userA.client, userA.userId)).resolves.toMatchObject({ professionalStatus: 'freelance' })
+    await expect(updateProfessionalStatus(userB.client, userA.userId, 'employee')).rejects.toThrow()
+    await expect(findProfileSettings(userA.client, userA.userId)).resolves.toMatchObject({ professionalStatus: 'freelance' })
   })
 
   it('stores, reads back and clears the encrypted api key of the user', async () => {

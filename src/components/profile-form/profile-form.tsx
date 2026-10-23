@@ -10,6 +10,7 @@ import {
   MAXIMUM_PROFILE_LINK_COUNT,
   MINIMUM_FOLLOW_UP_DELAY_DAYS,
 } from '@/domain/profile-settings'
+import { PROFESSIONAL_STATUSES, PROFESSIONAL_STATUS_LABELS } from '@/domain/sign-up'
 import { useController } from './controller'
 import type { ProfileFormProps } from './interfaces'
 
@@ -22,6 +23,8 @@ export const ProfileForm = ({ initialProfileSettings, updateProfileSettings }: P
     email,
     followUpDelayDaysText,
     setFollowUpDelayDaysText,
+    professionalStatus,
+    setProfessionalStatus,
     links,
     addLink,
     updateLink,
@@ -66,6 +69,26 @@ export const ProfileForm = ({ initialProfileSettings, updateProfileSettings }: P
           <p id="profile-form-email-hint" className="text-xs text-muted-foreground">
             L&apos;adresse de connexion ne se modifie pas ici.
           </p>
+        </div>
+      </div>
+      <div role="radiogroup" aria-labelledby="profile-form-professional-status-label" className="flex flex-col gap-2">
+        <span id="profile-form-professional-status-label" className="text-sm font-medium">
+          Je suis
+        </span>
+        <div className="flex gap-4">
+          {PROFESSIONAL_STATUSES.map((statusOption) => (
+            <label key={statusOption} className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="professionalStatus"
+                value={statusOption}
+                checked={professionalStatus === statusOption}
+                onChange={() => setProfessionalStatus(statusOption)}
+                className="size-4 accent-primary"
+              />
+              {PROFESSIONAL_STATUS_LABELS[statusOption]}
+            </label>
+          ))}
         </div>
       </div>
       <fieldset className="flex flex-col gap-3">

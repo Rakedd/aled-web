@@ -1,5 +1,6 @@
 import type { ActionResult } from './action-result'
 import { isRecord, rejectWith } from './input-validation'
+import { isProfessionalStatus, type ProfessionalStatus } from './sign-up'
 
 export type ProfileLink = { label: string; url: string }
 
@@ -10,9 +11,13 @@ export type ProfileSettings = {
   links: ProfileLink[]
   followUpDelayDays: number
   anthropicApiKeyLastFour: string | null
+  professionalStatus: ProfessionalStatus | null
 }
 
-export type ProfileSettingsInput = Pick<ProfileSettings, 'firstName' | 'lastName' | 'links' | 'followUpDelayDays'>
+export type ProfileSettingsInput = Pick<
+  ProfileSettings,
+  'firstName' | 'lastName' | 'links' | 'followUpDelayDays' | 'professionalStatus'
+>
 
 export const MINIMUM_FOLLOW_UP_DELAY_DAYS = 1
 export const MAXIMUM_FOLLOW_UP_DELAY_DAYS = 60
@@ -34,6 +39,7 @@ export const PROFILE_SETTINGS_VALIDATION_MESSAGES = {
 
 type ProfileSettingsInputShape = Omit<ProfileSettingsInput, 'followUpDelayDays'> & { followUpDelayDays: unknown }
 
+
 export const isProfileLink = (candidate: unknown): candidate is ProfileLink =>
   isRecord(candidate) && typeof candidate.label === 'string' && typeof candidate.url === 'string'
 
@@ -42,7 +48,8 @@ const isProfileSettingsInputShape = (candidate: unknown): candidate is ProfileSe
   typeof candidate.firstName === 'string' &&
   typeof candidate.lastName === 'string' &&
   Array.isArray(candidate.links) &&
-  candidate.links.every(isProfileLink)
+  candidate.links.every(isProfileLink) &&
+  (candidate.professionalStatus === null || isProfessionalStatus(candidate.professionalStatus))
 
 const isValidFollowUpDelayDays = (candidate: unknown): candidate is number =>
   typeof candidate === 'number' &&
@@ -81,5 +88,14 @@ export const validateProfileSettingsInput = (candidate: unknown): ActionResult<P
   if (!links.every((profileLink) => isValidHttpsUrl(profileLink.url))) {
     return rejectWith(PROFILE_SETTINGS_VALIDATION_MESSAGES.invalidLinkUrl)
   }
-  return { ok: true, data: { firstName, lastName, links, followUpDelayDays: candidate.followUpDelayDays } }
+  return {
+    ok: true,
+    data: {
+      firstName,
+      lastName,
+      links,
+      followUpDelayDays: candidate.followUpDelayDays,
+      professionalStatus: candidate.professionalStatus,
+    },
+  }
 }

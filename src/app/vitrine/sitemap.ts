@@ -1,8 +1,8 @@
 import type { MetadataRoute } from 'next'
-import { LEGAL_NOTICE_PATHNAME, PRIVACY_POLICY_PATHNAME } from '@/domain/landing-routing'
+import { LEGAL_NOTICE_PATHNAME, PRIVACY_POLICY_PATHNAME, TERMS_OF_USE_PATHNAME } from '@/domain/landing-routing'
 import { readLandingOrigin } from '@/lib/landing/landing-environment'
 
-const LANDING_PATHNAMES = ['/', LEGAL_NOTICE_PATHNAME, PRIVACY_POLICY_PATHNAME]
+const LANDING_PATHNAMES = ['/', LEGAL_NOTICE_PATHNAME, PRIVACY_POLICY_PATHNAME, TERMS_OF_USE_PATHNAME]
 
 const sitemap = (): MetadataRoute.Sitemap => {
   const landingOrigin = readLandingOrigin()

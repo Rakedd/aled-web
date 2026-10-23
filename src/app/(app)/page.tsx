@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { HomeDashboard } from '@/components/home-dashboard'
+import { ProfessionalStatusCard } from '@/components/professional-status-card'
 import { PasswordUpdatedBanner } from '@/components/password-updated-banner'
 import { countActiveJobApplications } from '@/domain/job-application-status'
 import { PASSWORD_UPDATED_SEARCH_PARAMETER, PASSWORD_UPDATED_SEARCH_VALUE } from '@/domain/routes'
@@ -7,6 +8,7 @@ import { PAGE_TITLE_CLASS_NAME } from '@/lib/typography-class-names'
 import { confirmCvStillGood } from '@/server/actions/cv-actions'
 import { changeJobApplicationStatus, snoozeAlert } from '@/server/actions/job-application-actions'
 import { applyToOpportunity, countOpportunitiesToProcess, listHighlightedOpportunities } from '@/server/actions/opportunity-actions'
+import { saveProfessionalStatus } from '@/server/actions/settings-actions'
 import { loadTodoReminders } from '@/server/todo-reminders/load-todo-reminders'
 
 export const metadata: Metadata = { title: 'Accueil · Aled' }
@@ -45,6 +47,9 @@ const HomePage = async ({ searchParams }: PageProps<'/'>) => {
   return (
     <div className="flex min-w-0 flex-col gap-5">
       {passwordUpdatedBanner}
+      {profileSettings.professionalStatus === null && (
+        <ProfessionalStatusCard saveProfessionalStatus={saveProfessionalStatus} />
+      )}
       <HomeDashboard
         firstName={profileSettings.firstName}
         now={now}

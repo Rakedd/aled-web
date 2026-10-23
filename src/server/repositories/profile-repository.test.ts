@@ -4,7 +4,12 @@
 import { randomBytes } from 'node:crypto'
 import { encryptApiKey } from '@/server/crypto/api-key-encryption'
 import { createServerSupabaseClient } from '@/server/supabase/create-server-supabase-client'
-import { findProfileSettings, getDecryptedAnthropicApiKeyForUser, updateProfileSettingsRow } from './profile-repository'
+import {
+  findProfileSettings,
+  getDecryptedAnthropicApiKeyForUser,
+  updateProfessionalStatus,
+  updateProfileSettingsRow,
+} from './profile-repository'
 
 jest.mock('server-only', () => ({}))
 jest.mock('@/server/supabase/create-server-supabase-client', () => ({ createServerSupabaseClient: jest.fn() }))
@@ -18,6 +23,7 @@ const profileSettingsRow = {
   links: [{ label: 'LinkedIn', url: 'https://www.linkedin.com/in/ada' }, { unexpected: true }],
   follow_up_delay_days: 7,
   anthropic_api_key_last_four: '4f2a',
+  professional_status: 'employee',
 }
 
 const createFakeSupabaseClientReturning = (rowData: unknown) => {
@@ -45,6 +51,7 @@ describe('findProfileSettings', () => {
       links: [{ label: 'LinkedIn', url: 'https://www.linkedin.com/in/ada' }],
       followUpDelayDays: 7,
       anthropicApiKeyLastFour: '4f2a',
+      professionalStatus: 'employee',
     })
     expect(queryBuilder.eq).toHaveBeenCalledWith('id', 'user-1')
     expect(queryBuilder.select.mock.calls[0][0]).not.toContain('encrypted_anthropic_api_key')
@@ -67,15 +74,41 @@ describe('updateProfileSettingsRow', () => {
       lastName: 'Lovelace',
       links: [],
       followUpDelayDays: 10,
+      professionalStatus: 'freelance',
     })
     expect(queryBuilder.update).toHaveBeenCalledWith({
       first_name: 'Ada',
       last_name: 'Lovelace',
       links: [],
       follow_up_delay_days: 10,
+      professional_status: 'freelance',
     })
     expect(queryBuilder.eq).toHaveBeenCalledWith('id', 'user-1')
     expect(queryBuilder.select.mock.calls[0][0]).not.toContain('encrypted_anthropic_api_key')
+  })
+})
+
+describe('findProfileSettings with an unknown professional status', () => {
+  it('reads a missing or unexpected status as null', async () => {
+    const { supabaseClient } = createFakeSupabaseClientReturning({ ...profileSettingsRow, professional_status: 'intern' })
+    await expect(findProfileSettings(supabaseClient, 'user-1')).resolves.toMatchObject({ professionalStatus: null })
+  })
+})
+
+describe('updateProfessionalStatus', () => {
+  it('writes only the status of the given user', async () => {
+    const { supabaseClient, queryBuilder } = createFakeSupabaseClientReturning({ id: 'user-1' })
+    await updateProfessionalStatus(supabaseClient, 'user-1', 'employee')
+    expect(queryBuilder.update).toHaveBeenCalledWith({ professional_status: 'employee' })
+    expect(queryBuilder.eq).toHaveBeenCalledWith('id', 'user-1')
+  })
+
+  it('throws without leaking database details when the update fails', async () => {
+    const { supabaseClient, queryBuilder } = createFakeSupabaseClientReturning(null)
+    queryBuilder.single.mockResolvedValue({ data: null, error: { code: '42501', message: 'denied', details: 'secret' } })
+    await expect(updateProfessionalStatus(supabaseClient, 'user-1', 'employee')).rejects.toThrow(
+      'Profile repository updateProfessionalStatus failed with code 42501',
+    )
   })
 })
 

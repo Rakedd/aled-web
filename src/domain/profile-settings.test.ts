@@ -5,6 +5,7 @@ const validProfileSettingsInput = {
   lastName: 'Lovelace',
   links: [{ label: ' LinkedIn ', url: ' https://www.linkedin.com/in/ada ' }],
   followUpDelayDays: 7,
+  professionalStatus: 'freelance',
 }
 
 describe('validateProfileSettingsInput', () => {
@@ -16,7 +17,22 @@ describe('validateProfileSettingsInput', () => {
         lastName: 'Lovelace',
         links: [{ label: 'LinkedIn', url: 'https://www.linkedin.com/in/ada' }],
         followUpDelayDays: 7,
+        professionalStatus: 'freelance',
       },
+    })
+  })
+
+  it('accepts a missing professional status', () => {
+    expect(validateProfileSettingsInput({ ...validProfileSettingsInput, professionalStatus: null })).toMatchObject({
+      ok: true,
+      data: { professionalStatus: null },
+    })
+  })
+
+  it.each(['intern', '', undefined, 3])('rejects the professional status %p', (professionalStatus) => {
+    expect(validateProfileSettingsInput({ ...validProfileSettingsInput, professionalStatus })).toEqual({
+      ok: false,
+      errorMessage: 'Préférences invalides',
     })
   })
 

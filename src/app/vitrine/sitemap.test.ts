@@ -19,6 +19,7 @@ describe('landing sitemap', () => {
       'https://aled.work/',
       'https://aled.work/mentions-legales',
       'https://aled.work/confidentialite',
+      'https://aled.work/conditions-utilisation',
     ])
   })
 

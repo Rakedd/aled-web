@@ -50,5 +50,6 @@ export const LANDING_COPY = {
     copyright: '© Aled',
     legalNotice: 'Mentions légales',
     privacyPolicy: 'Confidentialité',
+    termsOfUse: "Conditions d'utilisation",
   },
 } as const

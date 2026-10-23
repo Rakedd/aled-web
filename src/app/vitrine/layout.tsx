@@ -4,7 +4,12 @@ import type { ReactNode } from 'react'
 import { LandingFooter } from '@/components/landing-footer'
 import { LandingHeader } from '@/components/landing-header'
 import { LANDING_COPY } from '@/domain/landing-copy'
-import { LEGAL_NOTICE_PATHNAME, PRIVACY_POLICY_PATHNAME, SIGN_IN_PATHNAME } from '@/domain/landing-routing'
+import {
+  LEGAL_NOTICE_PATHNAME,
+  PRIVACY_POLICY_PATHNAME,
+  SIGN_IN_PATHNAME,
+  TERMS_OF_USE_PATHNAME,
+} from '@/domain/landing-routing'
 import { buildAppUrl, buildLandingHref, readLandingOrigin } from '@/lib/landing/landing-environment'
 
 export const buildLandingMetadata = (): Metadata => ({
@@ -26,6 +31,7 @@ const LandingLayout = ({ children }: Readonly<{ children: ReactNode }>) => (
     <LandingFooter
       legalNoticeHref={buildLandingHref(LEGAL_NOTICE_PATHNAME)}
       privacyPolicyHref={buildLandingHref(PRIVACY_POLICY_PATHNAME)}
+      termsOfUseHref={buildLandingHref(TERMS_OF_USE_PATHNAME)}
     />
     <Analytics />
   </>

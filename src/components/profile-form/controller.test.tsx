@@ -10,6 +10,7 @@ const initialProfileSettings: ProfileSettings = {
   links: [],
   followUpDelayDays: 7,
   anthropicApiKeyLastFour: null,
+  professionalStatus: null,
 }
 
 const renderProfileFormController = (
@@ -63,10 +64,19 @@ describe('profile-form useController', () => {
       lastName: 'Lovelace',
       links: [{ label: 'LinkedIn', url: 'https://www.linkedin.com/in/ada' }],
       followUpDelayDays: 10,
+      professionalStatus: null,
     })
     expect(result.current.links).toEqual(savedProfileSettings.links)
     expect(result.current.successMessage).toBe('Préférences enregistrées')
     expect(result.current.errorMessage).toBeNull()
+  })
+
+  it('sends the professional status picked by the user', async () => {
+    const { result, updateProfileSettings } = renderProfileFormController()
+    expect(result.current.professionalStatus).toBeNull()
+    act(() => result.current.setProfessionalStatus('employee'))
+    await act(() => result.current.submit())
+    expect(updateProfileSettings).toHaveBeenCalledWith(expect.objectContaining({ professionalStatus: 'employee' }))
   })
 
   it('removes a link', () => {

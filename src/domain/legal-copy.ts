@@ -53,3 +53,16 @@ export const PRIVACY_POLICY_DOCUMENT: LegalDocumentContent = {
     },
   ],
 }
+
+export const TERMS_OF_USE_DOCUMENT: LegalDocumentContent = {
+  title: "Conditions d'utilisation",
+  sections: [
+    { heading: 'Objet', paragraphs: [`${LEGAL_PLACEHOLDER_MARKER} : objet du service]`] },
+    { heading: 'Compte', paragraphs: [`${LEGAL_PLACEHOLDER_MARKER} : création et usage du compte]`] },
+    { heading: "Usage de l'IA et clé Claude", paragraphs: [`${LEGAL_PLACEHOLDER_MARKER} : usage de l'IA et clé Claude fournie par l'utilisateur]`] },
+    { heading: 'Données', paragraphs: [`${LEGAL_PLACEHOLDER_MARKER} : données personnelles et export]`] },
+    { heading: 'Responsabilité', paragraphs: [`${LEGAL_PLACEHOLDER_MARKER} : limites de responsabilité]`] },
+    { heading: 'Résiliation', paragraphs: [`${LEGAL_PLACEHOLDER_MARKER} : suppression du compte et fin du service]`] },
+    { heading: 'Droit applicable', paragraphs: [`${LEGAL_PLACEHOLDER_MARKER} : droit applicable et juridiction compétente]`] },
+  ],
+}

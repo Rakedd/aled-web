@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { GENERIC_ACTION_ERROR_MESSAGE } from '@/domain/action-result'
+import type { ProfessionalStatus } from '@/domain/sign-up'
 import { type ProfileLink, type ProfileSettings, validateProfileSettingsInput } from '@/domain/profile-settings'
 import type { EditableProfileLinkField, ProfileFormControllerParameters, ProfileFormStatus } from './interfaces'
 
@@ -10,6 +11,9 @@ export const useController = ({ initialProfileSettings, updateProfileSettings }:
   const [firstName, setFirstName] = useState(initialProfileSettings.firstName)
   const [lastName, setLastName] = useState(initialProfileSettings.lastName)
   const [followUpDelayDaysText, setFollowUpDelayDaysText] = useState(String(initialProfileSettings.followUpDelayDays))
+  const [professionalStatus, setProfessionalStatus] = useState<ProfessionalStatus | null>(
+    initialProfileSettings.professionalStatus,
+  )
   const [links, setLinks] = useState<ProfileLink[]>(initialProfileSettings.links)
   const [status, setStatus] = useState<ProfileFormStatus>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -32,6 +36,7 @@ export const useController = ({ initialProfileSettings, updateProfileSettings }:
     setLastName(savedProfileSettings.lastName)
     setFollowUpDelayDaysText(String(savedProfileSettings.followUpDelayDays))
     setLinks(savedProfileSettings.links)
+    setProfessionalStatus(savedProfileSettings.professionalStatus)
   }
 
   const submit = async () => {
@@ -42,6 +47,7 @@ export const useController = ({ initialProfileSettings, updateProfileSettings }:
       lastName,
       links,
       followUpDelayDays: Number(followUpDelayDaysText),
+      professionalStatus,
     })
     if (!validationResult.ok) {
       setErrorMessage(validationResult.errorMessage)
@@ -71,6 +77,8 @@ export const useController = ({ initialProfileSettings, updateProfileSettings }:
     email: initialProfileSettings.email,
     followUpDelayDaysText,
     setFollowUpDelayDaysText,
+    professionalStatus,
+    setProfessionalStatus,
     links,
     addLink,
     updateLink,

@@ -3,7 +3,12 @@
  */
 import type { ProfileSettings } from '@/domain/profile-settings'
 import { verifyAnthropicApiKey } from '@/server/ai/verify-anthropic-api-key'
-import { clearAnthropicApiKey, findProfileSettings, updateProfileSettingsRow } from '@/server/repositories/profile-repository'
+import {
+  clearAnthropicApiKey,
+  findProfileSettings,
+  updateProfessionalStatus,
+  updateProfileSettingsRow,
+} from '@/server/repositories/profile-repository'
 import { saveAnthropicApiKeyWithVerifier } from '@/server/settings/save-anthropic-api-key-with-verifier'
 import { createServerSupabaseClient } from '@/server/supabase/create-server-supabase-client'
 import { getAuthenticatedUser } from '@/server/supabase/get-authenticated-user'
@@ -12,6 +17,7 @@ import {
   getProfileSettings,
   hasAnthropicApiKeyConfigured,
   saveAnthropicApiKey,
+  saveProfessionalStatus,
   updateProfileSettings,
 } from './settings-actions'
 
@@ -23,6 +29,7 @@ jest.mock('@/server/settings/save-anthropic-api-key-with-verifier', () => ({ sav
 jest.mock('@/server/repositories/profile-repository', () => ({
   findProfileSettings: jest.fn(),
   updateProfileSettingsRow: jest.fn(),
+  updateProfessionalStatus: jest.fn(),
   clearAnthropicApiKey: jest.fn(),
 }))
 
@@ -35,6 +42,7 @@ const storedProfileSettings: ProfileSettings = {
   links: [],
   followUpDelayDays: 7,
   anthropicApiKeyLastFour: '4f2a',
+  professionalStatus: null,
 }
 
 beforeEach(() => {
@@ -85,7 +93,7 @@ describe('hasAnthropicApiKeyConfigured', () => {
 describe('updateProfileSettings', () => {
   it('rejects invalid settings without touching the database', async () => {
     await expect(
-      updateProfileSettings({ firstName: 'Ada', lastName: 'Lovelace', links: [], followUpDelayDays: 90 }),
+      updateProfileSettings({ firstName: 'Ada', lastName: 'Lovelace', links: [], followUpDelayDays: 90, professionalStatus: null }),
     ).resolves.toEqual({ ok: false, errorMessage: 'Entre 1 et 60 jours' })
     expect(updateProfileSettingsRow).not.toHaveBeenCalled()
   })
@@ -93,13 +101,14 @@ describe('updateProfileSettings', () => {
   it('saves the validated settings for the authenticated user', async () => {
     jest.mocked(updateProfileSettingsRow).mockResolvedValue(storedProfileSettings)
     await expect(
-      updateProfileSettings({ firstName: ' Ada ', lastName: 'Lovelace', links: [], followUpDelayDays: 7 }),
+      updateProfileSettings({ firstName: ' Ada ', lastName: 'Lovelace', links: [], followUpDelayDays: 7, professionalStatus: null }),
     ).resolves.toEqual({ ok: true, data: storedProfileSettings })
     expect(updateProfileSettingsRow).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', {
       firstName: 'Ada',
       lastName: 'Lovelace',
       links: [],
       followUpDelayDays: 7,
+      professionalStatus: null,
     })
   })
 
@@ -107,10 +116,35 @@ describe('updateProfileSettings', () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
     jest.mocked(updateProfileSettingsRow).mockRejectedValue(new Error('Profile repository failed'))
     await expect(
-      updateProfileSettings({ firstName: 'Ada', lastName: 'Lovelace', links: [], followUpDelayDays: 7 }),
+      updateProfileSettings({ firstName: 'Ada', lastName: 'Lovelace', links: [], followUpDelayDays: 7, professionalStatus: null }),
     ).resolves.toEqual({
       ok: false,
       errorMessage: "Impossible d'enregistrer tes préférences pour le moment. Réessaie dans quelques minutes.",
+    })
+    consoleErrorSpy.mockRestore()
+  })
+})
+
+describe('saveProfessionalStatus', () => {
+  it('saves the status for the authenticated user with the session client', async () => {
+    await expect(saveProfessionalStatus('freelance')).resolves.toEqual({ ok: true, data: null })
+    expect(updateProfessionalStatus).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1', 'freelance')
+  })
+
+  it.each(['intern', '', null, 3])('rejects the status %p without touching the database', async (invalidStatus) => {
+    await expect(saveProfessionalStatus(invalidStatus as never)).resolves.toEqual({
+      ok: false,
+      errorMessage: 'Statut invalide',
+    })
+    expect(updateProfessionalStatus).not.toHaveBeenCalled()
+  })
+
+  it('reports a generic error when the status cannot be saved', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    jest.mocked(updateProfessionalStatus).mockRejectedValue(new Error('Profile repository failed'))
+    await expect(saveProfessionalStatus('employee')).resolves.toEqual({
+      ok: false,
+      errorMessage: "Impossible d'enregistrer ton statut pour le moment. Réessaie dans quelques minutes.",
     })
     consoleErrorSpy.mockRestore()
   })
