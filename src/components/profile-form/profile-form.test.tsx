@@ -23,6 +23,14 @@ describe('ProfileForm professional status', () => {
     expect(screen.getByRole('radio', { name: 'CDI' })).not.toBeChecked()
   })
 
+  it('gives each status choice a 44 px touch target', () => {
+    render(<ProfileForm initialProfileSettings={profileSettings} updateProfileSettings={jest.fn()} />)
+
+    for (const statusName of ['Freelance', 'CDI']) {
+      expect(screen.getByRole('radio', { name: statusName }).closest('label')).toHaveClass('min-h-11')
+    }
+  })
+
   it('saves the status picked with the rest of the settings', async () => {
     const updateProfileSettings = jest.fn().mockResolvedValue({ ok: true, data: { ...profileSettings, professionalStatus: 'employee' } })
     render(<ProfileForm initialProfileSettings={profileSettings} updateProfileSettings={updateProfileSettings} />)

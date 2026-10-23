@@ -77,7 +77,7 @@ export const ProfileForm = ({ initialProfileSettings, updateProfileSettings }: P
         </span>
         <div className="flex gap-4">
           {PROFESSIONAL_STATUSES.map((statusOption) => (
-            <label key={statusOption} className="flex items-center gap-2 text-sm">
+            <label key={statusOption} className="flex min-h-11 items-center gap-2 text-sm">
               <input
                 type="radio"
                 name="professionalStatus"
