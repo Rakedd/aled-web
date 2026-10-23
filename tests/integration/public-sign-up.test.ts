@@ -32,6 +32,18 @@ const createUserWithMetadata = async (userMetadata: Record<string, unknown>) => 
   return data.user
 }
 
+const USERS_PER_PAGE = 1000
+
+const countUsersWithEmail = async (email: string): Promise<number> => {
+  let matchingUsersCount = 0
+  for (let page = 1; ; page += 1) {
+    const { data, error } = await createServiceRoleTestClient().auth.admin.listUsers({ page, perPage: USERS_PER_PAGE })
+    if (error) throw error
+    matchingUsersCount += data.users.filter((user) => user.email === email).length
+    if (matchingUsersCount >= 2 || data.users.length < USERS_PER_PAGE) return matchingUsersCount
+  }
+}
+
 const readMailpitMessageBody = async (recipientEmail: string) => {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const listResponse = await fetch(MAILPIT_MESSAGES_URL)
@@ -90,9 +102,24 @@ describe('public sign-up', () => {
     expect(firstSignUp.error).toBeNull()
     expect(secondSignUp.error).toBeNull()
 
-    const { data, error } = await createServiceRoleTestClient().auth.admin.listUsers({ perPage: 1000 })
-    expect(error).toBeNull()
-    expect(data.users.filter((user) => user.email === email)).toHaveLength(1)
+    await expect(countUsersWithEmail(email)).resolves.toBe(1)
+  })
+
+  it('rejects a sign-up with the address of a confirmed user as already registered without creating another user', async () => {
+    const email = buildTestEmail()
+    const { error: creationError } = await createServiceRoleTestClient().auth.admin.createUser({
+      email,
+      password: randomUUID(),
+      email_confirm: true,
+    })
+    expect(creationError).toBeNull()
+
+    const { error: signUpError } = await createAnonymousTestClient().auth.signUp({
+      email,
+      password: 'a-strong-password',
+    })
+    expect(signUpError?.code).toBe('user_already_exists')
+    await expect(countUsersWithEmail(email)).resolves.toBe(1)
   })
 
   it('sends the confirmation email in French', async () => {
