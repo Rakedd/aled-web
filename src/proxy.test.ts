@@ -53,6 +53,7 @@ describe('proxy', () => {
   it.each([
     '/login',
     '/inscription',
+    '/inscription/renvoyer',
     '/mot-de-passe-oublie',
     '/auth/confirm',
     '/auth/callback',
@@ -93,6 +94,7 @@ describe('proxy', () => {
     '/auth/confirm?token_hash=abc&type=recovery',
     '/auth/confirm?token_hash=abc&type=email',
     '/auth/callback?code=abc',
+    '/inscription/renvoyer',
     '/mot-de-passe-oublie',
     '/mot-de-passe/nouveau',
     '/login/elsewhere',

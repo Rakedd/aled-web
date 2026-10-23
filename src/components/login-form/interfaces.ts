@@ -4,11 +4,15 @@ export type LoginFormStatus = 'idle' | 'signing-in' | 'error'
 
 export type SignInWithPassword = (email: string, password: string) => Promise<ActionResult<null>>
 
+export type ResendSignUpConfirmation = (email: string) => Promise<ActionResult<null>>
+
 export type LoginFormControllerParameters = {
   signInWithPassword: SignInWithPassword
+  resendSignUpConfirmation: ResendSignUpConfirmation
   onSignedIn: () => void
 }
 
 export type LoginFormProps = {
   signInWithPassword: SignInWithPassword
+  resendSignUpConfirmation: ResendSignUpConfirmation
 }

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import LoginPage from './page'
 
 jest.mock('@/server/actions/auth-actions', () => ({ signInWithPassword: jest.fn() }))
@@ -14,10 +14,19 @@ describe('LoginPage', () => {
     expect(screen.getByRole('img', { name: 'Aled' })).toHaveAttribute('src', expect.stringContaining('aled-logo-on-dark.png'))
   })
 
-  it('explains an invalid email link', async () => {
+  it('explains an invalid email link neutrally and offers a new activation link or a password reset', async () => {
     await renderLoginPage({ error: 'invalid-link' })
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Ce lien de connexion est invalide ou a expiré.')
+    const alert = screen.getByRole('alert')
+    expect(within(alert).getByText('Ce lien est invalide ou a expiré.')).toBeInTheDocument()
+    expect(within(alert).getByRole('link', { name: "Recevoir un nouveau lien d'activation" })).toHaveAttribute(
+      'href',
+      '/inscription/renvoyer',
+    )
+    expect(within(alert).getByRole('link', { name: 'Mot de passe oublié ?' })).toHaveAttribute(
+      'href',
+      '/mot-de-passe-oublie',
+    )
   })
 
   it('explains a failed Google or LinkedIn sign-in', async () => {

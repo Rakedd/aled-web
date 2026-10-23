@@ -7,16 +7,32 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FORGOT_PASSWORD_ROUTE, HOME_ROUTE, SIGN_UP_ROUTE } from '@/domain/routes'
+import { SIGN_UP_MESSAGES, formatResendCooldown } from '@/domain/sign-up'
 import { useController } from './controller'
 import type { LoginFormProps } from './interfaces'
 
 const ERROR_MESSAGE_ELEMENT_ID = 'login-form-error-message'
 const LINK_CLASS_NAME = 'text-accent-text underline underline-offset-4'
 
-export const LoginForm = ({ signInWithPassword }: LoginFormProps) => {
+export const LoginForm = ({ signInWithPassword, resendSignUpConfirmation }: LoginFormProps) => {
   const router = useRouter()
-  const { email, setEmail, password, setPassword, submit, status, errorMessage } = useController({
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    submit,
+    status,
+    errorMessage,
+    isActivationResendOffered,
+    secondsBeforeActivationResend,
+    isResendingActivationEmail,
+    hasResentActivationEmail,
+    activationResendErrorMessage,
+    resendActivationEmail,
+  } = useController({
     signInWithPassword,
+    resendSignUpConfirmation,
     onSignedIn: () => router.replace(HOME_ROUTE),
   })
 
@@ -66,6 +82,29 @@ export const LoginForm = ({ signInWithPassword }: LoginFormProps) => {
         <p id={ERROR_MESSAGE_ELEMENT_ID} role="alert" className="text-sm text-destructive">
           {errorMessage}
         </p>
+      )}
+      {isActivationResendOffered && (
+        <div className="flex flex-col gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            disabled={secondsBeforeActivationResend > 0 || isResendingActivationEmail}
+            onClick={() => void resendActivationEmail()}
+          >
+            {secondsBeforeActivationResend > 0
+              ? formatResendCooldown(secondsBeforeActivationResend)
+              : "Renvoyer l'e-mail d'activation"}
+          </Button>
+          <p role="status" className="text-sm text-ink-secondary">
+            {hasResentActivationEmail ? SIGN_UP_MESSAGES.checkInbox : null}
+          </p>
+          {activationResendErrorMessage && (
+            <p role="alert" className="text-sm text-destructive">
+              {activationResendErrorMessage}
+            </p>
+          )}
+        </div>
       )}
       <Button type="submit" size="lg" disabled={status === 'signing-in'}>
         {status === 'signing-in' ? 'Connexion en cours…' : 'Se connecter'}

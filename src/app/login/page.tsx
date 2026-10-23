@@ -1,16 +1,22 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
+import Link from 'next/link'
 import { LoginForm } from '@/components/login-form'
 import { OAuthSignInButtons } from '@/components/oauth-sign-in-buttons'
 import { PRIVACY_POLICY_PATHNAME, TERMS_OF_USE_PATHNAME } from '@/domain/landing-routing'
+import { FORGOT_PASSWORD_ROUTE, SIGN_UP_RESEND_ROUTE } from '@/domain/routes'
 import { SIGN_UP_MESSAGES } from '@/domain/sign-up'
 import { buildLandingLegalHref } from '@/lib/landing/landing-environment'
-import { signInWithPassword, startOAuthSignIn } from '@/server/actions/auth-actions'
+import { resendSignUpConfirmation, signInWithPassword, startOAuthSignIn } from '@/server/actions/auth-actions'
 
 export const metadata: Metadata = { title: 'Connexion · Aled' }
 
+const INVALID_LINK_ERROR_PARAMETER = 'invalid-link'
+
+const RECOVERY_LINK_CLASS_NAME = 'inline-flex min-h-11 items-center text-accent-text underline underline-offset-4'
+
 const LOGIN_ERROR_MESSAGES: Partial<Record<string, string>> = {
-  'invalid-link': 'Ce lien de connexion est invalide ou a expiré. Connecte-toi avec ton mot de passe.',
+  [INVALID_LINK_ERROR_PARAMETER]: 'Ce lien est invalide ou a expiré.',
   oauth: SIGN_UP_MESSAGES.oauthFailure,
 }
 
@@ -38,16 +44,30 @@ const LoginPage = async ({ searchParams }: PageProps<'/login'>) => {
         <div className="flex w-full max-w-sm flex-col gap-6 rounded-2xl bg-card p-6">
           <h2 className="font-heading text-2xl font-bold text-ink">Connexion</h2>
           {loginErrorMessage && (
-            <p role="alert" className="text-sm text-destructive">
-              {loginErrorMessage}
-            </p>
+            <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
+              <p>{loginErrorMessage}</p>
+              {error === INVALID_LINK_ERROR_PARAMETER && (
+                <ul className="flex flex-col">
+                  <li>
+                    <Link href={SIGN_UP_RESEND_ROUTE} className={RECOVERY_LINK_CLASS_NAME}>
+                      Recevoir un nouveau lien d&apos;activation
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href={FORGOT_PASSWORD_ROUTE} className={RECOVERY_LINK_CLASS_NAME}>
+                      Mot de passe oublié ?
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </div>
           )}
           <OAuthSignInButtons
             startOAuthSignIn={startOAuthSignIn}
             termsOfUseHref={buildLandingLegalHref(TERMS_OF_USE_PATHNAME)}
             privacyPolicyHref={buildLandingLegalHref(PRIVACY_POLICY_PATHNAME)}
           />
-          <LoginForm signInWithPassword={signInWithPassword} />
+          <LoginForm signInWithPassword={signInWithPassword} resendSignUpConfirmation={resendSignUpConfirmation} />
         </div>
       </section>
     </main>

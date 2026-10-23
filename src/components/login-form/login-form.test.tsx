@@ -18,7 +18,7 @@ beforeEach(() => {
 
 describe('LoginForm', () => {
   it('offers email and password fields, and the sign-in button', () => {
-    render(<LoginForm signInWithPassword={jest.fn()} />)
+    render(<LoginForm signInWithPassword={jest.fn()} resendSignUpConfirmation={jest.fn()} />)
 
     expect(screen.getByLabelText('Adresse e-mail')).toHaveAttribute('autocomplete', 'username')
     expect(screen.getByLabelText('Mot de passe')).toHaveAttribute('type', 'password')
@@ -27,7 +27,7 @@ describe('LoginForm', () => {
   })
 
   it('links to the forgot-password and sign-up pages', () => {
-    render(<LoginForm signInWithPassword={jest.fn()} />)
+    render(<LoginForm signInWithPassword={jest.fn()} resendSignUpConfirmation={jest.fn()} />)
 
     expect(screen.getByRole('link', { name: 'Mot de passe oublié ?' })).toHaveAttribute('href', '/mot-de-passe-oublie')
     expect(screen.getByText('Pas encore de compte ?')).toBeInTheDocument()
@@ -35,7 +35,12 @@ describe('LoginForm', () => {
   })
 
   it('shows the pending label while signing in', async () => {
-    render(<LoginForm signInWithPassword={jest.fn(() => new Promise<never>(() => undefined))} />)
+    render(
+      <LoginForm
+        signInWithPassword={jest.fn(() => new Promise<never>(() => undefined))}
+        resendSignUpConfirmation={jest.fn()}
+      />,
+    )
 
     await fillAndSubmitCredentials()
 
@@ -43,7 +48,12 @@ describe('LoginForm', () => {
   })
 
   it('goes to the home page once signed in', async () => {
-    render(<LoginForm signInWithPassword={jest.fn().mockResolvedValue({ ok: true, data: null })} />)
+    render(
+      <LoginForm
+        signInWithPassword={jest.fn().mockResolvedValue({ ok: true, data: null })}
+        resendSignUpConfirmation={jest.fn()}
+      />,
+    )
 
     await fillAndSubmitCredentials()
 
@@ -54,6 +64,7 @@ describe('LoginForm', () => {
     render(
       <LoginForm
         signInWithPassword={jest.fn().mockResolvedValue({ ok: false, errorMessage: 'E-mail ou mot de passe incorrect.' })}
+        resendSignUpConfirmation={jest.fn()}
       />,
     )
 
@@ -65,5 +76,44 @@ describe('LoginForm', () => {
       expect(field).toHaveAccessibleDescription('E-mail ou mot de passe incorrect.')
     }
     expect(routerReplace).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: "Renvoyer l'e-mail d'activation" })).not.toBeInTheDocument()
+  })
+
+  it('offers to resend the activation email when the account is not activated yet', async () => {
+    const resendSignUpConfirmation = jest.fn().mockResolvedValue({ ok: true, data: null })
+    render(
+      <LoginForm
+        signInWithPassword={jest.fn().mockResolvedValue({ ok: false, errorMessage: "Ton compte n'est pas encore activé." })}
+        resendSignUpConfirmation={resendSignUpConfirmation}
+      />,
+    )
+
+    await fillAndSubmitCredentials()
+    await userEvent.click(await screen.findByRole('button', { name: "Renvoyer l'e-mail d'activation" }))
+
+    expect(resendSignUpConfirmation).toHaveBeenCalledWith('moi@example.com')
+    expect(screen.getByRole('status')).toHaveTextContent(
+      "Vérifie ta boîte mail : on t'a envoyé un lien pour activer ton compte.",
+    )
+    expect(screen.getByRole('button', { name: 'Renvoyer dans 60 s' })).toBeDisabled()
+  })
+
+  it('announces a failed activation email resend', async () => {
+    render(
+      <LoginForm
+        signInWithPassword={jest.fn().mockResolvedValue({ ok: false, errorMessage: "Ton compte n'est pas encore activé." })}
+        resendSignUpConfirmation={jest
+          .fn()
+          .mockResolvedValue({ ok: false, errorMessage: 'Trop de tentatives, réessaie dans quelques minutes.' })}
+      />,
+    )
+
+    await fillAndSubmitCredentials()
+    await userEvent.click(await screen.findByRole('button', { name: "Renvoyer l'e-mail d'activation" }))
+
+    expect(
+      screen.getAllByRole('alert').some((alert) => alert.textContent === 'Trop de tentatives, réessaie dans quelques minutes.'),
+    ).toBe(true)
+    expect(screen.getByRole('button', { name: "Renvoyer l'e-mail d'activation" })).toBeEnabled()
   })
 })

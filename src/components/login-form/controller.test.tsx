@@ -1,11 +1,16 @@
 import { act, renderHook } from '@testing-library/react'
 import type { ActionResult } from '@/domain/action-result'
 import { useController } from './controller'
-import type { SignInWithPassword } from './interfaces'
+import type { ResendSignUpConfirmation, SignInWithPassword } from './interfaces'
 
-const renderLoginFormController = (signInWithPassword: SignInWithPassword) => {
+const UNCONFIRMED_ACCOUNT_MESSAGE = "Ton compte n'est pas encore activé."
+
+const renderLoginFormController = (
+  signInWithPassword: SignInWithPassword,
+  resendSignUpConfirmation: ResendSignUpConfirmation = jest.fn(),
+) => {
   const onSignedIn = jest.fn()
-  const { result } = renderHook(() => useController({ signInWithPassword, onSignedIn }))
+  const { result } = renderHook(() => useController({ signInWithPassword, resendSignUpConfirmation, onSignedIn }))
   return { result, onSignedIn }
 }
 
@@ -113,5 +118,116 @@ describe('login-form useController', () => {
     })
 
     expect(onSignedIn).toHaveBeenCalledTimes(1)
+  })
+
+  describe('activation email resend', () => {
+    const failWithUnconfirmedAccount = () =>
+      jest.fn().mockResolvedValue({ ok: false, errorMessage: UNCONFIRMED_ACCOUNT_MESSAGE })
+
+    const renderUnconfirmedAccount = async (resendSignUpConfirmation: ResendSignUpConfirmation) => {
+      const rendered = renderLoginFormController(failWithUnconfirmedAccount(), resendSignUpConfirmation)
+      fillCredentials(rendered.result, ' camille@example.com ', 'secret')
+      await act(() => rendered.result.current.submit())
+      return rendered
+    }
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    it('does not offer the resend for any other sign-in failure', async () => {
+      const { result } = renderLoginFormController(
+        jest.fn().mockResolvedValue({ ok: false, errorMessage: 'E-mail ou mot de passe incorrect.' }),
+      )
+
+      fillCredentials(result, 'camille@example.com', 'wrong')
+      await act(() => result.current.submit())
+
+      expect(result.current.isActivationResendOffered).toBe(false)
+    })
+
+    it('offers the resend once the account is reported as not activated', async () => {
+      const { result } = await renderUnconfirmedAccount(jest.fn())
+
+      expect(result.current.isActivationResendOffered).toBe(true)
+      expect(result.current.secondsBeforeActivationResend).toBe(0)
+      expect(result.current.hasResentActivationEmail).toBe(false)
+    })
+
+    it('resends to the trimmed typed email, confirms neutrally and starts the 60 s cooldown', async () => {
+      const resendSignUpConfirmation = jest.fn().mockResolvedValue({ ok: true, data: null })
+      const { result } = await renderUnconfirmedAccount(resendSignUpConfirmation)
+
+      await act(() => result.current.resendActivationEmail())
+
+      expect(resendSignUpConfirmation).toHaveBeenCalledWith('camille@example.com')
+      expect(result.current.hasResentActivationEmail).toBe(true)
+      expect(result.current.activationResendErrorMessage).toBeNull()
+      expect(result.current.secondsBeforeActivationResend).toBe(60)
+    })
+
+    it('counts the cooldown down and ignores a resend before it ends', async () => {
+      jest.useFakeTimers()
+      const resendSignUpConfirmation = jest.fn().mockResolvedValue({ ok: true, data: null })
+      const { result } = await renderUnconfirmedAccount(resendSignUpConfirmation)
+
+      await act(() => result.current.resendActivationEmail())
+      act(() => jest.advanceTimersByTime(59_000))
+      expect(result.current.secondsBeforeActivationResend).toBe(1)
+
+      await act(() => result.current.resendActivationEmail())
+      expect(resendSignUpConfirmation).toHaveBeenCalledTimes(1)
+
+      act(() => jest.advanceTimersByTime(1_000))
+      expect(result.current.secondsBeforeActivationResend).toBe(0)
+      await act(() => result.current.resendActivationEmail())
+      expect(resendSignUpConfirmation).toHaveBeenCalledTimes(2)
+    })
+
+    it('sends a single resend request on a double click', async () => {
+      const resendSignUpConfirmation = jest.fn(() => new Promise<ActionResult<null>>(() => undefined))
+      const { result } = await renderUnconfirmedAccount(resendSignUpConfirmation)
+
+      act(() => {
+        void result.current.resendActivationEmail()
+        void result.current.resendActivationEmail()
+      })
+
+      expect(resendSignUpConfirmation).toHaveBeenCalledTimes(1)
+      expect(result.current.isResendingActivationEmail).toBe(true)
+    })
+
+    it('relays the resend failure without starting the cooldown', async () => {
+      const resendSignUpConfirmation = jest
+        .fn()
+        .mockResolvedValue({ ok: false, errorMessage: 'Trop de tentatives, réessaie dans quelques minutes.' })
+      const { result } = await renderUnconfirmedAccount(resendSignUpConfirmation)
+
+      await act(() => result.current.resendActivationEmail())
+
+      expect(result.current.activationResendErrorMessage).toBe('Trop de tentatives, réessaie dans quelques minutes.')
+      expect(result.current.hasResentActivationEmail).toBe(false)
+      expect(result.current.secondsBeforeActivationResend).toBe(0)
+      expect(result.current.isResendingActivationEmail).toBe(false)
+    })
+
+    it('shows the generic error when the resend throws', async () => {
+      const { result } = await renderUnconfirmedAccount(jest.fn().mockRejectedValue(new Error('Network down')))
+
+      await act(() => result.current.resendActivationEmail())
+
+      expect(result.current.activationResendErrorMessage).toBe('Une erreur est survenue, réessaie.')
+    })
+
+    it('withdraws the resend offer on the next sign-in attempt', async () => {
+      const { result } = await renderUnconfirmedAccount(jest.fn().mockResolvedValue({ ok: true, data: null }))
+      await act(() => result.current.resendActivationEmail())
+
+      act(() => result.current.setEmail('other@example.com'))
+      await act(() => result.current.submit())
+
+      expect(result.current.hasResentActivationEmail).toBe(false)
+      expect(result.current.activationResendErrorMessage).toBeNull()
+    })
   })
 })

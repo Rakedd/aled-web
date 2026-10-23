@@ -5,6 +5,7 @@ import {
   NEW_JOB_APPLICATION_ROUTE,
   NEW_PASSWORD_ROUTE,
   OPPORTUNITY_PREFERENCES_ROUTE,
+  SIGN_UP_RESEND_ROUTE,
   SIGN_UP_ROUTE,
   contactRoute,
   intermediaryRoute,
@@ -47,6 +48,7 @@ describe('cv library route', () => {
 describe('account routes', () => {
   it('points to the sign-up and password pages', () => {
     expect(SIGN_UP_ROUTE).toBe('/inscription')
+    expect(SIGN_UP_RESEND_ROUTE).toBe('/inscription/renvoyer')
     expect(FORGOT_PASSWORD_ROUTE).toBe('/mot-de-passe-oublie')
     expect(NEW_PASSWORD_ROUTE).toBe('/mot-de-passe/nouveau')
   })

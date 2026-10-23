@@ -36,6 +36,8 @@ export const CV_LIBRARY_ROUTE = '/cv'
 
 export const SIGN_UP_ROUTE = '/inscription'
 
+export const SIGN_UP_RESEND_ROUTE = `${SIGN_UP_ROUTE}/renvoyer`
+
 export const FORGOT_PASSWORD_ROUTE = '/mot-de-passe-oublie'
 
 export const PASSWORD_ROUTE = '/mot-de-passe'
