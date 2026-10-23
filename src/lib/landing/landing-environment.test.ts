@@ -1,4 +1,4 @@
-import { buildAppUrl, buildLandingHref, readLandingOrigin } from './landing-environment'
+import { buildAppUrl, buildLandingHref, buildLandingLegalHref, readLandingOrigin } from './landing-environment'
 
 const ORIGINAL_ENVIRONMENT = process.env
 
@@ -49,5 +49,24 @@ describe('buildLandingHref', () => {
 
     expect(buildLandingHref('/mentions-legales')).toBe('/vitrine/mentions-legales')
     expect(buildLandingHref('/')).toBe('/vitrine')
+  })
+})
+
+describe('buildLandingLegalHref', () => {
+  it('targets the landing origin in production', () => {
+    process.env.VERCEL_ENV = 'production'
+    process.env.LANDING_HOSTNAMES = 'aled.work,www.aled.work'
+
+    expect(buildLandingLegalHref('/conditions-utilisation')).toBe('https://aled.work/conditions-utilisation')
+  })
+
+  it('falls back to the internal segment without a landing hostname', () => {
+    expect(buildLandingLegalHref('/confidentialite')).toBe('/vitrine/confidentialite')
+  })
+
+  it('falls back to the internal segment outside production even with a landing hostname', () => {
+    process.env.LANDING_HOSTNAMES = 'aled.work'
+
+    expect(buildLandingLegalHref('/confidentialite')).toBe('/vitrine/confidentialite')
   })
 })

@@ -1,16 +1,17 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import type { FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { HOME_ROUTE } from '@/domain/routes'
+import { FORGOT_PASSWORD_ROUTE, HOME_ROUTE, SIGN_UP_ROUTE } from '@/domain/routes'
 import { useController } from './controller'
 import type { LoginFormProps } from './interfaces'
 
-const INVITATION_ONLY_MESSAGE = 'Accès sur invitation uniquement.'
 const ERROR_MESSAGE_ELEMENT_ID = 'login-form-error-message'
+const LINK_CLASS_NAME = 'text-accent-text underline underline-offset-4'
 
 export const LoginForm = ({ signInWithPassword }: LoginFormProps) => {
   const router = useRouter()
@@ -57,6 +58,9 @@ export const LoginForm = ({ signInWithPassword }: LoginFormProps) => {
           aria-invalid={hasError}
           aria-describedby={errorMessageElementId}
         />
+        <Link href={FORGOT_PASSWORD_ROUTE} className={`${LINK_CLASS_NAME} inline-flex min-h-11 items-center text-sm`}>
+          Mot de passe oublié ?
+        </Link>
       </div>
       {errorMessage && (
         <p id={ERROR_MESSAGE_ELEMENT_ID} role="alert" className="text-sm text-destructive">
@@ -66,7 +70,12 @@ export const LoginForm = ({ signInWithPassword }: LoginFormProps) => {
       <Button type="submit" size="lg" disabled={status === 'signing-in'}>
         {status === 'signing-in' ? 'Connexion en cours…' : 'Se connecter'}
       </Button>
-      <p className="text-sm text-ink-secondary">{INVITATION_ONLY_MESSAGE}</p>
+      <p className="text-sm text-ink-secondary">
+        Pas encore de compte ?{' '}
+        <Link href={SIGN_UP_ROUTE} className={`${LINK_CLASS_NAME} font-semibold`}>
+          Créer un compte
+        </Link>
+      </p>
     </form>
   )
 }

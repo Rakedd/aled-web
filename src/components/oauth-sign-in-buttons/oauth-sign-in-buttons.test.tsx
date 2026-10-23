@@ -1,0 +1,60 @@
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { OAuthSignInButtons } from './oauth-sign-in-buttons'
+
+const TERMS_HREF = 'https://aled.work/conditions-utilisation'
+const PRIVACY_HREF = 'https://aled.work/confidentialite'
+
+const renderButtons = (startOAuthSignIn = jest.fn()) =>
+  render(<OAuthSignInButtons startOAuthSignIn={startOAuthSignIn} termsOfUseHref={TERMS_HREF} privacyPolicyHref={PRIVACY_HREF} />)
+
+describe('OAuthSignInButtons', () => {
+  it('offers the Google and LinkedIn buttons', () => {
+    renderButtons()
+
+    expect(screen.getByRole('button', { name: 'Continuer avec Google' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Continuer avec LinkedIn' })).toBeEnabled()
+  })
+
+  it('shows the terms notice with both legal links opening in a new tab', () => {
+    renderButtons()
+
+    expect(
+      screen.getByText((_, element) => element?.tagName === 'P' && element.textContent === "En continuant, tu acceptes les conditions d'utilisation et la politique de confidentialité."),
+    ).toBeInTheDocument()
+    const termsLink = screen.getByRole('link', { name: "conditions d'utilisation" })
+    const privacyLink = screen.getByRole('link', { name: 'politique de confidentialité' })
+    expect(termsLink).toHaveAttribute('href', TERMS_HREF)
+    expect(privacyLink).toHaveAttribute('href', PRIVACY_HREF)
+    for (const legalLink of [termsLink, privacyLink]) {
+      expect(legalLink).toHaveAttribute('target', '_blank')
+      expect(legalLink).toHaveAttribute('rel', expect.stringContaining('noopener'))
+    }
+  })
+
+  it('shows the "ou" separator', () => {
+    renderButtons()
+
+    expect(screen.getByText('ou')).toBeInTheDocument()
+  })
+
+  it('starts the sign-in with the provider of the clicked button and disables both buttons', async () => {
+    const startOAuthSignIn = jest.fn(() => new Promise<never>(() => undefined))
+    renderButtons(startOAuthSignIn)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Continuer avec LinkedIn' }))
+
+    expect(startOAuthSignIn).toHaveBeenCalledWith('linkedin_oidc')
+    expect(screen.getByRole('button', { name: 'Continuer avec Google' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Continuer avec LinkedIn' })).toBeDisabled()
+  })
+
+  it('announces the failure message', async () => {
+    renderButtons(jest.fn().mockResolvedValue({ ok: false, errorMessage: "La connexion avec ce compte n'a pas abouti." }))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Continuer avec Google' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent("La connexion avec ce compte n'a pas abouti.")
+    expect(screen.getByRole('button', { name: 'Continuer avec Google' })).toBeEnabled()
+  })
+})

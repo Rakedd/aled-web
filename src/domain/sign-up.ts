@@ -49,6 +49,11 @@ export const SIGN_UP_MESSAGES = {
   samePassword: "Choisis un mot de passe différent de l'actuel.",
 } as const
 
+export const LEGAL_LINK_LABELS = {
+  termsOfUse: "conditions d'utilisation",
+  privacyPolicy: 'politique de confidentialité',
+} as const
+
 const MISSING_FIRST_NAME_MESSAGE = 'Saisis ton prénom.'
 
 const FIRST_NAME_TOO_LONG_MESSAGE = 'Ton prénom est trop long.'

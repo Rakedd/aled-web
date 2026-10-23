@@ -6,8 +6,6 @@ const routerReplace = jest.fn()
 
 jest.mock('next/navigation', () => ({ useRouter: () => ({ replace: routerReplace }) }))
 
-const INVITATION_ONLY_MESSAGE = 'Accès sur invitation uniquement.'
-
 const fillAndSubmitCredentials = async () => {
   await userEvent.type(screen.getByLabelText('Adresse e-mail'), 'moi@example.com')
   await userEvent.type(screen.getByLabelText('Mot de passe'), 'secret')
@@ -19,14 +17,21 @@ beforeEach(() => {
 })
 
 describe('LoginForm', () => {
-  it('offers email and password fields, the sign-in button and the invitation-only reminder', () => {
+  it('offers email and password fields, and the sign-in button', () => {
     render(<LoginForm signInWithPassword={jest.fn()} />)
 
     expect(screen.getByLabelText('Adresse e-mail')).toHaveAttribute('autocomplete', 'username')
     expect(screen.getByLabelText('Mot de passe')).toHaveAttribute('type', 'password')
     expect(screen.getByLabelText('Mot de passe')).toHaveAttribute('autocomplete', 'current-password')
     expect(screen.getByRole('button', { name: 'Se connecter' })).toBeInTheDocument()
-    expect(screen.getByText(INVITATION_ONLY_MESSAGE)).toBeInTheDocument()
+  })
+
+  it('links to the forgot-password and sign-up pages', () => {
+    render(<LoginForm signInWithPassword={jest.fn()} />)
+
+    expect(screen.getByRole('link', { name: 'Mot de passe oublié ?' })).toHaveAttribute('href', '/mot-de-passe-oublie')
+    expect(screen.getByText('Pas encore de compte ?')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Créer un compte' })).toHaveAttribute('href', '/inscription')
   })
 
   it('shows the pending label while signing in', async () => {

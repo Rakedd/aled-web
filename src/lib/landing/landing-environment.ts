@@ -15,3 +15,8 @@ export const buildAppUrl = (pathname: string): string => `${readAppOrigin()}${pa
 
 export const buildLandingHref = (pathname: string): string =>
   isProductionDeployment() ? pathname : toLandingInternalPathname(pathname)
+
+export const buildLandingLegalHref = (pathname: string): string => {
+  const landingOrigin = readLandingOrigin()
+  return isProductionDeployment() && landingOrigin ? `${landingOrigin.origin}${pathname}` : toLandingInternalPathname(pathname)
+}

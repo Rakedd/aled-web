@@ -21,6 +21,8 @@ export const LEGAL_NOTICE_PATHNAME = '/mentions-legales'
 
 export const PRIVACY_POLICY_PATHNAME = '/confidentialite'
 
+export const TERMS_OF_USE_PATHNAME = '/conditions-utilisation'
+
 const WWW_PREFIX = 'www.'
 
 const APP_PATH_PREFIXES = [

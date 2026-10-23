@@ -1,8 +1,11 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import { LoginForm } from '@/components/login-form'
+import { OAuthSignInButtons } from '@/components/oauth-sign-in-buttons'
+import { PRIVACY_POLICY_PATHNAME, TERMS_OF_USE_PATHNAME } from '@/domain/landing-routing'
 import { SIGN_UP_MESSAGES } from '@/domain/sign-up'
-import { signInWithPassword } from '@/server/actions/auth-actions'
+import { buildLandingLegalHref } from '@/lib/landing/landing-environment'
+import { signInWithPassword, startOAuthSignIn } from '@/server/actions/auth-actions'
 
 export const metadata: Metadata = { title: 'Connexion · Aled' }
 
@@ -39,6 +42,11 @@ const LoginPage = async ({ searchParams }: PageProps<'/login'>) => {
               {loginErrorMessage}
             </p>
           )}
+          <OAuthSignInButtons
+            startOAuthSignIn={startOAuthSignIn}
+            termsOfUseHref={buildLandingLegalHref(TERMS_OF_USE_PATHNAME)}
+            privacyPolicyHref={buildLandingLegalHref(PRIVACY_POLICY_PATHNAME)}
+          />
           <LoginForm signInWithPassword={signInWithPassword} />
         </div>
       </section>
