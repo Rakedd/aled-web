@@ -162,4 +162,53 @@ describe('technical briefs repository', () => {
     expect(result).toEqual({ ok: false, errorMessage: JOB_APPLICATION_NOT_FOUND_MESSAGE })
     expect(await findTechnicalBrief(owner.client, owner.userId, jobApplicationId, 'fr')).toBeNull()
   })
+
+  it('refuses to save a technical brief on a cv version that is not the user own', async () => {
+    const owner = await createTestUser()
+    const intruder = await createTestUser()
+    const jobApplicationId = await createJobApplicationOrFail(intruder.client, intruder.userId)
+    const ownerVersionId = await insertCvVersionWithPdfOrFail(owner)
+
+    const result = await saveTechnicalBrief(
+      intruder.client,
+      intruder.userId,
+      jobApplicationId,
+      buildTechnicalBrief({ cvVersionId: ownerVersionId }),
+    )
+
+    expect(result).toEqual({ ok: false, errorMessage: CV_MESSAGES.cvVersionNotFound })
+    expect(await findTechnicalBrief(intruder.client, intruder.userId, jobApplicationId, 'fr')).toBeNull()
+  })
+
+  it('returns null for a stored technical brief whose content does not normalize', async () => {
+    const user = await createTestUser()
+    const jobApplicationId = await createJobApplicationOrFail(user.client, user.userId)
+    const { error } = await user.client.from('technical_briefs').insert({
+      user_id: user.userId,
+      job_application_id: jobApplicationId,
+      language: 'fr',
+      cv_label: 'CV envoyé',
+      cv_uploaded_at: CV_UPLOADED_AT,
+      generated_at: CV_UPLOADED_AT,
+      content: { ...buildTechnicalBrief().content, storyline: buildTechnicalBrief().content.storyline.slice(0, 4) },
+    })
+    expect(error).toBeNull()
+
+    expect(await findTechnicalBrief(user.client, user.userId, jobApplicationId, 'fr')).toBeNull()
+  })
+
+  it('returns no job spec pdf for the job application of another user', async () => {
+    const owner = await createTestUser()
+    const intruder = await createTestUser()
+    const jobApplicationId = await createJobApplicationOrFail(owner.client, owner.userId)
+    const storagePath = await uploadJobSpecPdfFile(
+      owner.client,
+      owner.userId,
+      jobApplicationId,
+      new TextEncoder().encode('%PDF-1.4 fiche'),
+    )
+    await saveJobSpecContent(owner.client, owner.userId, jobApplicationId, { sourceKind: 'pdf', storagePath }, null)
+
+    expect(await downloadJobSpecPdfAsBase64(intruder.client, intruder.userId, jobApplicationId)).toBeNull()
+  })
 })

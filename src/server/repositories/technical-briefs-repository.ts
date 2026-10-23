@@ -1,5 +1,6 @@
 import 'server-only'
 import type { ActionResult } from '@/domain/action-result'
+import { CV_MESSAGES } from '@/domain/cv-library'
 import { rejectWith } from '@/domain/input-validation'
 import { type BriefLanguage, isBriefLanguage } from '@/domain/interview-preparation'
 import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from '@/domain/job-application'
@@ -7,6 +8,8 @@ import { normalizeTechnicalBriefContent, type TechnicalBrief } from '@/domain/te
 import type { Tables } from '@/server/supabase/database-types'
 import type { FreeclutchSupabaseClient } from '@/server/supabase/freeclutch-supabase-client'
 import { POSTGRES_FOREIGN_KEY_VIOLATION_CODE, toRepositoryError } from './repository-error'
+
+const CV_VERSION_COLUMN_NAME = 'cv_version_id'
 
 type TechnicalBriefRow = Pick<
   Tables<'technical_briefs'>,
@@ -63,7 +66,11 @@ export const saveTechnicalBrief = async (
     },
     { onConflict: 'user_id,job_application_id,language' },
   )
-  if (error?.code === POSTGRES_FOREIGN_KEY_VIOLATION_CODE) return rejectWith(JOB_APPLICATION_NOT_FOUND_MESSAGE)
+  if (error?.code === POSTGRES_FOREIGN_KEY_VIOLATION_CODE) {
+    return rejectWith(
+      error.message.includes(CV_VERSION_COLUMN_NAME) ? CV_MESSAGES.cvVersionNotFound : JOB_APPLICATION_NOT_FOUND_MESSAGE,
+    )
+  }
   if (error) throw toRepositoryError('saveTechnicalBrief', error)
   return { ok: true, data: null }
 }
