@@ -221,3 +221,21 @@ export const validateTechnicalBriefRequest = (
   if (!languageValidation.ok) return languageValidation
   return { ok: true, data: { jobApplicationId: jobApplicationIdValidation.data, language: languageValidation.data } }
 }
+
+export type GuidancePart = { text: string; isMissionLabel: boolean }
+
+const MINIMUM_HIGHLIGHTED_MISSION_LABEL_LENGTH = 3
+
+const escapeForRegularExpression = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+export const splitGuidanceByMissionLabels = (guidance: string, missionLabels: string[]): GuidancePart[] => {
+  const highlightedMissionLabels = [...new Set(missionLabels)]
+    .filter((missionLabel) => missionLabel.length >= MINIMUM_HIGHLIGHTED_MISSION_LABEL_LENGTH)
+    .sort((firstLabel, secondLabel) => secondLabel.length - firstLabel.length)
+  if (highlightedMissionLabels.length === 0) return guidance === '' ? [] : [{ text: guidance, isMissionLabel: false }]
+  const missionLabelPattern = new RegExp(`(${highlightedMissionLabels.map(escapeForRegularExpression).join('|')})`)
+  return guidance
+    .split(missionLabelPattern)
+    .map((text, partIndex) => ({ text, isMissionLabel: partIndex % 2 === 1 }))
+    .filter((guidancePart) => guidancePart.text !== '')
+}

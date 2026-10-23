@@ -222,6 +222,72 @@ describe('TechnicalBriefSection', () => {
     expect(screen.queryByRole('button', { name: 'Régénérer' })).not.toBeInTheDocument()
   })
 
+  it('renders every mission card and every step even when the ai repeats a label or a title', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    const alphaMission = brief.content.missions[0]
+    const briefWithRepeatedTexts: TechnicalBrief = {
+      ...brief,
+      content: {
+        storyline: brief.content.storyline.map((step) => ({ ...step, title: '' })),
+        missions: [alphaMission, { ...alphaMission, period: '2019', sharedStack: ['React', 'React'] }],
+        gaps: [
+          { stackItem: 'Kafka', question: 'Quelle file de messages ?' },
+          { stackItem: 'Kafka', question: 'Quel volume ?' },
+        ],
+      },
+    }
+    renderSection(buildView({ brief: briefWithRepeatedTexts }))
+    expect(await screen.findAllByRole('article', { name: /Alpha Corp/ })).toHaveLength(2)
+    expect(within(screen.getByRole('list', { name: '1 · Ton fil rouge' })).getAllByRole('listitem')).toHaveLength(5)
+    expect(screen.getByText('Kafka — Quel volume ?')).toBeInTheDocument()
+    expect(consoleErrorSpy.mock.calls.flat().join(' ')).not.toContain('same key')
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('nests the mission card headings under the missions heading and labels the missions list', async () => {
+    renderSection(buildView({ brief }))
+    const missionsList = await screen.findByRole('list', { name: '2 · Missions sur lesquelles appuyer' })
+    expect(within(missionsList).getAllByRole('article')).toHaveLength(2)
+    expect(screen.getByRole('heading', { level: 4, name: '2 · Missions sur lesquelles appuyer' })).toBeInTheDocument()
+    expect(within(missionsList).getByRole('heading', { level: 5, name: 'Alpha Corp' })).toBeInTheDocument()
+    expect(within(missionsList).getByRole('heading', { level: 5, name: 'Beta Labs' })).toBeInTheDocument()
+  })
+
+  it('puts in bold every mission label quoted in the storyline guidance', async () => {
+    const briefQuotingMissions: TechnicalBrief = {
+      ...brief,
+      content: {
+        ...brief.content,
+        storyline: brief.content.storyline.map((step, stepIndex) =>
+          stepIndex === 1 ? { ...step, guidance: 'Raconte Alpha Corp, puis relie Beta Labs à Alpha Corp.' } : step,
+        ),
+      },
+    }
+    renderSection(buildView({ brief: briefQuotingMissions }))
+    const storyline = await screen.findByRole('list', { name: '1 · Ton fil rouge' })
+    const boldMissionLabels = within(storyline)
+      .getAllByText(/Alpha Corp|Beta Labs/, { selector: 'strong' })
+      .map((boldElement) => boldElement.textContent)
+    expect(boldMissionLabels).toEqual(['Alpha Corp', 'Beta Labs', 'Alpha Corp'])
+    expect(within(storyline).getAllByRole('listitem')[1]).toHaveTextContent(
+      'Mission AlphaRaconte Alpha Corp, puis relie Beta Labs à Alpha Corp.',
+    )
+  })
+
+  it('announces the cv outcome to screen readers', async () => {
+    renderSection(buildView(), {
+      generateTechnicalBrief: jest.fn().mockResolvedValue({ ok: true, data: { kind: 'cv_missing_information' } }),
+    })
+    await userEvent.click(await screen.findByRole('button', { name: 'Préparer mon pitch' }))
+    expect(await screen.findByRole('status')).toHaveTextContent("Le CV manque d'informations.")
+  })
+
+  it('announces the unreadable cv outcome to screen readers', async () => {
+    renderSection(buildView())
+    await userEvent.click(await screen.findByRole('button', { name: 'Préparer mon pitch' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('Impossible de lire ce CV.')
+  })
+
   it('links Améliorer mon CV to the cv page and Choisir le CV envoyé to the sent cv block', async () => {
     renderSection(buildView({ availability: 'missing_sent_cv' }))
     expect(await screen.findByRole('link', { name: 'Choisir le CV envoyé' })).toHaveAttribute(

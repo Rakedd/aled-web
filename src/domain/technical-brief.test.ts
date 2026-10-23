@@ -3,6 +3,7 @@ import { JOB_APPLICATION_NOT_FOUND_MESSAGE } from './job-application'
 import {
   formatTechnicalBriefSource,
   normalizeTechnicalBriefContent,
+  splitGuidanceByMissionLabels,
   toTechnicalBriefView,
   validateTechnicalBriefRequest,
   type TechnicalBrief,
@@ -213,5 +214,51 @@ describe('validateTechnicalBriefRequest', () => {
       ok: false,
       errorMessage: INTERVIEW_PREPARATION_MESSAGES.invalidLanguage,
     })
+  })
+})
+
+describe('splitGuidanceByMissionLabels', () => {
+  it('keeps the guidance as one plain part without mission labels', () => {
+    expect(splitGuidanceByMissionLabels('Dis qui tu es.', [])).toEqual([{ text: 'Dis qui tu es.', isMissionLabel: false }])
+  })
+
+  it('marks every occurrence of every mission label', () => {
+    expect(
+      splitGuidanceByMissionLabels('Raconte Alpha Corp, relie Beta Labs à Alpha Corp.', ['Alpha Corp', 'Beta Labs']),
+    ).toEqual([
+      { text: 'Raconte ', isMissionLabel: false },
+      { text: 'Alpha Corp', isMissionLabel: true },
+      { text: ', relie ', isMissionLabel: false },
+      { text: 'Beta Labs', isMissionLabel: true },
+      { text: ' à ', isMissionLabel: false },
+      { text: 'Alpha Corp', isMissionLabel: true },
+      { text: '.', isMissionLabel: false },
+    ])
+  })
+
+  it('is case-sensitive and ignores labels of two characters or less', () => {
+    expect(splitGuidanceByMissionLabels('Parle de alpha corp et de BI.', ['Alpha Corp', 'BI'])).toEqual([
+      { text: 'Parle de alpha corp et de BI.', isMissionLabel: false },
+    ])
+  })
+
+  it('prefers the longest label when labels overlap', () => {
+    expect(splitGuidanceByMissionLabels('Alpha Corp puis Alpha', ['Alpha', 'Alpha Corp'])).toEqual([
+      { text: 'Alpha Corp', isMissionLabel: true },
+      { text: ' puis ', isMissionLabel: false },
+      { text: 'Alpha', isMissionLabel: true },
+    ])
+  })
+
+  it('matches labels that contain regular expression characters literally', () => {
+    expect(splitGuidanceByMissionLabels('Cite C++ (2020) puis C+++.', ['C++ (2020)'])).toEqual([
+      { text: 'Cite ', isMissionLabel: false },
+      { text: 'C++ (2020)', isMissionLabel: true },
+      { text: ' puis C+++.', isMissionLabel: false },
+    ])
+  })
+
+  it('answers no part for an empty guidance', () => {
+    expect(splitGuidanceByMissionLabels('', ['Alpha Corp'])).toEqual([])
   })
 })

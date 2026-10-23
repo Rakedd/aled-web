@@ -6,6 +6,7 @@ import { jobApplicationTabRoute } from '@/domain/job-application-tabs'
 import { CV_LIBRARY_ROUTE } from '@/domain/routes'
 import {
   formatTechnicalBriefSource,
+  splitGuidanceByMissionLabels,
   TECHNICAL_BRIEF_EMPHASIS_LABELS,
   TECHNICAL_BRIEF_MESSAGES,
   type TechnicalBrief,
@@ -29,7 +30,7 @@ const EMPHASIS_PILL_CLASS_NAMES = {
 const MissionCard = ({ mission }: { mission: TechnicalBriefMission }) => (
   <article aria-label={mission.label} className="flex flex-col gap-2 rounded-lg border border-border p-3 text-sm">
     <div className="flex flex-wrap items-center gap-2">
-      <h4 className="font-semibold break-words">{mission.label}</h4>
+      <h5 className="font-semibold break-words">{mission.label}</h5>
       {mission.period !== '' && <span className="text-xs text-muted-foreground">{mission.period}</span>}
       <span
         className={cn(
@@ -43,8 +44,8 @@ const MissionCard = ({ mission }: { mission: TechnicalBriefMission }) => (
     {mission.sharedStack.length > 0 && (
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="text-muted-foreground">{TECHNICAL_BRIEF_MESSAGES.sharedStackLabel}</span>
-        {mission.sharedStack.map((stackItem) => (
-          <span key={stackItem} className="rounded-full border border-border px-2 py-0.5 text-xs">
+        {mission.sharedStack.map((stackItem, stackItemIndex) => (
+          <span key={`${stackItemIndex}-${stackItem}`} className="rounded-full border border-border px-2 py-0.5 text-xs">
             {stackItem}
           </span>
         ))}
@@ -55,8 +56,8 @@ const MissionCard = ({ mission }: { mission: TechnicalBriefMission }) => (
       <div className="flex flex-col gap-1">
         <p className="text-muted-foreground">{TECHNICAL_BRIEF_MESSAGES.reflectionQuestionsLabel}</p>
         <ul className="flex list-disc flex-col gap-1 pl-5">
-          {mission.reflectionQuestions.map((question) => (
-            <li key={question} className="break-words">
+          {mission.reflectionQuestions.map((question, questionIndex) => (
+            <li key={`${questionIndex}-${question}`} className="break-words">
               {question}
             </li>
           ))}
@@ -66,8 +67,23 @@ const MissionCard = ({ mission }: { mission: TechnicalBriefMission }) => (
   </article>
 )
 
+const StoryStepGuidance = ({ guidance, missionLabels }: { guidance: string; missionLabels: string[] }) => (
+  <p className="text-muted-foreground">
+    {splitGuidanceByMissionLabels(guidance, missionLabels).map((guidancePart, partIndex) =>
+      guidancePart.isMissionLabel ? (
+        <strong key={`${partIndex}-${guidancePart.text}`} className="font-semibold text-foreground">
+          {guidancePart.text}
+        </strong>
+      ) : (
+        <span key={`${partIndex}-${guidancePart.text}`}>{guidancePart.text}</span>
+      ),
+    )}
+  </p>
+)
+
 const BriefContent = ({ brief }: { brief: TechnicalBrief }) => {
   const { storyline, missions, gaps } = brief.content
+  const missionLabels = missions.map((mission) => mission.label)
   const missionsToLeanOn = missions.filter((mission) => mission.emphasis !== 'skim')
   const missionsToSkim = missions.filter((mission) => mission.emphasis === 'skim')
   const skimLine = missionsToSkim.map((mission) => `${mission.label} (${mission.why})`).join(' ; ')
@@ -79,10 +95,10 @@ const BriefContent = ({ brief }: { brief: TechnicalBrief }) => {
           {TECHNICAL_BRIEF_MESSAGES.storylineTitle}
         </h4>
         <ol aria-labelledby={STORYLINE_TITLE_ID} className="flex list-decimal flex-col gap-2 pl-5 text-sm">
-          {storyline.map((step) => (
-            <li key={step.title} className="break-words">
+          {storyline.map((step, stepIndex) => (
+            <li key={`${stepIndex}-${step.title}`} className="break-words">
               <span className="font-semibold">{step.title}</span>
-              <p className="text-muted-foreground">{step.guidance}</p>
+              <StoryStepGuidance guidance={step.guidance} missionLabels={missionLabels} />
             </li>
           ))}
         </ol>
@@ -91,9 +107,15 @@ const BriefContent = ({ brief }: { brief: TechnicalBrief }) => {
         <h4 id={MISSIONS_TITLE_ID} className="text-sm font-semibold">
           {TECHNICAL_BRIEF_MESSAGES.missionsTitle}
         </h4>
-        {missionsToLeanOn.map((mission) => (
-          <MissionCard key={mission.label} mission={mission} />
-        ))}
+        {missionsToLeanOn.length > 0 && (
+          <ul aria-labelledby={MISSIONS_TITLE_ID} className="flex flex-col gap-2">
+            {missionsToLeanOn.map((mission, missionIndex) => (
+              <li key={`${missionIndex}-${mission.label}`}>
+                <MissionCard mission={mission} />
+              </li>
+            ))}
+          </ul>
+        )}
         {missionsToSkim.length > 0 && (
           <p className="text-sm break-words">{`${TECHNICAL_BRIEF_MESSAGES.skimPrefix} ${skimLine}.`}</p>
         )}
@@ -105,8 +127,8 @@ const BriefContent = ({ brief }: { brief: TechnicalBrief }) => {
           </h4>
           <p className="text-sm">{TECHNICAL_BRIEF_MESSAGES.gapsIntroduction}</p>
           <ul aria-labelledby={GAPS_TITLE_ID} className="flex list-disc flex-col gap-1 pl-5 text-sm">
-            {gaps.map((gap) => (
-              <li key={gap.stackItem} className="break-words">{`${gap.stackItem} — ${gap.question}`}</li>
+            {gaps.map((gap, gapIndex) => (
+              <li key={`${gapIndex}-${gap.stackItem}`} className="break-words">{`${gap.stackItem} — ${gap.question}`}</li>
             ))}
           </ul>
         </div>
@@ -116,7 +138,7 @@ const BriefContent = ({ brief }: { brief: TechnicalBrief }) => {
 }
 
 const TransientOutcomeNotice = ({ transientOutcome }: { transientOutcome: TransientOutcome }) => (
-  <div className="flex flex-col gap-2 rounded-lg border border-border p-3 text-sm">
+  <div role="status" className="flex flex-col gap-2 rounded-lg border border-border p-3 text-sm">
     {transientOutcome === 'cv_missing_information' ? (
       <>
         <p className="font-semibold">{TECHNICAL_BRIEF_MESSAGES.cvMissingInformationTitle}</p>
