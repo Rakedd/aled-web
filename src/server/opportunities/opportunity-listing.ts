@@ -19,10 +19,12 @@ import {
   toOpportunityListingPosition,
 } from '@/domain/opportunities'
 import { createOpportunityMatcher, normalizeForKeywordMatch, type OpportunityFilters } from '@/domain/opportunity-filters'
+import { createOpportunityMatchCalculator } from '@/domain/opportunity-match'
 import { addParisCalendarDays, formatParisCalendarDate } from '@/domain/paris-time'
 import {
   findLastOpportunityReceivedAt,
   listOpportunitiesByIds,
+  listOpportunitySkillsPublishedSince,
   listOpportunitySummariesPublishedSince,
   type OpportunitySummary,
 } from '@/server/repositories/opportunities-repository'
@@ -40,13 +42,17 @@ type ToProcessContext = {
   filters: OpportunityFilters
 }
 
+type MatchPercentById = ReadonlyMap<string, number>
+
+const toProcessWindowStart = (now: Date): Date => addParisCalendarDays(now, -TO_PROCESS_WINDOW_DAYS)
+
 const loadToProcessContext = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   now: Date,
 ): Promise<ToProcessContext> => {
   const [recentSummaries, decisions, filters] = await Promise.all([
-    listOpportunitySummariesPublishedSince(supabase, addParisCalendarDays(now, -TO_PROCESS_WINDOW_DAYS)),
+    listOpportunitySummariesPublishedSince(supabase, toProcessWindowStart(now)),
     listOpportunityDecisions(supabase, userId),
     findOpportunityFilters(supabase, userId),
   ])
@@ -85,14 +91,40 @@ const selectSummariesToProcess = ({
   return recentSummaries.filter((summary) => !decidedOpportunityIds.has(summary.id) && matchesUserFilters(summary))
 }
 
+const toPositionsToProcess = (
+  toProcessContext: ToProcessContext,
+  matchPercentById: MatchPercentById,
+): OpportunityListingPosition[] =>
+  selectSummariesToProcess(toProcessContext).map((summary) =>
+    toOpportunityListingPosition({ ...summary, matchPercent: matchPercentById.get(summary.id) ?? null }),
+  )
+
 const selectPositionsToProcess = (
   toProcessContext: ToProcessContext,
   order: OpportunityListingOrder,
+  matchPercentById: MatchPercentById,
 ): OpportunityListingPosition[] =>
-  toSortedUniquePositions(
-    selectSummariesToProcess(toProcessContext).map(toOpportunityListingPosition),
-    order,
+  toSortedUniquePositions(toPositionsToProcess(toProcessContext, matchPercentById), order)
+
+const NO_MATCH_PERCENTS: MatchPercentById = new Map()
+
+const loadMatchPercentById = async (
+  supabase: FreeclutchSupabaseClient,
+  mySkills: string[],
+  now: Date,
+): Promise<MatchPercentById> => {
+  const calculateMatch = createOpportunityMatchCalculator(mySkills)
+  const skillsByOpportunityId = await listOpportunitySkillsPublishedSince(supabase, toProcessWindowStart(now))
+  return new Map(
+    [...skillsByOpportunityId].flatMap(([opportunityId, skills]): [string, number][] => {
+      const matchPercent = calculateMatch(skills)?.percent
+      return matchPercent === undefined ? [] : [[opportunityId, matchPercent]]
+    }),
   )
+}
+
+const needsMatchPercents = (tab: OpportunityTab, order: OpportunityListingOrder, mySkills: string[]): boolean =>
+  tab === 'to_process' && order === 'match' && mySkills.length > 0
 
 const selectDecidedPositions = (
   decisions: StoredOpportunityDecision[],
@@ -112,6 +144,7 @@ const selectDecidedPositions = (
           publishedAt: storedDecision.opportunityPublishedAt,
           rateMin: storedDecision.opportunityRateMin,
           rateMax: storedDecision.opportunityRateMax,
+          matchPercent: null,
         }),
       ),
     order,
@@ -174,7 +207,7 @@ const buildListingPredicate = (
 }
 
 export const toListItems = (
-  pageOpportunityIds: string[],
+  pagePositions: OpportunityListingPosition[],
   pageOpportunities: Opportunity[],
   decisions: StoredOpportunityDecision[],
 ): OpportunityListItem[] => {
@@ -182,35 +215,38 @@ export const toListItems = (
   const decisionsByOpportunityId = new Map(
     decisions.map((storedDecision) => [storedDecision.opportunityId, storedDecision]),
   )
-  return pageOpportunityIds.flatMap((opportunityId) => {
-    const opportunity = opportunitiesById.get(opportunityId)
+  return pagePositions.flatMap(({ id, matchPercent }) => {
+    const opportunity = opportunitiesById.get(id)
     if (opportunity === undefined) return []
-    const storedDecision = decisionsByOpportunityId.get(opportunityId)
+    const storedDecision = decisionsByOpportunityId.get(id)
     return [
       {
         ...opportunity,
         decision: storedDecision?.decision ?? null,
         jobApplicationId: storedDecision?.jobApplicationId ?? null,
+        sortMatchPercent: matchPercent,
       },
     ]
   })
 }
 
-export const listSummariesToProcessForUser = async (
+export const listPositionsToProcessForUser = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   now: Date,
-): Promise<{ summaries: OpportunitySummary[]; decisions: StoredOpportunityDecision[] }> => {
+): Promise<{ positions: OpportunityListingPosition[]; decisions: StoredOpportunityDecision[] }> => {
   const toProcessContext = await loadToProcessContextOncePerRequest(supabase, userId, now)
-  return { summaries: selectSummariesToProcess(toProcessContext), decisions: toProcessContext.decisions }
+  return { positions: toPositionsToProcess(toProcessContext, NO_MATCH_PERCENTS), decisions: toProcessContext.decisions }
 }
 
 export const countOpportunitiesToProcessForUser = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
   now: Date,
-): Promise<number> =>
-  selectPositionsToProcess(await loadToProcessContextOncePerRequest(supabase, userId, now), 'publication').length
+): Promise<number> => {
+  const summariesToProcess = selectSummariesToProcess(await loadToProcessContextOncePerRequest(supabase, userId, now))
+  return new Set(summariesToProcess.map(({ id }) => id)).size
+}
 
 export const buildOpportunityListing = async (
   supabase: FreeclutchSupabaseClient,
@@ -224,10 +260,13 @@ export const buildOpportunityListing = async (
     findLastOpportunityReceivedAt(supabase),
     findOpportunitiesLastViewedAt(supabase, userId),
   ])
-  const order: OpportunityListingOrder = quickFilters.sortByRate ? 'rate' : 'publication'
+  const order = quickFilters.sortOrder
+  const matchPercentById = needsMatchPercents(tab, order, toProcessContext.filters.mySkills)
+    ? await loadMatchPercentById(supabase, toProcessContext.filters.mySkills, now)
+    : NO_MATCH_PERCENTS
   const matchesListingFilters = buildListingPredicate(toProcessContext, search, quickFilters)
   const positionsByTab: Record<OpportunityTab, OpportunityListingPosition[]> = {
-    to_process: selectPositionsToProcess(toProcessContext, order).filter(matchesListingFilters),
+    to_process: selectPositionsToProcess(toProcessContext, order, matchPercentById).filter(matchesListingFilters),
     applied: selectDecidedPositions(toProcessContext.decisions, 'applied', historyStart, order).filter(
       matchesListingFilters,
     ),
@@ -236,10 +275,13 @@ export const buildOpportunityListing = async (
     ),
   }
   const positionsAfterCursor = selectPositionsAfter(positionsByTab[tab], after, order)
-  const pageOpportunityIds = positionsAfterCursor.slice(0, OPPORTUNITY_PAGE_SIZE).map(({ id }) => id)
-  const pageOpportunities = await listOpportunitiesByIds(supabase, pageOpportunityIds)
+  const pagePositions = positionsAfterCursor.slice(0, OPPORTUNITY_PAGE_SIZE)
+  const pageOpportunities = await listOpportunitiesByIds(
+    supabase,
+    pagePositions.map(({ id }) => id),
+  )
   return {
-    items: toListItems(pageOpportunityIds, pageOpportunities, toProcessContext.decisions),
+    items: toListItems(pagePositions, pageOpportunities, toProcessContext.decisions),
     hasMore: positionsAfterCursor.length > OPPORTUNITY_PAGE_SIZE,
     counts: {
       to_process: positionsByTab.to_process.length,

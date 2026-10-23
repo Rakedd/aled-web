@@ -20,6 +20,7 @@ export type OpportunityFilters = {
   rateFloorOnsite: number | null
   regions: string[]
   disabledSources: OpportunitySource[]
+  mySkills: string[]
 }
 
 export const EMPTY_OPPORTUNITY_FILTERS: OpportunityFilters = {
@@ -32,6 +33,7 @@ export const EMPTY_OPPORTUNITY_FILTERS: OpportunityFilters = {
   rateFloorOnsite: null,
   regions: [],
   disabledSources: [],
+  mySkills: [],
 }
 
 export type OpportunityMatchCandidate = Pick<
@@ -50,11 +52,15 @@ export const OPPORTUNITY_FILTERS_VALIDATION_MESSAGES = {
   regionTooLong: 'Une région fait plus de 60 caractères',
   invalidSources: 'Sources invalides',
   noEnabledSource: 'Garde au moins une source active',
+  invalidSkills: 'Compétences invalides',
+  tooManySkills: '100 compétences maximum',
+  skillTooLong: 'Une compétence fait plus de 60 caractères',
 } as const
 
 const MAXIMUM_KEYWORD_COUNT = 100
 const MAXIMUM_REGION_COUNT = 30
-const MAXIMUM_TERM_LENGTH = 60
+export const MAXIMUM_SKILL_COUNT = 100
+export const MAXIMUM_TERM_LENGTH = 60
 const MAXIMUM_RATE_FLOOR = 5000
 const REGULAR_EXPRESSION_METACHARACTER_PATTERN = /[.*+?^${}()|[\]\\]/g
 const APOSTROPHE_VARIANT_PATTERN = /[\u2018\u2019\u02BC]/g
@@ -89,6 +95,13 @@ const KEYWORD_LIST_RULES: TermListRules = {
   malformedMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.invalidKeywords,
   tooManyMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.tooManyKeywords,
   tooLongMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.keywordTooLong,
+}
+
+const SKILL_LIST_RULES: TermListRules = {
+  maximumCount: MAXIMUM_SKILL_COUNT,
+  malformedMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.invalidSkills,
+  tooManyMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.tooManySkills,
+  tooLongMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.skillTooLong,
 }
 
 const REGION_LIST_RULES: TermListRules = {
@@ -228,6 +241,9 @@ export const validateOpportunityFilters = (candidate: unknown): ActionResult<Opp
   const disabledSourcesValidation = validateDisabledSources(candidate.disabledSources)
   if (!disabledSourcesValidation.ok) return disabledSourcesValidation
   validatedFilters.disabledSources = disabledSourcesValidation.data
+  const mySkillsValidation = validateTermList(candidate.mySkills, SKILL_LIST_RULES)
+  if (!mySkillsValidation.ok) return mySkillsValidation
+  validatedFilters.mySkills = mySkillsValidation.data
   return { ok: true, data: validatedFilters }
 }
 

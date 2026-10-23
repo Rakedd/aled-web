@@ -1,7 +1,17 @@
 import type { OpportunityListItem, OpportunityTab } from '@/domain/opportunities'
+import type { OpportunityMatch } from '@/domain/opportunity-match'
+
+export type OpportunitySkillChip = { name: string; isShared: boolean }
+
+export type OpportunitySkillLine = {
+  match: OpportunityMatch | null
+  visibleSkills: OpportunitySkillChip[]
+  hiddenSkillCount: number
+}
 
 type OpportunityCardBaseProps = {
   opportunity: OpportunityListItem
+  mySkills?: string[]
   tab: OpportunityTab
   isNew: boolean
   isPending: boolean

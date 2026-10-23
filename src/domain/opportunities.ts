@@ -61,6 +61,7 @@ export type OpportunityTab = (typeof OPPORTUNITY_TABS)[number]
 export type OpportunityListItem = Opportunity & {
   decision: OpportunityDecision | null
   jobApplicationId: string | null
+  sortMatchPercent: number | null
 }
 
 export type OpportunityListing = {
@@ -91,18 +92,23 @@ export const OPPORTUNITY_VALIDATION_MESSAGES = {
   invalidQuickFilters: 'Filtres rapides invalides',
 } as const
 
-export type OpportunityQuickFilters = { readonly sortByRate: boolean; readonly remoteModes: readonly RemoteMode[] }
+export const OPPORTUNITY_LISTING_ORDERS = ['publication', 'rate', 'match'] as const
+
+export type OpportunityListingOrder = (typeof OPPORTUNITY_LISTING_ORDERS)[number]
+
+export type OpportunityQuickFilters = {
+  readonly sortOrder: OpportunityListingOrder
+  readonly remoteModes: readonly RemoteMode[]
+}
 
 export const NO_OPPORTUNITY_QUICK_FILTERS: OpportunityQuickFilters = Object.freeze({
-  sortByRate: false,
+  sortOrder: 'publication',
   remoteModes: Object.freeze([]),
 })
 
-export type OpportunityListingOrder = 'publication' | 'rate'
+export type OpportunityListingCursor = { publishedAt: string; id: string; rate: number | null; matchPercent: number | null }
 
-export type OpportunityListingCursor = { publishedAt: string; id: string; rate: number | null }
-
-export type OpportunityListingPosition = { publishedAt: Date; id: string; rate: number | null }
+export type OpportunityListingPosition = { publishedAt: Date; id: string; rate: number | null; matchPercent: number | null }
 
 export type OpportunityListingRequest = {
   tab: OpportunityTab
@@ -115,6 +121,7 @@ const UNDISCLOSED_RATE_LABEL = 'Non communiqué'
 const FEED_WATCH_START_HOUR = 9
 const FEED_WATCH_END_HOUR = 22
 const MAXIMUM_FEED_SILENCE_IN_MILLISECONDS = 4 * 60 * 60 * 1000
+const MAXIMUM_MATCH_PERCENT = 100
 
 export const isOpportunitySource = (candidate: unknown): candidate is OpportunitySource =>
   OPPORTUNITY_SOURCES.some((opportunitySource) => opportunitySource === candidate)
@@ -125,6 +132,9 @@ export const isRemoteMode = (candidate: unknown): candidate is RemoteMode =>
 export const isOpportunityTab = (candidate: unknown): candidate is OpportunityTab =>
   OPPORTUNITY_TABS.some((opportunityTab) => opportunityTab === candidate)
 
+const isOpportunityListingOrder = (candidate: unknown): candidate is OpportunityListingOrder =>
+  OPPORTUNITY_LISTING_ORDERS.some((listingOrder) => listingOrder === candidate)
+
 export const validateOpportunityId = (candidate: unknown): ActionResult<string> =>
   validateUuid(candidate, OPPORTUNITY_VALIDATION_MESSAGES.notFound)
 
@@ -133,21 +143,29 @@ const isValidCursorRate = (candidate: unknown): candidate is number | null | und
   candidate === null ||
   (typeof candidate === 'number' && Number.isFinite(candidate) && candidate >= 0)
 
+const isValidCursorMatchPercent = (candidate: unknown): candidate is number | null | undefined =>
+  candidate === undefined ||
+  candidate === null ||
+  (typeof candidate === 'number' &&
+    Number.isInteger(candidate) &&
+    candidate >= 0 &&
+    candidate <= MAXIMUM_MATCH_PERCENT)
+
 const toListingPosition = (cursor: unknown): OpportunityListingPosition | null => {
   if (!isRecord(cursor) || typeof cursor.publishedAt !== 'string' || !isUuid(cursor.id)) return null
-  if (!isValidCursorRate(cursor.rate)) return null
+  if (!isValidCursorRate(cursor.rate) || !isValidCursorMatchPercent(cursor.matchPercent)) return null
   const publishedAt = new Date(cursor.publishedAt)
   return Number.isNaN(publishedAt.getTime())
     ? null
-    : { publishedAt, id: cursor.id.toLowerCase(), rate: cursor.rate ?? null }
+    : { publishedAt, id: cursor.id.toLowerCase(), rate: cursor.rate ?? null, matchPercent: cursor.matchPercent ?? null }
 }
 
 const toQuickFilters = (candidate: unknown): OpportunityQuickFilters | null => {
-  if (!isRecord(candidate) || typeof candidate.sortByRate !== 'boolean') return null
+  if (!isRecord(candidate) || !isOpportunityListingOrder(candidate.sortOrder)) return null
   const { remoteModes } = candidate
   if (!Array.isArray(remoteModes) || !remoteModes.every(isRemoteMode)) return null
   return {
-    sortByRate: candidate.sortByRate,
+    sortOrder: candidate.sortOrder,
     remoteModes: REMOTE_MODES.filter((remoteMode) => remoteModes.includes(remoteMode)),
   }
 }
@@ -193,17 +211,40 @@ const compareByRateDescendingUndisclosedLast = (
   return secondPosition.rate - firstPosition.rate
 }
 
+const compareByMatchDescendingUnknownLast = (
+  firstPosition: OpportunityListingPosition,
+  secondPosition: OpportunityListingPosition,
+): number => {
+  if (firstPosition.matchPercent === secondPosition.matchPercent) {
+    return compareByPublicationDescending(firstPosition, secondPosition)
+  }
+  if (firstPosition.matchPercent === null) return 1
+  if (secondPosition.matchPercent === null) return -1
+  return secondPosition.matchPercent - firstPosition.matchPercent
+}
+
+type OpportunityListingPositionComparator = (
+  firstPosition: OpportunityListingPosition,
+  secondPosition: OpportunityListingPosition,
+) => number
+
+const LISTING_POSITION_COMPARATORS: Record<OpportunityListingOrder, OpportunityListingPositionComparator> = {
+  publication: compareByPublicationDescending,
+  rate: compareByRateDescendingUndisclosedLast,
+  match: compareByMatchDescendingUnknownLast,
+}
+
 export const compareOpportunityListingPositions = (
   order: OpportunityListingOrder,
-): ((firstPosition: OpportunityListingPosition, secondPosition: OpportunityListingPosition) => number) =>
-  order === 'rate' ? compareByRateDescendingUndisclosedLast : compareByPublicationDescending
+): OpportunityListingPositionComparator => LISTING_POSITION_COMPARATORS[order]
 
 export const toOpportunityListingPosition = (
-  opportunity: Pick<Opportunity, 'id' | 'publishedAt' | 'rateMin' | 'rateMax'>,
+  opportunity: Pick<Opportunity, 'id' | 'publishedAt' | 'rateMin' | 'rateMax'> & { matchPercent: number | null },
 ): OpportunityListingPosition => ({
   id: opportunity.id,
   publishedAt: opportunity.publishedAt,
   rate: getOpportunityEffectiveRate(opportunity),
+  matchPercent: opportunity.matchPercent,
 })
 
 export const matchesRemoteModeQuickFilter = (

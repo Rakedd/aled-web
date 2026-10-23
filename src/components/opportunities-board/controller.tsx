@@ -5,6 +5,7 @@ import {
   NO_OPPORTUNITY_QUICK_FILTERS,
   REMOTE_MODES,
   type OpportunityListingCursor,
+  type OpportunityListingOrder,
   type OpportunityListItem,
   type OpportunityListing,
   type OpportunityQuickFilters,
@@ -27,7 +28,12 @@ const toListingCursor = (items: OpportunityListItem[]): OpportunityListingCursor
   const lastItem = items.at(-1)
   return lastItem === undefined
     ? null
-    : { publishedAt: lastItem.publishedAt.toISOString(), id: lastItem.id, rate: getOpportunityEffectiveRate(lastItem) }
+    : {
+        publishedAt: lastItem.publishedAt.toISOString(),
+        id: lastItem.id,
+        rate: getOpportunityEffectiveRate(lastItem),
+        matchPercent: lastItem.sortMatchPercent,
+      }
 }
 
 export const useController = ({
@@ -256,8 +262,11 @@ export const useController = ({
     replaceListing(actionResult.data)
   }
 
-  const toggleSortByRate = () =>
-    applyQuickFilters({ ...requestedQuickFiltersRef.current, sortByRate: !requestedQuickFiltersRef.current.sortByRate })
+  const toggleSortOrder = (sortOrder: Exclude<OpportunityListingOrder, 'publication'>) =>
+    applyQuickFilters({
+      ...requestedQuickFiltersRef.current,
+      sortOrder: requestedQuickFiltersRef.current.sortOrder === sortOrder ? 'publication' : sortOrder,
+    })
 
   const toggleRemoteMode = (remoteMode: RemoteMode) => {
     const { remoteModes } = requestedQuickFiltersRef.current
@@ -307,7 +316,10 @@ export const useController = ({
       setErrorMessage(actionResult.errorMessage)
       return
     }
-    setLoadedItems((currentItems) => [...currentItems, ...actionResult.data.items])
+    setLoadedItems((currentItems) => {
+      const loadedOpportunityIds = new Set(currentItems.map(({ id }) => id))
+      return [...currentItems, ...actionResult.data.items.filter(({ id }) => !loadedOpportunityIds.has(id))]
+    })
     setHasMore(actionResult.data.hasMore)
   }
 
@@ -329,7 +341,7 @@ export const useController = ({
     restore,
     selectTab,
     changeSearch,
-    toggleSortByRate,
+    toggleSortOrder,
     toggleRemoteMode,
     loadMore,
   }

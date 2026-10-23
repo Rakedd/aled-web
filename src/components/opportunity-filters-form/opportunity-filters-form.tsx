@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import type { FormEvent } from 'react'
+import { CvSkillsExtractor } from '@/components/cv-skills-extractor'
 import { KeywordTagsInput } from '@/components/keyword-tags-input'
 import { PillToggle } from '@/components/pill-toggle'
 import type { PillTone } from '@/components/pill/interfaces'
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { normalizeRegionName } from '@/domain/opportunity-filters'
+import { normalizeSkillName, OPPORTUNITY_MATCH_MESSAGES } from '@/domain/opportunity-match'
 import { OPPORTUNITY_SOURCE_LABELS, OPPORTUNITY_SOURCES, REMOTE_MODE_LABELS } from '@/domain/opportunities'
 import { buildRegionOptions } from '@/domain/region-options'
 import { useController } from './controller'
@@ -60,12 +62,18 @@ const SOURCES_HELP_TEXT = "Les missions d'une source désactivée n'apparaissent
 export const OpportunityFiltersForm = ({
   initialFilters,
   knownRegions,
+  cvOptions,
+  cvLibraryErrorMessage,
+  hasAnthropicApiKey,
   saveOpportunityFilters,
+  extractSkillsFromCv,
 }: OpportunityFiltersFormProps) => {
   const router = useRouter()
   const {
     filters,
     setKeywordList,
+    setMySkills,
+    addExtractedSkills,
     toggleRegion,
     toggleSource,
     rateFloorTexts,
@@ -74,6 +82,7 @@ export const OpportunityFiltersForm = ({
     isSubmitting,
     errorMessage,
     successMessage,
+    savedFiltersRevision,
     submit,
   } = useController({
     initialFilters,
@@ -91,6 +100,26 @@ export const OpportunityFiltersForm = ({
 
   return (
     <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-1 text-sm font-medium">{OPPORTUNITY_MATCH_MESSAGES.mySkillsTitle}</legend>
+        <KeywordTagsInput
+          label={OPPORTUNITY_MATCH_MESSAGES.mySkillsInputLabel}
+          helpText={OPPORTUNITY_MATCH_MESSAGES.mySkillsHelpText}
+          values={filters.mySkills}
+          onChange={setMySkills}
+          tone="forest-soft"
+          normalizeKey={normalizeSkillName}
+        />
+        <CvSkillsExtractor
+          key={savedFiltersRevision}
+          cvOptions={cvOptions}
+          cvLibraryErrorMessage={cvLibraryErrorMessage}
+          hasAnthropicApiKey={hasAnthropicApiKey}
+          mySkills={filters.mySkills}
+          extractSkillsFromCv={extractSkillsFromCv}
+          onSkillsExtracted={addExtractedSkills}
+        />
+      </fieldset>
       <p className="rounded-lg bg-muted p-3 text-sm">
         Sans aucun filtre, toutes les missions s&apos;affichent.
       </p>

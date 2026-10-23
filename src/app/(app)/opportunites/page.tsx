@@ -36,6 +36,7 @@ const OpportunitiesPage = async ({ searchParams }: PageProps<'/opportunites'>) =
           initialTab={selectedTab}
           initialListing={listingResult.data}
           hasActiveFilters={filtersResult.ok && hasActiveOpportunityFilters(filtersResult.data)}
+          mySkills={filtersResult.ok ? filtersResult.data.mySkills : []}
           now={new Date()}
           listOpportunities={listOpportunities}
           applyToOpportunity={applyToOpportunity}

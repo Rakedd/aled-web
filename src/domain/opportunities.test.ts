@@ -325,7 +325,7 @@ describe('validateOpportunityListingRequest', () => {
     expect(
       validateOpportunityListingRequest(
         'applied',
-        { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, rate: 650 },
+        { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, rate: 650, matchPercent: 75 },
         '',
         NO_OPPORTUNITY_QUICK_FILTERS,
       ),
@@ -333,7 +333,7 @@ describe('validateOpportunityListingRequest', () => {
       ok: true,
       data: {
         tab: 'applied',
-        after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: cursorId, rate: 650 },
+        after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: cursorId, rate: 650, matchPercent: 75 },
         search: '',
         quickFilters: NO_OPPORTUNITY_QUICK_FILTERS,
       },
@@ -351,6 +351,10 @@ describe('validateOpportunityListingRequest', () => {
     ['a cursor with a negative rate', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, rate: -1 }],
     ['a cursor with a rate that is not a number', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, rate: NaN }],
     ['a cursor with an infinite rate', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, rate: Infinity }],
+    ['a cursor with a match percent given as text', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, matchPercent: '75' }],
+    ['a cursor with a negative match percent', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, matchPercent: -1 }],
+    ['a cursor with a match percent above 100', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, matchPercent: 101 }],
+    ['a cursor with a fractional match percent', 'to_process', { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, matchPercent: 75.5 }],
   ])('rejects %s', (_caseName, tab, cursor) => {
     expect(validateOpportunityListingRequest(tab, cursor, '', NO_OPPORTUNITY_QUICK_FILTERS)).toEqual({
       ok: false,
@@ -394,7 +398,17 @@ describe('validateOpportunityListingRequest', () => {
     })
   })
 
-  it('accepts a cursor without rate as a cursor with an undisclosed rate', () => {
+  it.each([0, 100, null])('accepts a cursor with the match percent %p', (matchPercent) => {
+    const validation = validateOpportunityListingRequest(
+      'to_process',
+      { publishedAt: '2026-10-17T09:00:00.000Z', id: cursorId, rate: null, matchPercent },
+      '',
+      NO_OPPORTUNITY_QUICK_FILTERS,
+    )
+    expect(validation.ok && validation.data.after?.matchPercent).toBe(matchPercent)
+  })
+
+  it('accepts a cursor without rate nor match percent as a cursor with an undisclosed rate and no match', () => {
     expect(
       validateOpportunityListingRequest(
         'to_process',
@@ -406,7 +420,7 @@ describe('validateOpportunityListingRequest', () => {
       ok: true,
       data: {
         tab: 'to_process',
-        after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: cursorId, rate: null },
+        after: { publishedAt: new Date('2026-10-17T09:00:00.000Z'), id: cursorId, rate: null, matchPercent: null },
         search: '',
         quickFilters: NO_OPPORTUNITY_QUICK_FILTERS,
       },
@@ -415,22 +429,29 @@ describe('validateOpportunityListingRequest', () => {
 
   it('deduplicates the remote modes and orders them like the stored remote modes', () => {
     expect(
-      validateOpportunityListingRequest('to_process', null, '', { sortByRate: true, remoteModes: ['none', 'full', 'full'] }),
+      validateOpportunityListingRequest('to_process', null, '', { sortOrder: 'rate', remoteModes: ['none', 'full', 'full'] }),
     ).toEqual({
       ok: true,
       data: {
         tab: 'to_process',
         after: null,
         search: '',
-        quickFilters: { sortByRate: true, remoteModes: ['full', 'none'] },
+        quickFilters: { sortOrder: 'rate', remoteModes: ['full', 'none'] },
       },
     })
   })
 
+  it.each(['publication', 'rate', 'match'] as const)('accepts the %s sort order', (sortOrder) => {
+    const validation = validateOpportunityListingRequest('to_process', null, '', { sortOrder, remoteModes: [] })
+    expect(validation.ok && validation.data.quickFilters).toEqual({ sortOrder, remoteModes: [] })
+  })
+
   it.each([
-    ['an unknown remote mode', { sortByRate: false, remoteModes: ['moon'] }],
-    ['a rate sort that is not a boolean', { sortByRate: 'yes', remoteModes: [] }],
-    ['remote modes that are not a list', { sortByRate: false, remoteModes: 'full' }],
+    ['an unknown remote mode', { sortOrder: 'publication', remoteModes: ['moon'] }],
+    ['an unknown sort order', { sortOrder: 'salary', remoteModes: [] }],
+    ['a missing sort order', { remoteModes: [] }],
+    ['the former rate sort flag', { sortByRate: true, remoteModes: [] }],
+    ['remote modes that are not a list', { sortOrder: 'publication', remoteModes: 'full' }],
     ['missing quick filters', undefined],
   ])('rejects %s', (_caseName, quickFilters) => {
     expect(validateOpportunityListingRequest('to_process', null, '', quickFilters)).toEqual({
@@ -441,10 +462,54 @@ describe('validateOpportunityListingRequest', () => {
 })
 
 describe('compareOpportunityListingPositions', () => {
-  const buildPosition = (id: string, rate: number | null, publishedAt: string): OpportunityListingPosition => ({
+  const buildPosition = (
+    id: string,
+    rate: number | null,
+    publishedAt: string,
+    matchPercent: number | null = null,
+  ): OpportunityListingPosition => ({
     id,
     rate,
     publishedAt: new Date(publishedAt),
+    matchPercent,
+  })
+
+  it('ranks by match percent descending with unknown matches last, then by publication, then by id', () => {
+    const positions = [
+      buildPosition('no-match-recent', 900, '2026-10-17T09:00:00Z', null),
+      buildPosition('match-40', 300, '2026-10-17T09:00:00Z', 40),
+      buildPosition('match-75-old', 400, '2026-10-15T09:00:00Z', 75),
+      buildPosition('match-0', 900, '2026-10-17T09:00:00Z', 0),
+      buildPosition('match-75-recent-a', 400, '2026-10-17T09:00:00Z', 75),
+      buildPosition('match-75-recent-b', 400, '2026-10-17T09:00:00Z', 75),
+      buildPosition('no-match-old', 900, '2026-10-15T09:00:00Z', null),
+    ]
+
+    expect([...positions].sort(compareOpportunityListingPositions('match')).map(({ id }) => id)).toEqual([
+      'match-75-recent-b',
+      'match-75-recent-a',
+      'match-75-old',
+      'match-40',
+      'match-0',
+      'no-match-recent',
+      'no-match-old',
+    ])
+  })
+
+  it('ignores the match percent when sorting by rate or by publication', () => {
+    const positions = [
+      buildPosition('match-100-old', 500, '2026-10-15T09:00:00Z', 100),
+      buildPosition('match-0-recent', 700, '2026-10-17T09:00:00Z', 0),
+    ]
+
+    expect([...positions].sort(compareOpportunityListingPositions('rate')).map(({ id }) => id)).toEqual([
+      'match-0-recent',
+      'match-100-old',
+    ])
+    expect([...positions].sort(compareOpportunityListingPositions('publication')).map(({ id }) => id)).toEqual([
+      'match-0-recent',
+      'match-100-old',
+    ])
   })
 
   it('ranks by rate descending with undisclosed rates last, then by publication descending', () => {
@@ -495,17 +560,24 @@ describe('compareOpportunityListingPositions', () => {
 })
 
 describe('toOpportunityListingPosition', () => {
-  it('keeps the id and the publication date and carries the effective rate', () => {
-    expect(toOpportunityListingPosition(completeOpportunity)).toEqual({
+  it('keeps the id and the publication date and carries the effective rate and the match percent', () => {
+    expect(toOpportunityListingPosition({ ...completeOpportunity, matchPercent: 80 })).toEqual({
       id: completeOpportunity.id,
       publishedAt: completeOpportunity.publishedAt,
       rate: 550,
+      matchPercent: 80,
     })
-    expect(toOpportunityListingPosition(bareOpportunity).rate).toBeNull()
+    expect(toOpportunityListingPosition({ ...bareOpportunity, matchPercent: null })).toEqual(
+      expect.objectContaining({ rate: null, matchPercent: null }),
+    )
   })
 })
 
 describe('NO_OPPORTUNITY_QUICK_FILTERS', () => {
+  it('sorts by publication without remote mode filter', () => {
+    expect(NO_OPPORTUNITY_QUICK_FILTERS).toEqual({ sortOrder: 'publication', remoteModes: [] })
+  })
+
   it('cannot be mutated from one request to another', () => {
     expect(Object.isFrozen(NO_OPPORTUNITY_QUICK_FILTERS)).toBe(true)
     expect(Object.isFrozen(NO_OPPORTUNITY_QUICK_FILTERS.remoteModes)).toBe(true)

@@ -40,6 +40,7 @@ type SeededOpportunity = {
   rateMin?: number | null
   rateMax?: number | null
   remoteMode?: string | null
+  skills?: string[]
 }
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
@@ -63,6 +64,7 @@ const buildOpportunityRow = ({
   rateMin = null,
   rateMax = 550,
   remoteMode = 'partial',
+  skills = ['React'],
 }: SeededOpportunity): TablesInsert<'opportunities'> => {
   const externalId = randomUUID()
   return {
@@ -79,7 +81,7 @@ const buildOpportunityRow = ({
     location_label: region,
     region,
     duration_months: 6,
-    skills: ['React'],
+    skills,
     published_at: (publishedAt ?? new Date(Date.now() - daysAgo * MILLISECONDS_PER_DAY - 60_000)).toISOString(),
   }
 }
@@ -124,7 +126,12 @@ const listOrFail = async (
 
 const toCursor = (items: OpportunityListing['items']): OpportunityListingCursor => {
   const lastItem = items[items.length - 1]
-  return { publishedAt: lastItem.publishedAt.toISOString(), id: lastItem.id, rate: getOpportunityEffectiveRate(lastItem) }
+  return {
+    publishedAt: lastItem.publishedAt.toISOString(),
+    id: lastItem.id,
+    rate: getOpportunityEffectiveRate(lastItem),
+    matchPercent: lastItem.sortMatchPercent,
+  }
 }
 
 const minutesAgo = (minutes: number): Date => new Date(Date.now() - minutes * MILLISECONDS_PER_MINUTE)
@@ -183,6 +190,7 @@ describe('listOpportunities', () => {
       skills: ['React'],
       decision: null,
       jobApplicationId: null,
+      sortMatchPercent: null,
     })
   })
 
@@ -367,10 +375,11 @@ describe('listOpportunities', () => {
   })
 
   describe('quick filters', () => {
-    const SORTED_BY_RATE: OpportunityQuickFilters = { sortByRate: true, remoteModes: [] }
+    const SORTED_BY_RATE: OpportunityQuickFilters = { sortOrder: 'rate', remoteModes: [] }
+    const SORTED_BY_MATCH: OpportunityQuickFilters = { sortOrder: 'match', remoteModes: [] }
 
     const remoteModesOnly = (remoteModes: OpportunityQuickFilters['remoteModes']): OpportunityQuickFilters => ({
-      sortByRate: false,
+      sortOrder: 'publication',
       remoteModes,
     })
 
@@ -472,12 +481,105 @@ describe('listOpportunities', () => {
         publishedAt: firstPage.items[49].publishedAt.toISOString(),
         id: firstPage.items[49].id,
         rate: null,
+        matchPercent: null,
       })
       expect(nextPage.items).toHaveLength(10)
       expect(nextPage.hasMore).toBe(false)
       const everyListedItem = [...firstPage.items, ...nextPage.items]
       expect(new Set(toIds(everyListedItem)).size).toBe(60)
       expect(everyListedItem.map((listItem) => listItem.title)).toEqual(expectedTitles)
+    })
+
+    it('sorts by match percent, unknown matches last, then by publication date, and keeps the rate sort apart', async () => {
+      const user = await createTestUser()
+      actAs(user)
+      const keyword = buildUniqueKeyword()
+      await saveFiltersOrFail(filtersWith({ mySkills: ['React', 'TypeScript'] }))
+      const halfMatchId = await seedOpportunityOrFail({
+        title: `Moitié ${keyword}`,
+        skills: ['React.js', 'Java'],
+        rateMax: 900,
+        publishedAt: minutesAgo(10),
+      })
+      const fullMatchOldId = await seedOpportunityOrFail({
+        title: `Complet ancien ${keyword}`,
+        skills: ['reactjs', 'TS'],
+        rateMax: 400,
+        publishedAt: minutesAgo(120),
+      })
+      const fullMatchRecentId = await seedOpportunityOrFail({
+        title: `Complet récent ${keyword}`,
+        skills: ['TypeScript'],
+        rateMax: 300,
+        publishedAt: minutesAgo(60),
+      })
+      const noSkillId = await seedOpportunityOrFail({ title: `Sans compétence ${keyword}`, skills: [], publishedAt: minutesAgo(5) })
+      const noMatchId = await seedOpportunityOrFail({ title: `Aucune ${keyword}`, skills: ['Java'], publishedAt: minutesAgo(200) })
+
+      const matchListing = await listOrFail('to_process', null, keyword, SORTED_BY_MATCH)
+      const rateListing = await listOrFail('to_process', null, keyword, SORTED_BY_RATE)
+
+      expect(toIds(matchListing.items)).toEqual([fullMatchRecentId, fullMatchOldId, halfMatchId, noMatchId, noSkillId])
+      expect(matchListing.items.map((listItem) => listItem.sortMatchPercent)).toEqual([100, 100, 50, 0, null])
+      expect(toIds(rateListing.items)).toEqual([halfMatchId, noSkillId, noMatchId, fullMatchOldId, fullMatchRecentId])
+    })
+
+    it('carries no match percent when I have no skill, whatever the sort', async () => {
+      const user = await createTestUser()
+      actAs(user)
+      const keyword = buildUniqueKeyword()
+      const olderId = await seedOpportunityOrFail({ title: `Ancienne ${keyword}`, skills: ['React'], publishedAt: minutesAgo(60) })
+      const newerId = await seedOpportunityOrFail({ title: `Récente ${keyword}`, skills: ['Java'], publishedAt: minutesAgo(10) })
+
+      const matchListing = await listOrFail('to_process', null, keyword, SORTED_BY_MATCH)
+
+      expect(toIds(matchListing.items)).toEqual([newerId, olderId])
+      expect(matchListing.items.map((listItem) => listItem.sortMatchPercent)).toEqual([null, null])
+    })
+
+    it('paginates by a cursor carrying the match percent of the last item in the global match order', async () => {
+      const user = await createTestUser()
+      actAs(user)
+      const keyword = buildUniqueKeyword()
+      await saveFiltersOrFail(filtersWith({ mySkills: ['React'] }))
+      const missionIndexes = Array.from({ length: 60 }, (_, index) => index)
+      const skillsByRemainder: string[][] = [['React'], ['React', 'Java'], ['Java'], []]
+      await seedOpportunitiesOrFail(
+        missionIndexes.map((index) => ({
+          title: `Mission ${keyword} ${index}`,
+          skills: skillsByRemainder[index % 4],
+          publishedAt: minutesAgo(index + 1),
+        })),
+      )
+      const expectedTitles = [0, 1, 2, 3]
+        .flatMap((remainder) => missionIndexes.filter((index) => index % 4 === remainder))
+        .map((index) => `Mission ${keyword} ${index}`)
+
+      const firstPage = await listOrFail('to_process', null, keyword, SORTED_BY_MATCH)
+      const nextPage = await listOrFail('to_process', toCursor(firstPage.items), keyword, SORTED_BY_MATCH)
+
+      expect(firstPage.items).toHaveLength(50)
+      expect(firstPage.hasMore).toBe(true)
+      expect(toCursor(firstPage.items).matchPercent).toBeNull()
+      expect(nextPage.items).toHaveLength(10)
+      expect(nextPage.hasMore).toBe(false)
+      expect([...firstPage.items, ...nextPage.items].map((listItem) => listItem.title)).toEqual(expectedTitles)
+    })
+
+    it('keeps the publication order and no match percent in the applied tab when sorting by match', async () => {
+      const user = await createTestUser()
+      actAs(user)
+      const keyword = buildUniqueKeyword()
+      await saveFiltersOrFail(filtersWith({ mySkills: ['React'] }))
+      const noMatchRecentId = await seedOpportunityOrFail({ title: `Java ${keyword}`, skills: ['Java'], publishedAt: minutesAgo(10) })
+      const fullMatchOldId = await seedOpportunityOrFail({ title: `React ${keyword}`, skills: ['React'], publishedAt: minutesAgo(60) })
+      await applyToOpportunity(noMatchRecentId)
+      await applyToOpportunity(fullMatchOldId)
+
+      const appliedListing = await listOrFail('applied', null, keyword, SORTED_BY_MATCH)
+
+      expect(toIds(appliedListing.items)).toEqual([noMatchRecentId, fullMatchOldId])
+      expect(appliedListing.items.map((listItem) => listItem.sortMatchPercent)).toEqual([null, null])
     })
 
     it('sorts the applied tab by rate', async () => {
@@ -516,7 +618,7 @@ describe('listOpportunities', () => {
       actAs(user)
 
       await expect(
-        listOpportunities('to_process', null, '', { sortByRate: 'yes', remoteModes: [] } as unknown as OpportunityQuickFilters),
+        listOpportunities('to_process', null, '', { sortOrder: 'yes', remoteModes: [] } as unknown as OpportunityQuickFilters),
       ).resolves.toEqual({ ok: false, errorMessage: 'Filtres rapides invalides' })
     })
   })
@@ -529,7 +631,9 @@ describe('listOpportunities', () => {
       ok: false,
       errorMessage: 'Onglet ou page invalide',
     })
-    await expect(listOpportunities('to_process', { publishedAt: 'hier', id: randomUUID(), rate: null }, '')).resolves.toEqual({
+    await expect(
+      listOpportunities('to_process', { publishedAt: 'hier', id: randomUUID(), rate: null, matchPercent: null }, ''),
+    ).resolves.toEqual({
       ok: false,
       errorMessage: 'Onglet ou page invalide',
     })
@@ -738,6 +842,49 @@ describe('opportunity filters', () => {
     await expect(saveOpportunityFilters(unnormalizedFilters)).resolves.toEqual({ ok: true, data: savedFilters })
     await expect(saveOpportunityFilters(savedFilters)).resolves.toEqual({ ok: true, data: savedFilters })
     await expect(getOpportunityFilters()).resolves.toEqual({ ok: true, data: savedFilters })
+  })
+
+  it('reads and writes my skills without letting them filter the missions', async () => {
+    const user = await createTestUser()
+    actAs(user)
+    const keyword = buildUniqueKeyword()
+    const javaId = await seedOpportunityOrFail({ title: `Dev Java ${keyword}`, skills: ['Java'] })
+
+    await expect(saveOpportunityFilters(filtersWith({ mySkills: [' React ', 'react', 'Node.js'] }))).resolves.toEqual({
+      ok: true,
+      data: filtersWith({ mySkills: ['React', 'Node.js'] }),
+    })
+
+    await expect(getOpportunityFilters()).resolves.toEqual({ ok: true, data: filtersWith({ mySkills: ['React', 'Node.js'] }) })
+    expect(toIds((await listOrFail('to_process', null, keyword)).items)).toEqual([javaId])
+  })
+
+  it('keeps my skills when the mobile app upserts the filters without them', async () => {
+    const user = await createTestUser()
+    actAs(user)
+    await saveFiltersOrFail(filtersWith({ mySkills: ['React', 'TypeScript'], includeKeywords: ['react'] }))
+
+    const { error } = await user.client.from('opportunity_filters').upsert(
+      {
+        user_id: user.userId,
+        include_keywords: ['java'],
+        always_exclude_keywords: [],
+        rescuable_exclude_keywords: [],
+        rescue_keywords: [],
+        rate_floor_full_remote: null,
+        rate_floor_hybrid: null,
+        rate_floor_onsite: null,
+        regions: [],
+        disabled_sources: [],
+      },
+      { onConflict: 'user_id' },
+    )
+
+    expect(error).toBeNull()
+    await expect(getOpportunityFilters()).resolves.toEqual({
+      ok: true,
+      data: filtersWith({ mySkills: ['React', 'TypeScript'], includeKeywords: ['java'] }),
+    })
   })
 })
 

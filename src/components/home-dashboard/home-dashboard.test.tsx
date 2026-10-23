@@ -61,6 +61,7 @@ const buildOpportunity = (index: number): OpportunityListItem => ({
   receivedAt: new Date('2026-10-19T06:30:00Z'),
   decision: null,
   jobApplicationId: null,
+  sortMatchPercent: null,
 })
 
 const buildDashboard = (overrides: Partial<HomeDashboardProps> = {}) => (

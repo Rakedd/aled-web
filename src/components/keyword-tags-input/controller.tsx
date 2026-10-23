@@ -4,15 +4,19 @@ import type { KeywordDraftKeyboardEvent, KeywordTagsInputControllerParameters } 
 
 const KEYWORD_SEPARATOR_KEYS = ['Enter', ',']
 
-export const useController = ({ values, onChange }: KeywordTagsInputControllerParameters) => {
+export const useController = ({
+  values,
+  onChange,
+  normalizeKey = normalizeForKeywordMatch,
+}: KeywordTagsInputControllerParameters) => {
   const [draft, setDraft] = useState('')
 
   const addTerms = (rawTerms: string[]) => {
-    const knownNormalizedTerms = new Set(values.map(normalizeForKeywordMatch))
+    const knownNormalizedTerms = new Set(values.map(normalizeKey))
     const addedTerms: string[] = []
     for (const rawTerm of rawTerms) {
       const trimmedTerm = rawTerm.trim()
-      const normalizedTerm = normalizeForKeywordMatch(trimmedTerm)
+      const normalizedTerm = normalizeKey(trimmedTerm)
       if (normalizedTerm === '' || knownNormalizedTerms.has(normalizedTerm)) continue
       knownNormalizedTerms.add(normalizedTerm)
       addedTerms.push(trimmedTerm)

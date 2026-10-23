@@ -16,12 +16,13 @@ type OpportunityFiltersRow = Pick<
   | 'rate_floor_onsite'
   | 'regions'
   | 'disabled_sources'
+  | 'my_skills'
 >
 
 type OpportunityFiltersColumns = Omit<TablesInsert<'opportunity_filters'>, 'id' | 'created_at' | 'updated_at'>
 
 const OPPORTUNITY_FILTERS_COLUMNS =
-  'include_keywords, always_exclude_keywords, rescuable_exclude_keywords, rescue_keywords, rate_floor_full_remote, rate_floor_hybrid, rate_floor_onsite, regions, disabled_sources'
+  'include_keywords, always_exclude_keywords, rescuable_exclude_keywords, rescue_keywords, rate_floor_full_remote, rate_floor_hybrid, rate_floor_onsite, regions, disabled_sources, my_skills'
 const FILTERS_UNIQUE_KEY_COLUMNS = 'user_id'
 
 const toOpportunityFilters = (filtersRow: OpportunityFiltersRow): OpportunityFilters => ({
@@ -34,6 +35,7 @@ const toOpportunityFilters = (filtersRow: OpportunityFiltersRow): OpportunityFil
   rateFloorOnsite: filtersRow.rate_floor_onsite,
   regions: filtersRow.regions,
   disabledSources: filtersRow.disabled_sources.filter(isOpportunitySource),
+  mySkills: filtersRow.my_skills,
 })
 
 const toOpportunityFiltersColumns = (userId: string, filters: OpportunityFilters): OpportunityFiltersColumns => ({
@@ -47,6 +49,7 @@ const toOpportunityFiltersColumns = (userId: string, filters: OpportunityFilters
   rate_floor_onsite: filters.rateFloorOnsite,
   regions: filters.regions,
   disabled_sources: filters.disabledSources,
+  my_skills: filters.mySkills,
 })
 
 export const findOpportunityFilters = async (

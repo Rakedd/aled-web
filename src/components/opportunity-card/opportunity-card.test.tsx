@@ -27,6 +27,7 @@ const buildOpportunity = (overrides: Partial<OpportunityListItem> = {}): Opportu
   receivedAt: new Date('2026-10-18T14:40:00Z'),
   decision: null,
   jobApplicationId: null,
+  sortMatchPercent: null,
   ...overrides,
 })
 
@@ -171,5 +172,100 @@ describe('OpportunityCard', () => {
     const dismissButton = screen.getByRole('button', { name: 'Pas intéressé' })
     expect(applyButton.compareDocumentPosition(freeWorkLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(freeWorkLink.compareDocumentPosition(dismissButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  describe('match with my skills', () => {
+    const MY_SKILLS = ['React', 'TypeScript', 'Docker']
+
+    it('shows the match percent next to the rate with an accessible name', () => {
+      renderCard(buildOpportunity({ rateMax: 650, skills: ['React.js', 'TS', 'Docker', 'GraphQL'] }), { mySkills: MY_SKILLS })
+
+      const header = screen.getByRole('heading', { name: 'Développeur React' }).closest('header') as HTMLElement
+      expect(within(header).getByText('75 % match')).toHaveAttribute('aria-hidden', 'true')
+      expect(within(header).getByText('Correspondance avec tes compétences : 3 sur 4 (Très bon match)')).toHaveClass('sr-only')
+      expect(within(header).getByText('650 €/j')).toBeInTheDocument()
+    })
+
+    it.each([
+      [['React', 'TypeScript', 'Docker', 'Java'], 'forest-soft', 'Très bon match'],
+      [['React', 'Java'], 'peach', 'Bon match'],
+      [['React', 'Java', 'Go'], 'neutral', 'Match faible'],
+    ])('tones the match pill by level and writes the level for the skills %p', (skills, expectedTone, expectedLevelLabel) => {
+      renderCard(buildOpportunity({ skills }), { mySkills: MY_SKILLS })
+
+      const matchPill = screen.getByText(/% match$/).closest('[data-tone]')
+      expect(matchPill).toHaveAttribute('data-tone', expectedTone)
+      expect(matchPill).toHaveTextContent(`(${expectedLevelLabel})`)
+      expect(screen.getByText(new RegExp(`^${expectedLevelLabel} · \\d+ compétences? en commun sur \\d+$`))).toBeVisible()
+    })
+
+    it('writes the level and the shared skill count above the skill line', () => {
+      renderCard(buildOpportunity({ skills: ['React', 'TypeScript', 'Docker', 'Java'] }), { mySkills: MY_SKILLS })
+
+      const summary = screen.getByText('Très bon match · 3 compétences en commun sur 4')
+      expect(summary).toHaveAttribute('aria-hidden', 'true')
+      expect(
+        summary.compareDocumentPosition(screen.getByRole('list', { name: 'Compétences demandées' })) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    })
+
+    it('lets a long skill wrap inside the card instead of overflowing it', () => {
+      const longSkill = 'Microsoft Dynamics 365 Finance and Operations Supply Chain Management'
+      renderCard(buildOpportunity({ skills: [longSkill] }), { mySkills: MY_SKILLS })
+
+      const skillPill = screen.getByText(longSkill).closest('[data-tone]')
+      expect(skillPill).toHaveClass('max-w-full', 'whitespace-normal')
+      expect(screen.getByText(longSkill)).toHaveClass('min-w-0', 'break-words')
+    })
+
+    it.each([
+      ['the opportunity lists no skill', [], MY_SKILLS],
+      ['I have no skill', ['React'], []],
+    ])('shows no match pill when %s', (_caseName, skills, mySkills) => {
+      renderCard(buildOpportunity({ skills }), { mySkills })
+
+      expect(screen.queryByText(/% match$/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Correspondance avec tes compétences/)).not.toBeInTheDocument()
+    })
+
+    it('lists the opportunity skills and marks the shared ones with a check and a text, not only a colour', () => {
+      renderCard(buildOpportunity({ skills: ['GraphQL', 'React.js', 'Docker'] }), { mySkills: MY_SKILLS })
+
+      const skillItems = within(screen.getByRole('list', { name: 'Compétences demandées' })).getAllByRole('listitem')
+      expect(skillItems.map((skillItem) => skillItem.textContent)).toEqual([
+        'React.js (en commun)',
+        'Docker (en commun)',
+        'GraphQL',
+      ])
+      expect(skillItems[0].querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+      expect(skillItems[0].querySelector('[data-tone]')).toHaveAttribute('data-tone', 'forest-soft')
+      expect(skillItems[2].querySelector('svg')).toBeNull()
+      expect(skillItems[2].querySelector('[data-tone]')).toHaveAttribute('data-tone', 'neutral')
+    })
+
+    it('lists the opportunity skills without highlight when I have no skill', () => {
+      renderCard(buildOpportunity({ skills: ['React', 'react', 'Java'] }))
+
+      const skillItems = within(screen.getByRole('list', { name: 'Compétences demandées' })).getAllByRole('listitem')
+      expect(skillItems.map((skillItem) => skillItem.textContent)).toEqual(['React', 'Java'])
+    })
+
+    it('shows at most eight skills then « +N »', () => {
+      const skills = Array.from({ length: 11 }, (_, index) => `Techno ${index}`)
+      renderCard(buildOpportunity({ skills }), { mySkills: MY_SKILLS })
+
+      const skillList = screen.getByRole('list', { name: 'Compétences demandées' })
+      expect(within(skillList).getAllByRole('listitem')).toHaveLength(9)
+      expect(within(skillList).getByText('+3')).toHaveAttribute('aria-hidden', 'true')
+      expect(within(skillList).getByText('3 autres compétences')).toHaveClass('sr-only')
+      expect(within(skillList).queryByText('Techno 8')).not.toBeInTheDocument()
+    })
+
+    it('renders no skill line for an opportunity without skills', () => {
+      renderCard(buildOpportunity({ skills: [] }), { mySkills: MY_SKILLS })
+
+      expect(screen.queryByRole('list', { name: 'Compétences demandées' })).not.toBeInTheDocument()
+    })
   })
 })

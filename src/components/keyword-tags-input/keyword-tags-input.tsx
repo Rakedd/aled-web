@@ -9,8 +9,12 @@ import { Label } from '@/components/ui/label'
 import { useController } from './controller'
 import type { KeywordTagsInputProps } from './interfaces'
 
-export const KeywordTagsInput = ({ label, helpText, values, onChange, tone }: KeywordTagsInputProps) => {
-  const { draft, changeDraft, addDraft, removeValue, handleDraftKeyDown } = useController({ values, onChange })
+export const KeywordTagsInput = ({ label, helpText, values, onChange, tone, normalizeKey }: KeywordTagsInputProps) => {
+  const { draft, changeDraft, addDraft, removeValue, handleDraftKeyDown } = useController({
+    values,
+    onChange,
+    normalizeKey,
+  })
   const inputId = useId()
   const helpTextId = useId()
 

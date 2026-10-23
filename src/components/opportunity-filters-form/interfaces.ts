@@ -1,5 +1,8 @@
+import type { ExtractSkillsFromCv } from '@/components/cv-skills-extractor/interfaces'
 import type { ActionResult } from '@/domain/action-result'
+import type { CvOption } from '@/domain/cv-library'
 import type { OpportunityFilters } from '@/domain/opportunity-filters'
+
 export type SaveOpportunityFilters = (filters: OpportunityFilters) => Promise<ActionResult<OpportunityFilters>>
 
 export type KeywordListField =
@@ -19,4 +22,8 @@ export type OpportunityFiltersFormControllerParameters = {
 
 export type OpportunityFiltersFormProps = Omit<OpportunityFiltersFormControllerParameters, 'onDataChanged'> & {
   knownRegions: string[]
+  cvOptions: CvOption[]
+  cvLibraryErrorMessage: string | null
+  hasAnthropicApiKey: boolean
+  extractSkillsFromCv: ExtractSkillsFromCv
 }

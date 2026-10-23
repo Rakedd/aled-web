@@ -57,6 +57,11 @@ describe('buildKeywordMatcher', () => {
 })
 
 describe('createOpportunityMatcher', () => {
+  it('keeps every mission whatever my skills are', () => {
+    const matches = createOpportunityMatcher(filters({ mySkills: ['Java'] }))
+    expect(matches(candidate({ title: 'Dev React' }))).toBe(true)
+  })
+
   it('hides the missions of a disabled source and keeps the other sources', () => {
     const matches = createOpportunityMatcher(filters({ disabledSources: ['collective'] }))
     expect(matches(candidate({ source: 'collective' }))).toBe(false)
@@ -151,6 +156,7 @@ describe('validateOpportunityFilters', () => {
       rateFloorOnsite: 5000,
       regions: [' Île-de-France ', 'île-de-france', 'Bretagne'],
       disabledSources: ['collective', 'collective'],
+      mySkills: [' React ', 'react', 'TypeScript'],
     })
     expect(result).toEqual({
       ok: true,
@@ -164,6 +170,7 @@ describe('validateOpportunityFilters', () => {
         rateFloorOnsite: 5000,
         regions: ['Île-de-France', 'Bretagne'],
         disabledSources: ['collective'],
+        mySkills: ['React', 'TypeScript'],
       },
     })
   })
@@ -193,6 +200,25 @@ describe('validateOpportunityFilters', () => {
     expect(validateOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, includeKeywords: [` ${'a'.repeat(60)} `] }).ok).toBe(true)
     expect(validateOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, includeKeywords: ['a'.repeat(61)] })).toEqual({ ok: false, errorMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.keywordTooLong })
   })
+  it.each([undefined, 'react', [1], ['react', null]])('rejects skills that are not a list of strings %p', (mySkills) => {
+    expect(validateOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, mySkills })).toEqual({ ok: false, errorMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.invalidSkills })
+    expect(OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.invalidSkills).toBe('Compétences invalides')
+  })
+  it('drops blank and duplicate skills', () => {
+    const result = validateOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, mySkills: ['  Go ', 'GO', '   ', ''] })
+    expect(result).toEqual({ ok: true, data: expect.objectContaining({ mySkills: ['Go'] }) })
+  })
+  it('accepts 100 skills but not 101', () => {
+    const skills = Array.from({ length: 101 }, (_, index) => `techno${index}`)
+    expect(validateOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, mySkills: skills.slice(0, 100) }).ok).toBe(true)
+    expect(validateOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, mySkills: skills })).toEqual({ ok: false, errorMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.tooManySkills })
+    expect(OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.tooManySkills).toBe('100 compétences maximum')
+  })
+  it('accepts a 60 character skill but not 61', () => {
+    expect(validateOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, mySkills: [` ${'a'.repeat(60)} `] }).ok).toBe(true)
+    expect(validateOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, mySkills: ['a'.repeat(61)] })).toEqual({ ok: false, errorMessage: OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.skillTooLong })
+    expect(OPPORTUNITY_FILTERS_VALIDATION_MESSAGES.skillTooLong).toBe('Une compétence fait plus de 60 caractères')
+  })
   it.each([0, 5000, null])('accepts the rate floor %p', (rateFloorHybrid) => {
     expect(validateOpportunityFilters({ ...EMPTY_OPPORTUNITY_FILTERS, rateFloorHybrid }).ok).toBe(true)
   })
@@ -213,6 +239,10 @@ describe('validateOpportunityFilters', () => {
 describe('hasActiveOpportunityFilters', () => {
   it('is false for empty filters', () => {
     expect(hasActiveOpportunityFilters(EMPTY_OPPORTUNITY_FILTERS)).toBe(false)
+  })
+
+  it('ignores my skills, which never filter anything', () => {
+    expect(hasActiveOpportunityFilters(filters({ mySkills: ['React'] }))).toBe(false)
   })
 
   it.each([

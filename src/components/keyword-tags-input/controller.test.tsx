@@ -1,9 +1,10 @@
 import { act, renderHook } from '@testing-library/react'
+import { normalizeSkillName } from '@/domain/opportunity-match'
 import { useController } from './controller'
 
-const renderKeywordTagsInputController = (values: string[] = []) => {
+const renderKeywordTagsInputController = (values: string[] = [], normalizeKey?: (term: string) => string) => {
   const onChange = jest.fn()
-  const { result } = renderHook(() => useController({ values, onChange }))
+  const { result } = renderHook(() => useController({ values, onChange, normalizeKey }))
   return { result, onChange }
 }
 
@@ -34,6 +35,19 @@ describe('keyword-tags-input useController', () => {
     act(() => result.current.handleDraftKeyDown(pressKey('Enter')))
     expect(onChange).not.toHaveBeenCalled()
     expect(result.current.draft).toBe('')
+  })
+
+  it('keeps terms that only differ by a js suffix by default', () => {
+    const { result, onChange } = renderKeywordTagsInputController(['React'])
+    act(() => result.current.changeDraft('ReactJS'))
+    act(() => result.current.handleDraftKeyDown(pressKey('Enter')))
+    expect(onChange).toHaveBeenCalledWith(['React', 'ReactJS'])
+  })
+
+  it('deduplicates with the given key, among known and typed terms', () => {
+    const { result, onChange } = renderKeywordTagsInputController(['React'], normalizeSkillName)
+    act(() => result.current.changeDraft('ReactJS, TS, TypeScript'))
+    expect(onChange).toHaveBeenCalledWith(['React', 'TS'])
   })
 
   it('removes the last keyword on Backspace when the draft is empty', () => {

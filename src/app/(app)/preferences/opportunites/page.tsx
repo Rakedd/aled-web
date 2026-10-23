@@ -1,21 +1,29 @@
 import type { Metadata } from 'next'
 import { OpportunityFiltersForm } from '@/components/opportunity-filters-form'
 import { SettingsNavigation } from '@/components/settings-navigation'
+import { toCvOptions } from '@/domain/cv-library'
 import { PAGE_TITLE_CLASS_NAME } from '@/lib/typography-class-names'
+import { listCvs } from '@/server/actions/cv-actions'
 import {
   getOpportunityFilters,
   listKnownOpportunityRegions,
   saveOpportunityFilters,
 } from '@/server/actions/opportunity-actions'
+import { extractSkillsFromCv } from '@/server/actions/opportunity-skills-actions'
+import { hasAnthropicApiKeyConfigured } from '@/server/actions/settings-actions'
 
 export const metadata: Metadata = {
   title: 'Opportunités · Préférences · Aled',
 }
 
+export const maxDuration = 120
+
 const OpportunitySettingsPage = async () => {
-  const [filtersResult, knownRegionsResult] = await Promise.all([
+  const [filtersResult, knownRegionsResult, cvsResult, hasAnthropicApiKey] = await Promise.all([
     getOpportunityFilters(),
     listKnownOpportunityRegions(),
+    listCvs(),
+    hasAnthropicApiKeyConfigured(),
   ])
 
   return (
@@ -37,7 +45,11 @@ const OpportunitySettingsPage = async () => {
             <OpportunityFiltersForm
               initialFilters={filtersResult.data}
               knownRegions={knownRegionsResult.ok ? knownRegionsResult.data : []}
+              cvOptions={cvsResult.ok ? toCvOptions(cvsResult.data) : []}
+              cvLibraryErrorMessage={cvsResult.ok ? null : cvsResult.errorMessage}
+              hasAnthropicApiKey={hasAnthropicApiKey}
               saveOpportunityFilters={saveOpportunityFilters}
+              extractSkillsFromCv={extractSkillsFromCv}
             />
           )}
         </section>

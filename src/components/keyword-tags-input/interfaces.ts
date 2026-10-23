@@ -6,9 +6,10 @@ export type KeywordTagsInputProps = {
   values: string[]
   onChange: (values: string[]) => void
   tone: PillTone
+  normalizeKey?: (term: string) => string
 }
 
-export type KeywordTagsInputControllerParameters = Pick<KeywordTagsInputProps, 'values' | 'onChange'>
+export type KeywordTagsInputControllerParameters = Pick<KeywordTagsInputProps, 'values' | 'onChange' | 'normalizeKey'>
 
 export type KeywordDraftKeyboardEvent = {
   key: string

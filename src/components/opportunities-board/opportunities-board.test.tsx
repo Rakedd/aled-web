@@ -7,7 +7,11 @@ jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) 
 
 const NOW = new Date('2026-10-18T13:00:00Z')
 
-const buildOpportunity = (id: string, receivedAt: string): OpportunityListItem => ({
+const buildOpportunity = (
+  id: string,
+  receivedAt: string,
+  overrides: Partial<OpportunityListItem> = {},
+): OpportunityListItem => ({
   id,
   source: 'free-work',
   externalId: id,
@@ -29,7 +33,20 @@ const buildOpportunity = (id: string, receivedAt: string): OpportunityListItem =
   receivedAt: new Date(receivedAt),
   decision: null,
   jobApplicationId: null,
+  sortMatchPercent: null,
+  ...overrides,
 })
+
+const EMPTY_LISTING_RESULT = {
+  ok: true,
+  data: {
+    items: [],
+    hasMore: false,
+    counts: { to_process: 0, applied: 0, dismissed: 0 },
+    lastReceivedAt: new Date('2026-10-18T12:30:00Z'),
+    lastViewedAt: null,
+  },
+}
 
 const renderBoard = (
   listingOverrides: Partial<OpportunityListing>,
@@ -37,6 +54,7 @@ const renderBoard = (
   initialTab: 'to_process' | 'applied' | 'dismissed' = 'to_process',
   applyToOpportunity: jest.Mock = jest.fn(),
   listOpportunities: jest.Mock = jest.fn(),
+  mySkills: string[] = [],
 ) => {
   const succeeded = { ok: true, data: null }
   render(
@@ -51,6 +69,7 @@ const renderBoard = (
         ...listingOverrides,
       }}
       hasActiveFilters={hasActiveFilters}
+      mySkills={mySkills}
       now={NOW}
       listOpportunities={listOpportunities}
       applyToOpportunity={applyToOpportunity}
@@ -135,7 +154,7 @@ describe('OpportunitiesBoard', () => {
 
     await userEvent.keyboard('{ArrowRight}')
 
-    expect(listOpportunities).toHaveBeenCalledWith('applied', null, '', { sortByRate: false, remoteModes: [] })
+    expect(listOpportunities).toHaveBeenCalledWith('applied', null, '', { sortOrder: 'publication', remoteModes: [] })
   })
 
   it('keeps the focus on the tab while the next tab loads and ignores further keys', async () => {
@@ -204,5 +223,73 @@ describe('OpportunitiesBoard', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Hybride' }))
 
     expect(await screen.findByText('Aucune mission ne correspond à ces filtres.')).toBeInTheDocument()
+  })
+
+  describe('match with my skills', () => {
+    it('invites me to add my skills, with a link to the opportunity preferences, when I have none', () => {
+      renderBoard({})
+
+      const hintLink = screen.getByRole('link', { name: 'tes filtres' })
+      expect(hintLink).toHaveAttribute('href', '/preferences/opportunites')
+      expect(hintLink.closest('p')).toHaveTextContent(
+        'Ajoute tes compétences dans tes filtres pour voir ton taux de match.',
+      )
+      expect(screen.queryByRole('button', { name: 'Meilleur match' })).not.toBeInTheDocument()
+    })
+
+    it('shows the match of each card once I have skills, without the invitation', () => {
+      renderBoard(
+        {
+          items: [buildOpportunity('opportunity-1', '2026-10-18T09:00:00Z', { skills: ['React', 'Java'] })],
+          counts: { to_process: 1, applied: 0, dismissed: 0 },
+        },
+        false,
+        'to_process',
+        jest.fn(),
+        jest.fn(),
+        ['React'],
+      )
+
+      expect(screen.queryByRole('link', { name: 'tes filtres' })).not.toBeInTheDocument()
+      expect(screen.getByText('Correspondance avec tes compétences : 1 sur 2 (Bon match)')).toBeInTheDocument()
+    })
+
+    it('groups the two sorts under « Tri » and keeps them exclusive, each press releasing the other', async () => {
+      const listOpportunities = jest.fn().mockResolvedValue(EMPTY_LISTING_RESULT)
+      renderBoard({}, false, 'to_process', jest.fn(), listOpportunities, ['React'])
+      const sortGroup = screen.getByRole('group', { name: 'Tri' })
+      const rateToggle = () => within(sortGroup).getByRole('button', { name: 'Trier par TJM' })
+      const matchToggle = () => within(sortGroup).getByRole('button', { name: 'Meilleur match' })
+      expect(rateToggle()).toHaveAttribute('aria-pressed', 'false')
+      expect(matchToggle()).toHaveAttribute('aria-pressed', 'false')
+
+      await userEvent.click(rateToggle())
+      expect(rateToggle()).toHaveAttribute('aria-pressed', 'true')
+      expect(matchToggle()).toHaveAttribute('aria-pressed', 'false')
+
+      await userEvent.click(matchToggle())
+      expect(matchToggle()).toHaveAttribute('aria-pressed', 'true')
+      expect(rateToggle()).toHaveAttribute('aria-pressed', 'false')
+      expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, '', { sortOrder: 'match', remoteModes: [] })
+
+      await userEvent.click(rateToggle())
+      expect(rateToggle()).toHaveAttribute('aria-pressed', 'true')
+      expect(matchToggle()).toHaveAttribute('aria-pressed', 'false')
+    })
+
+    it('offers the best match sort in « À traiter » only, and finds it again on return', async () => {
+      const listOpportunities = jest.fn().mockResolvedValue(EMPTY_LISTING_RESULT)
+      renderBoard({}, false, 'to_process', jest.fn(), listOpportunities, ['React'])
+      await userEvent.click(screen.getByRole('button', { name: 'Meilleur match' }))
+
+      await userEvent.click(screen.getByRole('tab', { name: /^Postulées/ }))
+
+      expect(screen.queryByRole('button', { name: 'Meilleur match' })).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Trier par TJM' })).toHaveAttribute('aria-pressed', 'false')
+
+      await userEvent.click(screen.getByRole('tab', { name: /^À traiter/ }))
+
+      expect(screen.getByRole('button', { name: 'Meilleur match' })).toHaveAttribute('aria-pressed', 'true')
+    })
   })
 })

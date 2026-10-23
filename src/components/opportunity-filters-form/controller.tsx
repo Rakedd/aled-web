@@ -6,6 +6,7 @@ import {
   type OpportunityFilters,
   validateOpportunityFilters,
 } from '@/domain/opportunity-filters'
+import { mergeSkillLists } from '@/domain/opportunity-match'
 import type {
   KeywordListField,
   OpportunityFiltersFormControllerParameters,
@@ -44,12 +45,21 @@ export const useController = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [savedFiltersRevision, setSavedFiltersRevision] = useState(0)
   const isRequestInFlightRef = useRef(false)
 
   const setKeywordList = (keywordListField: KeywordListField, keywords: string[]) =>
     setFilters((currentFilters) => ({
       ...currentFilters,
       [keywordListField]: keywords,
+    }))
+
+  const setMySkills = (mySkills: string[]) => setFilters((currentFilters) => ({ ...currentFilters, mySkills }))
+
+  const addExtractedSkills = (extractedSkills: string[]) =>
+    setFilters((currentFilters) => ({
+      ...currentFilters,
+      mySkills: mergeSkillLists(currentFilters.mySkills, extractedSkills).skills,
     }))
 
   const toggleRegion = (region: string) =>
@@ -111,6 +121,7 @@ export const useController = ({
       setFilters(saveResult.data)
       setRateFloorTexts(toRateFloorTexts(saveResult.data))
       setSuccessMessage(OPPORTUNITY_FILTERS_SAVED_MESSAGE)
+      setSavedFiltersRevision((currentRevision) => currentRevision + 1)
       onDataChanged()
     } catch {
       setErrorMessage(GENERIC_ACTION_ERROR_MESSAGE)
@@ -123,6 +134,8 @@ export const useController = ({
   return {
     filters,
     setKeywordList,
+    setMySkills,
+    addExtractedSkills,
     toggleRegion,
     toggleSource,
     rateFloorTexts,
@@ -131,6 +144,7 @@ export const useController = ({
     isSubmitting,
     errorMessage,
     successMessage,
+    savedFiltersRevision,
     submit,
   }
 }

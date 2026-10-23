@@ -15,6 +15,7 @@ import {
   REMOTE_MODES,
   type OpportunityTab,
 } from '@/domain/opportunities'
+import { OPPORTUNITY_MATCH_MESSAGES } from '@/domain/opportunity-match'
 import { OPPORTUNITY_PREFERENCES_ROUTE } from '@/domain/routes'
 import { useController } from './controller'
 import type { OpportunitiesBoardProps } from './interfaces'
@@ -34,6 +35,7 @@ export const OpportunitiesBoard = ({
   initialTab,
   initialListing,
   hasActiveFilters,
+  mySkills,
   now,
   listOpportunities,
   applyToOpportunity,
@@ -42,7 +44,7 @@ export const OpportunitiesBoard = ({
   markOpportunitiesViewed,
 }: OpportunitiesBoardProps) => {
   const router = useRouter()
-  const { tab, searchInput, hasActiveSearch, quickFilters, items, hasMore, counts, errorMessage, isLoadingListing, isOpportunityPending, isOpportunityNew, isAnyOpportunityPending, applyTo, dismiss, restore, selectTab, changeSearch, toggleSortByRate, toggleRemoteMode, loadMore } =
+  const { tab, searchInput, hasActiveSearch, quickFilters, items, hasMore, counts, errorMessage, isLoadingListing, isOpportunityPending, isOpportunityNew, isAnyOpportunityPending, applyTo, dismiss, restore, selectTab, changeSearch, toggleSortOrder, toggleRemoteMode, loadMore } =
     useController({
       initialTab,
       initialListing,
@@ -55,6 +57,7 @@ export const OpportunitiesBoard = ({
       onTabChanged: (nextTab) => window.history.replaceState(null, '', `?tab=${nextTab}`),
     })
   const { lastReceivedAt } = initialListing
+  const hasSkills = mySkills.length > 0
 
   const renderEmptyState = () => {
     if (hasActiveSearch) return <p className="text-sm text-muted-foreground">Aucune mission ne correspond à ta recherche.</p>
@@ -92,13 +95,24 @@ export const OpportunitiesBoard = ({
           className="min-w-48 flex-1"
           onChange={(event) => changeSearch(event.target.value)}
         />
-        <PillToggle
-          isPressed={quickFilters.sortByRate}
-          onPressedChange={() => void toggleSortByRate()}
-          disabled={isAnyOpportunityPending}
-        >
-          Trier par TJM
-        </PillToggle>
+        <div role="group" aria-label={OPPORTUNITY_MATCH_MESSAGES.sortGroupLabel} className="flex flex-wrap items-center gap-2">
+          <PillToggle
+            isPressed={quickFilters.sortOrder === 'rate'}
+            onPressedChange={() => void toggleSortOrder('rate')}
+            disabled={isAnyOpportunityPending}
+          >
+            Trier par TJM
+          </PillToggle>
+          {hasSkills && tab === 'to_process' && (
+            <PillToggle
+              isPressed={quickFilters.sortOrder === 'match'}
+              onPressedChange={() => void toggleSortOrder('match')}
+              disabled={isAnyOpportunityPending}
+            >
+              {OPPORTUNITY_MATCH_MESSAGES.sortByMatch}
+            </PillToggle>
+          )}
+        </div>
         <div role="group" aria-label="Présentiel" className="flex flex-wrap items-center gap-2">
           {REMOTE_MODES.map((remoteMode) => (
             <PillToggle
@@ -125,6 +139,15 @@ export const OpportunitiesBoard = ({
         onSelect={(tabKey) => void selectTab(tabKey)}
         isDisabled={isLoadingListing || isAnyOpportunityPending}
       />
+      {!hasSkills && (
+        <p className="text-sm text-muted-foreground">
+          {OPPORTUNITY_MATCH_MESSAGES.missingSkillsHintBeforeLink}
+          <Link href={OPPORTUNITY_PREFERENCES_ROUTE} className="underline underline-offset-4">
+            {OPPORTUNITY_MATCH_MESSAGES.missingSkillsHintLink}
+          </Link>
+          {OPPORTUNITY_MATCH_MESSAGES.missingSkillsHintAfterLink}
+        </p>
+      )}
       {errorMessage && (
         <p role="alert" className="text-sm text-destructive">
           {errorMessage}
@@ -144,6 +167,7 @@ export const OpportunitiesBoard = ({
               <li key={opportunity.id}>
                 <OpportunityCard
                   opportunity={opportunity}
+                  mySkills={mySkills}
                   tab={tab}
                   isNew={isOpportunityNew(opportunity)}
                   isPending={isOpportunityPending(opportunity.id)}

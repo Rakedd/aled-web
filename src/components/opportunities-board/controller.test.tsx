@@ -30,6 +30,7 @@ const buildOpportunity = (id: string, overrides: Partial<OpportunityListItem> = 
   receivedAt: new Date('2026-10-18T09:00:00Z'),
   decision: null,
   jobApplicationId: null,
+  sortMatchPercent: null,
   ...overrides,
 })
 
@@ -177,11 +178,13 @@ describe('opportunities-board useController', () => {
       publishedAt: serverItems[49].publishedAt.toISOString(),
       id: 'item-049',
       rate: null,
+      matchPercent: null,
     }, '', NO_OPPORTUNITY_QUICK_FILTERS)
     expect(listOpportunities).toHaveBeenNthCalledWith(2, 'to_process', {
       publishedAt: serverItems[99].publishedAt.toISOString(),
       id: 'item-099',
       rate: null,
+      matchPercent: null,
     }, '', NO_OPPORTUNITY_QUICK_FILTERS)
     const remainingIds = serverItems.map(({ id }) => id).filter((id) => !dismissedIds.has(id))
     expect(dismissedIds.size).toBe(90)
@@ -262,6 +265,7 @@ describe('opportunities-board useController', () => {
       publishedAt: '2026-10-18T08:00:00.000Z',
       id: 'second',
       rate: null,
+      matchPercent: null,
     }, '', NO_OPPORTUNITY_QUICK_FILTERS)
     expect(result.current.items.map(({ id }) => id)).toEqual(['first', 'second', 'third'])
     expect(result.current.hasMore).toBe(false)
@@ -458,7 +462,7 @@ describe('opportunities-board useController', () => {
       expect(listOpportunities).toHaveBeenNthCalledWith(
         3,
         'applied',
-        { publishedAt: '2026-10-18T08:00:00.000Z', id: 'second', rate: null },
+        { publishedAt: '2026-10-18T08:00:00.000Z', id: 'second', rate: null, matchPercent: null },
         'react',
         NO_OPPORTUNITY_QUICK_FILTERS,
       )
@@ -540,11 +544,63 @@ describe('opportunities-board useController', () => {
       const { result, listOpportunities } = renderBoardController()
       listOpportunities.mockResolvedValue(succeeded(buildListing({ items: [buildOpportunity('rated')], hasMore: false })))
 
-      await act(() => result.current.toggleSortByRate())
+      await act(() => result.current.toggleSortOrder('rate'))
 
-      expect(listOpportunities).toHaveBeenCalledWith('to_process', null, '', { sortByRate: true, remoteModes: [] })
-      expect(result.current.quickFilters.sortByRate).toBe(true)
+      expect(listOpportunities).toHaveBeenCalledWith('to_process', null, '', { sortOrder: 'rate', remoteModes: [] })
+      expect(result.current.quickFilters.sortOrder).toBe('rate')
       expect(result.current.items.map(({ id }) => id)).toEqual(['rated'])
+    })
+
+    it('sorts by best match, then back to publication when the match sort is toggled again', async () => {
+      const { result, listOpportunities } = renderBoardController()
+
+      await act(() => result.current.toggleSortOrder('match'))
+      expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, '', { sortOrder: 'match', remoteModes: [] })
+      expect(result.current.quickFilters.sortOrder).toBe('match')
+
+      await act(() => result.current.toggleSortOrder('match'))
+      expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, '', NO_OPPORTUNITY_QUICK_FILTERS)
+      expect(result.current.quickFilters.sortOrder).toBe('publication')
+    })
+
+    it('keeps the rate and match sorts exclusive', async () => {
+      const { result, listOpportunities } = renderBoardController()
+
+      await act(() => result.current.toggleSortOrder('rate'))
+      await act(() => result.current.toggleSortOrder('match'))
+      expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, '', { sortOrder: 'match', remoteModes: [] })
+
+      await act(() => result.current.toggleSortOrder('rate'))
+      expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, '', { sortOrder: 'rate', remoteModes: [] })
+    })
+
+    it('loads more with a cursor carrying the match percent of the last item', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      listOpportunities.mockResolvedValue(
+        succeeded(buildListing({ items: [buildOpportunity('matched', { rateMax: 500, sortMatchPercent: 75 })], hasMore: true })),
+      )
+      await act(() => result.current.toggleSortOrder('match'))
+      listOpportunities.mockResolvedValue(succeeded(buildListing({ items: [], hasMore: false })))
+
+      await act(() => result.current.loadMore())
+
+      expect(listOpportunities).toHaveBeenLastCalledWith(
+        'to_process',
+        { publishedAt: '2026-10-18T08:00:00.000Z', id: 'matched', rate: 500, matchPercent: 75 },
+        '',
+        { sortOrder: 'match', remoteModes: [] },
+      )
+    })
+
+    it('drops the items already loaded when the next page overlaps the current one', async () => {
+      const { result, listOpportunities } = renderBoardController()
+      listOpportunities.mockResolvedValue(
+        succeeded(buildListing({ items: [buildOpportunity('second'), buildOpportunity('third')], hasMore: false })),
+      )
+
+      await act(() => result.current.loadMore())
+
+      expect(result.current.items.map(({ id }) => id)).toEqual(['first', 'second', 'third'])
     })
 
     it('keeps the remote modes in canonical order and removes a mode toggled twice', async () => {
@@ -553,13 +609,13 @@ describe('opportunities-board useController', () => {
       await act(() => result.current.toggleRemoteMode('none'))
       await act(() => result.current.toggleRemoteMode('full'))
       expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, '', {
-        sortByRate: false,
+        sortOrder: 'publication',
         remoteModes: ['full', 'none'],
       })
 
       await act(() => result.current.toggleRemoteMode('full'))
       expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, '', {
-        sortByRate: false,
+        sortOrder: 'publication',
         remoteModes: ['none'],
       })
     })
@@ -584,10 +640,10 @@ describe('opportunities-board useController', () => {
         const { result, listOpportunities } = renderBoardController()
         await typeAndFireSearch(result, 'react')
 
-        await act(() => result.current.toggleSortByRate())
+        await act(() => result.current.toggleSortOrder('rate'))
 
         expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, 'react', {
-          sortByRate: true,
+          sortOrder: 'rate',
           remoteModes: [],
         })
       })
@@ -600,13 +656,13 @@ describe('opportunities-board useController', () => {
           .mockResolvedValueOnce(succeeded(buildListing({ items: [buildOpportunity('both')], hasMore: false })))
         await typeAndFireSearch(result, 'react')
 
-        await act(() => result.current.toggleSortByRate())
+        await act(() => result.current.toggleSortOrder('rate'))
         await act(async () => {
           resolveSearch(succeeded(buildListing({ items: [buildOpportunity('outdated')], hasMore: false })))
         })
 
         expect(listOpportunities).toHaveBeenLastCalledWith('to_process', null, 'react', {
-          sortByRate: true,
+          sortOrder: 'rate',
           remoteModes: [],
         })
         expect(result.current.hasActiveSearch).toBe(true)
@@ -620,7 +676,7 @@ describe('opportunities-board useController', () => {
           .mockReturnValueOnce(new Promise((resolve) => (resolveFilter = resolve)))
           .mockResolvedValueOnce({ ok: false, errorMessage: 'Recherche impossible' })
         act(() => {
-          void result.current.toggleSortByRate()
+          void result.current.toggleSortOrder('rate')
         })
 
         await typeAndFireSearch(result, 'react')
@@ -640,16 +696,16 @@ describe('opportunities-board useController', () => {
       listOpportunities.mockResolvedValue(
         succeeded(buildListing({ items: [buildOpportunity('rated', { rateMax: 650 })], hasMore: true })),
       )
-      await act(() => result.current.toggleSortByRate())
+      await act(() => result.current.toggleSortOrder('rate'))
       listOpportunities.mockResolvedValue(succeeded(buildListing({ items: [], hasMore: false })))
 
       await act(() => result.current.loadMore())
 
       expect(listOpportunities).toHaveBeenLastCalledWith(
         'to_process',
-        { publishedAt: '2026-10-18T08:00:00.000Z', id: 'rated', rate: 650 },
+        { publishedAt: '2026-10-18T08:00:00.000Z', id: 'rated', rate: 650, matchPercent: null },
         '',
-        { sortByRate: true, remoteModes: [] },
+        { sortOrder: 'rate', remoteModes: [] },
       )
     })
 
@@ -660,7 +716,7 @@ describe('opportunities-board useController', () => {
       await act(() => result.current.selectTab('applied'))
 
       expect(listOpportunities).toHaveBeenLastCalledWith('applied', null, '', {
-        sortByRate: false,
+        sortOrder: 'publication',
         remoteModes: ['partial'],
       })
     })
@@ -673,7 +729,7 @@ describe('opportunities-board useController', () => {
         .mockResolvedValueOnce(succeeded(buildListing({ items: [buildOpportunity('latest')], hasMore: false })))
 
       act(() => {
-        void result.current.toggleSortByRate()
+        void result.current.toggleSortOrder('rate')
       })
       await act(() => result.current.toggleRemoteMode('full'))
       await act(async () => {
@@ -681,7 +737,7 @@ describe('opportunities-board useController', () => {
       })
 
       expect(result.current.items.map(({ id }) => id)).toEqual(['latest'])
-      expect(result.current.quickFilters).toEqual({ sortByRate: true, remoteModes: ['full'] })
+      expect(result.current.quickFilters).toEqual({ sortOrder: 'rate', remoteModes: ['full'] })
       expect(result.current.isLoadingListing).toBe(false)
     })
 
@@ -689,7 +745,7 @@ describe('opportunities-board useController', () => {
       const { result, listOpportunities } = renderBoardController()
       listOpportunities.mockResolvedValue({ ok: false, errorMessage: 'Chargement impossible' })
 
-      await act(() => result.current.toggleSortByRate())
+      await act(() => result.current.toggleSortOrder('rate'))
 
       expect(result.current.errorMessage).toBe('Chargement impossible')
       expect(result.current.quickFilters).toEqual(NO_OPPORTUNITY_QUICK_FILTERS)

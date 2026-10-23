@@ -50,9 +50,10 @@ const USER_NOT_FOUND_ERROR_CODE = 'user_not_found'
 const LEGACY_END_CLIENT_BRIEF_LANGUAGE: BriefLanguage = 'fr'
 const LEGACY_OPPORTUNITY_FILTERS_SOURCE = 'free-work'
 
-type EarlierOpportunityFiltersRow = Omit<Tables<'opportunity_filters'>, 'disabled_sources'> & {
+type EarlierOpportunityFiltersRow = Omit<Tables<'opportunity_filters'>, 'disabled_sources' | 'my_skills'> & {
   source?: string
   disabled_sources?: string[]
+  my_skills?: string[]
 }
 
 const isRecord = (candidate: unknown): candidate is Record<string, unknown> =>
@@ -74,7 +75,11 @@ const toFrenchBriefsFromLegacyColumns = (endClient: Tables<'end_clients'>): Tabl
 }
 
 const toSharedOpportunityFiltersRow = (filtersRow: EarlierOpportunityFiltersRow): Tables<'opportunity_filters'> => {
-  const sharedFiltersRow = { ...filtersRow, disabled_sources: filtersRow.disabled_sources ?? [] }
+  const sharedFiltersRow = {
+    ...filtersRow,
+    disabled_sources: filtersRow.disabled_sources ?? [],
+    my_skills: filtersRow.my_skills ?? [],
+  }
   delete sharedFiltersRow.source
   return sharedFiltersRow
 }

@@ -30,5 +30,6 @@ export type OpportunitiesBoardControllerParameters = {
 
 export type OpportunitiesBoardProps = Omit<OpportunitiesBoardControllerParameters, 'onDataChanged' | 'onTabChanged'> & {
   hasActiveFilters: boolean
+  mySkills: string[]
   now: Date
 }

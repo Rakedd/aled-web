@@ -175,6 +175,7 @@ const seedOpportunityFiltersAndDecisions = async (
     user_id: userId,
     disabled_sources: ['collective'],
     include_keywords: ['react'],
+    my_skills: ['React', 'TypeScript'],
     always_exclude_keywords: ['stage'],
     regions: ['Île-de-France'],
     rate_floor_full_remote: 500,
@@ -534,6 +535,7 @@ describe('user data snapshot', () => {
       user_id: owner.userId,
       disabled_sources: ['collective'],
       include_keywords: ['react'],
+      my_skills: ['React', 'TypeScript'],
     })
     expect(snapshot.opportunityDecisions).toEqual(
       expect.arrayContaining([

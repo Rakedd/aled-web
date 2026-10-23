@@ -185,4 +185,44 @@ describe('opportunity-filters-form useController', () => {
     act(() => result.current.toggleRegion("Provence Alpes Côte d'Azur"))
     expect(result.current.filters.regions).toEqual([])
   })
+
+  it('sets my skills and sends them with the filters', async () => {
+    const { result, saveOpportunityFilters } = renderOpportunityFiltersFormController()
+    act(() => result.current.setMySkills(['React', 'Go']))
+
+    await act(() => result.current.submit())
+
+    expect(saveOpportunityFilters).toHaveBeenCalledWith({ ...EMPTY_OPPORTUNITY_FILTERS, mySkills: ['React', 'Go'] })
+  })
+
+  it('never merges more than 100 skills', () => {
+    const { result } = renderOpportunityFiltersFormController()
+    act(() => result.current.setMySkills(Array.from({ length: 99 }, (_, index) => `Techno ${index}`)))
+
+    act(() => result.current.addExtractedSkills(['Docker', 'Kubernetes']))
+
+    expect(result.current.filters.mySkills).toHaveLength(100)
+    expect(result.current.filters.mySkills.at(-1)).toBe('Docker')
+  })
+
+  it('counts the successful saves', async () => {
+    const { result } = renderOpportunityFiltersFormController()
+    expect(result.current.savedFiltersRevision).toBe(0)
+
+    await act(() => result.current.submit())
+
+    expect(result.current.savedFiltersRevision).toBe(1)
+  })
+
+  it('merges extracted skills into my skills by normalized name, keeping every skill added meanwhile', () => {
+    const { result } = renderOpportunityFiltersFormController()
+    act(() => result.current.setMySkills(['React']))
+
+    act(() => {
+      result.current.addExtractedSkills(['ReactJS', 'Docker'])
+      result.current.addExtractedSkills(['docker', 'K8s'])
+    })
+
+    expect(result.current.filters.mySkills).toEqual(['React', 'Docker', 'K8s'])
+  })
 })

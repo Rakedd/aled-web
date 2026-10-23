@@ -153,7 +153,7 @@ Domaine pur `src/domain/opportunity-match.ts`, copié à l'identique sur le mobi
 `normalizeSkillName(name)` :
 1. applique `normalizeEntityName` ;
 2. retire les espaces, `.`, `-` et `_` ;
-3. retire un suffixe `js` si le reste fait au moins 2 caractères ;
+3. retire un suffixe `js` si le reste fait au moins 2 caractères, sauf pour les frameworks distincts de leur homonyme : `angularjs`, `solidjs`, `emberjs`, `nestjs`, `nextjs` et `nuxtjs` gardent leur clé entière ;
 4. applique un petit dictionnaire d'alias :
 
    | Alias | Devient |
@@ -182,7 +182,7 @@ Exemples : « React.js », « reactjs » et « React » sont égaux. « Node.js 
 
 ### Affichage (web)
 - `OpportunityCard` reçoit `mySkills` :
-  - **une pastille** « 75 % match » à côté du TJM, teintée selon le niveau, avec le nom accessible « Correspondance avec tes compétences : 3 sur 4 » ;
+  - **une pastille** « 75 % match » à côté du TJM, teintée selon le niveau, avec le nom accessible « Correspondance avec tes compétences : 3 sur 4 (Très bon match) ». Le niveau est aussi écrit en clair au-dessus de la ligne de compétences ;
   - **une ligne de compétences** : celles de l'annonce, les communes mises en avant (teinte et icône de coche, pas seulement la couleur). Huit au maximum, puis « +N » ;
   - sans compétences à l'annonce ou chez l'utilisateur, pas de pastille.
 - `OpportunitiesBoard` :

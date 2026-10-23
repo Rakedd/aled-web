@@ -1,18 +1,39 @@
 'use client'
 
+import { Check } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { Pill } from '@/components/pill'
+import type { PillTone } from '@/components/pill/interfaces'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { isExternalLinkUrl } from '@/domain/client-brief'
 import { formatOpportunityRate, OPPORTUNITY_SOURCE_LABELS, REMOTE_MODE_LABELS } from '@/domain/opportunities'
+import {
+  describeHiddenSkillCount,
+  describeOpportunityMatchForScreenReaders,
+  describeOpportunityMatchLevel,
+  formatOpportunityMatchPercent,
+  formatOpportunityMatchSummary,
+  OPPORTUNITY_MATCH_MESSAGES,
+  type OpportunityMatchLevel,
+} from '@/domain/opportunity-match'
 import { jobApplicationRoute } from '@/domain/routes'
 import { cn } from '@/lib/utils'
+import { buildOpportunitySkillLine } from './build-opportunity-skill-line'
 import { formatOpportunityPublication } from './format-opportunity-publication'
 import type { OpportunityCardProps } from './interfaces'
 
+const NO_SKILLS: string[] = []
+
+const MATCH_LEVEL_TONES: Record<OpportunityMatchLevel, PillTone> = {
+  strong: 'forest-soft',
+  good: 'peach',
+  weak: 'neutral',
+}
+
 export const OpportunityCard = ({
   opportunity,
+  mySkills = NO_SKILLS,
   tab,
   isCompact,
   isNew,
@@ -24,6 +45,8 @@ export const OpportunityCard = ({
 }: OpportunityCardProps) => {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
   const descriptionId = `opportunity-description-${opportunity.id}`
+  const { match, visibleSkills, hiddenSkillCount } = buildOpportunitySkillLine(opportunity.skills, mySkills)
+  const matchLevel = match === null ? null : describeOpportunityMatchLevel(match.percent)
   const facts = [
     opportunity.company,
     opportunity.remoteMode === null ? null : REMOTE_MODE_LABELS[opportunity.remoteMode],
@@ -60,15 +83,54 @@ export const OpportunityCard = ({
           <Pill tone="neutral">{OPPORTUNITY_SOURCE_LABELS[opportunity.source]}</Pill>
           {isNew && <Pill tone="lilac">nouveau</Pill>}
         </div>
-        <p className={cn('shrink-0 font-heading font-extrabold text-accent-text', isCompact ? 'text-lg' : 'text-xl')}>
-          {formatOpportunityRate(opportunity)}
-        </p>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          {match !== null && matchLevel !== null && (
+            <Pill tone={MATCH_LEVEL_TONES[matchLevel.level]}>
+              <span aria-hidden="true">{formatOpportunityMatchPercent(match.percent)}</span>
+              <span className="sr-only">{describeOpportunityMatchForScreenReaders(match)}</span>
+            </Pill>
+          )}
+          <p className={cn('font-heading font-extrabold text-accent-text', isCompact ? 'text-lg' : 'text-xl')}>
+            {formatOpportunityRate(opportunity)}
+          </p>
+        </div>
       </header>
       <ul className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
         {facts.map((fact, factIndex) => (
           <li key={`${factIndex}-${fact}`}>{fact}</li>
         ))}
       </ul>
+      {!isCompact && visibleSkills.length > 0 && (
+        <div className="flex min-w-0 flex-col gap-1.5">
+          {match !== null && (
+            <p aria-hidden="true" className="text-xs font-medium text-muted-foreground">
+              {formatOpportunityMatchSummary(match)}
+            </p>
+          )}
+          <ul aria-label={OPPORTUNITY_MATCH_MESSAGES.opportunitySkillsLabel} className="flex min-w-0 flex-wrap gap-1.5">
+            {visibleSkills.map((skillChip) => (
+              <li key={skillChip.name} className="min-w-0 max-w-full">
+                <Pill
+                  tone={skillChip.isShared ? MATCH_LEVEL_TONES.strong : 'neutral'}
+                  className="max-w-full gap-1 whitespace-normal"
+                >
+                  {skillChip.isShared && <Check className="size-3 shrink-0" strokeWidth={2} aria-hidden="true" />}
+                  <span className="min-w-0 break-words">{skillChip.name}</span>
+                  {skillChip.isShared && <span className="sr-only">{OPPORTUNITY_MATCH_MESSAGES.sharedSkillSuffix}</span>}
+                </Pill>
+              </li>
+            ))}
+            {hiddenSkillCount > 0 && (
+              <li>
+                <Pill tone="neutral">
+                  <span aria-hidden="true">+{hiddenSkillCount}</span>
+                  <span className="sr-only">{describeHiddenSkillCount(hiddenSkillCount)}</span>
+                </Pill>
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
       {!isCompact && opportunity.description && (
         <div className="flex flex-col items-start gap-1">
           <p id={descriptionId} className={cn('whitespace-pre-line break-words text-sm', !isDescriptionExpanded && 'line-clamp-3')}>

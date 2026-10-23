@@ -197,10 +197,15 @@ describe('parseUserDataSnapshot', () => {
       rate_floor_onsite: null,
       regions: ['Île-de-France'],
       disabled_sources: [],
+      my_skills: [],
       created_at: '2026-10-05T10:00:00+00:00',
       updated_at: '2026-10-05T10:00:00+00:00',
     }
-    const { disabled_sources: absentFromEarlierSnapshots, ...earlierFreeWorkFilters } = sharedFilters
+    const {
+      disabled_sources: absentFromEarlierSnapshots,
+      my_skills: skillsAbsentFromEarlierSnapshots,
+      ...earlierFreeWorkFilters
+    } = sharedFilters
     const earlierCollectiveFilters = {
       ...earlierFreeWorkFilters,
       id: '77777777-7777-4777-8777-777777777776',
@@ -213,10 +218,11 @@ describe('parseUserDataSnapshot', () => {
     })
 
     expect(absentFromEarlierSnapshots).toEqual([])
+    expect(skillsAbsentFromEarlierSnapshots).toEqual([])
     expect(parsedSnapshot.opportunityFilters).toEqual([sharedFilters])
   })
 
-  it('keeps the disabled sources of a current snapshot', () => {
+  it('keeps the disabled sources and my skills of a current snapshot', () => {
     const currentFilters: Tables<'opportunity_filters'> = {
       id: '66666666-6666-4666-8666-666666666667',
       user_id: SNAPSHOT_USER_ID,
@@ -229,6 +235,7 @@ describe('parseUserDataSnapshot', () => {
       rate_floor_onsite: null,
       regions: [],
       disabled_sources: ['collective'],
+      my_skills: ['React', 'TypeScript'],
       created_at: '2026-10-21T10:00:00+00:00',
       updated_at: '2026-10-21T10:00:00+00:00',
     }
