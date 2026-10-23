@@ -104,7 +104,7 @@ La landing page de `aled.work` vit dans ce projet, sous le segment interne `src/
 
 ### Checklist de lancement
 
-1. L'inscription publique existe sur `app.aled.work/inscription` (projet séparé) et la relecture du contrat est livrée.
+1. L'inscription publique existe sur `app.aled.work/inscription` est livrée (voir « Mettre en production les inscriptions ») et la relecture du contrat aussi.
 2. Les emplacements `[À COMPLÉTER` de `src/domain/legal-copy.ts` sont remplis, et le test « contains no placeholder left » de `src/domain/legal-copy.test.ts` est activé (retirer le `.skip`).
 3. La page Confidentialité couvre aussi l'app (comptes, candidatures, clé API).
 4. Dans Vercel : renseigner `LANDING_HOSTNAMES` et `APP_ORIGIN` en Production, activer Web Analytics, retirer la redirection de `aled.work` (voir « Domaine de production »), puis déployer.
@@ -174,7 +174,7 @@ Le code et la configuration locale (`supabase/config.toml`) sont prêts. Les ré
    - **Site URL** : `https://app.aled.work` ;
    - **Redirect URLs** : `https://app.aled.work/auth/callback` et `aled://auth/callback` (le schéma `aled://` sert à l'application mobile).
 3. **Authentication > Email Templates** : coller le contenu de `supabase/templates/confirmation.html` dans **Confirm signup** et celui de `supabase/templates/recovery.html` dans **Reset password**, avec les mêmes objets que ceux du fichier.
-4. **Authentication > Rate Limits** : Resend est déjà le SMTP du projet, donc relever la limite d'envoi d'e-mails (« Rate limit for sending emails »), par exemple à 30 par heure. Vérifier que l'intervalle minimal entre deux e-mails (« Minimum interval between emails », réglage du fournisseur e-mail ou des limites de débit dans **Authentication**) vaut 60 secondes ou plus ; l'emplacement exact est à confirmer dans le tableau de bord. Cela empêche des répétitions rapides de révéler si un compte existe et limite les abus. Attention : Supabase voit l'IP du serveur Vercel, pas celle de l'utilisateur. Les limites par IP s'appliquent donc à tous les utilisateurs ensemble.
+4. **Authentication > Rate Limits** : Resend est déjà le SMTP du projet, donc relever la limite d'envoi d'e-mails (« Rate limit for sending emails »), par exemple à 30 par heure. Vérifier que l'intervalle minimal entre deux e-mails (« Minimum interval between emails ») vaut 60 secondes ou plus. L'emplacement exact de ce réglage dans le tableau de bord n'a pas été vérifié, faute d'accès au tableau de bord hébergé : il se trouve probablement dans **Authentication > Rate Limits** ou dans les réglages du fournisseur e-mail. Cela empêche des répétitions rapides de révéler si un compte existe et limite les abus. Attention : Supabase voit l'IP du serveur Vercel, pas celle de l'utilisateur. Les limites par IP s'appliquent donc à tous les utilisateurs ensemble.
 5. Variables Vercel (Production) : `APP_ORIGIN` et `LANDING_HOSTNAMES`, déjà renseignées le jour du lancement de la landing (voir « Projet Vercel »). Sans hôte de landing, les liens légaux pointent vers `/vitrine/...`, qui est une 404 sur l'hôte de l'application, et l'application journalise `Landing hostname missing for legal links` (`console.error`).
 
 ### 2. Google
@@ -212,7 +212,7 @@ Les blocs `[auth.external.google]` et `[auth.external.linkedin_oidc]` de `supaba
 3. Passer `enabled = true` dans le bloc voulu.
 4. Redémarrer Supabase : `npx supabase stop && npx supabase start`.
 
-Réglages locaux déjà en place : inscriptions et confirmations activées, mot de passe de 8 caractères minimum, `email_sent` à 30 et intervalle minimal d'une seconde entre deux e-mails (`max_frequency`).
+Réglages locaux déjà en place : inscriptions et confirmations activées, mot de passe de 8 caractères minimum, `email_sent` à 30 et intervalle minimal d'une seconde entre deux e-mails (`max_frequency = "1s"`). Cette valeur sert uniquement au développement et ne s'applique pas en production.
 
 ## Export et sauvegardes
 
