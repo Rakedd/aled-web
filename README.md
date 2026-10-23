@@ -104,7 +104,7 @@ La landing page de `aled.work` vit dans ce projet, sous le segment interne `src/
 
 ### Checklist de lancement
 
-1. L'inscription publique existe sur `app.aled.work/inscription` est livrée (voir « Mettre en production les inscriptions ») et la relecture du contrat aussi.
+1. L'inscription publique sur `app.aled.work/inscription` est livrée (voir « Mettre en production les inscriptions ») et la relecture du contrat aussi.
 2. Les emplacements `[À COMPLÉTER` de `src/domain/legal-copy.ts` sont remplis, et le test « contains no placeholder left » de `src/domain/legal-copy.test.ts` est activé (retirer le `.skip`).
 3. La page Confidentialité couvre aussi l'app (comptes, candidatures, clé API).
 4. Dans Vercel : renseigner `LANDING_HOSTNAMES` et `APP_ORIGIN` en Production, activer Web Analytics, retirer la redirection de `aled.work` (voir « Domaine de production »), puis déployer.
