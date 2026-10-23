@@ -1,5 +1,5 @@
 import { INVALID_EMAIL_ADDRESS_MESSAGE } from '@/domain/email-address'
-import { MAXIMUM_NAME_LENGTH } from '@/domain/profile-settings'
+import { MAXIMUM_NAME_LENGTH } from '@/domain/person-name'
 import * as signUpModule from '@/domain/sign-up'
 import {
   MINIMUM_PASSWORD_LENGTH,

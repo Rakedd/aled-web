@@ -1,5 +1,6 @@
 import type { ActionResult } from './action-result'
 import { isRecord, rejectWith } from './input-validation'
+import { MAXIMUM_NAME_LENGTH } from './person-name'
 import { isProfessionalStatus, type ProfessionalStatus } from './sign-up'
 
 export type ProfileLink = { label: string; url: string }
@@ -24,7 +25,6 @@ export const MAXIMUM_FOLLOW_UP_DELAY_DAYS = 60
 export const MAXIMUM_PROFILE_LINK_COUNT = 10
 const REQUIRED_PROFILE_LINK_URL_PREFIX = 'https://'
 
-export const MAXIMUM_NAME_LENGTH = 100
 const MAXIMUM_LINK_LABEL_LENGTH = 50
 const MAXIMUM_LINK_URL_LENGTH = 2048
 

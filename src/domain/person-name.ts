@@ -1,0 +1,1 @@
+export const MAXIMUM_NAME_LENGTH = 100

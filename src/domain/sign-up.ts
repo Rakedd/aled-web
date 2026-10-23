@@ -1,5 +1,5 @@
 import { INVALID_EMAIL_ADDRESS_MESSAGE, isValidEmailAddress } from '@/domain/email-address'
-import { MAXIMUM_NAME_LENGTH } from '@/domain/profile-settings'
+import { MAXIMUM_NAME_LENGTH } from '@/domain/person-name'
 
 export const PROFESSIONAL_STATUSES = ['freelance', 'employee'] as const
 
