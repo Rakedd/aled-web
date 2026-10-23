@@ -62,18 +62,26 @@ const renderButton = (initialPreparation: InterviewPreparation, hasAnthropicApiK
 }
 
 describe('InterviewPreparationButton', () => {
-  it('shows the technical brief block in the modal for the displayed language and follows the language change', async () => {
+  it('shows the technical brief button under the preparation button and follows the language change', async () => {
     const { getTechnicalBriefView } = renderButton(completePreparation)
-    await userEvent.click(screen.getByRole('button', { name: 'Brief généré · voir mon brief' }))
-    expect(await screen.findByRole('region', { name: 'Brief technique' })).toBeInTheDocument()
-    expect(getTechnicalBriefView).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'fr')
+    const preparationButton = screen.getByRole('button', { name: 'Brief généré · voir mon brief' })
+    const technicalBriefButton = screen.getByRole('button', { name: 'Brief technique · voir' })
+    expect(preparationButton.compareDocumentPosition(technicalBriefButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    await waitFor(() => expect(getTechnicalBriefView).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'fr'))
     await userEvent.selectOptions(screen.getByLabelText('Langue du brief'), 'en')
     await waitFor(() => expect(getTechnicalBriefView).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'en'))
   })
 
-  it('generates the technical brief through the route handler fetch, not a server action', async () => {
+  it('does not show the technical brief inside the preparation modal', async () => {
     renderButton(completePreparation)
     await userEvent.click(screen.getByRole('button', { name: 'Brief généré · voir mon brief' }))
+    expect(within(screen.getByRole('dialog')).queryByRole('button', { name: 'Préparer mon pitch' })).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: "Préparation d'entretien" })).toBeInTheDocument()
+  })
+
+  it('generates the technical brief through the route handler fetch, not a server action', async () => {
+    renderButton(completePreparation)
+    await userEvent.click(screen.getByRole('button', { name: 'Brief technique · voir' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Préparer mon pitch' }))
     expect(requestTechnicalBriefGeneration).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'fr')
   })

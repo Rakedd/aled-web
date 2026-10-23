@@ -16,8 +16,11 @@ export type TransientOutcome = 'cv_missing_information' | 'cv_unreadable'
 
 export type TechnicalBriefSectionProps = {
   jobApplicationId: string
-  language: BriefLanguage
   hasAnthropicApiKey: boolean
-  getTechnicalBriefView: GetTechnicalBriefView
-  generateTechnicalBrief: GenerateTechnicalBrief
+  view: TechnicalBriefView | null
+  isLoading: boolean
+  isGenerating: boolean
+  errorMessage: string | null
+  transientOutcome: TransientOutcome | null
+  generate: () => Promise<void>
 }

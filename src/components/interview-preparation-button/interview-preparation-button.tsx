@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
 import { InterviewPreparationModal } from '@/components/interview-preparation-modal'
 import { MissingAnthropicApiKeyNotice } from '@/components/missing-anthropic-api-key-notice'
-import { TechnicalBriefSection } from '@/components/technical-brief-section'
+import { TechnicalBriefButton } from '@/components/technical-brief-button'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { BRIEF_LANGUAGES, BRIEF_LANGUAGE_LABELS, isBriefLanguage } from '@/domain/interview-preparation'
@@ -76,6 +76,15 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
           ))}
         </select>
       </div>
+      <div>
+        <TechnicalBriefButton
+          jobApplicationId={jobApplicationId}
+          language={preparation.language}
+          hasAnthropicApiKey={hasAnthropicApiKey}
+          getTechnicalBriefView={getTechnicalBriefView}
+          generateTechnicalBrief={requestTechnicalBriefGeneration}
+        />
+      </div>
       {!isModalOpen && errorMessage && (
         <p role="alert" className="text-sm text-destructive">
           {errorMessage}
@@ -95,15 +104,6 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
         notesSaveStatus={notesSaveStatus}
         notesErrorMessage={notesErrorMessage}
         retryNotesSave={retryNotesSave}
-        technicalBriefSlot={
-          <TechnicalBriefSection
-            jobApplicationId={jobApplicationId}
-            language={preparation.language}
-            hasAnthropicApiKey={hasAnthropicApiKey}
-            getTechnicalBriefView={getTechnicalBriefView}
-            generateTechnicalBrief={requestTechnicalBriefGeneration}
-          />
-        }
         finalFocusRef={openingButtonRef}
       />
     </section>

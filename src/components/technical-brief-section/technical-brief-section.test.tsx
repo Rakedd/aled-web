@@ -1,8 +1,9 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { ComponentProps } from 'react'
 import type { BriefLanguage } from '@/domain/interview-preparation'
 import type { TechnicalBrief, TechnicalBriefView } from '@/domain/technical-brief'
+import { useController } from '@/components/technical-brief-button/controller'
+import type { TechnicalBriefButtonControllerParameters } from '@/components/technical-brief-button/interfaces'
 import { TechnicalBriefSection } from './technical-brief-section'
 
 const JOB_APPLICATION_ID = '4f1e0a52-1b3c-4d5e-8f60-71829304a5b6'
@@ -53,14 +54,25 @@ const buildView = (overrides: Partial<TechnicalBriefView> = {}): TechnicalBriefV
   ...overrides,
 })
 
+const ControlledSection = (controllerParameters: TechnicalBriefButtonControllerParameters) => {
+  const sectionState = useController(controllerParameters)
+  return (
+    <TechnicalBriefSection
+      jobApplicationId={controllerParameters.jobApplicationId}
+      hasAnthropicApiKey={controllerParameters.hasAnthropicApiKey}
+      {...sectionState}
+    />
+  )
+}
+
 const renderSection = (
   view: TechnicalBriefView,
-  overrides: Partial<ComponentProps<typeof TechnicalBriefSection>> = {},
+  overrides: Partial<TechnicalBriefButtonControllerParameters> = {},
 ) => {
   const getTechnicalBriefView = jest.fn().mockResolvedValue({ ok: true, data: view })
   const generateTechnicalBrief = jest.fn().mockResolvedValue({ ok: true, data: { kind: 'cv_unreadable' } })
   render(
-    <TechnicalBriefSection
+    <ControlledSection
       jobApplicationId={JOB_APPLICATION_ID}
       language={'fr' as BriefLanguage}
       hasAnthropicApiKey

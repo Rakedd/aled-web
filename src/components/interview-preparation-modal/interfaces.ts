@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from 'react'
+import type { RefObject } from 'react'
 import type { BriefLanguage, InterviewPreparation } from '@/domain/interview-preparation'
 
 export type NotesSaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved' | 'failed'
@@ -22,7 +22,6 @@ export type InterviewPreparationModalProps = {
   notesSaveStatus: NotesSaveStatus
   notesErrorMessage: string | null
   retryNotesSave: () => void
-  technicalBriefSlot: ReactNode
   finalFocusRef: RefObject<HTMLElement | null>
 }
 

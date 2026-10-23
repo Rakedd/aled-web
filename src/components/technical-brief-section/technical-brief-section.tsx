@@ -13,10 +13,8 @@ import {
   type TechnicalBriefMission,
 } from '@/domain/technical-brief'
 import { cn } from '@/lib/utils'
-import { useController } from './controller'
 import type { TechnicalBriefSectionProps, TransientOutcome } from './interfaces'
 
-const SECTION_TITLE_ID = 'technical-brief-title'
 const STORYLINE_TITLE_ID = 'technical-brief-storyline-title'
 const MISSIONS_TITLE_ID = 'technical-brief-missions-title'
 const GAPS_TITLE_ID = 'technical-brief-gaps-title'
@@ -156,9 +154,16 @@ const TransientOutcomeNotice = ({ transientOutcome }: { transientOutcome: Transi
   </div>
 )
 
-export const TechnicalBriefSection = (sectionProps: TechnicalBriefSectionProps) => {
-  const { jobApplicationId, hasAnthropicApiKey } = sectionProps
-  const { view, isLoading, isGenerating, errorMessage, transientOutcome, generate } = useController(sectionProps)
+export const TechnicalBriefSection = ({
+  jobApplicationId,
+  hasAnthropicApiKey,
+  view,
+  isLoading,
+  isGenerating,
+  errorMessage,
+  transientOutcome,
+  generate,
+}: TechnicalBriefSectionProps) => {
   const chooseSentCvLink = (
     <a
       href={`${jobApplicationTabRoute(jobApplicationId, 'apercu')}#cv-envoye`}
@@ -172,18 +177,9 @@ export const TechnicalBriefSection = (sectionProps: TechnicalBriefSectionProps) 
   const brief = view?.brief ?? null
 
   return (
-    <section
-      aria-labelledby={SECTION_TITLE_ID}
-      aria-busy={isLoading}
-      className="flex flex-col gap-3 rounded-lg border border-border p-3"
-    >
+    <div aria-busy={isLoading} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex flex-col gap-0.5">
-          <h3 id={SECTION_TITLE_ID} className="text-sm font-semibold">
-            {TECHNICAL_BRIEF_MESSAGES.title}
-          </h3>
-          {brief !== null && <p className="text-xs text-muted-foreground">{formatTechnicalBriefSource(brief)}</p>}
-        </div>
+        {brief !== null && <p className="text-xs text-muted-foreground">{formatTechnicalBriefSource(brief)}</p>}
         {view !== null && brief !== null && view.availability === 'ready' && hasAnthropicApiKey && (
           <Button
             type="button"
@@ -236,6 +232,6 @@ export const TechnicalBriefSection = (sectionProps: TechnicalBriefSectionProps) 
           {errorMessage}
         </p>
       )}
-    </section>
+    </div>
   )
 }

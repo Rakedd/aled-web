@@ -54,7 +54,6 @@ const InterviewPreparationModalContent = ({
   notesSaveStatus,
   notesErrorMessage,
   retryNotesSave,
-  technicalBriefSlot,
 }: InterviewPreparationModalContentProps) => {
   const { regenerationLanguage, changeRegenerationLanguage, requestRegeneration } = useController({
     language: preparation.language,
@@ -147,7 +146,6 @@ const InterviewPreparationModalContent = ({
           </ol>
         </section>
       )}
-      {technicalBriefSlot}
       {brief !== null && brief.sources.length > 0 && (
         <details className="rounded-lg border border-border p-3">
           <summary className="cursor-pointer text-sm font-medium">Voir les sources ({brief.sources.length})</summary>

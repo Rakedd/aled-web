@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { guardActionCall } from '@/domain/action-result'
-import type { TechnicalBriefView } from '@/domain/technical-brief'
-import type { TechnicalBriefSectionProps, TransientOutcome } from './interfaces'
+import { TECHNICAL_BRIEF_MESSAGES, type TechnicalBriefView } from '@/domain/technical-brief'
+import type { TransientOutcome } from '@/components/technical-brief-section/interfaces'
+import type { TechnicalBriefButtonControllerParameters } from './interfaces'
 
 export const useController = ({
   jobApplicationId,
@@ -9,7 +10,8 @@ export const useController = ({
   hasAnthropicApiKey,
   getTechnicalBriefView,
   generateTechnicalBrief,
-}: TechnicalBriefSectionProps) => {
+}: TechnicalBriefButtonControllerParameters) => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [view, setView] = useState<TechnicalBriefView | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -75,5 +77,20 @@ export const useController = ({
     setTransientOutcome(generationResult.data.kind)
   }
 
-  return { view, isLoading, isGenerating, errorMessage, transientOutcome, generate }
+  const openDialog = () => setIsDialogOpen(true)
+  const closeDialog = () => setIsDialogOpen(false)
+  const buttonLabel = isGenerating ? TECHNICAL_BRIEF_MESSAGES.generationProgress : 'Brief technique · voir'
+
+  return {
+    view,
+    isLoading,
+    isGenerating,
+    errorMessage,
+    transientOutcome,
+    generate,
+    isDialogOpen,
+    openDialog,
+    closeDialog,
+    buttonLabel,
+  }
 }
