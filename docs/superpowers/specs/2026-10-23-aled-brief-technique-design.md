@@ -74,7 +74,7 @@ Toutes les entrées sont **des données, pas des instructions**. Elles sont pass
 - **Sortie structurée** (`zodOutputFormat`), dans la langue choisie (`BRIEF_LANGUAGES` : fr, en). Le schéma (§3.1) borne les longueurs pour que le brief reste lisible en deux minutes.
 - **Déclenchement :** un bouton dédié dans le bloc. Le brief technique n'est **pas** généré automatiquement avec le brief client **[choix du rédacteur]** : c'est un appel plus coûteux, qui demande un CV, et qu'on relance quand le CV envoyé change.
 - **Une action serveur à part [choix du rédacteur]**, distincte de `generateInterviewPreparation`, avec sa propre requête et donc son propre budget de temps sous le `maxDuration = 300` de la page. Elle ne touche ni au brief client ni aux questions.
-- **Durées :** 120 s par requête, 1 nouvel essai, dans un budget total de 280 s. Le nouvel essai n'est tenté que s'il reste au moins 125 s. Libellé pendant la génération : « Préparation de ton pitch… (jusqu'à 2 min) ».
+- **Durées :** 120 s par requête et 1 nouvel essai, soit 240 s au pire, sous les 300 s de la page. Libellé pendant la génération : « Préparation de ton pitch… (jusqu'à 2 min) ».
 - **Langue :** le bloc suit la langue affichée dans la fenêtre, avec le même sélecteur. Chaque langue a son propre brief technique. Si on passe à une langue jamais générée, le bloc affiche l'état « Prêt, jamais généré » pour cette langue, comme les questions **[choix du rédacteur]**.
 - **CV illisible [choix du rédacteur] :** un PDF scanné sans texte, ou refusé par l'API, est signalé par `cvStatus: 'unreadable'`, ou par l'erreur de l'API sur le document. Message : « Impossible de lire ce CV. Dépose une version PDF exportée depuis ton éditeur, pas un scan. », avec le bouton « Améliorer mon CV ».
 - **Refus, clé invalide, débit, délai :** les messages existants (`AI_ERROR_MESSAGES` et le même schéma que `INTERVIEW_QUESTIONS_AI_ERROR_MESSAGES`), formulés pour ce bloc.
@@ -120,7 +120,7 @@ Le bloc s'ajoute dans la fenêtre « Préparer l'entretien », **sous le brief c
 - **3 · Points à préparer :** « Leur stack contient des choses que ton CV ne montre pas. C'est là que tomberont les questions : », puis une ligne par écart.
 - **Si le CV envoyé a changé** depuis la génération, c'est-à-dire que `cv_version_id` est différent du CV envoyé actuel ou vaut null, on affiche « Ton CV envoyé a changé depuis ce brief. », avec « Régénérer » mis en avant **[choix du rédacteur]**. Seul le CV compte pour cette mention : une stack ou une fiche de poste modifiée ne la déclenche pas, l'utilisateur régénère s'il le souhaite.
 - **Priorité des états [choix du rédacteur] :** un brief enregistré est toujours affiché, même si la candidature n'a plus de CV envoyé. Dans ce cas, la mention « CV changé » s'affiche, et « Régénérer » est remplacé par « Choisir le CV envoyé ».
-- **Libellé du CV :** celui du CV de la bibliothèque. Si ce CV a été supprimé entre-temps, on affiche « CV supprimé · version du {date} ».
+- **Libellé du CV :** le libellé et la date de la version sont **enregistrés avec le brief** au moment de la génération. L'en-tête reste donc juste même si le CV est supprimé ensuite.
 
 ### 4.2 États sans brief
 
@@ -140,6 +140,7 @@ Nouvelle table **`technical_briefs`**, sur le modèle de `interview_questions` :
 - `id`, `user_id`, `job_application_id` ;
 - `language` (`fr` | `en`) ;
 - `cv_version_id`, la version du CV utilisée ;
+- `cv_label` et `cv_uploaded_at`, copiés de cette version au moment de la génération ;
 - `content` (jsonb, le résultat validé du §3.1) ;
 - `generated_at`.
 
@@ -153,7 +154,7 @@ Règles :
 
 Le brief est lié à **la candidature**, pas au client final comme le brief client : il dépend du CV envoyé et de la stack de cette mission.
 
-L'export des données (`build-user-data-snapshot`) inclut la nouvelle table, comme `interview_questions`. Il n'existe pas de restauration à adapter.
+L'export des données (`build-user-data-snapshot`) et la restauration (`scripts/restore-user-data-snapshot.ts`) incluent la nouvelle table, comme `interview_questions`. Les versions de CV sont restaurées avec leur PDF, donc `cv_version_id` reste valide.
 
 ## 6. Tests
 
@@ -170,7 +171,7 @@ L'export des données (`build-user-data-snapshot`) inclut la nouvelle table, com
   - génération et enregistrement, puis upsert à la régénération ;
   - isolation : impossible de viser la candidature ou le CV d'un autre utilisateur ;
   - suppression de la version de CV → `cv_version_id` à null ;
-  - export des données.
+  - export et restauration des données.
 - **Composants :** chaque état du §4.2, l'affichage du brief (fil rouge, cartes, « Passe vite sur », points à préparer) et le bouton « Améliorer mon CV » vers `/cv`.
 
 ## 7. Laissé au constructeur
