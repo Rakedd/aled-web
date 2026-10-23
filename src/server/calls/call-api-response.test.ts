@@ -2,6 +2,7 @@
 import { CALL_LOG_MESSAGES, toCallApiError, type ServerCallApiErrorKind } from '@/domain/call-log'
 import {
   CALL_API_ERROR_STATUSES,
+  PASTED_TEXT_REQUEST_BODY_MAXIMUM_LENGTH,
   UNAUTHORIZED_CALL_API_ERROR,
   callApiErrorResponse,
   callApiSuccessResponse,
@@ -63,6 +64,29 @@ describe('call api response', () => {
     const oversizedBody = JSON.stringify({ text: 'a'.repeat(64 * 1024) })
     const readRequest = new Request('http://localhost/x', { method: 'POST', body: oversizedBody })
     expect(await readJsonRequestBody(readRequest)).toEqual({ ok: false, failure: 'too_large' })
+  })
+
+  it('accepts a larger body when the route raises the limit, declared or read', async () => {
+    const accentedPostingBody = JSON.stringify({ rawText: 'é'.repeat(50_000) })
+    const declaredBodyLength = String(Buffer.byteLength(accentedPostingBody))
+    const accentedPostingRequest = () =>
+      new Request('http://localhost/x', {
+        method: 'POST',
+        body: accentedPostingBody,
+        headers: { 'content-length': declaredBodyLength },
+      })
+    expect(await readJsonRequestBody(accentedPostingRequest())).toEqual({ ok: false, failure: 'too_large' })
+    expect(await readJsonRequestBody(accentedPostingRequest(), PASTED_TEXT_REQUEST_BODY_MAXIMUM_LENGTH)).toEqual({
+      ok: true,
+      body: { rawText: 'é'.repeat(50_000) },
+    })
+    expect(PASTED_TEXT_REQUEST_BODY_MAXIMUM_LENGTH).toBe(256 * 1024)
+    const oversizedBody = JSON.stringify({ text: 'a'.repeat(256 * 1024) })
+    const readRequest = new Request('http://localhost/x', { method: 'POST', body: oversizedBody })
+    expect(await readJsonRequestBody(readRequest, PASTED_TEXT_REQUEST_BODY_MAXIMUM_LENGTH)).toEqual({
+      ok: false,
+      failure: 'too_large',
+    })
   })
 
   it('answers 413 for a body that is too large and 400 for a malformed one', async () => {

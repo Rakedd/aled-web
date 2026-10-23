@@ -83,6 +83,20 @@ describe('extractJobPosting', () => {
     expect(requestOptions).toEqual(expect.objectContaining({ maxRetries: 1 }))
   })
 
+  it('waits one minute per attempt and retries once by default', async () => {
+    const client = createFakeAnthropicClientReturning(emptyExtraction)
+    await extractJobPosting(client, 'Mission React')
+    const [, requestOptions] = readCreateCall(client)
+    expect(requestOptions).toEqual({ maxRetries: 1, timeout: 60_000 })
+  })
+
+  it('applies the request limits given by a caller with a shorter time budget', async () => {
+    const client = createFakeAnthropicClientReturning(emptyExtraction)
+    await extractJobPosting(client, 'Mission React', { timeoutInMilliseconds: 50_000, maxRetries: 0 })
+    const [, requestOptions] = readCreateCall(client)
+    expect(requestOptions).toEqual({ maxRetries: 0, timeout: 50_000 })
+  })
+
   it('does not ask the model for the stack item origin', async () => {
     const client = createFakeAnthropicClientReturning(emptyExtraction)
     await extractJobPosting(client, 'Mission React')

@@ -9,8 +9,13 @@ import { extractedStackItemSchema, toStackItems } from './extracted-stack-item-s
 import { readStructuredOutputText } from './read-structured-output-text'
 
 const EXTRACTION_MAX_OUTPUT_TOKENS = 8_000
-const EXTRACTION_TIMEOUT_IN_MILLISECONDS = 60_000
-const EXTRACTION_MAX_RETRIES = 1
+
+export type JobPostingExtractionRequestLimits = { timeoutInMilliseconds: number; maxRetries: number }
+
+const DEFAULT_EXTRACTION_REQUEST_LIMITS: JobPostingExtractionRequestLimits = {
+  timeoutInMilliseconds: 60_000,
+  maxRetries: 1,
+}
 
 const JOB_POSTING_EXTRACTION_SYSTEM_PROMPT = `You extract structured data from a freelance job posting pasted by a freelancer who tracks the missions they apply to. Postings are usually written in French by a recruitment agency, an IT services company (ESN), a freelance platform or the end client itself.
 
@@ -39,7 +44,11 @@ const extractedJobPostingSchema = z.object({
 
 const EXTRACTED_JOB_POSTING_OUTPUT_FORMAT = zodOutputFormat(extractedJobPostingSchema)
 
-export const extractJobPosting = async (client: Anthropic, rawText: string): Promise<JobPostingExtraction> => {
+export const extractJobPosting = async (
+  client: Anthropic,
+  rawText: string,
+  requestLimits: JobPostingExtractionRequestLimits = DEFAULT_EXTRACTION_REQUEST_LIMITS,
+): Promise<JobPostingExtraction> => {
   const response = await client.messages.create(
     {
       model: CLAUDE_MODELS.extraction,
@@ -48,7 +57,7 @@ export const extractJobPosting = async (client: Anthropic, rawText: string): Pro
       messages: [{ role: 'user', content: `<job_posting>\n${rawText}\n</job_posting>` }],
       output_config: { effort: 'low', format: EXTRACTED_JOB_POSTING_OUTPUT_FORMAT },
     },
-    { maxRetries: EXTRACTION_MAX_RETRIES, timeout: EXTRACTION_TIMEOUT_IN_MILLISECONDS },
+    { maxRetries: requestLimits.maxRetries, timeout: requestLimits.timeoutInMilliseconds },
   )
   if (response.stop_reason === 'refusal') throw new AiError('refused')
   const extractedJobPosting = EXTRACTED_JOB_POSTING_OUTPUT_FORMAT.parse(readStructuredOutputText(response))
