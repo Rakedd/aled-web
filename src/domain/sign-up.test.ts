@@ -15,7 +15,9 @@ import {
   isAlreadyRegisteredSignUpError,
   isOAuthProvider,
   isProfessionalStatus,
-  isRateLimitSignUpError,
+  isEmailSendRateLimitSignUpError,
+  isExpectedSignUpError,
+  isRequestRateLimitSignUpError,
 } from '@/domain/sign-up'
 import type { SignUpInput } from '@/domain/sign-up'
 
@@ -155,8 +157,8 @@ describe('SIGN_UP_MESSAGES', () => {
 })
 
 describe('findSignUpErrorMessage', () => {
-  it.each(['over_email_send_rate_limit', 'over_request_rate_limit'])('maps %s to tooManyAttempts', (code) => {
-    expect(findSignUpErrorMessage(code)).toBe(SIGN_UP_MESSAGES.tooManyAttempts)
+  it('maps over_request_rate_limit to tooManyAttempts', () => {
+    expect(findSignUpErrorMessage('over_request_rate_limit')).toBe(SIGN_UP_MESSAGES.tooManyAttempts)
   })
 
   it('maps weak_password to weakPassword', () => {
@@ -167,7 +169,7 @@ describe('findSignUpErrorMessage', () => {
     expect(findSignUpErrorMessage('email_address_invalid')).toBe(INVALID_EMAIL_ADDRESS_MESSAGE)
   })
 
-  it.each(['user_already_exists', 'email_exists', 'unexpected_failure'])('maps %s to failure', (code) => {
+  it.each(['user_already_exists', 'email_exists', 'over_email_send_rate_limit', 'unexpected_failure'])('maps %s to failure', (code) => {
     expect(findSignUpErrorMessage(code)).toBe(SIGN_UP_MESSAGES.failure)
   })
 
@@ -183,13 +185,46 @@ describe('findSignUpErrorMessage', () => {
   )
 })
 
-describe('isRateLimitSignUpError', () => {
-  it.each(['over_email_send_rate_limit', 'over_request_rate_limit'])('returns true for %s', (code) => {
-    expect(isRateLimitSignUpError(code)).toBe(true)
+describe('isRequestRateLimitSignUpError', () => {
+  it('returns true for the per-IP request limit', () => {
+    expect(isRequestRateLimitSignUpError('over_request_rate_limit')).toBe(true)
   })
 
-  it.each([['weak_password'], ['toString'], [undefined]])('returns false for %p', (code) => {
-    expect(isRateLimitSignUpError(code)).toBe(false)
+  it.each([['over_email_send_rate_limit'], ['weak_password'], ['toString'], [undefined]])(
+    'returns false for %p',
+    (code) => {
+      expect(isRequestRateLimitSignUpError(code)).toBe(false)
+    },
+  )
+})
+
+describe('isEmailSendRateLimitSignUpError', () => {
+  it('returns true for the per-address email send limit', () => {
+    expect(isEmailSendRateLimitSignUpError('over_email_send_rate_limit')).toBe(true)
+  })
+
+  it.each([['over_request_rate_limit'], ['toString'], [undefined]])('returns false for %p', (code) => {
+    expect(isEmailSendRateLimitSignUpError(code)).toBe(false)
+  })
+})
+
+describe('isExpectedSignUpError', () => {
+  it.each(['over_request_rate_limit', 'weak_password', 'email_address_invalid'])(
+    'returns true for the mapped code %s',
+    (code) => {
+      expect(isExpectedSignUpError(code)).toBe(true)
+    },
+  )
+
+  it.each([
+    ['over_email_send_rate_limit'],
+    ['user_already_exists'],
+    ['unexpected_failure'],
+    ['toString'],
+    ['__proto__'],
+    [undefined],
+  ])('returns false for %p', (code) => {
+    expect(isExpectedSignUpError(code)).toBe(false)
   })
 })
 

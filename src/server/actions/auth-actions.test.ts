@@ -204,6 +204,21 @@ describe('signUpWithPassword', () => {
     )
   })
 
+  it('warns and uses a relative confirmation link when neither APP_ORIGIN nor the request origin is known', async () => {
+    const consoleWarnSpy = spyOnConsoleWarn()
+    delete process.env.APP_ORIGIN
+    jest.mocked(headers).mockResolvedValue(new Headers() as unknown as Awaited<ReturnType<typeof headers>>)
+    authSignUp.mockResolvedValue({ data: { user: null, session: null }, error: null })
+
+    await signUpWithPassword(validSignUpInput)
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Auth redirect origin missing')
+    expect(authSignUp).toHaveBeenCalledWith(
+      expect.objectContaining({ options: expect.objectContaining({ emailRedirectTo: '/auth/confirm' }) }),
+    )
+    consoleWarnSpy.mockRestore()
+  })
+
   it('rejects an invalid input without calling Supabase', async () => {
     await expect(signUpWithPassword({ ...validSignUpInput, firstName: '   ' })).resolves.toEqual({
       ok: false,
@@ -237,18 +252,34 @@ describe('signUpWithPassword', () => {
     },
   )
 
-  it('asks to retry later and warns with the error code only when sign-ups are throttled', async () => {
+  it('answers like a new sign-up when the email sending to this address is throttled, so the address stays secret', async () => {
     const consoleWarnSpy = spyOnConsoleWarn()
     authSignUp.mockResolvedValue({
       data: { user: null, session: null },
       error: new AuthApiError('Email rate limit exceeded', 429, 'over_email_send_rate_limit'),
     })
 
+    await expect(signUpWithPassword(validSignUpInput)).resolves.toEqual({ ok: true, data: null })
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Sign-up email send throttled', {
+      code: 'over_email_send_rate_limit',
+      status: 429,
+    })
+    expect(JSON.stringify(consoleWarnSpy.mock.calls)).not.toContain('ada@example.com')
+    consoleWarnSpy.mockRestore()
+  })
+
+  it('asks to retry later and warns with the error code only when requests from this client are throttled', async () => {
+    const consoleWarnSpy = spyOnConsoleWarn()
+    authSignUp.mockResolvedValue({
+      data: { user: null, session: null },
+      error: new AuthApiError('Request rate limit reached', 429, 'over_request_rate_limit'),
+    })
+
     await expect(signUpWithPassword(validSignUpInput)).resolves.toEqual({
       ok: false,
       errorMessage: SIGN_UP_MESSAGES.tooManyAttempts,
     })
-    expect(consoleWarnSpy).toHaveBeenCalledWith('Sign-up throttled', { code: 'over_email_send_rate_limit', status: 429 })
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Sign-up throttled', { code: 'over_request_rate_limit', status: 429 })
     consoleWarnSpy.mockRestore()
   })
 
@@ -315,7 +346,22 @@ describe('resendSignUpConfirmation', () => {
     await expect(resendSignUpConfirmation('ada@example.com')).resolves.toEqual({ ok: true, data: null })
   })
 
-  it('asks to retry later when resends are throttled', async () => {
+  it('answers like a normal resend when the email sending to this address is throttled', async () => {
+    const consoleWarnSpy = spyOnConsoleWarn()
+    authResend.mockResolvedValue({
+      data: {},
+      error: new AuthApiError('Email rate limit exceeded', 429, 'over_email_send_rate_limit'),
+    })
+
+    await expect(resendSignUpConfirmation('ada@example.com')).resolves.toEqual({ ok: true, data: null })
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Sign-up confirmation resend email send throttled', {
+      code: 'over_email_send_rate_limit',
+      status: 429,
+    })
+    consoleWarnSpy.mockRestore()
+  })
+
+  it('asks to retry later when requests from this client are throttled', async () => {
     const consoleWarnSpy = spyOnConsoleWarn()
     authResend.mockResolvedValue({
       data: {},
@@ -372,16 +418,36 @@ describe('requestPasswordReset', () => {
     expect(authResetPasswordForEmail).not.toHaveBeenCalled()
   })
 
-  it('asks to retry later when reset emails are throttled', async () => {
+  it('answers that the link is on its way when the email sending to this address is throttled', async () => {
     const consoleWarnSpy = spyOnConsoleWarn()
     authResetPasswordForEmail.mockResolvedValue({
       data: {},
       error: new AuthApiError('Email rate limit exceeded', 429, 'over_email_send_rate_limit'),
     })
 
+    await expect(requestPasswordReset('ada@example.com')).resolves.toEqual({ ok: true, data: null })
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Password reset request email send throttled', {
+      code: 'over_email_send_rate_limit',
+      status: 429,
+    })
+    expect(JSON.stringify(consoleWarnSpy.mock.calls)).not.toContain('ada@example.com')
+    consoleWarnSpy.mockRestore()
+  })
+
+  it('asks to retry later when requests from this client are throttled', async () => {
+    const consoleWarnSpy = spyOnConsoleWarn()
+    authResetPasswordForEmail.mockResolvedValue({
+      data: {},
+      error: new AuthApiError('Request rate limit reached', 429, 'over_request_rate_limit'),
+    })
+
     await expect(requestPasswordReset('ada@example.com')).resolves.toEqual({
       ok: false,
       errorMessage: SIGN_UP_MESSAGES.tooManyAttempts,
+    })
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Password reset request throttled', {
+      code: 'over_request_rate_limit',
+      status: 429,
     })
     consoleWarnSpy.mockRestore()
   })

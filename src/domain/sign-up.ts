@@ -64,11 +64,12 @@ const PASSWORD_CONFIRMATION_MISMATCH_MESSAGE = 'Les deux mots de passe ne corres
 
 const ALREADY_REGISTERED_ERROR_CODES: readonly string[] = ['user_already_exists', 'email_exists']
 
-const RATE_LIMIT_ERROR_CODES: readonly string[] = ['over_email_send_rate_limit', 'over_request_rate_limit']
+const REQUEST_RATE_LIMIT_ERROR_CODE = 'over_request_rate_limit'
+
+const EMAIL_SEND_RATE_LIMIT_ERROR_CODE = 'over_email_send_rate_limit'
 
 const SIGN_UP_ERROR_MESSAGES_BY_CODE: Partial<Record<string, string>> = {
-  over_email_send_rate_limit: SIGN_UP_MESSAGES.tooManyAttempts,
-  over_request_rate_limit: SIGN_UP_MESSAGES.tooManyAttempts,
+  [REQUEST_RATE_LIMIT_ERROR_CODE]: SIGN_UP_MESSAGES.tooManyAttempts,
   weak_password: SIGN_UP_MESSAGES.weakPassword,
   email_address_invalid: INVALID_EMAIL_ADDRESS_MESSAGE,
 }
@@ -99,15 +100,17 @@ export const findNewPasswordError = (password: string, confirmation: string): st
 export const isAlreadyRegisteredSignUpError = (errorCode: string | undefined): boolean =>
   errorCode !== undefined && ALREADY_REGISTERED_ERROR_CODES.includes(errorCode)
 
-export const isRateLimitSignUpError = (errorCode: string | undefined): boolean =>
-  errorCode !== undefined && RATE_LIMIT_ERROR_CODES.includes(errorCode)
+export const isRequestRateLimitSignUpError = (errorCode: string | undefined): boolean =>
+  errorCode === REQUEST_RATE_LIMIT_ERROR_CODE
 
-export const findSignUpErrorMessage = (errorCode: string | undefined): string => {
-  if (errorCode === undefined || !Object.hasOwn(SIGN_UP_ERROR_MESSAGES_BY_CODE, errorCode)) {
-    return SIGN_UP_MESSAGES.failure
-  }
-  return SIGN_UP_ERROR_MESSAGES_BY_CODE[errorCode] ?? SIGN_UP_MESSAGES.failure
-}
+export const isEmailSendRateLimitSignUpError = (errorCode: string | undefined): boolean =>
+  errorCode === EMAIL_SEND_RATE_LIMIT_ERROR_CODE
+
+export const isExpectedSignUpError = (errorCode: string | undefined): errorCode is string =>
+  errorCode !== undefined && Object.hasOwn(SIGN_UP_ERROR_MESSAGES_BY_CODE, errorCode)
+
+export const findSignUpErrorMessage = (errorCode: string | undefined): string =>
+  (isExpectedSignUpError(errorCode) ? SIGN_UP_ERROR_MESSAGES_BY_CODE[errorCode] : undefined) ?? SIGN_UP_MESSAGES.failure
 
 export const formatResendCooldown = (seconds: number): string =>
   SIGN_UP_MESSAGES.resendCooldown.replace('{seconds}', String(seconds))

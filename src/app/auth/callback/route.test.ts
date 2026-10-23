@@ -91,6 +91,27 @@ describe('GET /auth/callback', () => {
     expect(response.headers.get('location')).toBe('http://localhost:3000/')
   })
 
+  it.each<Record<string, string>>([
+    { next: 'https://evil.example' },
+    { redirect: 'https://evil.example/phish' },
+    { next: '//evil.example' },
+  ])(
+    'ignores the return address %p and stays on the app home page',
+    async (returnAddress) => {
+      authExchangeCodeForSession.mockResolvedValue({ data: { user: { id: 'user-1' }, session: {} }, error: null })
+
+      const response = await requestCallback({ code: 'valid-code', ...returnAddress })
+
+      expect(response.headers.get('location')).toBe('http://localhost:3000/')
+    },
+  )
+
+  it('ignores a return address on a failed sign-in and stays on the app login page', async () => {
+    const response = await requestCallback({ error: 'access_denied', next: 'https://evil.example' })
+
+    expect(response.headers.get('location')).toBe(OAUTH_FAILURE_LOCATION)
+  })
+
   it('still opens the home page when recording the terms acceptance fails, and warns with the code and status only', async () => {
     const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
     authExchangeCodeForSession.mockResolvedValue({ data: { user: { id: 'user-1' }, session: {} }, error: null })

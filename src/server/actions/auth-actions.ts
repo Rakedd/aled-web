@@ -18,9 +18,11 @@ import {
   findSignUpErrorMessage,
   findSignUpInputError,
   isAlreadyRegisteredSignUpError,
+  isEmailSendRateLimitSignUpError,
+  isExpectedSignUpError,
   isOAuthProvider,
   isProfessionalStatus,
-  isRateLimitSignUpError,
+  isRequestRateLimitSignUpError,
   type OAuthProvider,
   type SignUpInput,
 } from '@/domain/sign-up'
@@ -46,7 +48,10 @@ const buildAppAuthUrl = async (pathname: string): Promise<string> => {
   const appOrigin = readAppOrigin()
   if (appOrigin) return `${appOrigin}${pathname}`
   const requestHeaders = await headers()
-  return `${requestHeaders.get('origin') ?? ''}${pathname}`
+  const requestOrigin = requestHeaders.get('origin')
+  if (requestOrigin) return `${requestOrigin}${pathname}`
+  console.warn('Auth redirect origin missing')
+  return pathname
 }
 
 const isSignUpInput = (candidate: unknown): candidate is SignUpInput => {
@@ -69,16 +74,17 @@ const findExpectedPasswordUpdateErrorMessage = (errorCode: string | undefined): 
 const toEmailSendingResult = (emailSendingError: AuthError | null, operationLabel: string): ActionResult<null> => {
   if (!emailSendingError || isAlreadyRegisteredSignUpError(emailSendingError.code)) return ACTION_SUCCESS
 
-  if (isRateLimitSignUpError(emailSendingError.code)) {
-    console.warn(`${operationLabel} throttled`, readAuthErrorDiagnostics(emailSendingError))
-    return toActionFailure(SIGN_UP_MESSAGES.tooManyAttempts)
+  if (isEmailSendRateLimitSignUpError(emailSendingError.code)) {
+    console.warn(`${operationLabel} email send throttled`, readAuthErrorDiagnostics(emailSendingError))
+    return ACTION_SUCCESS
   }
 
-  const signUpErrorMessage = findSignUpErrorMessage(emailSendingError.code)
-  if (signUpErrorMessage === SIGN_UP_MESSAGES.failure) {
+  if (isRequestRateLimitSignUpError(emailSendingError.code)) {
+    console.warn(`${operationLabel} throttled`, readAuthErrorDiagnostics(emailSendingError))
+  } else if (!isExpectedSignUpError(emailSendingError.code)) {
     console.error(`${operationLabel} failed`, readAuthErrorDiagnostics(emailSendingError))
   }
-  return toActionFailure(signUpErrorMessage)
+  return toActionFailure(findSignUpErrorMessage(emailSendingError.code))
 }
 
 export const signInWithPassword = async (email: string, password: string): Promise<ActionResult<null>> => {
@@ -162,7 +168,12 @@ export const requestPasswordReset = async (email: string): Promise<ActionResult<
   })
   if (!resetError) return ACTION_SUCCESS
 
-  if (isRateLimitSignUpError(resetError.code)) {
+  if (isEmailSendRateLimitSignUpError(resetError.code)) {
+    console.warn('Password reset request email send throttled', readAuthErrorDiagnostics(resetError))
+    return ACTION_SUCCESS
+  }
+
+  if (isRequestRateLimitSignUpError(resetError.code)) {
     console.warn('Password reset request throttled', readAuthErrorDiagnostics(resetError))
     return toActionFailure(SIGN_UP_MESSAGES.tooManyAttempts)
   }

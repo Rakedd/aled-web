@@ -39,6 +39,24 @@ describe('GET /auth/confirm', () => {
     expect(response.headers.get('location')).toBe('http://localhost:3000/')
   })
 
+  it.each([
+    ['recovery', { next: 'https://evil.example' }, 'http://localhost:3000/mot-de-passe/nouveau'],
+    ['signup', { redirect: 'https://evil.example/phish' }, 'http://localhost:3000/'],
+    ['email', { next: '//evil.example', redirect_to: 'https://evil.example' }, 'http://localhost:3000/'],
+  ])('ignores the return address on a verified %s link and stays on the app', async (otpType, returnAddress, location) => {
+    authVerifyOtp.mockResolvedValue({ data: {}, error: null })
+
+    const response = await requestConfirmation({ token_hash: 'hash', type: otpType, ...returnAddress })
+
+    expect(response.headers.get('location')).toBe(location)
+  })
+
+  it('ignores the return address on an invalid link and stays on the app login page', async () => {
+    const response = await requestConfirmation({ type: 'magiclink', next: 'https://evil.example' })
+
+    expect(response.headers.get('location')).toBe('http://localhost:3000/login?error=invalid-link')
+  })
+
   it('sends an unknown link type to the invalid link error without verifying it', async () => {
     const response = await requestConfirmation({ token_hash: 'hash', type: 'magiclink' })
 
