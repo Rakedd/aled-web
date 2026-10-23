@@ -84,10 +84,10 @@ describe('SignUpForm', () => {
   it('shows and hides the password', async () => {
     const user = renderForm()
 
-    await user.click(screen.getByRole('button', { name: 'Afficher' }))
+    await user.click(screen.getByRole('button', { name: 'Afficher le mot de passe' }))
     expect(screen.getByLabelText('Mot de passe')).toHaveAttribute('type', 'text')
 
-    await user.click(screen.getByRole('button', { name: 'Masquer' }))
+    await user.click(screen.getByRole('button', { name: 'Masquer le mot de passe' }))
     expect(screen.getByLabelText('Mot de passe')).toHaveAttribute('type', 'password')
   })
 

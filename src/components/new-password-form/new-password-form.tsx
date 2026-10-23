@@ -66,6 +66,7 @@ export const NewPasswordForm = ({ updatePassword }: NewPasswordFormProps) => {
             onClick={togglePasswordVisibility}
           >
             {isPasswordVisible ? 'Masquer' : 'Afficher'}
+            <span className="sr-only"> le mot de passe</span>
           </Button>
         </div>
         <p id={PASSWORD_HINT_ELEMENT_ID} className="text-sm text-ink-secondary">

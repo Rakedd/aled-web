@@ -36,10 +36,10 @@ describe('NewPasswordForm', () => {
   it('shows and hides both passwords with one toggle', async () => {
     const user = renderForm()
 
-    await user.click(screen.getByRole('button', { name: 'Afficher' }))
+    await user.click(screen.getByRole('button', { name: 'Afficher le mot de passe' }))
     expect(screen.getByLabelText('Nouveau mot de passe')).toHaveAttribute('type', 'text')
     expect(screen.getByLabelText('Confirme-le')).toHaveAttribute('type', 'text')
-    await user.click(screen.getByRole('button', { name: 'Masquer' }))
+    await user.click(screen.getByRole('button', { name: 'Masquer le mot de passe' }))
     expect(screen.getByLabelText('Nouveau mot de passe')).toHaveAttribute('type', 'password')
   })
 
