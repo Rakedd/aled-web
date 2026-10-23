@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { PositionedJobApplication } from '@/domain/duplicate-positioning'
 import { NewJobApplicationForm } from './new-job-application-form'
 
 jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }) }))
@@ -12,7 +13,12 @@ const CV_OPTIONS = [
 const renderNewJobApplicationForm = ({
   hasAnthropicApiKey = true,
   cvOptions = CV_OPTIONS,
-}: { hasAnthropicApiKey?: boolean; cvOptions?: { id: string; label: string }[] } = {}) => {
+  positionedJobApplications = [],
+}: {
+  hasAnthropicApiKey?: boolean
+  cvOptions?: { id: string; label: string }[]
+  positionedJobApplications?: PositionedJobApplication[]
+} = {}) => {
   const extractJobPosting = jest.fn().mockResolvedValue({
     ok: true,
     data: {
@@ -39,13 +45,37 @@ const renderNewJobApplicationForm = ({
       searchEntities={searchEntities}
       hasAnthropicApiKey={hasAnthropicApiKey}
       cvOptions={cvOptions}
-      positionedJobApplications={[]}
+      positionedJobApplications={positionedJobApplications}
     />,
   )
   return { extractJobPosting, createJobApplication }
 }
 
 describe('NewJobApplicationForm', () => {
+  it('shows the duplicate positioning warning once the typed end client was positioned by another agency', async () => {
+    renderNewJobApplicationForm({
+      positionedJobApplications: [
+        {
+          id: 'application-9',
+          title: 'Lead React',
+          endClientName: 'Société Générale',
+          endClientParentName: null,
+          intermediaryName: 'Autre ESN',
+          appliedOn: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+        },
+      ],
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'Saisie manuelle' }))
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('Client final'), 'societe generale')
+    const warning = screen.getByRole('status')
+    expect(warning).toHaveTextContent('Ce positionnement risque de faire doublon, attention.')
+    expect(within(warning).getByRole('link', { name: /Lead React/ })).toHaveAttribute(
+      'href',
+      '/candidatures/application-9',
+    )
+  })
+
   it('disables the prefill without a Claude key, points to the settings and keeps manual entry', async () => {
     renderNewJobApplicationForm({ hasAnthropicApiKey: false })
 

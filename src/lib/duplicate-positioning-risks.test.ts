@@ -59,4 +59,12 @@ describe('duplicate-positioning-risks', () => {
     )
     expect(risks).toEqual([])
   })
+
+  it('matches on the parent group alone', () => {
+    const risks = findDuplicatePositioningRisksForFormValues(
+      { jobApplicationId: null, ...formValues, endClientName: '', endClientParentName: 'groupe sg' },
+      toPositionedJobApplications([OTHER_AGENCY_APPLICATION]),
+    )
+    expect(risks.map((risk) => risk.id)).toEqual(['application-2'])
+  })
 })
