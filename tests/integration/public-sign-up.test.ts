@@ -59,14 +59,33 @@ const readMailpitMessageBody = async (recipientEmail: string) => {
   throw new Error(`No email received for ${recipientEmail}`)
 }
 
+const readConfirmationTokenHash = (emailHtml: string): string => {
+  const tokenHashMatch = emailHtml.match(/token_hash=([^&"]+)/)
+  if (!tokenHashMatch) throw new Error('No confirmation token in the email')
+  return tokenHashMatch[1]
+}
+
 describe('public sign-up', () => {
-  it('creates the profile with the first name, the professional status and the terms acceptance of a password sign-up', async () => {
-    const { data, error } = await createAnonymousTestClient().auth.signUp({
-      email: buildTestEmail(),
+  it('signs up, confirms the address from the email and keeps the first name, the status and the terms acceptance', async () => {
+    const email = buildTestEmail()
+    const anonymousClient = createAnonymousTestClient()
+    const { data, error } = await anonymousClient.auth.signUp({
+      email,
       password: 'a-strong-password',
-      options: { data: { first_name: '  Ada ', professional_status: 'freelance', terms_accepted: 'true' } },
+      options: { data: { first_name: '  Ada ', professional_status: 'freelance', terms_accepted: true } },
     })
     expect(error).toBeNull()
+    expect(data.session).toBeNull()
+
+    const confirmationEmail = await readMailpitMessageBody(email)
+    const { data: verification, error: verificationError } = await anonymousClient.auth.verifyOtp({
+      token_hash: readConfirmationTokenHash(confirmationEmail.HTML),
+      type: 'email',
+    })
+    expect(verificationError).toBeNull()
+    expect(verification.session).not.toBeNull()
+    expect(verification.user?.id).toBe(data.user!.id)
+    expect(verification.user?.email_confirmed_at).toBeTruthy()
 
     const profile = await findProfileByUserId(data.user!.id)
     expect(profile.first_name).toBe('Ada')
