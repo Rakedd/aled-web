@@ -6,7 +6,7 @@ export type UnvalidatedRecord = Record<string, unknown>
 export type TextFieldRule = { label: string; maximumLength: number }
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const MAXIMUM_URL_LENGTH = 2048
+export const MAXIMUM_URL_LENGTH = 2048
 const MAXIMUM_EMAIL_ADDRESS_LENGTH = 320
 
 export const rejectWith = (errorMessage: string): { ok: false; errorMessage: string } => ({ ok: false, errorMessage })
