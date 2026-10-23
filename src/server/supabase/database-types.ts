@@ -397,14 +397,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "anthropic_api_key_last_four": string | null,"created_at": string,"email": string | null,"encrypted_anthropic_api_key": string | null,"first_name": string | null,"follow_up_delay_days": number,"id": string,"last_name": string | null,"links": NonNullable<Json>,"opportunities_last_viewed_at": string | null,"updated_at": string
+                    "anthropic_api_key_last_four": string | null,"created_at": string,"email": string | null,"encrypted_anthropic_api_key": string | null,"first_name": string | null,"follow_up_delay_days": number,"id": string,"last_name": string | null,"links": NonNullable<Json>,"opportunities_last_viewed_at": string | null,"professional_status": string | null,"terms_accepted_at": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "anthropic_api_key_last_four"?: string | null,"created_at"?: string,"email"?: string | null,"encrypted_anthropic_api_key"?: string | null,"first_name"?: string | null,"follow_up_delay_days"?: number,"id": string,"last_name"?: string | null,"links"?: NonNullable<Json>,"opportunities_last_viewed_at"?: string | null,"updated_at"?: string
+                    "anthropic_api_key_last_four"?: string | null,"created_at"?: string,"email"?: string | null,"encrypted_anthropic_api_key"?: string | null,"first_name"?: string | null,"follow_up_delay_days"?: number,"id": string,"last_name"?: string | null,"links"?: NonNullable<Json>,"opportunities_last_viewed_at"?: string | null,"professional_status"?: string | null,"terms_accepted_at"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "anthropic_api_key_last_four"?: string | null,"created_at"?: string,"email"?: string | null,"encrypted_anthropic_api_key"?: string | null,"first_name"?: string | null,"follow_up_delay_days"?: number,"id"?: string,"last_name"?: string | null,"links"?: NonNullable<Json>,"opportunities_last_viewed_at"?: string | null,"updated_at"?: string
+                    "anthropic_api_key_last_four"?: string | null,"created_at"?: string,"email"?: string | null,"encrypted_anthropic_api_key"?: string | null,"first_name"?: string | null,"follow_up_delay_days"?: number,"id"?: string,"last_name"?: string | null,"links"?: NonNullable<Json>,"opportunities_last_viewed_at"?: string | null,"professional_status"?: string | null,"terms_accepted_at"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     

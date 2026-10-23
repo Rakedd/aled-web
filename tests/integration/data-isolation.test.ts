@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { createAnonymousTestClient, createSignedInTestClient } from './create-test-user'
+import { createSignedInTestClient } from './create-test-user'
 
 describe('data isolation between users', () => {
   it('prevents user B from reading or modifying user A data', async () => {
@@ -63,10 +63,5 @@ describe('data isolation between users', () => {
 
     const { data: contactAfterDeletion } = await user.client.from('contacts').select('intermediary_id').eq('id', contact!.id).single()
     expect(contactAfterDeletion).toEqual({ intermediary_id: null })
-  })
-
-  it('rejects a sign-up from an anonymous client because access is invite-only', async () => {
-    const { error: signUpError } = await createAnonymousTestClient().auth.signUp({ email: `e-${randomUUID()}@test.local`, password: randomUUID() })
-    expect(signUpError?.code).toBe('signup_disabled')
   })
 })

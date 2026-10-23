@@ -46,7 +46,7 @@ export type UserDataSnapshot = {
   cvVersions: UserDataSnapshotCvVersion[]
 }
 
-const SNAPSHOT_PROFILE_COLUMNS = 'id, first_name, last_name, email, links, follow_up_delay_days, created_at, updated_at'
+const SNAPSHOT_PROFILE_COLUMNS = 'id, first_name, last_name, email, links, follow_up_delay_days, professional_status, terms_accepted_at, created_at, updated_at'
 
 const fetchSnapshotProfile = async (
   supabase: FreeclutchSupabaseClient,

@@ -30,6 +30,8 @@ const buildFakeSnapshot = (userId: string): UserDataSnapshot => ({
     email: `${userId}@test.local`,
     links: [],
     follow_up_delay_days: 7,
+    professional_status: null,
+    terms_accepted_at: null,
     created_at: '2026-10-01T00:00:00+00:00',
     updated_at: '2026-10-01T00:00:00+00:00',
   },

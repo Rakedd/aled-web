@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+    <title>Active ton compte Aled</title>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #f2f4f1">
+    <div style="display: none; max-height: 0; overflow: hidden; opacity: 0">
+      Confirme ton adresse pour activer ton compte Aled.
+    </div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f2f4f1">
+      <tr>
+        <td align="center" style="padding: 40px 16px">
+          <table
+            role="presentation"
+            width="100%"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            style="max-width: 560px; background-color: #ffffff; border: 1px solid #e6ece8; border-radius: 16px"
+          >
+            <tr>
+              <td style="padding: 40px 40px 0 40px">
+                <img
+                  src="{{ .SiteURL }}/email/aled-logo.png"
+                  width="120"
+                  height="54"
+                  alt="Aled"
+                  style="display: block; width: 120px; height: auto; border: 0"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 32px 40px 0 40px; font-family: Manrope, 'Segoe UI', Helvetica, Arial, sans-serif">
+                <h1 style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 700; color: #16231d">
+                  Bienvenue sur Aled
+                </h1>
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="padding: 16px 40px 0 40px; font-family: Figtree, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 24px; color: #3b4a42"
+              >
+                <p style="margin: 0">Merci de t'être inscrit sur Aled, l'outil de suivi de tes candidatures freelance. Confirme ton adresse e-mail pour activer ton compte.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 32px 40px 0 40px">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td align="center" bgcolor="#1f5c46" style="border-radius: 999px">
+                      <a
+                        href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email"
+                        style="display: inline-block; padding: 14px 28px; font-family: Figtree, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 20px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 999px"
+                        >Activer mon compte</a
+                      >
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="padding: 24px 40px 0 40px; font-family: Figtree, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 20px; color: #55625b"
+              >
+                <p style="margin: 0">Ce lien est personnel, valable une heure et utilisable une seule fois.</p>
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="padding: 16px 40px 40px 40px; font-family: Figtree, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 20px; color: #55625b"
+              >
+                <p style="margin: 0 0 8px 0">Si le bouton ne fonctionne pas, copie ce lien dans ton navigateur :</p>
+                <p style="margin: 0; word-break: break-all">
+                  <a
+                    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email"
+                    style="color: #1f5c46; text-decoration: underline"
+                    >{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email</a
+                  >
+                </p>
+              </td>
+            </tr>
+          </table>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 560px">
+            <tr>
+              <td
+                style="padding: 24px 40px 0 40px; font-family: Figtree, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; line-height: 20px; color: #55625b; text-align: center"
+              >
+                E-mail envoyé à {{ .Email }}. Si tu n'as pas créé de compte Aled, ignore simplement cet e-mail.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
