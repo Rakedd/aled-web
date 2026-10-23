@@ -25,13 +25,26 @@ export type PositionedJobApplication = {
   appliedOn: Date
 }
 
+const LEGAL_FORMS = new Set([
+  'sa', 'sas', 'sasu', 'sarl', 'eurl', 'sca', 'scs', 'snc', 'se', 'gie',
+  'inc', 'ltd', 'llc', 'gmbh', 'ag', 'bv', 'nv', 'spa', 'plc',
+])
+
+const removeTrailingLegalForm = (normalizedName: string): string => {
+  const words = normalizedName.split(' ')
+  const lastWord = words[words.length - 1]
+  return words.length > 1 && LEGAL_FORMS.has(lastWord) ? words.slice(0, -1).join(' ') : normalizedName
+}
+
 export const normalizeOrganisationName = (name: string | null): string =>
-  (name ?? '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim()
+  removeTrailingLegalForm(
+    (name ?? '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim(),
+  )
 
 const collectNormalizedEndClientNames = (
   endClientName: string | null,

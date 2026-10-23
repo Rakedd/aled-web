@@ -39,7 +39,18 @@ describe('constants', () => {
 
 describe('normalizeOrganisationName', () => {
   it('lowercases, removes accents and punctuation, and collapses spaces', () => {
-    expect(normalizeOrganisationName('  Société-Générale,  SA ')).toBe('societe generale sa')
+    expect(normalizeOrganisationName('  Société-Générale ')).toBe('societe generale')
+  })
+
+  it('removes one trailing legal form', () => {
+    expect(normalizeOrganisationName('Société Générale SA')).toBe('societe generale')
+    expect(normalizeOrganisationName('Acme GmbH')).toBe('acme')
+    expect(normalizeOrganisationName('Acme SAS SA')).toBe('acme sas')
+  })
+
+  it('never reduces a name to an empty string', () => {
+    expect(normalizeOrganisationName('SA')).toBe('sa')
+    expect(normalizeOrganisationName('SAS')).toBe('sas')
   })
 
   it('returns an empty string for null or blank names', () => {
@@ -49,6 +60,13 @@ describe('normalizeOrganisationName', () => {
 })
 
 describe('findDuplicatePositioningRisks', () => {
+  it('matches the same company with and without its legal form', () => {
+    const risks = findDuplicatePositioningRisks(buildCandidate({ endClientName: 'Société Générale SA' }), [
+      buildJobApplication(),
+    ])
+    expect(risks).toHaveLength(1)
+  })
+
   it('recognises the same end client written differently', () => {
     const risks = findDuplicatePositioningRisks(buildCandidate(), [
       buildJobApplication({ endClientName: '  societe   generale ' }),
@@ -124,7 +142,7 @@ describe('findDuplicatePositioningRisks', () => {
     expect(risks).toEqual([])
   })
 
-  it('ignores the status by including every application', () => {
+  it('matches job applications whatever their stage, since the list carries no status', () => {
     const risks = findDuplicatePositioningRisks(buildCandidate(), [
       buildJobApplication({ id: 'a' }),
       buildJobApplication({ id: 'b' }),
