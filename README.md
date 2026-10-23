@@ -169,7 +169,15 @@ Le code et la configuration locale (`supabase/config.toml`) sont prêts. Les ré
 
 ### 1. Réglages Supabase
 
-1. **Authentication > Sign In / Providers** : activer **Allow new users to sign up** et **Confirm email**, puis fixer la longueur minimale du mot de passe à 8.
+1. **Authentication > Sign In / Providers** : activer **Allow new users to sign up** et **Confirm email**, puis fixer la longueur minimale du mot de passe à 8. Phone : confirmations activées (même sans SMS). Sans ce réglage, Supabase confirme d'office les comptes et répond `422 user_already_exists` à une inscription avec l'adresse d'un compte confirmé, ce qui révèle que le compte existe. Avec ce réglage, il répond `200` comme pour une nouvelle adresse. L'inscription par SMS reste désactivée, donc ce réglage n'a pas d'autre effet. Son emplacement exact n'a pas été vérifié faute d'accès au tableau de bord hébergé : probablement **Confirm phone** dans le fournisseur **Phone**. Pour contrôler le résultat, lancer cette inscription avec l'adresse d'un compte de test déjà confirmé ; la réponse attendue est `200` :
+
+   ```bash
+   curl -s -o /dev/null -w '%{http_code}\n' -X POST 'https://<référence-du-projet>.supabase.co/auth/v1/signup' \
+     -H 'apikey: <clé anon publique>' -H 'Content-Type: application/json' \
+     -d '{"email":"<adresse-du-compte-de-test-confirmé>","password":"un-mot-de-passe-de-test"}'
+   ```
+
+   Un `422` signifie que les confirmations ne sont pas actives. Le mot de passe du compte de test n'est pas modifié.
 2. **Authentication > URL Configuration** :
    - **Site URL** : `https://app.aled.work` ;
    - **Redirect URLs** : `https://app.aled.work/auth/callback` et `aled://auth/callback` (le schéma `aled://` sert à l'application mobile).
@@ -212,7 +220,7 @@ Les blocs `[auth.external.google]` et `[auth.external.linkedin_oidc]` de `supaba
 3. Passer `enabled = true` dans le bloc voulu.
 4. Redémarrer Supabase : `npx supabase stop && npx supabase start`.
 
-Réglages locaux déjà en place : inscriptions et confirmations activées, mot de passe de 8 caractères minimum, `email_sent` à 30 et intervalle minimal d'une seconde entre deux e-mails (`max_frequency = "1s"`). Cette valeur sert uniquement au développement et ne s'applique pas en production.
+Réglages locaux déjà en place : inscriptions et confirmations activées (e-mail, et téléphone pour la même raison qu'en production), mot de passe de 8 caractères minimum, `email_sent` à 30 et intervalle minimal d'une seconde entre deux e-mails (`max_frequency = "1s"`). Cette valeur sert uniquement au développement et ne s'applique pas en production.
 
 ## Export et sauvegardes
 

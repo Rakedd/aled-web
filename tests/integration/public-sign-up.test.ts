@@ -105,7 +105,7 @@ describe('public sign-up', () => {
     await expect(countUsersWithEmail(email)).resolves.toBe(1)
   })
 
-  it('rejects a sign-up with the address of a confirmed user as already registered without creating another user', async () => {
+  it('answers a sign-up with the address of a confirmed user like any other without creating another user', async () => {
     const email = buildTestEmail()
     const { error: creationError } = await createServiceRoleTestClient().auth.admin.createUser({
       email,
@@ -118,7 +118,7 @@ describe('public sign-up', () => {
       email,
       password: 'a-strong-password',
     })
-    expect(signUpError?.code).toBe('user_already_exists')
+    expect(signUpError).toBeNull()
     await expect(countUsersWithEmail(email)).resolves.toBe(1)
   })
 
