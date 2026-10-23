@@ -15,13 +15,10 @@ const FULL_PROFILE: ContactProfile = {
 }
 
 describe('ContactProfileView', () => {
-  it('shows call, email and LinkedIn actions only when the information exists', () => {
+  it('shows call and email actions only when the information exists', () => {
     const { rerender } = render(<ContactProfileView profile={FULL_PROFILE} />)
     expect(screen.getByRole('link', { name: 'Appeler' })).toHaveAttribute('href', 'tel:0102030405')
     expect(screen.getByRole('link', { name: 'E-mail' })).toHaveAttribute('href', 'mailto:jeanne@example.com')
-    screen.getAllByRole('link', { name: 'LinkedIn' }).forEach((linkedinLink) => {
-      expect(linkedinLink).toHaveAttribute('href', 'https://www.linkedin.com/in/jeanne')
-    })
 
     rerender(<ContactProfileView profile={{ ...FULL_PROFILE, phone: null, email: null, linkedinUrl: null }} />)
     expect(screen.queryByRole('link', { name: 'Appeler' })).not.toBeInTheDocument()
@@ -29,9 +26,11 @@ describe('ContactProfileView', () => {
     expect(screen.queryByRole('link', { name: 'LinkedIn' })).not.toBeInTheDocument()
   })
 
-  it('shows the LinkedIn detail row as the logo link and keeps the action', () => {
+  it('shows the LinkedIn detail row as the logo link and is the only LinkedIn link', () => {
     render(<ContactProfileView profile={FULL_PROFILE} />)
-    expect(screen.getAllByRole('link', { name: 'LinkedIn' })).toHaveLength(2)
+    const linkedinLinks = screen.getAllByRole('link', { name: 'LinkedIn' })
+    expect(linkedinLinks).toHaveLength(1)
+    expect(linkedinLinks[0]).toHaveAttribute('href', 'https://www.linkedin.com/in/jeanne')
     const detailRow = screen.getByText('LinkedIn', { selector: 'dt' }).nextElementSibling
     expect(detailRow?.querySelector('a svg')).toBeInTheDocument()
     expect(detailRow).not.toHaveTextContent('https://')

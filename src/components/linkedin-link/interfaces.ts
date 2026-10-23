@@ -1,5 +1,15 @@
-export interface LinkedinLinkProps {
+interface LinkedinLinkBaseProps {
   url: string
-  label?: string
-  isCompact?: boolean
 }
+
+interface LinkedinLinkFullProps extends LinkedinLinkBaseProps {
+  isCompact?: false
+  label?: string
+}
+
+interface LinkedinLinkCompactProps extends LinkedinLinkBaseProps {
+  isCompact: true
+  label: string
+}
+
+export type LinkedinLinkProps = LinkedinLinkFullProps | LinkedinLinkCompactProps

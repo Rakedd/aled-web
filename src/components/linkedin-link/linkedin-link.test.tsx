@@ -29,4 +29,9 @@ describe('LinkedinLink', () => {
       expect(container).toBeEmptyDOMElement()
     },
   )
+
+  it('requires a label when compact', () => {
+    // @ts-expect-error a compact link without label must not compile
+    render(<LinkedinLink url={LINKEDIN_URL} isCompact />)
+  })
 })

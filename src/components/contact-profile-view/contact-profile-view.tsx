@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 import { LinkedinLink } from '@/components/linkedin-link'
 import { isExternalLinkUrl } from '@/domain/client-brief'
 import { MISSING_VALUE_LABEL, toDisplayText, toPhoneHref } from '@/domain/job-application-display'
@@ -8,15 +9,21 @@ import type { ContactProfileViewProps } from './interfaces'
 const ACTION_LINK_CLASS_NAME =
   'inline-flex items-center rounded-full border border-hairline px-3 py-1 text-sm font-medium text-ink hover:bg-muted focus-visible:bg-muted'
 
+const renderLinkedinUrl = (linkedinUrl: string | null): ReactNode =>
+  linkedinUrl === null || !isExternalLinkUrl(linkedinUrl) ? (
+    MISSING_VALUE_LABEL
+  ) : (
+    <LinkedinLink url={linkedinUrl} />
+  )
+
 export const ContactProfileView = ({ profile }: ContactProfileViewProps) => {
-  const hasLinkedinAction = profile.linkedinUrl !== null && isExternalLinkUrl(profile.linkedinUrl)
   const detailEntries = [
     { term: 'Téléphone', value: toDisplayText(profile.phone) },
     { term: 'E-mail', value: toDisplayText(profile.email) },
-    { term: 'LinkedIn', value: profile.linkedinUrl !== null && hasLinkedinAction ? <LinkedinLink url={profile.linkedinUrl} /> : MISSING_VALUE_LABEL },
+    { term: 'LinkedIn', value: renderLinkedinUrl(profile.linkedinUrl) },
     { term: 'Recommandé par', value: toDisplayText(profile.referredBy) },
   ]
-  const hasAnyAction = profile.phone !== null || profile.email !== null || hasLinkedinAction
+  const hasAnyAction = profile.phone !== null || profile.email !== null
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -39,11 +46,6 @@ export const ContactProfileView = ({ profile }: ContactProfileViewProps) => {
           {profile.email !== null && (
             <a href={`mailto:${profile.email}`} className={ACTION_LINK_CLASS_NAME}>
               E-mail
-            </a>
-          )}
-          {hasLinkedinAction && (
-            <a href={profile.linkedinUrl ?? undefined} target="_blank" rel="noopener noreferrer" className={ACTION_LINK_CLASS_NAME}>
-              LinkedIn
             </a>
           )}
         </div>
