@@ -1,11 +1,14 @@
-import { toPositionedJobApplications, findDuplicatePositioningRisksForFormValues } from './duplicate-positioning-risks'
-import { buildJobApplicationOverview } from '@/test-fixtures/job-application-overview'
+import type { PositionedJobApplication } from '@/domain/duplicate-positioning'
+import { findDuplicatePositioningRisksForFormValues } from './duplicate-positioning-risks'
 
-const OTHER_AGENCY_APPLICATION = buildJobApplicationOverview({
+const OTHER_AGENCY_APPLICATION: PositionedJobApplication = {
   id: 'application-2',
+  title: 'Développeur React',
+  endClientName: 'Société Générale',
+  endClientParentName: 'Groupe SG',
   intermediaryName: 'Autre ESN',
   appliedOn: new Date('2026-10-13T08:00:00Z'),
-})
+}
 
 const formValues = {
   endClientName: 'societe generale',
@@ -15,23 +18,10 @@ const formValues = {
 }
 
 describe('duplicate-positioning-risks', () => {
-  it('keeps only the fields needed to compare positionings', () => {
-    expect(toPositionedJobApplications([OTHER_AGENCY_APPLICATION])).toEqual([
-      {
-        id: 'application-2',
-        title: 'Développeur React',
-        endClientName: 'Société Générale',
-        endClientParentName: 'Groupe SG',
-        intermediaryName: 'Autre ESN',
-        appliedOn: new Date('2026-10-13T08:00:00Z'),
-      },
-    ])
-  })
-
   it('finds a recent positioning by another agency from typed text values', () => {
     const risks = findDuplicatePositioningRisksForFormValues(
       { jobApplicationId: null, ...formValues },
-      toPositionedJobApplications([OTHER_AGENCY_APPLICATION]),
+      [OTHER_AGENCY_APPLICATION],
     )
     expect(risks.map((risk) => risk.id)).toEqual(['application-2'])
   })
@@ -39,7 +29,7 @@ describe('duplicate-positioning-risks', () => {
   it('finds nothing when the application date is not a valid date', () => {
     const risks = findDuplicatePositioningRisksForFormValues(
       { jobApplicationId: null, ...formValues, appliedOn: '' },
-      toPositionedJobApplications([OTHER_AGENCY_APPLICATION]),
+      [OTHER_AGENCY_APPLICATION],
     )
     expect(risks).toEqual([])
   })
@@ -47,7 +37,7 @@ describe('duplicate-positioning-risks', () => {
   it('finds nothing when the typed agency is the same', () => {
     const risks = findDuplicatePositioningRisksForFormValues(
       { jobApplicationId: null, ...formValues, intermediaryName: 'autre esn' },
-      toPositionedJobApplications([OTHER_AGENCY_APPLICATION]),
+      [OTHER_AGENCY_APPLICATION],
     )
     expect(risks).toEqual([])
   })
@@ -55,7 +45,7 @@ describe('duplicate-positioning-risks', () => {
   it('never reports the application being edited', () => {
     const risks = findDuplicatePositioningRisksForFormValues(
       { jobApplicationId: 'application-2', ...formValues },
-      toPositionedJobApplications([OTHER_AGENCY_APPLICATION]),
+      [OTHER_AGENCY_APPLICATION],
     )
     expect(risks).toEqual([])
   })
@@ -63,7 +53,7 @@ describe('duplicate-positioning-risks', () => {
   it('matches on the parent group alone', () => {
     const risks = findDuplicatePositioningRisksForFormValues(
       { jobApplicationId: null, ...formValues, endClientName: '', endClientParentName: 'groupe sg' },
-      toPositionedJobApplications([OTHER_AGENCY_APPLICATION]),
+      [OTHER_AGENCY_APPLICATION],
     )
     expect(risks.map((risk) => risk.id)).toEqual(['application-2'])
   })

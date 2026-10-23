@@ -2,6 +2,7 @@ import 'server-only'
 import type { ActionResult } from '@/domain/action-result'
 import type { ProposedMission } from '@/domain/contacts'
 import { formatStatusChangeSummary } from '@/domain/activity-log'
+import type { PositionedJobApplication } from '@/domain/duplicate-positioning'
 import { formatEndClientLabel } from '@/domain/entity-names'
 import {
   isStackItem,
@@ -132,6 +133,35 @@ export const listJobApplicationItems = async (
     .order('created_at', { ascending: false })
   if (error) throw toRepositoryError('listJobApplicationItems', error)
   return data.map(toJobApplicationListItem)
+}
+
+const POSITIONED_JOB_APPLICATION_COLUMNS = 'id, title, end_client_name, end_client_parent_name, intermediary_name, applied_on'
+
+type PositionedJobApplicationRow = Pick<
+  JobApplicationOverviewRow,
+  'id' | 'title' | 'end_client_name' | 'end_client_parent_name' | 'intermediary_name' | 'applied_on'
+>
+
+const toPositionedJobApplication = (overviewRow: PositionedJobApplicationRow): PositionedJobApplication => ({
+  id: requireOverviewValue(overviewRow.id, 'id'),
+  title: requireOverviewValue(overviewRow.title, 'title'),
+  endClientName: overviewRow.end_client_name,
+  endClientParentName: overviewRow.end_client_parent_name,
+  intermediaryName: overviewRow.intermediary_name,
+  appliedOn: parseParisCalendarDate(requireOverviewValue(overviewRow.applied_on, 'applied_on')),
+})
+
+export const listPositionedJobApplications = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+): Promise<PositionedJobApplication[]> => {
+  const { data, error } = await supabase
+    .from('job_applications_overview')
+    .select(POSITIONED_JOB_APPLICATION_COLUMNS)
+    .eq('user_id', userId)
+    .order('applied_on', { ascending: false })
+  if (error) throw toRepositoryError('listPositionedJobApplications', error)
+  return data.map(toPositionedJobApplication)
 }
 
 const PROPOSED_MISSION_COLUMNS = 'id, title, applied_on, status, contact_name, end_client_name, end_client_parent_name, sent_cv_label, sent_cv_uploaded_at'

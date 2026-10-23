@@ -24,7 +24,6 @@ import { findNextInterview } from '@/domain/interviews'
 import { JOB_APPLICATION_NOT_FOUND_MESSAGE, type JobApplicationOverview } from '@/domain/job-application'
 import { JOB_APPLICATION_TAB_SEARCH_PARAMETER, resolveJobApplicationTab } from '@/domain/job-application-tabs'
 import { JOB_APPLICATIONS_ROUTE } from '@/domain/routes'
-import { toPositionedJobApplications } from '@/lib/duplicate-positioning-risks'
 import { updateEndClientNotes } from '@/server/actions/client-brief-actions'
 import {
   attachLibraryCvToJobApplication,
@@ -53,7 +52,7 @@ import {
   deleteJobApplication,
   getJobApplication,
   listActivityLogEntries,
-  listJobApplications,
+  listPositionedJobApplications,
   updateJobApplication,
 } from '@/server/actions/job-application-actions'
 import {
@@ -109,7 +108,7 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
     interviewPreparationResult,
     hasAnthropicApiKey,
     cvsResult,
-    jobApplicationsResult,
+    positionedJobApplicationsResult,
   ] = await Promise.all([
     loadJobApplicationWithContactDetails(jobApplicationId),
     listActivityLogEntries(jobApplicationId),
@@ -118,7 +117,7 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
     loadInitialInterviewPreparation(jobApplicationId),
     hasAnthropicApiKeyConfigured(),
     listCvs(),
-    listJobApplications(),
+    listPositionedJobApplications(),
   ])
 
   if (!jobApplicationResult.ok) {
@@ -170,7 +169,7 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
     contactDetailsResult !== null && !contactDetailsResult.ok ? contactDetailsResult.errorMessage : null
 
   const cvOptions = cvsResult.ok ? toCvOptions(cvsResult.data) : []
-  const positionedJobApplications = jobApplicationsResult.ok ? toPositionedJobApplications(jobApplicationsResult.data) : []
+  const positionedJobApplications = positionedJobApplicationsResult.ok ? positionedJobApplicationsResult.data : []
 
   return (
     <div className="flex min-w-0 flex-col gap-8">

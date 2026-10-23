@@ -5,6 +5,7 @@ import type { ActionResult } from '@/domain/action-result'
 import { type ActivityLogEntry, type ActivityLogEntryInput, validateActivityLogEntryInput } from '@/domain/activity-log'
 import { type SnoozeDurationInDays, validateSnoozeAlertArguments } from '@/domain/alert-snoozes'
 import { CV_MESSAGES } from '@/domain/cv-library'
+import type { PositionedJobApplication } from '@/domain/duplicate-positioning'
 import { rejectWith, validateUuid } from '@/domain/input-validation'
 import {
   JOB_APPLICATION_NOT_FOUND_MESSAGE,
@@ -32,6 +33,7 @@ import {
   findJobApplicationOverview,
   insertJobApplication,
   listJobApplicationItems,
+  listPositionedJobApplications as listPositionedJobApplicationRows,
   updateJobApplicationRow,
 } from '@/server/repositories/job-applications-repository'
 import { findJobSpecStoragePath, removeJobSpecFile } from '@/server/repositories/job-specs-repository'
@@ -81,6 +83,14 @@ export const listJobApplications = async (): Promise<ActionResult<JobApplication
     failureMessage: LOAD_FAILURE_MESSAGE,
     validateArguments: () => NO_ARGUMENTS,
     operation: async (supabase, userId) => ({ ok: true, data: await listJobApplicationItems(supabase, userId) }),
+  })
+
+export const listPositionedJobApplications = async (): Promise<ActionResult<PositionedJobApplication[]>> =>
+  runAuthenticatedOperation({
+    operationName: 'listPositionedJobApplications',
+    failureMessage: LOAD_FAILURE_MESSAGE,
+    validateArguments: () => NO_ARGUMENTS,
+    operation: async (supabase, userId) => ({ ok: true, data: await listPositionedJobApplicationRows(supabase, userId) }),
   })
 
 export const getJobApplication = async (jobApplicationId: string): Promise<ActionResult<JobApplicationOverview>> =>

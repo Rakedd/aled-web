@@ -15,6 +15,7 @@ import {
   findJobApplicationOverview,
   insertJobApplication,
   listJobApplicationItems,
+  listPositionedJobApplications as listPositionedJobApplicationRows,
   updateJobApplicationRow,
 } from '@/server/repositories/job-applications-repository'
 import { findJobSpecStoragePath, removeJobSpecFile } from '@/server/repositories/job-specs-repository'
@@ -30,6 +31,7 @@ import {
   listActivityLogEntries,
   listAlertSnoozes,
   listJobApplications,
+  listPositionedJobApplications,
   snoozeAlert,
   updateJobApplication,
 } from './job-application-actions'
@@ -39,6 +41,7 @@ jest.mock('@/server/supabase/get-authenticated-user', () => ({ getAuthenticatedU
 jest.mock('@/server/supabase/create-server-supabase-client', () => ({ createServerSupabaseClient: jest.fn() }))
 jest.mock('@/server/repositories/job-applications-repository', () => ({
   listJobApplicationItems: jest.fn(),
+  listPositionedJobApplications: jest.fn(),
   findJobApplicationOverview: jest.fn(),
   insertJobApplication: jest.fn(),
   updateJobApplicationRow: jest.fn(),
@@ -115,6 +118,24 @@ describe('listJobApplications', () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
     jest.mocked(listJobApplicationItems).mockRejectedValue(new Error('Repository failure'))
     await expect(listJobApplications()).resolves.toEqual({
+      ok: false,
+      errorMessage: 'Impossible de charger les candidatures pour le moment. Réessaie dans quelques minutes.',
+    })
+    consoleErrorSpy.mockRestore()
+  })
+})
+
+describe('listPositionedJobApplications', () => {
+  it('lists the positioning fields of the authenticated user', async () => {
+    jest.mocked(listPositionedJobApplicationRows).mockResolvedValue([])
+    await expect(listPositionedJobApplications()).resolves.toEqual({ ok: true, data: [] })
+    expect(listPositionedJobApplicationRows).toHaveBeenCalledWith(fakeSupabaseClient, 'user-1')
+  })
+
+  it('returns a generic message when the positionings cannot be loaded', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    jest.mocked(listPositionedJobApplicationRows).mockRejectedValue(new Error('Repository failure'))
+    await expect(listPositionedJobApplications()).resolves.toEqual({
       ok: false,
       errorMessage: 'Impossible de charger les candidatures pour le moment. Réessaie dans quelques minutes.',
     })

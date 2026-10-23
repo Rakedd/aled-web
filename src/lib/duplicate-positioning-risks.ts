@@ -2,7 +2,6 @@ import {
   findDuplicatePositioningRisks,
   type PositionedJobApplication,
 } from '@/domain/duplicate-positioning'
-import type { JobApplicationListItem } from '@/domain/job-application'
 import { toNullableText } from '@/domain/form-values'
 import { parseParisCalendarDate } from '@/domain/paris-time'
 
@@ -13,16 +12,6 @@ export type PositioningFormValues = {
   intermediaryName: string
   appliedOn: string
 }
-
-export const toPositionedJobApplications = (jobApplications: JobApplicationListItem[]): PositionedJobApplication[] =>
-  jobApplications.map((jobApplication) => ({
-    id: jobApplication.id,
-    title: jobApplication.title,
-    endClientName: jobApplication.endClientName,
-    endClientParentName: jobApplication.endClientParentName,
-    intermediaryName: jobApplication.intermediaryName,
-    appliedOn: jobApplication.appliedOn,
-  }))
 
 export const findDuplicatePositioningRisksForFormValues = (
   formValues: PositioningFormValues,
