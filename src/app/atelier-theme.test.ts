@@ -110,6 +110,7 @@ const LIGHT_THEME_COLOURS: Record<string, string> = {
   destructive: '#8A3B32',
   muted: '#F7F9F7',
   input: '#C9D3CC',
+  linkedin: '#0A66C2',
 }
 
 const DARK_THEME_COLOURS: Record<string, string> = {
@@ -159,6 +160,7 @@ const DARK_THEME_COLOURS: Record<string, string> = {
   ring: '#E9A27C',
   destructive: '#F1A79D',
   muted: '#2A2622',
+  linkedin: '#70B5F9',
 }
 
 const ROLE_CONTRAST_PAIRS: Array<[string, string]> = [
@@ -204,6 +206,7 @@ const ROLE_CONTRAST_PAIRS: Array<[string, string]> = [
   ['destructive', 'sage'],
   ['primary', 'card'],
   ['ink-secondary', 'card'],
+  ['linkedin', 'card'],
   ['on-menu-counter', 'menu-counter'],
   ['on-settings-navigation-active', 'settings-navigation-active'],
 ]
@@ -331,6 +334,7 @@ describe('atelier theme', () => {
       'on-menu-counter',
       'settings-navigation-active',
       'on-settings-navigation-active',
+      'linkedin',
     ]
     roleTokens.forEach((token) => {
       const colorVariablePattern = new RegExp(`--color-${token}:\\s*var\\(--${token}\\)`)

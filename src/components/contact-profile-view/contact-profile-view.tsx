@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { LinkedinLink } from '@/components/linkedin-link'
 import { isExternalLinkUrl } from '@/domain/client-brief'
 import { MISSING_VALUE_LABEL, toDisplayText, toPhoneHref } from '@/domain/job-application-display'
 import { intermediaryRoute } from '@/domain/routes'
@@ -8,13 +9,13 @@ const ACTION_LINK_CLASS_NAME =
   'inline-flex items-center rounded-full border border-hairline px-3 py-1 text-sm font-medium text-ink hover:bg-muted focus-visible:bg-muted'
 
 export const ContactProfileView = ({ profile }: ContactProfileViewProps) => {
+  const hasLinkedinAction = profile.linkedinUrl !== null && isExternalLinkUrl(profile.linkedinUrl)
   const detailEntries = [
     { term: 'Téléphone', value: toDisplayText(profile.phone) },
     { term: 'E-mail', value: toDisplayText(profile.email) },
-    { term: 'LinkedIn', value: toDisplayText(profile.linkedinUrl) },
+    { term: 'LinkedIn', value: profile.linkedinUrl !== null && hasLinkedinAction ? <LinkedinLink url={profile.linkedinUrl} /> : MISSING_VALUE_LABEL },
     { term: 'Recommandé par', value: toDisplayText(profile.referredBy) },
   ]
-  const hasLinkedinAction = profile.linkedinUrl !== null && isExternalLinkUrl(profile.linkedinUrl)
   const hasAnyAction = profile.phone !== null || profile.email !== null || hasLinkedinAction
 
   return (

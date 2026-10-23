@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { isExternalLinkUrl } from '@/domain/client-brief'
+import { LinkedinLink } from '@/components/linkedin-link'
 import { contactRoute } from '@/domain/routes'
 import { MISSING_VALUE_LABEL, toDisplayText, toPhoneHref } from '@/domain/job-application-display'
 import type { ContactViewProps } from './interfaces'
@@ -29,9 +30,7 @@ const renderLinkedinUrl = (linkedinUrl: string | null): ReactNode =>
   linkedinUrl === null || !isExternalLinkUrl(linkedinUrl) ? (
     MISSING_VALUE_LABEL
   ) : (
-    <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className={LINK_CLASS_NAME}>
-      {linkedinUrl}
-    </a>
+    <LinkedinLink url={linkedinUrl} />
   )
 
 export const ContactView = ({ contactName, contactDetails, loadErrorMessage, contactId }: ContactViewProps) => {

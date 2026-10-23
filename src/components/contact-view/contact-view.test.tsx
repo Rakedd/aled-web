@@ -17,7 +17,8 @@ describe('ContactView', () => {
     expect(readValueOf('Nom')).toHaveTextContent('Jeanne Martin')
     expect(screen.getByRole('link', { name: '+33 6 12 34 56 78' })).toHaveAttribute('href', 'tel:+33612345678')
     expect(screen.getByRole('link', { name: 'jeanne@example.com' })).toHaveAttribute('href', 'mailto:jeanne@example.com')
-    const linkedinLink = screen.getByRole('link', { name: 'https://www.linkedin.com/in/jeanne' })
+    const linkedinLink = screen.getByRole('link', { name: 'LinkedIn' })
+    expect(linkedinLink).toHaveAttribute('href', 'https://www.linkedin.com/in/jeanne')
     expect(linkedinLink).toHaveAttribute('target', '_blank')
     expect(linkedinLink).toHaveAttribute('rel', 'noopener noreferrer')
   })
@@ -35,6 +36,19 @@ describe('ContactView', () => {
     expect(readValueOf('E-mail')).toHaveTextContent('—')
     expect(readValueOf('LinkedIn')).toHaveTextContent('—')
     expect(screen.queryByRole('link')).not.toBeInTheDocument()
+  })
+
+  it('shows a dash instead of a link for a refused LinkedIn url', () => {
+    render(
+      <ContactView
+        contactName="Jeanne Martin"
+        contactDetails={buildContactDetails({ linkedinUrl: 'javascript:alert(1)' })}
+        loadErrorMessage={null}
+        contactId={null}
+      />,
+    )
+    expect(readValueOf('LinkedIn')).toHaveTextContent('—')
+    expect(screen.queryByRole('link', { name: 'LinkedIn' })).not.toBeInTheDocument()
   })
 
   it('shows a dash for the name when the application has no contact', () => {

@@ -38,6 +38,7 @@ describe('ContactsTable', () => {
       'https://www.linkedin.com/in/jeanne',
     )
     expect(screen.queryByRole('link', { name: 'Profil LinkedIn de Paul Durand' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Profil LinkedIn de Jeanne Martin' })).not.toHaveTextContent('LinkedIn')
   })
 
   it('links the name to the contact page and the agency to the agency page', () => {

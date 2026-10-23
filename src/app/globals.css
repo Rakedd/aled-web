@@ -12,6 +12,7 @@
   --color-hairline-strong: var(--hairline-strong);
   --color-control-border: var(--control-border);
   --color-accent-text: var(--accent-text);
+  --color-linkedin: var(--linkedin);
   --color-brand-tile: var(--brand-tile);
   --color-on-brand-tile: var(--on-brand-tile);
   --color-on-brand-tile-secondary: var(--on-brand-tile-secondary);
@@ -84,6 +85,7 @@
   --primary: #1F5C46;
   --primary-foreground: #FFFFFF;
   --accent-text: #1F5C46;
+  --linkedin: #0A66C2;
   --brand-tile: #1F5C46;
   --on-brand-tile: #FFFFFF;
   --on-brand-tile-secondary: #CFE3D8;
@@ -147,6 +149,7 @@
   --primary: #E9A27C;
   --primary-foreground: #1A120C;
   --accent-text: #EDB08E;
+  --linkedin: #70B5F9;
   --brand-tile: #2D4B3B;
   --on-brand-tile: #F1ECE6;
   --on-brand-tile-secondary: #D3DDCF;
