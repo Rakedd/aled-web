@@ -79,6 +79,22 @@ describe('technical brief section controller', () => {
     expect(result.current.isGenerating).toBe(false)
   })
 
+  it('keeps a generation answer when the actions get a new identity during the generation', async () => {
+    const slowGeneration = createDeferred<ActionResult<TechnicalBriefGenerationOutcome>>()
+    const parameters = buildParameters({ generateTechnicalBrief: jest.fn().mockReturnValue(slowGeneration.promise) })
+    const { result, rerender } = renderHook((props) => useController(props), { initialProps: parameters })
+    await waitFor(() => expect(result.current.view).not.toBeNull())
+    act(() => {
+      void result.current.generate()
+    })
+    const refreshedGetTechnicalBriefView = jest.fn()
+    rerender({ ...parameters, getTechnicalBriefView: refreshedGetTechnicalBriefView })
+    const generatedView = { ...buildView('fr'), isCvOutdated: true }
+    await act(async () => slowGeneration.resolve({ ok: true, data: { kind: 'generated', view: generatedView } }))
+    expect(result.current.view).toEqual(generatedView)
+    expect(refreshedGetTechnicalBriefView).not.toHaveBeenCalled()
+  })
+
   it('sends a single generation on a double click', async () => {
     const slowGeneration = createDeferred<ActionResult<TechnicalBriefGenerationOutcome>>()
     const generateTechnicalBrief = jest.fn().mockReturnValue(slowGeneration.promise)

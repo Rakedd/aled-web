@@ -17,6 +17,8 @@ export const useController = ({
   const [transientOutcome, setTransientOutcome] = useState<TransientOutcome | null>(null)
   const latestRequestNumberRef = useRef(0)
   const isGenerationInFlightRef = useRef(false)
+  const activeRequestKeyRef = useRef(`${jobApplicationId}:${language}`)
+  const actionsRef = useRef({ getTechnicalBriefView, generateTechnicalBrief })
   const [loadedRequestKey, setLoadedRequestKey] = useState(`${jobApplicationId}:${language}`)
   const currentRequestKey = `${jobApplicationId}:${language}`
 
@@ -29,10 +31,15 @@ export const useController = ({
   }
 
   useEffect(() => {
+    actionsRef.current = { getTechnicalBriefView, generateTechnicalBrief }
+  })
+
+  useEffect(() => {
+    activeRequestKeyRef.current = `${jobApplicationId}:${language}`
     latestRequestNumberRef.current += 1
     const requestNumber = latestRequestNumberRef.current
     const loadView = async () => {
-      const loadResult = await guardActionCall(() => getTechnicalBriefView(jobApplicationId, language))
+      const loadResult = await guardActionCall(() => actionsRef.current.getTechnicalBriefView(jobApplicationId, language))
       if (requestNumber !== latestRequestNumberRef.current) return
       setIsLoading(false)
       if (!loadResult.ok) {
@@ -42,19 +49,21 @@ export const useController = ({
       setView(loadResult.data)
     }
     void loadView()
-  }, [jobApplicationId, language, getTechnicalBriefView])
+  }, [jobApplicationId, language])
 
   const generate = async () => {
     if (!hasAnthropicApiKey || isGenerationInFlightRef.current) return
     isGenerationInFlightRef.current = true
-    const requestNumber = latestRequestNumberRef.current
+    const requestKey = `${jobApplicationId}:${language}`
     setIsGenerating(true)
     setErrorMessage(null)
     setTransientOutcome(null)
-    const generationResult = await guardActionCall(() => generateTechnicalBrief(jobApplicationId, language))
+    const generationResult = await guardActionCall(() =>
+      actionsRef.current.generateTechnicalBrief(jobApplicationId, language),
+    )
     isGenerationInFlightRef.current = false
     setIsGenerating(false)
-    if (requestNumber !== latestRequestNumberRef.current) return
+    if (requestKey !== activeRequestKeyRef.current) return
     if (!generationResult.ok) {
       setErrorMessage(generationResult.errorMessage)
       return

@@ -165,7 +165,7 @@ describe('TechnicalBriefSection', () => {
     expect(within(alphaCard).getByText('Pour préparer ton récit :')).toBeInTheDocument()
     expect(within(alphaCard).getByText('Quel arbitrage ?')).toBeInTheDocument()
     const betaCard = screen.getByRole('article', { name: /Beta Labs/ })
-    expect(within(betaCard).getByText("Pour l'intro")).toHaveClass('bg-sage')
+    expect(within(betaCard).getByText("Pour l'intro")).toHaveClass('bg-forest-soft', 'text-on-forest-soft')
     expect(screen.queryByRole('article', { name: /Gamma/ })).not.toBeInTheDocument()
     expect(screen.getByText('Passe vite sur : Gamma (Trop ancien) ; Delta (Hors sujet).')).toBeInTheDocument()
     expect(screen.getByText('3 · Points à préparer')).toBeInTheDocument()
@@ -188,6 +188,16 @@ describe('TechnicalBriefSection', () => {
     expect(await screen.findByText('Ton CV envoyé a changé depuis ce brief.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Régénérer' })).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Choisir le CV envoyé' })).toBeInTheDocument()
+  })
+
+  it('emphasises Régénérer only when the sent cv changed', async () => {
+    renderSection(buildView({ brief, isCvOutdated: true }))
+    expect(await screen.findByRole('button', { name: 'Régénérer' })).toHaveClass('bg-primary')
+  })
+
+  it('keeps Régénérer discreet when the cv is up to date', async () => {
+    renderSection(buildView({ brief }))
+    expect(await screen.findByRole('button', { name: 'Régénérer' })).not.toHaveClass('bg-primary')
   })
 
   it('shows the missing mission details text instead of Régénérer', async () => {

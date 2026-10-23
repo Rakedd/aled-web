@@ -22,8 +22,8 @@ const GAPS_TITLE_ID = 'technical-brief-gaps-title'
 
 const EMPHASIS_PILL_CLASS_NAMES = {
   lean_on: 'bg-peach text-on-peach',
-  intro: 'bg-sage',
-  skim: 'bg-sage',
+  intro: 'bg-forest-soft text-on-forest-soft',
+  skim: 'bg-forest-soft text-on-forest-soft',
 } as const
 
 const MissionCard = ({ mission }: { mission: TechnicalBriefMission }) => (
@@ -163,7 +163,12 @@ export const TechnicalBriefSection = (sectionProps: TechnicalBriefSectionProps) 
           {brief !== null && <p className="text-xs text-muted-foreground">{formatTechnicalBriefSource(brief)}</p>}
         </div>
         {view !== null && brief !== null && view.availability === 'ready' && hasAnthropicApiKey && (
-          <Button type="button" variant="outline" onClick={() => void generate()} disabled={isGenerating}>
+          <Button
+            type="button"
+            variant={view.isCvOutdated ? 'default' : 'outline'}
+            onClick={() => void generate()}
+            disabled={isGenerating}
+          >
             {generationButtonLabel(TECHNICAL_BRIEF_MESSAGES.regenerate)}
           </Button>
         )}
