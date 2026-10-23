@@ -3,7 +3,7 @@
 Aled (anciennement Freeclutch) : le dépôt GitHub s'appelle `aled-web` et l'application est servie sur `https://app.aled.work` ; les noms techniques portent encore `freeclutch`.
 
 Suivi des candidatures freelance : missions, intermédiaires, entretiens, fiches métier et brief client généré par Claude.
-Next.js (App Router), TypeScript, Supabase (Postgres, Auth, Storage), API Claude. Accès sur invitation uniquement.
+Next.js (App Router), TypeScript, Supabase (Postgres, Auth, Storage), API Claude.
 
 ## Identité Atelier
 
@@ -161,7 +161,11 @@ Sur le projet hébergé, la mise en route de l'inscription est décrite dans « 
 
 ## Mettre en production les inscriptions
 
-Le code et la configuration locale (`supabase/config.toml`) sont prêts. Les réglages du projet Supabase hébergé, de Google et de LinkedIn se font à la main, dans cet ordre.
+Le code et la configuration locale (`supabase/config.toml`) sont prêts. Les réglages du projet Supabase hébergé, de Google et de LinkedIn se font à la main. Ordre à respecter :
+
+1. La landing est en ligne sur `aled.work`, avec les pages légales accessibles (voir « Landing page > Checklist de lancement »). C'est à ce moment que `LANDING_HOSTNAMES` et `APP_ORIGIN` sont renseignées en Production.
+2. L'écran de consentement Google est configuré avec les URL de confidentialité et des conditions d'utilisation, qui doivent donc déjà répondre. Google peut exiger la vérification du domaine `aled.work` : à contrôler dans la console.
+3. Les inscriptions s'ouvrent (réglages Supabase ci-dessous, puis Google et LinkedIn).
 
 ### 1. Réglages Supabase
 
@@ -170,8 +174,8 @@ Le code et la configuration locale (`supabase/config.toml`) sont prêts. Les ré
    - **Site URL** : `https://app.aled.work` ;
    - **Redirect URLs** : `https://app.aled.work/auth/callback` et `aled://auth/callback` (le schéma `aled://` sert à l'application mobile).
 3. **Authentication > Email Templates** : coller le contenu de `supabase/templates/confirmation.html` dans **Confirm signup** et celui de `supabase/templates/recovery.html` dans **Reset password**, avec les mêmes objets que ceux du fichier.
-4. **Authentication > Rate Limits** : Resend est déjà le SMTP du projet, donc relever la limite d'envoi d'e-mails (« Rate limit for sending emails »), par exemple à 30 par heure. Garder un intervalle minimal entre deux e-mails d'au moins 60 secondes : en dessous, des demandes répétées rapidement se comportent différemment selon que le compte existe ou non, ce qui permet de le deviner. Attention : Supabase voit l'IP du serveur Vercel, pas celle de l'utilisateur. Les limites par IP s'appliquent donc à tous les utilisateurs ensemble.
-5. Variables Vercel (Production) : `APP_ORIGIN` et `LANDING_HOSTNAMES` (voir « Projet Vercel »). Sans hôte de landing, les liens légaux pointent vers `/vitrine/...`, qui est une 404 sur l'hôte de l'application, et l'application journalise `Landing hostname missing for legal links` (`console.error`).
+4. **Authentication > Rate Limits** : Resend est déjà le SMTP du projet, donc relever la limite d'envoi d'e-mails (« Rate limit for sending emails »), par exemple à 30 par heure. Vérifier que l'intervalle minimal entre deux e-mails (« Minimum interval between emails », réglage du fournisseur e-mail ou des limites de débit dans **Authentication**) vaut 60 secondes ou plus ; l'emplacement exact est à confirmer dans le tableau de bord. Cela empêche des répétitions rapides de révéler si un compte existe et limite les abus. Attention : Supabase voit l'IP du serveur Vercel, pas celle de l'utilisateur. Les limites par IP s'appliquent donc à tous les utilisateurs ensemble.
+5. Variables Vercel (Production) : `APP_ORIGIN` et `LANDING_HOSTNAMES`, déjà renseignées le jour du lancement de la landing (voir « Projet Vercel »). Sans hôte de landing, les liens légaux pointent vers `/vitrine/...`, qui est une 404 sur l'hôte de l'application, et l'application journalise `Landing hostname missing for legal links` (`console.error`).
 
 ### 2. Google
 
@@ -181,6 +185,7 @@ Le code et la configuration locale (`supabase/config.toml`) sont prêts. Les ré
 4. Dans **Authorized redirect URIs**, ajouter `https://<référence-du-projet>.supabase.co/auth/v1/callback`.
 5. Copier le **Client ID** et le **Client secret**.
 6. Dans Supabase, **Authentication > Sign In / Providers > Google** : activer le fournisseur, coller l'identifiant et le secret, enregistrer.
+7. Publier l'application avant le lancement public. Un écran de consentement **External** démarre en mode « Testing » : seuls les testeurs listés peuvent se connecter. Cliquer sur « Publier l'application » pour passer le statut à « In production ». Le libellé exact du bouton est à vérifier dans la console, car l'interface Google Auth Platform peut répartir ces réglages entre Branding, Audience et Clients.
 
 ### 3. LinkedIn
 
@@ -192,11 +197,11 @@ Le code et la configuration locale (`supabase/config.toml`) sont prêts. Les ré
 
 ### 4. Application mobile
 
-Un nouveau build de développement est nécessaire : `expo-clipboard` et `expo-crypto` sont des modules natifs, absents des builds existants. Le schéma `aled://auth/callback` doit être dans les **Redirect URLs** de Supabase (étape 1.2).
+Un nouveau build de développement est nécessaire : `expo-clipboard` et `expo-crypto` sont des modules natifs, à reconstruire. Le schéma `aled://auth/callback` doit être dans les **Redirect URLs** de Supabase (étape 1.2).
 
 ### 5. Avant le lancement
 
-La page `/conditions-utilisation` contient des marqueurs `[À COMPLÉTER …]`. Le porteur doit les remplir avant d'ouvrir les inscriptions. Vérifier ensuite un parcours complet : inscription par e-mail, confirmation, déconnexion, récupération du mot de passe, puis Google et LinkedIn.
+La page `/conditions-utilisation` contient des marqueurs `[À COMPLÉTER …]`. Le porteur doit les remplir avant d'ouvrir les inscriptions. Le texte est dans `src/domain/legal-copy.ts` (`TERMS_OF_USE_DOCUMENT`), en 7 sections : Objet, Compte, Usage de l'IA et clé Claude, Données, Responsabilité, Résiliation, Droit applicable. Le test « contains no placeholder left » de `src/domain/legal-copy.test.ts` est ignoré (`.skip`) : l'activer une fois les emplacements remplis. Vérifier ensuite un parcours complet : inscription par e-mail, confirmation, déconnexion, récupération du mot de passe, puis Google et LinkedIn.
 
 ### Activer Google et LinkedIn en local
 
@@ -293,7 +298,11 @@ La première mise en place se fait à la main, dans cet ordre : Supabase, Google
    - **Confirm signup** : `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`
    - **Reset password** : `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`
 
-   Le plus simple est de copier le contenu de `supabase/templates/magic-link.html` et `supabase/templates/invite.html` dans les modèles, avec les mêmes objets ; `confirmation.html` et `recovery.html` servent aux deux autres.
+   Le plus simple est de copier le contenu des fichiers de `supabase/templates/` dans les modèles, avec les mêmes objets :
+   - Magic link : `magic-link.html`
+   - Invite : `invite.html`
+   - Confirm signup : `confirmation.html`
+   - Reset password : `recovery.html`
 6. Configurer un serveur SMTP personnalisé avant d'envoyer des e-mails Supabase (invitation, lien magique). La connexion par mot de passe n'envoie aucun e-mail et fonctionne sans. Le service d'e-mail intégré de Supabase n'envoie qu'aux adresses des membres de l'équipe du projet Supabase, avec une limite de quelques e-mails par heure : sans SMTP personnalisé, ces e-mails n'arrivent jamais, sans aucune erreur visible.
    - Créer un compte chez un fournisseur gratuit, par exemple [Resend](https://resend.com) (3 000 e-mails par mois) ou [Brevo](https://www.brevo.com) (300 e-mails par jour).
    - Chez ce fournisseur, vérifier le domaine d'envoi (enregistrements DNS SPF et DKIM) ou, à défaut, l'adresse d'expéditeur.
