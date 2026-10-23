@@ -1,8 +1,16 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { saveProfessionalStatus } from '@/server/actions/settings-actions'
 import { loadTodoReminders } from '@/server/todo-reminders/load-todo-reminders'
 import HomePage from './page'
 
-jest.mock('@/components/home-dashboard', () => ({ HomeDashboard: () => <h1>Tableau de bord</h1> }))
+jest.mock('@/components/home-dashboard', () => ({
+  HomeDashboard: ({ titleElementId }: { titleElementId: string }) => (
+    <h1 id={titleElementId} tabIndex={-1}>
+      Tableau de bord
+    </h1>
+  ),
+}))
 jest.mock('@/server/actions/settings-actions', () => ({ saveProfessionalStatus: jest.fn() }))
 jest.mock('@/server/actions/cv-actions', () => ({ confirmCvStillGood: jest.fn() }))
 jest.mock('@/server/actions/job-application-actions', () => ({
@@ -40,7 +48,7 @@ describe('HomePage', () => {
     },
   )
 
-  it('asks for the professional status when it is missing', async () => {
+  const mockMissingProfessionalStatus = () =>
     jest.mocked(loadTodoReminders).mockResolvedValueOnce({
       ok: true,
       data: {
@@ -52,10 +60,23 @@ describe('HomePage', () => {
       },
     } as never)
 
+  it('asks for the professional status when it is missing', async () => {
+    mockMissingProfessionalStatus()
+
     await renderHomePage({})
 
     expect(screen.getByRole('button', { name: 'Freelance' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'CDI' })).toBeInTheDocument()
+  })
+
+  it('moves focus to the dashboard title once the professional status is chosen', async () => {
+    mockMissingProfessionalStatus()
+    jest.mocked(saveProfessionalStatus).mockResolvedValueOnce({ ok: true, data: null })
+
+    await renderHomePage({})
+    await userEvent.click(screen.getByRole('button', { name: 'Freelance' }))
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Tableau de bord' })).toHaveFocus()
   })
 
   it('does not ask when the professional status is known', async () => {

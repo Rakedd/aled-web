@@ -5,6 +5,10 @@ export type SaveProfessionalStatus = (professionalStatus: ProfessionalStatus) =>
 
 export type ProfessionalStatusCardControllerParameters = {
   saveProfessionalStatus: SaveProfessionalStatus
+  onAnswered: () => void
 }
 
-export type ProfessionalStatusCardProps = ProfessionalStatusCardControllerParameters
+export type ProfessionalStatusCardProps = {
+  saveProfessionalStatus: SaveProfessionalStatus
+  answeredFocusTargetId: string
+}

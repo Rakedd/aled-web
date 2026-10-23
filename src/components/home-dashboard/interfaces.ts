@@ -13,6 +13,7 @@ export type HomeDashboardControllerParameters = {
 
 export type HomeDashboardProps = Omit<HomeDashboardControllerParameters, 'onDataChanged'> & {
   firstName: string
+  titleElementId: string
   now: Date
   initialAlerts: TodoAlert[]
   jobApplicationSummaries: TodoBannerJobApplicationSummary[]

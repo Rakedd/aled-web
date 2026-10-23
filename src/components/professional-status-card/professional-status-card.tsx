@@ -5,8 +5,11 @@ import { PROFESSIONAL_STATUSES, PROFESSIONAL_STATUS_LABELS } from '@/domain/sign
 import { useController } from './controller'
 import type { ProfessionalStatusCardProps } from './interfaces'
 
-export const ProfessionalStatusCard = ({ saveProfessionalStatus }: ProfessionalStatusCardProps) => {
-  const { isSaving, isAnswered, errorMessage, choose } = useController({ saveProfessionalStatus })
+export const ProfessionalStatusCard = ({ saveProfessionalStatus, answeredFocusTargetId }: ProfessionalStatusCardProps) => {
+  const { isSaving, isAnswered, errorMessage, choose } = useController({
+    saveProfessionalStatus,
+    onAnswered: () => document.getElementById(answeredFocusTargetId)?.focus(),
+  })
 
   if (isAnswered) return null
 

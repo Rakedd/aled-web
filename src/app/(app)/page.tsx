@@ -19,6 +19,8 @@ const UPCOMING_INTERVIEWS_LOOKAHEAD_DAYS = 90
 
 const PAGE_LOAD_FAILURE_MESSAGE = 'Impossible de charger ton accueil.'
 
+const HOME_TITLE_ELEMENT_ID = 'home-dashboard-title'
+
 const HomePage = async ({ searchParams }: PageProps<'/'>) => {
   const searchParameters = await searchParams
   const passwordUpdatedBanner =
@@ -48,10 +50,14 @@ const HomePage = async ({ searchParams }: PageProps<'/'>) => {
     <div className="flex min-w-0 flex-col gap-5">
       {passwordUpdatedBanner}
       {profileSettings.professionalStatus === null && (
-        <ProfessionalStatusCard saveProfessionalStatus={saveProfessionalStatus} />
+        <ProfessionalStatusCard
+          saveProfessionalStatus={saveProfessionalStatus}
+          answeredFocusTargetId={HOME_TITLE_ELEMENT_ID}
+        />
       )}
       <HomeDashboard
         firstName={profileSettings.firstName}
+        titleElementId={HOME_TITLE_ELEMENT_ID}
         now={now}
         initialAlerts={alerts}
         jobApplicationSummaries={jobApplications.map(({ id, status, contactName, intermediaryName }) => ({

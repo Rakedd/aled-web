@@ -66,6 +66,7 @@ const buildOpportunity = (index: number): OpportunityListItem => ({
 const buildDashboard = (overrides: Partial<HomeDashboardProps> = {}) => (
   <HomeDashboard
     firstName="Rayan"
+    titleElementId="home-dashboard-title"
     now={NOW}
     initialAlerts={[]}
     jobApplicationSummaries={[]}
@@ -94,6 +95,13 @@ describe('HomeDashboard', () => {
   it('greets the user by first name', () => {
     renderDashboard()
     expect(screen.getByRole('heading', { level: 1, name: 'Bonjour Rayan' })).toBeInTheDocument()
+  })
+
+  it('makes the greeting a programmatic focus target with the given id', () => {
+    renderDashboard()
+    const greeting = screen.getByRole('heading', { level: 1, name: 'Bonjour Rayan' })
+    expect(greeting).toHaveAttribute('id', 'home-dashboard-title')
+    expect(greeting).toHaveAttribute('tabindex', '-1')
   })
 
   it('greets without a name when the first name is empty', () => {

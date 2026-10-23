@@ -30,6 +30,7 @@ const DAY_BLOCK_CLASS_NAMES = ['bg-lilac text-on-lilac', 'bg-hairline']
 
 export const HomeDashboard = ({
   firstName,
+  titleElementId,
   now,
   initialAlerts,
   jobApplicationSummaries,
@@ -72,7 +73,11 @@ export const HomeDashboard = ({
         >
           <p className="text-sm font-semibold">{formatParisLongDate(now)}</p>
           <div className="flex flex-col gap-2.5">
-            <h1 className="font-heading text-4xl leading-none font-extrabold tracking-tight md:text-6xl">
+            <h1
+              id={titleElementId}
+              tabIndex={-1}
+              className="font-heading text-4xl leading-none font-extrabold tracking-tight outline-none md:text-6xl"
+            >
               {trimmedFirstName === '' ? 'Bonjour' : `Bonjour ${trimmedFirstName}`}
             </h1>
             <p className="text-lg">{summarySentence}</p>
