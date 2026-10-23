@@ -8,6 +8,7 @@ import type { StackItem } from '@/domain/types'
 import { AiError } from './ai-error'
 import { CLAUDE_MODELS } from './claude-models'
 import { readStructuredOutputText } from './read-structured-output-text'
+import { toTaggedDocumentOrNull, toTaggedNameOrNull, toTaggedStackOrNull } from './tagged-prompt-data'
 
 export type InterviewQuestionsInput = {
   language: BriefLanguage
@@ -40,21 +41,6 @@ Rules:
 - Make every question specific to this mission, using the data provided: the team, the project context, the technical stack, the organisation and ways of working, and what is expected from the freelancer.
 - Never ask generic questions that would fit any mission, and never ask about the salary, the daily rate or other payment terms.
 - Never invent a fact that the data does not state. When the end client is not given, do not guess it.`
-
-const toTaggedNameOrNull = (tagName: string, name: string | null): string | null => {
-  const sanitizedName = name === null ? '' : removeAngleBrackets(name)
-  return sanitizedName === '' ? null : `<${tagName}>${sanitizedName}</${tagName}>`
-}
-
-const toTaggedDocumentOrNull = (tagName: string, documentText: string | null): string | null => {
-  const trimmedDocumentText = documentText?.trim() ?? ''
-  return trimmedDocumentText === '' ? null : `<${tagName}>\n${trimmedDocumentText}\n</${tagName}>`
-}
-
-const toStackLine = (stackItem: StackItem): string => `- ${removeAngleBrackets(stackItem.name)} (${stackItem.category})`
-
-const toTaggedStackOrNull = (stack: StackItem[]): string | null =>
-  stack.length === 0 ? null : `<stack>\n${stack.map(toStackLine).join('\n')}\n</stack>`
 
 const buildInterviewQuestionsUserPrompt = (interviewQuestionsInput: InterviewQuestionsInput): string =>
   [

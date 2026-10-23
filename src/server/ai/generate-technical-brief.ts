@@ -14,6 +14,7 @@ import type { StackItem } from '@/domain/types'
 import { AiError } from './ai-error'
 import { CLAUDE_MODELS } from './claude-models'
 import { readStructuredOutputText } from './read-structured-output-text'
+import { toTaggedDocumentOrNull, toTaggedNameOrNull, toTaggedStackOrNull } from './tagged-prompt-data'
 
 export type TechnicalBriefJobSpec = { kind: 'text'; text: string } | { kind: 'pdf'; base64Pdf: string }
 
@@ -79,21 +80,6 @@ const toPdfDocumentBlock = (base64Pdf: string): Anthropic.DocumentBlockParam => 
   type: 'document',
   source: { type: 'base64', media_type: 'application/pdf', data: base64Pdf },
 })
-
-const toTaggedNameOrNull = (tagName: string, name: string | null): string | null => {
-  const sanitizedName = name === null ? '' : removeAngleBrackets(name)
-  return sanitizedName === '' ? null : `<${tagName}>${sanitizedName}</${tagName}>`
-}
-
-const toTaggedDocumentOrNull = (tagName: string, documentText: string | null): string | null => {
-  const trimmedDocumentText = documentText?.trim() ?? ''
-  return trimmedDocumentText === '' ? null : `<${tagName}>\n${trimmedDocumentText}\n</${tagName}>`
-}
-
-const toStackLine = (stackItem: StackItem): string => `- ${removeAngleBrackets(stackItem.name)} (${stackItem.category})`
-
-const toTaggedStackOrNull = (stack: StackItem[]): string | null =>
-  stack.length === 0 ? null : `<stack>\n${stack.map(toStackLine).join('\n')}\n</stack>`
 
 const buildTaggedDataText = (technicalBriefInput: TechnicalBriefInput): string =>
   [

@@ -4,6 +4,7 @@ import {
   formatTechnicalBriefSource,
   normalizeTechnicalBriefContent,
   splitGuidanceByMissionLabels,
+  TECHNICAL_BRIEF_AI_ERROR_MESSAGES,
   toTechnicalBriefView,
   validateTechnicalBriefRequest,
   type TechnicalBrief,
@@ -260,5 +261,11 @@ describe('splitGuidanceByMissionLabels', () => {
 
   it('answers no part for an empty guidance', () => {
     expect(splitGuidanceByMissionLabels('', ['Alpha Corp'])).toEqual([])
+  })
+})
+
+describe('TECHNICAL_BRIEF_AI_ERROR_MESSAGES', () => {
+  it('blames the cv or the job spec when the input is too long', () => {
+    expect(TECHNICAL_BRIEF_AI_ERROR_MESSAGES.input_too_long).toBe('Ton CV ou la fiche de poste est trop volumineux pour Claude.')
   })
 })

@@ -190,6 +190,38 @@ describe('generateTechnicalBriefForUser', () => {
     expect(saveTechnicalBrief).not.toHaveBeenCalled()
   })
 
+  it('continues without the job spec when its pdf download fails and the mission has a stack', async () => {
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    mockJobApplication({ hasJobSpec: true })
+    jest.mocked(findJobSpec).mockResolvedValue({ sourceKind: 'pdf', rawText: null, pendingStack: null, updatedAt: NOW })
+    jest.mocked(downloadJobSpecPdfAsBase64).mockRejectedValue(new Error('storage down'))
+    const dependencies = buildDependencies()
+
+    const result = await generate(dependencies)
+
+    expect(dependencies.generateTechnicalBrief).toHaveBeenCalledWith(
+      'sk-ant-test-key',
+      expect.objectContaining({ stack: STACK, jobSpec: null }),
+    )
+    expect(result.ok).toBe(true)
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Technical brief job spec download failed', { errorMessage: 'storage down' })
+    consoleWarnSpy.mockRestore()
+  })
+
+  it('refuses an empty stack when the job spec pdf download fails', async () => {
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    mockJobApplication({ stack: [], hasJobSpec: true })
+    jest.mocked(findJobSpec).mockResolvedValue({ sourceKind: 'pdf', rawText: null, pendingStack: null, updatedAt: NOW })
+    jest.mocked(downloadJobSpecPdfAsBase64).mockRejectedValue(new Error('storage down'))
+    const dependencies = buildDependencies()
+
+    const result = await generate(dependencies)
+
+    expect(result).toEqual({ ok: false, errorMessage: TECHNICAL_BRIEF_MESSAGES.missingMissionDetails })
+    expect(dependencies.generateTechnicalBrief).not.toHaveBeenCalled()
+    consoleWarnSpy.mockRestore()
+  })
+
   it('still calls the ai with a stack and no usable job spec', async () => {
     const dependencies = buildDependencies()
 

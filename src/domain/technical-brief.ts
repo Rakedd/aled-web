@@ -101,6 +101,7 @@ export const TECHNICAL_BRIEF_MESSAGES = {
 
 export const TECHNICAL_BRIEF_AI_ERROR_MESSAGES: Record<AiErrorKind, string> = {
   ...CLIENT_BRIEF_AI_ERROR_MESSAGES,
+  input_too_long: 'Ton CV ou la fiche de poste est trop volumineux pour Claude.',
   unknown: 'La préparation du pitch a échoué, réessaie.',
 }
 

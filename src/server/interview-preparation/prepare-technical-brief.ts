@@ -71,6 +71,21 @@ export const findTechnicalBriefViewForUser = async (
   return contextResult.ok ? { ok: true, data: contextResult.data.view } : contextResult
 }
 
+const downloadJobSpecPdfAsBase64OrNull = async (
+  supabase: FreeclutchSupabaseClient,
+  userId: string,
+  jobApplicationId: string,
+): Promise<string | null> => {
+  try {
+    return await downloadJobSpecPdfAsBase64(supabase, userId, jobApplicationId)
+  } catch (downloadError) {
+    console.warn('Technical brief job spec download failed', {
+      errorMessage: downloadError instanceof Error ? downloadError.message : typeof downloadError,
+    })
+    return null
+  }
+}
+
 const findJobSpecForTechnicalBrief = async (
   supabase: FreeclutchSupabaseClient,
   userId: string,
@@ -79,7 +94,7 @@ const findJobSpecForTechnicalBrief = async (
   const jobSpec = await findJobSpec(supabase, userId, jobApplicationId)
   if (jobSpec === null) return null
   if (jobSpec.sourceKind === 'text') return jobSpec.rawText === null ? null : { kind: 'text', text: jobSpec.rawText }
-  const base64Pdf = await downloadJobSpecPdfAsBase64(supabase, userId, jobApplicationId)
+  const base64Pdf = await downloadJobSpecPdfAsBase64OrNull(supabase, userId, jobApplicationId)
   return base64Pdf === null ? null : { kind: 'pdf', base64Pdf }
 }
 
