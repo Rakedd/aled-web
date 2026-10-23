@@ -144,11 +144,11 @@ L'inscription est publique : chacun crée son compte lui-même, par e-mail et mo
 Parcours d'une inscription :
 
 1. Sur `/inscription` (web) ou depuis l'écran d'inscription de l'application, la personne saisit son prénom, son e-mail, un mot de passe d'au moins 8 caractères, son statut (freelance ou salarié) et accepte les conditions d'utilisation.
-2. Elle reçoit un e-mail de confirmation. Le lien ouvre `/auth/confirm`, qui vérifie le jeton et ouvre la session.
+2. Elle reçoit un e-mail de confirmation. Le lien ouvre `/auth/confirm`, qui vérifie le jeton et ouvre la session. Si le lien a expiré ou a déjà servi, `/login` propose d'en recevoir un nouveau sur `/inscription/renvoyer`. La connexion d'un compte pas encore activé propose aussi de renvoyer l'e-mail.
 3. Avec Google ou LinkedIn, le retour passe par `/auth/callback` (échange de code PKCE) et aucun e-mail de confirmation n'est nécessaire.
 4. En cas d'oubli, `/mot-de-passe-oublie` envoie un lien de récupération ; `/mot-de-passe/nouveau` permet de choisir le nouveau mot de passe.
 
-Routes concernées : `/inscription`, `/mot-de-passe-oublie`, `/mot-de-passe/nouveau`, `/auth/confirm` (types `email`, `invite`, `signup`, `recovery`) et `/auth/callback`.
+Routes concernées : `/inscription`, `/inscription/renvoyer`, `/mot-de-passe-oublie`, `/mot-de-passe/nouveau`, `/auth/confirm` (types `email`, `invite`, `signup`, `recovery`) et `/auth/callback`.
 
 Un profil est créé automatiquement pour chaque nouveau compte. Il garde le statut professionnel (`professional_status`) et la date d'acceptation des conditions (`terms_accepted_at`).
 
