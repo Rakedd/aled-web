@@ -41,6 +41,7 @@ export type UserDataSnapshot = {
   opportunityDecisions: UserDataSnapshotOpportunityDecision[]
   endClientBriefs: Tables<'end_client_briefs'>[]
   interviewQuestions: Tables<'interview_questions'>[]
+  technicalBriefs: Tables<'technical_briefs'>[]
   cvs: Tables<'cvs'>[]
   cvVersions: UserDataSnapshotCvVersion[]
 }
@@ -133,6 +134,7 @@ export const buildUserDataSnapshot = async (
     opportunityDecisions,
     endClientBriefs,
     interviewQuestions,
+    technicalBriefs,
     cvs,
     cvVersionRows,
   ] = await Promise.all([
@@ -196,6 +198,14 @@ export const buildUserDataSnapshot = async (
         .order('id')
         .range(firstRowIndex, lastRowIndex),
     ),
+    fetchEveryRow('fetchSnapshotTechnicalBriefs', (firstRowIndex, lastRowIndex) =>
+      supabase
+        .from('technical_briefs')
+        .select('*')
+        .eq('user_id', userId)
+        .order('id')
+        .range(firstRowIndex, lastRowIndex),
+    ),
     fetchEveryRow('fetchSnapshotCvs', (firstRowIndex, lastRowIndex) =>
       supabase.from('cvs').select('*').eq('user_id', userId).order('id').range(firstRowIndex, lastRowIndex),
     ),
@@ -221,6 +231,7 @@ export const buildUserDataSnapshot = async (
     opportunityDecisions,
     endClientBriefs,
     interviewQuestions,
+    technicalBriefs,
     cvs,
     cvVersions: await attachCvVersionPdfs(supabase, cvVersionRows),
   }

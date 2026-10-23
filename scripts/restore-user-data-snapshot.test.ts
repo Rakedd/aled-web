@@ -32,6 +32,7 @@ const EMPTY_SNAPSHOT: UserDataSnapshot = {
   opportunityDecisions: [],
   endClientBriefs: [],
   interviewQuestions: [],
+  technicalBriefs: [],
   cvs: [],
   cvVersions: [],
 }
@@ -55,6 +56,7 @@ const buildSnapshotJsonWithoutBriefsByLanguage = (endClients: Tables<'end_client
   const snapshotJson: Record<string, unknown> = { ...EMPTY_SNAPSHOT, endClients }
   delete snapshotJson.endClientBriefs
   delete snapshotJson.interviewQuestions
+  delete snapshotJson.technicalBriefs
   return snapshotJson
 }
 
@@ -159,6 +161,27 @@ describe('parseUserDataSnapshot', () => {
     expect(parsedSnapshot.interviewQuestions).toEqual([interviewQuestions])
   })
 
+  it('parses the technical briefs and defaults them to an empty list', () => {
+    const technicalBrief: Tables<'technical_briefs'> = {
+      id: '12121212-1212-4212-8212-121212121212',
+      user_id: SNAPSHOT_USER_ID,
+      job_application_id: '99999999-9999-4999-8999-999999999999',
+      language: 'fr',
+      cv_version_id: null,
+      cv_label: 'CV React',
+      cv_uploaded_at: '2026-09-20T10:00:00+00:00',
+      content: { storyline: [], missions: [], gaps: [] },
+      generated_at: '2026-10-05T12:00:00+00:00',
+    }
+    const snapshotWithoutTechnicalBriefs: Record<string, unknown> = { ...EMPTY_SNAPSHOT }
+    delete snapshotWithoutTechnicalBriefs.technicalBriefs
+
+    expect(parseUserDataSnapshot(snapshotWithoutTechnicalBriefs).technicalBriefs).toEqual([])
+    expect(parseUserDataSnapshot({ ...EMPTY_SNAPSHOT, technicalBriefs: [technicalBrief] }).technicalBriefs).toEqual([
+      technicalBrief,
+    ])
+  })
+
   it('keeps only the Free-Work filters of a snapshot written before shared filters, without their source', () => {
     const sharedFilters: Tables<'opportunity_filters'> = {
       id: '66666666-6666-4666-8666-666666666666',
@@ -213,7 +236,7 @@ describe('parseUserDataSnapshot', () => {
     ])
   })
 
-  it.each(['endClientBriefs', 'interviewQuestions'])('refuses a snapshot whose %s is not a list', (snapshotArrayKey) => {
+  it.each(['endClientBriefs', 'interviewQuestions', 'technicalBriefs'])('refuses a snapshot whose %s is not a list', (snapshotArrayKey) => {
     expect(() => parseUserDataSnapshot({ ...EMPTY_SNAPSHOT, [snapshotArrayKey]: {} })).toThrow(
       'The file is not a Freeclutch snapshot with formatVersion 1',
     )

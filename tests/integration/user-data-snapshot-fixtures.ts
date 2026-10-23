@@ -98,6 +98,24 @@ const uploadJobSpecPdf = async ({ client, userId }: TestUser, jobApplicationId: 
   return pdfStoragePath
 }
 
+const TECHNICAL_BRIEF_FIXTURE_CONTENT = {
+  storyline: Array.from({ length: 5 }, (_unused, stepIndex) => ({
+    title: `Étape ${stepIndex + 1}`,
+    guidance: `Raconte l'étape ${stepIndex + 1} en une minute.`,
+  })),
+  missions: [
+    {
+      label: 'Refonte du portail client',
+      period: '2024 - 2025',
+      emphasis: 'lean_on',
+      sharedStack: ['TypeScript', 'React'],
+      why: 'La stack recoupe la mission visée.',
+      reflectionQuestions: ['Pourquoi React plutôt que Vue ?'],
+    },
+  ],
+  gaps: [],
+}
+
 export const SENT_CV_PDF_BYTES = Uint8Array.from([
   ...new TextEncoder().encode('%PDF-1.4\n'),
   ...Array.from({ length: 256 }, (_unused, byteValue) => 255 - byteValue),
@@ -274,5 +292,17 @@ export const seedEveryUserTable = async (testUser: TestUser): Promise<SeededUser
     }),
   )
   const seededCv = await seedCvWithSentVersion(testUser, jobApplicationId)
+  failOnError(
+    await client.from('technical_briefs').insert({
+      user_id: userId,
+      job_application_id: jobApplicationId,
+      language: 'fr',
+      cv_version_id: seededCv.sentCvVersionId,
+      cv_label: 'CV React ancien',
+      cv_uploaded_at: '2026-09-20T10:00:00.123456+00:00',
+      content: TECHNICAL_BRIEF_FIXTURE_CONTENT,
+      generated_at: '2026-10-12T09:30:00.654321+00:00',
+    }),
+  )
   return { jobApplicationId, pdfStoragePath, ...seededCv }
 }

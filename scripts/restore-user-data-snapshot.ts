@@ -25,6 +25,7 @@ const SNAPSHOT_TABLE_NAMES = {
   opportunityFilters: 'opportunity_filters',
   endClientBriefs: 'end_client_briefs',
   interviewQuestions: 'interview_questions',
+  technicalBriefs: 'technical_briefs',
   cvs: 'cvs',
   cvVersions: 'cv_versions',
 } as const satisfies Record<string, keyof Database['public']['Tables']>
@@ -34,6 +35,7 @@ const ARRAY_KEYS_ABSENT_FROM_EARLIER_SNAPSHOTS = [
   'opportunityDecisions',
   'endClientBriefs',
   'interviewQuestions',
+  'technicalBriefs',
   'cvs',
   'cvVersions',
 ] as const
@@ -100,6 +102,7 @@ export const parseUserDataSnapshot = (snapshotJson: unknown): UserDataSnapshot =
     opportunityDecisions: parsedSnapshot.opportunityDecisions ?? [],
     endClientBriefs: parsedSnapshot.endClientBriefs ?? parsedSnapshot.endClients.flatMap(toFrenchBriefsFromLegacyColumns),
     interviewQuestions: parsedSnapshot.interviewQuestions ?? [],
+    technicalBriefs: parsedSnapshot.technicalBriefs ?? [],
     cvs: parsedSnapshot.cvs ?? [],
     cvVersions: parsedSnapshot.cvVersions ?? [],
   }
@@ -385,6 +388,12 @@ export const restoreUserDataSnapshot = async (
     await supabase
       .from('interview_questions')
       .upsert(snapshot.interviewQuestions, { onConflict: 'user_id,job_application_id,language' }),
+  )
+  failOnWriteError(
+    'upsertTechnicalBriefs',
+    await supabase
+      .from('technical_briefs')
+      .upsert(snapshot.technicalBriefs, { onConflict: 'user_id,job_application_id,language' }),
   )
   failOnWriteError(
     'assignMissingContactIntermediaries',

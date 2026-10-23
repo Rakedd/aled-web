@@ -88,6 +88,7 @@ Menu : « Mes candidatures », « Mes contacts », « Mes CV », « Mon calendri
 
 - **Stack** : sur « J'ai postulé », la stack de la mission est extraite par l'IA.
 - **Brief d'entretien** : « Générer le brief » devient « Brief généré · voir mon brief » et ouvre une fenêtre avec le brief par langue (fr/en) : une langue à la fois, choisie avant de générer, avec les callouts « Chiffres clés » et « Dates clés », « Mes notes sur l'entreprise », « Questions à poser en entretien » et « Voir les sources (N) » repliées. « Régénérer » relance la génération.
+- **Brief technique** : dans « Préparer l'entretien », il demande le CV envoyé pour la candidature, rattaché à celle-ci. Chaque mission du CV doit lister sa stack, sinon le brief ne sait pas sur lesquelles appuyer.
 - **Suppression** : le bouton rouge « Supprimer la candidature » demande confirmation, puis supprime le journal, les entretiens, la fiche métier et son PDF. L'opportunité d'origine revient dans « À traiter ».
 
 ## Landing page

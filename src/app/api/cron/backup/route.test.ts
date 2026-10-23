@@ -45,6 +45,7 @@ const buildFakeSnapshot = (userId: string): UserDataSnapshot => ({
   opportunityDecisions: [],
   endClientBriefs: [],
   interviewQuestions: [],
+  technicalBriefs: [],
   cvs: [],
   cvVersions: [],
 })

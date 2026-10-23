@@ -20,6 +20,7 @@ import {
 jest.mock('server-only', () => ({}))
 
 const USER_OWNED_TABLES_CHILDREN_FIRST = [
+  'technical_briefs',
   'cvs',
   'cv_versions',
   'opportunity_decisions',
@@ -115,6 +116,7 @@ const collectSnapshotRowOwnerIds = (snapshot: UserDataSnapshot): string[] => [
     ...snapshot.opportunityFilters,
     ...snapshot.endClientBriefs,
     ...snapshot.interviewQuestions,
+    ...snapshot.technicalBriefs,
     ...snapshot.cvs,
     ...snapshot.cvVersions,
   ].map((snapshotRow) => snapshotRow.user_id),
@@ -127,6 +129,7 @@ const buildSnapshotWrittenBeforeBriefsByLanguage = (currentSnapshot: UserDataSna
   const earlierSnapshot: Partial<UserDataSnapshot> = { ...currentSnapshot }
   delete earlierSnapshot.endClientBriefs
   delete earlierSnapshot.interviewQuestions
+  delete earlierSnapshot.technicalBriefs
   return JSON.parse(JSON.stringify(earlierSnapshot))
 }
 
@@ -230,6 +233,7 @@ describe('user data snapshot', () => {
       alertSnoozes: snapshot.alertSnoozes.length,
       endClientBriefs: snapshot.endClientBriefs.length,
       interviewQuestions: snapshot.interviewQuestions.length,
+      technicalBriefs: snapshot.technicalBriefs.length,
       cvs: snapshot.cvs.length,
       cvVersions: snapshot.cvVersions.length,
     }).toEqual({
@@ -243,6 +247,7 @@ describe('user data snapshot', () => {
       alertSnoozes: 1,
       endClientBriefs: 1,
       interviewQuestions: 1,
+      technicalBriefs: 1,
       cvs: 1,
       cvVersions: 2,
     })
@@ -695,6 +700,12 @@ describe('user data snapshot', () => {
       language: 'en',
       questions: ['Which product ships next?', 'How large is the frontend team?'],
     })
+    expect(restoredSnapshot.technicalBriefs).toEqual(originalSnapshot.technicalBriefs)
+    expect(restoredSnapshot.technicalBriefs[0]).toMatchObject({
+      language: 'fr',
+      cv_version_id: owner.sentCvVersionId,
+      cv_label: 'CV React ancien',
+    })
   })
 
   it('exports and restores an exchange without job application and contact notes', async () => {
@@ -809,10 +820,12 @@ describe('user data snapshot', () => {
     const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
     expect(removeBriefIds(restoredSnapshot.endClientBriefs)).toEqual(removeBriefIds(currentSnapshot.endClientBriefs))
     expect(restoredSnapshot.interviewQuestions).toEqual([])
+    expect(restoredSnapshot.technicalBriefs).toEqual([])
     expect({
       ...keepUpdatedAtOfRowsRewrittenByRestore(restoredSnapshot, currentSnapshot),
       endClientBriefs: currentSnapshot.endClientBriefs,
       interviewQuestions: currentSnapshot.interviewQuestions,
+      technicalBriefs: currentSnapshot.technicalBriefs,
     }).toEqual(currentSnapshot)
   })
 
@@ -829,5 +842,6 @@ describe('user data snapshot', () => {
     const restoredSnapshot = await buildUserDataSnapshot(serviceRoleClient, owner.userId)
     expect(removeBriefIds(restoredSnapshot.endClientBriefs)).toEqual(removeBriefIds(currentSnapshot.endClientBriefs))
     expect(restoredSnapshot.interviewQuestions).toEqual(currentSnapshot.interviewQuestions)
+    expect(restoredSnapshot.technicalBriefs).toEqual(currentSnapshot.technicalBriefs)
   })
 })
