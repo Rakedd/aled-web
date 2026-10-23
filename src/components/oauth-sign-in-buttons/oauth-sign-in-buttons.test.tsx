@@ -32,10 +32,15 @@ describe('OAuthSignInButtons', () => {
     }
   })
 
-  it('shows the "ou" separator', () => {
-    renderButtons()
+  it('shows "ou" as plain text between two decorative lines hidden from assistive technologies', () => {
+    const { container } = renderButtons()
 
     expect(screen.getByText('ou')).toBeInTheDocument()
+    expect(screen.queryByRole('separator')).not.toBeInTheDocument()
+    expect(container.querySelector('[role="separator"]')).toBeNull()
+    const decorativeLines = container.querySelectorAll('span.h-px')
+    expect(decorativeLines).toHaveLength(2)
+    for (const decorativeLine of decorativeLines) expect(decorativeLine).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('starts the sign-in with the provider of the clicked button and disables both buttons', async () => {

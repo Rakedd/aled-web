@@ -188,4 +188,50 @@ describe('SignUpForm', () => {
     await screen.findByText('E-mail renvoyé.')
     expect(document.activeElement).toBe(inboxBlock)
   })
+
+  it('refocuses the alert when the same validation error happens twice in a row', async () => {
+    const user = renderForm()
+    const submitButton = screen.getByRole('button', { name: 'Créer mon compte' })
+
+    await user.click(submitButton)
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveFocus()
+
+    await user.click(submitButton)
+
+    expect(alert).toHaveTextContent('Saisis ton prénom.')
+    expect(alert).toHaveFocus()
+  })
+
+  it('moves focus to the alert after a resend error', async () => {
+    const user = renderForm(
+      succeed(),
+      jest.fn().mockResolvedValue({ ok: false, errorMessage: 'Trop de tentatives, réessaie dans quelques minutes.' }),
+    )
+    await fillValidForm(user)
+    await user.click(screen.getByRole('button', { name: 'Créer mon compte' }))
+    await screen.findByRole('button', { name: 'Renvoyer dans 60 s' })
+    act(() => jest.advanceTimersByTime(60000))
+
+    await user.click(screen.getByRole('button', { name: "Renvoyer l'e-mail" }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Trop de tentatives, réessaie dans quelques minutes.')
+    expect(alert).toHaveFocus()
+  })
+
+  it('keeps focus on the inbox block, not on the disabled resend button, while a resend is running', async () => {
+    const user = renderForm(succeed(), jest.fn(() => new Promise<never>(() => undefined)))
+    await fillValidForm(user)
+    await user.click(screen.getByRole('button', { name: 'Créer mon compte' }))
+    const inboxBlock = (await screen.findByText("Vérifie ta boîte mail : on t'a envoyé un lien pour activer ton compte.")).parentElement
+    act(() => jest.advanceTimersByTime(60000))
+    const resendButton = screen.getByRole('button', { name: "Renvoyer l'e-mail" })
+
+    await user.click(resendButton)
+
+    expect(resendButton).toBeDisabled()
+    expect(document.activeElement).toBe(inboxBlock)
+    expect(document.activeElement).not.toBe(resendButton)
+  })
 })
