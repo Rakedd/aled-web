@@ -12,4 +12,10 @@ describe('NewPasswordPage', () => {
     expect(screen.getByRole('img', { name: 'Aled' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeInTheDocument()
   })
+
+  it('offers a way back to the home page', () => {
+    render(<NewPasswordPage />)
+
+    expect(screen.getByRole('link', { name: 'Retour' })).toHaveAttribute('href', '/')
+  })
 })
