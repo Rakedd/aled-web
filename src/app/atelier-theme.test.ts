@@ -102,6 +102,8 @@ const LIGHT_THEME_COLOURS: Record<string, string> = {
   'ink-button-ring': '#16231D',
   'lilac-panel-action': '#16231D',
   'on-lilac-panel-action': '#CFE3D8',
+  'toggle-pressed': '#1F5C46',
+  'on-toggle-pressed': '#FFFFFF',
   'menu-counter': '#FFB48A',
   'on-menu-counter': '#16231D',
   'settings-navigation-active': '#16231D',
@@ -156,6 +158,8 @@ const DARK_THEME_COLOURS: Record<string, string> = {
   'ink-button-ring': '#E9A27C',
   'lilac-panel-action': '#C9BFE6',
   'on-lilac-panel-action': '#15132A',
+  'toggle-pressed': '#A9CBA9',
+  'on-toggle-pressed': '#26302A',
   'menu-counter': '#C9BFE6',
   'on-menu-counter': '#15132A',
   'settings-navigation-active': '#E9A27C',
@@ -214,9 +218,12 @@ const ROLE_CONTRAST_PAIRS: Array<[string, string]> = [
   ['on-menu-counter', 'menu-counter'],
   ['on-settings-navigation-active', 'settings-navigation-active'],
   ['on-lilac-panel-action', 'lilac-panel-action'],
+  ['on-toggle-pressed', 'toggle-pressed'],
 ]
 
 const MINIMUM_COMPONENT_BOUNDARY_CONTRAST = 3
+
+const TOGGLE_RESTING_TONE_BACKGROUNDS = ['peach', 'peach-soft', 'lilac', 'hairline', 'forest-soft', 'background']
 
 const RETIRED_COLOUR_CLASS_PATTERNS = [
   /\b(bg|text|border|ring|outline|fill)-(forest|on-forest)\b(?!-)/,
@@ -272,6 +279,10 @@ describe('atelier theme', () => {
       expect(getContrastRatio(themeColours['lilac-panel-action'], themeColours['lilac-panel'])).toBeGreaterThanOrEqual(
         MINIMUM_COMPONENT_BOUNDARY_CONTRAST,
       )
+    })
+
+    it.each(TOGGLE_RESTING_TONE_BACKGROUNDS)('paints a pressed toggle unlike a resting %s toggle', (restingBackground) => {
+      expect(themeColours['toggle-pressed']).not.toBe(themeColours[restingBackground])
     })
 
     it('outlines highlighted popup options visibly', () => {
@@ -345,6 +356,8 @@ describe('atelier theme', () => {
       'ink-button-ring',
       'lilac-panel-action',
       'on-lilac-panel-action',
+      'toggle-pressed',
+      'on-toggle-pressed',
       'menu-counter',
       'on-menu-counter',
       'settings-navigation-active',

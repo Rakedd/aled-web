@@ -40,6 +40,8 @@
   --color-ink-button-ring: var(--ink-button-ring);
   --color-lilac-panel-action: var(--lilac-panel-action);
   --color-on-lilac-panel-action: var(--on-lilac-panel-action);
+  --color-toggle-pressed: var(--toggle-pressed);
+  --color-on-toggle-pressed: var(--on-toggle-pressed);
   --color-menu-counter: var(--menu-counter);
   --color-on-menu-counter: var(--on-menu-counter);
   --color-settings-navigation-active: var(--settings-navigation-active);
@@ -120,6 +122,8 @@
   --ink-button-ring: var(--deep-surface);
   --lilac-panel-action: var(--deep-surface);
   --on-lilac-panel-action: var(--on-deep-surface-soft);
+  --toggle-pressed: var(--primary);
+  --on-toggle-pressed: var(--primary-foreground);
   --menu-counter: var(--peach);
   --on-menu-counter: var(--on-peach);
   --settings-navigation-active: var(--deep-surface);
@@ -186,6 +190,8 @@
   --ink-button-ring: var(--primary);
   --lilac-panel-action: var(--lilac);
   --on-lilac-panel-action: var(--on-lilac);
+  --toggle-pressed: var(--on-forest-soft);
+  --on-toggle-pressed: var(--forest-soft);
   --menu-counter: var(--lilac);
   --on-menu-counter: var(--on-lilac);
   --settings-navigation-active: var(--primary);

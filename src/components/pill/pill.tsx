@@ -7,7 +7,7 @@ export const PILL_TONE_CLASS_NAMES: Record<PillTone, string> = {
   'forest-soft': 'bg-forest-soft text-on-forest-soft',
   forest: 'bg-on-forest-soft text-forest-soft',
   brand: 'bg-brand-tile text-on-brand-tile',
-  action: 'bg-primary text-primary-foreground',
+  pressed: 'bg-toggle-pressed text-on-toggle-pressed',
   peach: 'bg-peach text-on-peach',
   'peach-soft': 'bg-peach-soft text-peach-ink',
   lilac: 'bg-lilac text-on-lilac',
