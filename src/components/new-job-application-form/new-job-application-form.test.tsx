@@ -76,6 +76,50 @@ describe('NewJobApplicationForm', () => {
     )
   })
 
+  it('cancels an untouched manual entry back to the paste step, keeping the text and focusing it for the prefill', async () => {
+    const { extractJobPosting } = renderNewJobApplicationForm()
+    await userEvent.type(screen.getByLabelText("Texte de l'annonce"), 'Annonce React')
+    await userEvent.click(screen.getByRole('button', { name: 'Saisie manuelle' }))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler la saisie manuelle' }))
+
+    const pastedText = screen.getByLabelText("Texte de l'annonce")
+    expect(pastedText).toHaveValue('Annonce React')
+    expect(pastedText).toHaveFocus()
+    expect(screen.queryByLabelText('Titre de la mission *')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: "Pré-remplir avec l'IA" }))
+    expect(extractJobPosting).toHaveBeenCalledWith('Annonce React')
+  })
+
+  it('asks before discarding a started manual entry', async () => {
+    renderNewJobApplicationForm()
+    await userEvent.click(screen.getByRole('button', { name: 'Saisie manuelle' }))
+    await userEvent.type(screen.getByLabelText('Titre de la mission *'), 'Lead React')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler la saisie manuelle' }))
+
+    expect(screen.getByText('Effacer ce que tu as saisi ?')).toBeInTheDocument()
+    const keepButton = screen.getByRole('button', { name: 'Continuer la saisie' })
+    expect(keepButton).toHaveFocus()
+    await userEvent.click(keepButton)
+    expect(screen.getByLabelText('Titre de la mission *')).toHaveValue('Lead React')
+    expect(screen.getByRole('button', { name: 'Annuler la saisie manuelle' })).toHaveFocus()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler la saisie manuelle' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Effacer et revenir' }))
+    expect(screen.queryByLabelText('Titre de la mission *')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: "Pré-remplir avec l'IA" })).toBeInTheDocument()
+  })
+
+  it('offers no manual entry cancellation once Claude prefilled the form', async () => {
+    renderNewJobApplicationForm()
+    await userEvent.type(screen.getByLabelText("Texte de l'annonce"), 'Annonce React')
+    await userEvent.click(screen.getByRole('button', { name: "Pré-remplir avec l'IA" }))
+
+    expect(await screen.findByLabelText('Titre de la mission *')).toHaveValue('Développeur React senior')
+    expect(screen.queryByRole('button', { name: 'Annuler la saisie manuelle' })).not.toBeInTheDocument()
+  })
+
   it('disables the prefill without a Claude key, points to the settings and keeps manual entry', async () => {
     renderNewJobApplicationForm({ hasAnthropicApiKey: false })
 

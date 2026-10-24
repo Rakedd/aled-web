@@ -54,6 +54,78 @@ describe('new-job-application-form useController', () => {
   })
   afterEach(() => jest.useRealTimers())
 
+  it('offers to cancel a manual entry, but not a prefill by Claude', async () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.switchToManualEntry())
+    expect(result.current.canCancelManualEntry).toBe(true)
+
+    const prefilled = renderNewJobApplicationFormController()
+    act(() => prefilled.result.current.setPastedText('Annonce React'))
+    await act(() => prefilled.result.current.extract())
+    expect(prefilled.result.current.canCancelManualEntry).toBe(false)
+  })
+
+  it('goes back to the paste step with the pasted text kept when the untouched manual entry is cancelled', () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.setPastedText('Annonce React à Lyon'))
+    act(() => result.current.switchToManualEntry())
+
+    act(() => result.current.requestManualEntryCancellation())
+
+    expect(result.current.step).toBe('paste')
+    expect(result.current.pastedText).toBe('Annonce React à Lyon')
+    expect(result.current.isManualEntryCancellationConfirmationShown).toBe(false)
+  })
+
+  it('keeps the text edited in the manual entry when going back to the paste step', () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.switchToManualEntry())
+    act(() => result.current.setTextFormValue('postingRawText', 'Annonce collée après coup'))
+
+    act(() => result.current.requestManualEntryCancellation())
+
+    expect(result.current.step).toBe('paste')
+    expect(result.current.pastedText).toBe('Annonce collée après coup')
+  })
+
+  it('asks for confirmation before discarding what was typed, and keeps the entry when the user changes their mind', () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.switchToManualEntry())
+    act(() => result.current.setTextFormValue('title', 'Lead React'))
+
+    act(() => result.current.requestManualEntryCancellation())
+    expect(result.current.step).toBe('form')
+    expect(result.current.isManualEntryCancellationConfirmationShown).toBe(true)
+
+    act(() => result.current.keepManualEntry())
+    expect(result.current.isManualEntryCancellationConfirmationShown).toBe(false)
+    expect(result.current.formValues.title).toBe('Lead React')
+  })
+
+  it('discards what was typed once the cancellation is confirmed, then starts a fresh manual entry', () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.switchToManualEntry())
+    act(() => result.current.setTextFormValue('title', 'Lead React'))
+    act(() => result.current.requestManualEntryCancellation())
+
+    act(() => result.current.confirmManualEntryCancellation())
+
+    expect(result.current.step).toBe('paste')
+    expect(result.current.isManualEntryCancellationConfirmationShown).toBe(false)
+    act(() => result.current.switchToManualEntry())
+    expect(result.current.formValues.title).toBe('')
+  })
+
+  it('asks the paste step to take the focus back after a cancellation', () => {
+    const { result } = renderNewJobApplicationFormController()
+    act(() => result.current.switchToManualEntry())
+    const focusRequestBefore = result.current.pastedTextFocusRequest
+
+    act(() => result.current.requestManualEntryCancellation())
+
+    expect(result.current.pastedTextFocusRequest).toBe(focusRequestBefore + 1)
+  })
+
   it('warns as soon as the typed end client was positioned by another agency 10 days ago', () => {
     const { result } = renderNewJobApplicationFormController({ positionedJobApplications: [POSITIONED_BY_OTHER_AGENCY] })
     act(() => result.current.switchToManualEntry())

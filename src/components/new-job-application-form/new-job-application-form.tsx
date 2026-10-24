@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import type { ComponentProps, FormEvent } from 'react'
+import { useEffect, useRef, type ComponentProps, type FormEvent } from 'react'
 import { DuplicatePositioningWarning } from '@/components/duplicate-positioning-warning'
 import { EntityAutocomplete } from '@/components/entity-autocomplete'
 import { FormField } from '@/components/form-field'
@@ -47,6 +47,12 @@ export const NewJobApplicationForm = ({
     duplicatePositioningRisks,
     extract,
     switchToManualEntry,
+    canCancelManualEntry,
+    isManualEntryCancellationConfirmationShown,
+    pastedTextFocusRequest,
+    requestManualEntryCancellation,
+    confirmManualEntryCancellation,
+    keepManualEntry,
     setTextFormValue,
     selectContactSuggestion,
     setStatus,
@@ -60,6 +66,20 @@ export const NewJobApplicationForm = ({
     hasAnthropicApiKey,
     positionedJobApplications,
   })
+  const pastedTextAreaRef = useRef<HTMLTextAreaElement>(null)
+  const cancelManualEntryButtonRef = useRef<HTMLButtonElement>(null)
+  const keepManualEntryButtonRef = useRef<HTMLButtonElement>(null)
+  const wasCancellationConfirmationShownRef = useRef(false)
+
+  useEffect(() => {
+    if (pastedTextFocusRequest > 0) pastedTextAreaRef.current?.focus()
+  }, [pastedTextFocusRequest])
+
+  useEffect(() => {
+    if (isManualEntryCancellationConfirmationShown) keepManualEntryButtonRef.current?.focus()
+    else if (wasCancellationConfirmationShownRef.current) cancelManualEntryButtonRef.current?.focus()
+    wasCancellationConfirmationShownRef.current = isManualEntryCancellationConfirmationShown
+  }, [isManualEntryCancellationConfirmationShown])
 
   const errorAlert = errorMessage && (
     <p role="alert" className="text-sm text-destructive">
@@ -130,6 +150,7 @@ export const NewJobApplicationForm = ({
         <div className="flex flex-col gap-2">
           <Label htmlFor="new-job-application-pasted-text">Texte de l&apos;annonce</Label>
           <textarea
+            ref={pastedTextAreaRef}
             id="new-job-application-pasted-text"
             rows={12}
             maxLength={MAX_PASTED_TEXT_LENGTH + 1}
@@ -170,6 +191,37 @@ export const NewJobApplicationForm = ({
           />
         </div>
         {retryExtractionButton}
+        {canCancelManualEntry &&
+          (isManualEntryCancellationConfirmationShown ? (
+            <div
+              role="group"
+              aria-labelledby="new-job-application-cancel-manual-entry-question"
+              className="flex flex-col gap-3 rounded-xl bg-card p-4"
+            >
+              <p id="new-job-application-cancel-manual-entry-question" className="text-sm font-semibold text-ink">
+                Effacer ce que tu as saisi ?
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="destructive" onClick={confirmManualEntryCancellation}>
+                  Effacer et revenir
+                </Button>
+                <Button ref={keepManualEntryButtonRef} type="button" variant="outline" onClick={keepManualEntry}>
+                  Continuer la saisie
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              ref={cancelManualEntryButtonRef}
+              type="button"
+              variant="outline"
+              className="self-start"
+              onClick={requestManualEntryCancellation}
+              disabled={isSubmitting}
+            >
+              Annuler la saisie manuelle
+            </Button>
+          ))}
       </>
     )
 

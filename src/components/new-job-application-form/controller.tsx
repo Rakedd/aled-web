@@ -117,6 +117,9 @@ export const useController = ({
   const [hasExtractionFailed, setHasExtractionFailed] = useState(false)
   const [isPrefilledByClaude, setIsPrefilledByClaude] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isManualEntryCancellationConfirmationShown, setIsManualEntryCancellationConfirmationShown] = useState(false)
+  const [pastedTextFocusRequest, setPastedTextFocusRequest] = useState(0)
+  const manualEntryStartingValuesRef = useRef<JobApplicationFormValues | null>(null)
   const isExtractionInFlightRef = useRef(false)
   const isSubmissionInFlightRef = useRef(false)
 
@@ -163,10 +166,44 @@ export const useController = ({
   }
 
   const switchToManualEntry = () => {
+    const manualEntryStartingValues = {
+      ...createEmptyFormValues(),
+      postingRawText: pastedText.trim().length === 0 ? '' : pastedText,
+    }
+    manualEntryStartingValuesRef.current = manualEntryStartingValues
     setHasExtractionFailed(false)
     setIsPrefilledByClaude(false)
-    showForm({ ...createEmptyFormValues(), postingRawText: pastedText.trim().length === 0 ? '' : pastedText }, null)
+    showForm(manualEntryStartingValues, null)
   }
+
+  const hasTypedInManualEntry = (): boolean => {
+    const manualEntryStartingValues = manualEntryStartingValuesRef.current
+    if (manualEntryStartingValues === null) return false
+    const ignoringPostingText = (values: JobApplicationFormValues) => JSON.stringify({ ...values, postingRawText: '' })
+    return ignoringPostingText(manualEntryStartingValues) !== ignoringPostingText(formValues)
+  }
+
+  const cancelManualEntry = () => {
+    setPastedText(formValues.postingRawText)
+    setFormValues(createEmptyFormValues())
+    setUserEditedContactFields([])
+    setIsContactPrefilledFromSuggestion(false)
+    setErrorMessage(null)
+    setIsManualEntryCancellationConfirmationShown(false)
+    manualEntryStartingValuesRef.current = null
+    setStep('paste')
+    setPastedTextFocusRequest((currentFocusRequest) => currentFocusRequest + 1)
+  }
+
+  const requestManualEntryCancellation = () => {
+    if (hasTypedInManualEntry()) {
+      setIsManualEntryCancellationConfirmationShown(true)
+      return
+    }
+    cancelManualEntry()
+  }
+
+  const keepManualEntry = () => setIsManualEntryCancellationConfirmationShown(false)
 
   const setTextFormValue = (valueName: TextFormValueName, value: string) => {
     const editedContactField = CONTACT_DETAIL_FIELD_BY_FORM_VALUE_NAME[valueName]
@@ -250,6 +287,12 @@ export const useController = ({
     ),
     extract,
     switchToManualEntry,
+    canCancelManualEntry: step === 'form' && !isPrefilledByClaude && !hasExtractionFailed,
+    isManualEntryCancellationConfirmationShown,
+    pastedTextFocusRequest,
+    requestManualEntryCancellation,
+    confirmManualEntryCancellation: cancelManualEntry,
+    keepManualEntry,
     setTextFormValue,
     selectContactSuggestion,
     userEditedContactFields,
