@@ -45,7 +45,7 @@ export const LoginForm = ({ signInWithPassword, resendSignUpConfirmation }: Logi
   const errorMessageElementId = errorMessage ? ERROR_MESSAGE_ELEMENT_ID : undefined
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form method="post" noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <Label htmlFor="login-form-email">Adresse e-mail</Label>
         <Input

@@ -24,3 +24,11 @@ describe('AnthropicApiKeyForm on the dark key card', () => {
     expect(screen.getByRole('button', { name: 'Remplacer' })).toHaveClass('text-ink')
   })
 })
+
+describe('AnthropicApiKeyForm submission', () => {
+  it('posts the key so it never lands in the URL before hydration', () => {
+    renderForm(null)
+
+    expect(screen.getByLabelText('Clé API').closest('form')).toHaveAttribute('method', 'post')
+  })
+})

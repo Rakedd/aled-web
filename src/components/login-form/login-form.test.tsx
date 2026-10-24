@@ -17,6 +17,12 @@ beforeEach(() => {
 })
 
 describe('LoginForm', () => {
+  it('posts the credentials so they never land in the URL before hydration', () => {
+    render(<LoginForm signInWithPassword={jest.fn()} resendSignUpConfirmation={jest.fn()} />)
+
+    expect(screen.getByLabelText('Mot de passe').closest('form')).toHaveAttribute('method', 'post')
+  })
+
   it('offers email and password fields, and the sign-in button', () => {
     render(<LoginForm signInWithPassword={jest.fn()} resendSignUpConfirmation={jest.fn()} />)
 

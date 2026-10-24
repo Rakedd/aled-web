@@ -38,6 +38,12 @@ afterEach(() => {
 })
 
 describe('SignUpForm', () => {
+  it('posts the credentials so they never land in the URL before hydration', () => {
+    renderForm()
+
+    expect(screen.getByLabelText('Mot de passe').closest('form')).toHaveAttribute('method', 'post')
+  })
+
   it('renders the fields with their autocomplete hints', () => {
     renderForm()
 

@@ -24,6 +24,12 @@ beforeEach(() => {
 })
 
 describe('NewPasswordForm', () => {
+  it('posts the new password so it never lands in the URL before hydration', () => {
+    renderForm()
+
+    expect(screen.getByLabelText('Nouveau mot de passe').closest('form')).toHaveAttribute('method', 'post')
+  })
+
   it('renders both fields as new-password inputs and the save button', () => {
     renderForm()
 

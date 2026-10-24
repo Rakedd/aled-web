@@ -76,7 +76,7 @@ export const AnthropicApiKeyForm = ({
         </div>
       )}
       {isApiKeyInputVisible && (
-        <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-2">
+        <form method="post" noValidate onSubmit={handleSubmit} className="flex flex-col gap-2">
           <Label htmlFor={API_KEY_INPUT_ELEMENT_ID} className="text-on-deep-surface-secondary">{isReplacingApiKey ? 'Nouvelle clé API' : 'Clé API'}</Label>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input

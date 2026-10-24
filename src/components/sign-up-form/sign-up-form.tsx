@@ -112,7 +112,7 @@ export const SignUpForm = ({
   return (
     <>
       {oauthSignInButtons}
-      <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form method="post" noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="sign-up-form-first-name">Prénom</Label>
           <Input

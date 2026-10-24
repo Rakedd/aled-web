@@ -43,7 +43,7 @@ export const NewPasswordForm = ({ updatePassword }: NewPasswordFormProps) => {
     .join(' ')
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form method="post" noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <Label htmlFor="new-password-form-password">Nouveau mot de passe</Label>
         <div className="flex gap-2">
