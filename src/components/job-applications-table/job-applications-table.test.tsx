@@ -124,6 +124,7 @@ describe('JobApplicationsTable', () => {
     expect(within(row).getByText('Malt')).toHaveClass('hidden', 'md:table-cell')
     expect(within(row).getByText('10/09/2026')).toHaveClass('hidden', 'md:table-cell')
     expect(screen.getByRole('table')).toHaveClass('md:min-w-[56rem]')
+    expect(screen.getByRole('link', { name: 'Alpha' })).toHaveClass('min-w-40', 'md:min-w-0')
   })
 
   it('styles the status filter like an outline button at the search field height', () => {

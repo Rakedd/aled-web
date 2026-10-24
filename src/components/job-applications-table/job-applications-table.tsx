@@ -190,7 +190,7 @@ export const JobApplicationsTable = ({ jobApplications, alerts, todoDetails, now
         <p className="text-sm text-muted-foreground">Aucune candidature ne correspond.</p>
       ) : (
         <div className="overflow-x-auto rounded-2xl bg-card">
-          <table className="w-full min-w-[36rem] text-left text-sm md:min-w-[56rem]">
+          <table className="w-full text-left text-sm md:min-w-[56rem]">
             <thead className="border-b bg-muted">
               <tr>
                 {COLUMNS.map(({ sortKey, label, isHiddenOnPhone }) => (
@@ -216,7 +216,10 @@ export const JobApplicationsTable = ({ jobApplications, alerts, todoDetails, now
                   className="cursor-pointer border-b last:border-b-0 hover:bg-muted/50"
                 >
                   <td className="px-3 py-2 font-medium">
-                    <Link href={jobApplicationRoute(jobApplication.id)} className="hover:underline focus-visible:underline">
+                    <Link
+                      href={jobApplicationRoute(jobApplication.id)}
+                      className="inline-block min-w-40 hover:underline focus-visible:underline md:min-w-0"
+                    >
                       {jobApplication.title}
                     </Link>
                   </td>
