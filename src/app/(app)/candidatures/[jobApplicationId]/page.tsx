@@ -182,12 +182,13 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
             <ArrowLeft aria-hidden="true" strokeWidth={1.75} className="size-4" />
             Mes candidatures
           </Link>
-          <h1 className="font-heading text-3xl leading-tight font-extrabold tracking-tight break-words md:text-4xl">
-            {jobApplication.title}
-          </h1>
           <JobApplicationBlock
             title="En-tête"
-            isTitleHidden
+            heading={
+              <h1 className="font-heading text-3xl leading-tight font-extrabold tracking-tight break-words md:text-4xl">
+                {jobApplication.title}
+              </h1>
+            }
             view={<HeaderView jobApplication={jobApplication} />}
             form={{
               kind: 'header',

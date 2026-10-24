@@ -14,7 +14,7 @@ export type JobApplicationBlockForm =
 
 export type JobApplicationBlockProps = {
   title: string
-  isTitleHidden?: boolean
+  heading?: ReactNode
   view: ReactNode
   form: JobApplicationBlockForm
 }

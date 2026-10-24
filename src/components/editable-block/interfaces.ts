@@ -4,5 +4,5 @@ export type EditableBlockProps = {
   title: string
   view: ReactNode
   renderEdit: (close: () => void) => ReactNode
-  isTitleHidden?: boolean
+  heading?: ReactNode
 }

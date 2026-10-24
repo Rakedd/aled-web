@@ -24,13 +24,13 @@ const renderBlockForm = (form: JobApplicationBlockForm, onDataChanged: () => voi
   }
 }
 
-export const JobApplicationBlock = ({ title, isTitleHidden, view, form }: JobApplicationBlockProps) => {
+export const JobApplicationBlock = ({ title, heading, view, form }: JobApplicationBlockProps) => {
   const router = useRouter()
 
   return (
     <EditableBlock
       title={title}
-      isTitleHidden={isTitleHidden}
+      heading={heading}
       view={view}
       renderEdit={(close) => renderBlockForm(form, router.refresh, close)}
     />

@@ -95,28 +95,25 @@ describe('JobApplicationBlock', () => {
     expect(screen.getByRole('button', { name: 'Modifier Infos mission' })).toHaveFocus()
   })
 
-  it('keeps the page title rendered beside the header block while the header is being edited', async () => {
+  it('keeps the page title visible while the header is being edited', async () => {
     const jobApplication = buildJobApplicationOverview()
     render(
-      <>
-        <h1>{jobApplication.title}</h1>
-        <JobApplicationBlock
-          title="En-tête"
-          isTitleHidden
-          view={<HeaderView jobApplication={jobApplication} />}
-          form={{
-            kind: 'header',
-            props: {
-              jobApplication,
-              updateJobApplication: jest.fn(),
-              setEndClientParent: jest.fn(),
-              updateIntermediaryKind: jest.fn(),
-              searchEntities: jest.fn(),
-              positionedJobApplications: [],
-            },
-          }}
-        />
-      </>,
+      <JobApplicationBlock
+        title="En-tête"
+        heading={<h1>{jobApplication.title}</h1>}
+        view={<HeaderView jobApplication={jobApplication} />}
+        form={{
+          kind: 'header',
+          props: {
+            jobApplication,
+            updateJobApplication: jest.fn(),
+            setEndClientParent: jest.fn(),
+            updateIntermediaryKind: jest.fn(),
+            searchEntities: jest.fn(),
+            positionedJobApplications: [],
+          },
+        }}
+      />,
     )
     await userEvent.click(screen.getByRole('button', { name: 'Modifier En-tête' }))
     expect(screen.getByRole('textbox', { name: 'Titre de la mission *' })).toBeInTheDocument()

@@ -59,8 +59,12 @@ const ContactDetailPage = async ({ params }: PageProps<'/contacts/[contactId]'>)
           <ArrowLeft aria-hidden="true" strokeWidth={1.75} className="size-4" />
           Mes contacts
         </Link>
-        <h1 className={PAGE_TITLE_CLASS_NAME}>{profile.fullName}</h1>
-        <ContactProfileBlock profile={profile} updateContactProfile={updateContactProfile} searchEntities={searchEntities} />
+        <ContactProfileBlock
+          heading={<h1 className={PAGE_TITLE_CLASS_NAME}>{profile.fullName}</h1>}
+          profile={profile}
+          updateContactProfile={updateContactProfile}
+          searchEntities={searchEntities}
+        />
       </div>
       <section aria-labelledby="contact-missions-title" className={PANEL_CARD_CLASS_NAME}>
         <h2 id="contact-missions-title" className={SECTION_TITLE_CLASS_NAME}>
