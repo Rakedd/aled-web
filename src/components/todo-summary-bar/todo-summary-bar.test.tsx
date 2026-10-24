@@ -78,4 +78,14 @@ describe('TodoSummaryBar', () => {
     await userEvent.click(cvLink)
     expect(props.onToggleAlertKind).not.toHaveBeenCalled()
   })
+
+  it('aligns « Tout déplier » with the title on small screens and keeps a touch target', () => {
+    render(<TodoSummaryBar {...buildProps()} />)
+    expect(screen.getByRole('button', { name: 'Tout déplier' })).toHaveClass('-ml-3.5', 'sm:ml-0', 'h-11', 'sm:h-9')
+  })
+
+  it('sizes the cv link like the toggles beside it', () => {
+    render(<TodoSummaryBar {...buildProps({ kindCounts: [{ kind: 'follow_up_due', count: 2 }, { kind: 'cv_outdated', count: 1 }] })} />)
+    expect(screen.getByRole('link', { name: '1 CV à revoir' })).toHaveClass('h-11', 'sm:h-9', 'text-sm')
+  })
 })

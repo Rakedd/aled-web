@@ -1,5 +1,6 @@
 import type { CvOutdatedTodoAlert, JobApplicationTodoAlert } from '@/domain/todo-alerts'
 import {
+  TODO_ALERT_CARD_TAG_TONES,
   TODO_ALERT_KIND_TAG_LABELS,
   TODO_ALERT_KIND_TONES,
   formatTodoAlertKindCount,
@@ -122,6 +123,19 @@ describe('TODO_ALERT_KIND_TONES', () => {
   ] as const)('gives %s the %s tone', (alertKind, tone) => {
     expect(TODO_ALERT_KIND_TONES[alertKind]).toBe(tone)
   })
+})
+
+describe('TODO_ALERT_CARD_TAG_TONES', () => {
+  it('tags upcoming interviews in a forest tone that stands out from their card', () => {
+    expect(TODO_ALERT_CARD_TAG_TONES.upcoming_interview).toBe('forest')
+  })
+
+  it.each(['follow_up_due', 'job_spec_missing', 'end_client_unknown', 'no_news_suggestion', 'cv_outdated'] as const)(
+    'keeps the summary tone for %s',
+    (alertKind) => {
+      expect(TODO_ALERT_CARD_TAG_TONES[alertKind]).toBe(TODO_ALERT_KIND_TONES[alertKind])
+    },
+  )
 })
 
 describe('formatTodoAlertKindCount', () => {

@@ -116,4 +116,11 @@ describe('PillTabs', () => {
 
     expect(onSelect).not.toHaveBeenCalled()
   })
+
+  it('wraps the tabs instead of clipping them on narrow screens', () => {
+    render(<TabsHarness initialTab="a" onSelect={jest.fn()} />)
+    const tablist = screen.getByRole('tablist', { name: 'Test' })
+    expect(tablist).toHaveClass('flex-wrap', 'max-w-full')
+    expect(tablist).not.toHaveClass('overflow-x-auto')
+  })
 })

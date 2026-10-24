@@ -48,4 +48,15 @@ describe('PillToggle', () => {
     expect(screen.getByRole('button', { name: 'Remote' })).toBeDisabled()
     expect(onPressedChange).not.toHaveBeenCalled()
   })
+
+  it('matches the comfortable control height with a 44px touch target on phone', () => {
+    render(
+      <PillToggle isPressed={false} onPressedChange={jest.fn()}>
+        Remote
+      </PillToggle>,
+    )
+    const toggle = screen.getByRole('button', { name: 'Remote' })
+    expect(toggle).toHaveClass('h-11', 'sm:h-9', 'px-4', 'text-sm')
+    expect(toggle).not.toHaveClass('text-xs')
+  })
 })

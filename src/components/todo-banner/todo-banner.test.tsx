@@ -52,6 +52,21 @@ describe('TodoBanner', () => {
     expect(within(card).queryByRole('button', { name: /Reporter/ })).not.toBeInTheDocument()
   })
 
+  it('tags an upcoming interview in a tone that differs from its card background', () => {
+    renderTodoBanner('À faire', [
+      {
+        kind: 'upcoming_interview',
+        jobApplicationId: 'application-1',
+        jobApplicationTitle: 'Dev React',
+        interviewId: 'interview-1',
+        referenceDate: new Date('2026-10-21T09:00:00Z'),
+      },
+    ])
+    const card = screen.getByRole('listitem')
+    expect(card).toHaveClass('bg-forest-soft')
+    expect(within(card).getByText('Entretien à venir')).toHaveAttribute('data-tone', 'forest')
+  })
+
   it('offers to draft a follow up only on the follow up due reminders', () => {
     const referenceDate = new Date('2026-10-01T10:00:00Z')
     renderTodoBanner('À faire', [

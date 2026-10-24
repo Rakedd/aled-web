@@ -37,7 +37,7 @@ export const PillTabs = <TabKey extends string>({ label, tabs, selectedTab, onSe
   }
 
   return (
-    <div role="tablist" aria-label={label} className="flex max-w-full gap-1 self-start overflow-x-auto rounded-full bg-card p-1">
+    <div role="tablist" aria-label={label} className="flex max-w-full flex-wrap gap-1 self-start rounded-3xl bg-card p-1">
       {tabs.map((tab, index) => {
         const isSelected = tab.key === selectedTab
         return (
@@ -56,7 +56,7 @@ export const PillTabs = <TabKey extends string>({ label, tabs, selectedTab, onSe
             onClick={() => !isDisabled && onSelect(tab.key)}
             onKeyDown={(event) => handleKeyDown(event, index)}
             className={cn(
-              'h-9 shrink-0 cursor-pointer rounded-full px-4 text-sm font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/40 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 motion-reduce:transition-none',
+              'h-9 shrink-0 cursor-pointer rounded-full px-3 text-sm sm:px-4 font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/40 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 motion-reduce:transition-none',
               isSelected ? 'bg-primary text-primary-foreground' : 'text-ink hover:bg-hairline',
             )}
           >

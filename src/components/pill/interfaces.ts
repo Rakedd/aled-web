@@ -4,6 +4,7 @@ export type PillTone =
   | 'neutral'
   | 'sage'
   | 'forest-soft'
+  | 'forest'
   | 'brand'
   | 'action'
   | 'peach'

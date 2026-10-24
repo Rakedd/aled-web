@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { useId } from 'react'
 import { PILL_BASE_CLASS_NAME, PILL_TONE_CLASS_NAMES } from '@/components/pill'
-import { PillToggle } from '@/components/pill-toggle'
+import { PILL_TOGGLE_SIZE_CLASS_NAME, PillToggle } from '@/components/pill-toggle'
 import { TODO_ALERT_KIND_TONES, formatTodoAlertKindCount } from '@/components/todo-banner/format-todo-alert'
 import { Button } from '@/components/ui/button'
 import { CV_LIBRARY_ROUTE } from '@/domain/routes'
@@ -46,6 +46,7 @@ export const TodoSummaryBar = ({
                   className={cn(
                     PILL_BASE_CLASS_NAME,
                     PILL_TONE_CLASS_NAMES[TODO_ALERT_KIND_TONES[kind]],
+                    PILL_TOGGLE_SIZE_CLASS_NAME,
                     'outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/40',
                   )}
                 >
@@ -63,7 +64,15 @@ export const TodoSummaryBar = ({
               ),
             )}
           </div>
-          <Button type="button" variant="ghost" size="sm" aria-expanded={isExpanded} aria-controls={detailsId} onClick={onToggleExpanded}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="-ml-3.5 h-11 sm:ml-0 sm:h-9"
+            aria-expanded={isExpanded}
+            aria-controls={detailsId}
+            onClick={onToggleExpanded}
+          >
             {isExpanded ? 'Tout replier' : 'Tout déplier'}
           </Button>
         </>

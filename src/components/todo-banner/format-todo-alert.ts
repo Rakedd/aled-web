@@ -33,6 +33,11 @@ export const TODO_ALERT_KIND_TONES: Record<TodoAlertKind, PillTone> = {
   cv_outdated: 'peach-soft',
 }
 
+export const TODO_ALERT_CARD_TAG_TONES: Record<TodoAlertKind, PillTone> = {
+  ...TODO_ALERT_KIND_TONES,
+  upcoming_interview: 'forest',
+}
+
 export const formatTodoAlertKindCount = (kind: TodoAlertKind, count: number): string => {
   switch (kind) {
     case 'follow_up_due':

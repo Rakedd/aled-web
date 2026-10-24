@@ -12,8 +12,8 @@ import { cn } from '@/lib/utils'
 import { CV_LIBRARY_ROUTE, jobApplicationRoute } from '@/domain/routes'
 import { useController } from './controller'
 import {
+  TODO_ALERT_CARD_TAG_TONES,
   TODO_ALERT_KIND_TAG_LABELS,
-  TODO_ALERT_KIND_TONES,
   formatTodoAlertMessage,
   getTodoAlertKey,
 } from './format-todo-alert'
@@ -24,7 +24,7 @@ const TODO_ALERT_CARD_CLASS_NAMES: Record<TodoAlertKind, string> = {
   job_spec_missing: 'bg-lilac-tint',
   end_client_unknown: 'bg-lilac-tint',
   no_news_suggestion: 'bg-clay-tint',
-  upcoming_interview: 'bg-hairline',
+  upcoming_interview: 'bg-forest-soft',
   cv_outdated: 'bg-peach-tint',
 }
 
@@ -89,7 +89,7 @@ export const TodoBanner = ({
                     href={CV_LIBRARY_ROUTE}
                     className="flex flex-col items-start gap-1.5 text-sm hover:underline focus-visible:underline"
                   >
-                    <Pill tone={TODO_ALERT_KIND_TONES[alert.kind]}>{TODO_ALERT_KIND_TAG_LABELS[alert.kind]}</Pill>
+                    <Pill tone={TODO_ALERT_CARD_TAG_TONES[alert.kind]}>{TODO_ALERT_KIND_TAG_LABELS[alert.kind]}</Pill>
                     {formatTodoAlertMessage(alert, undefined, interviews, now)}
                   </Link>
                   <div className="flex flex-wrap gap-2">
@@ -113,7 +113,7 @@ export const TodoBanner = ({
                   href={jobApplicationRoute(alert.jobApplicationId)}
                   className="flex flex-col items-start gap-1.5 text-sm hover:underline focus-visible:underline"
                 >
-                  <Pill tone={TODO_ALERT_KIND_TONES[alert.kind]}>{TODO_ALERT_KIND_TAG_LABELS[alert.kind]}</Pill>
+                  <Pill tone={TODO_ALERT_CARD_TAG_TONES[alert.kind]}>{TODO_ALERT_KIND_TAG_LABELS[alert.kind]}</Pill>
                   {formatTodoAlertMessage(alert, summary, interviews, now)}
                 </Link>
                 {isSnoozableAlertKind(alert.kind) && (
