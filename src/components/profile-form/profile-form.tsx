@@ -11,6 +11,8 @@ import {
   MINIMUM_FOLLOW_UP_DELAY_DAYS,
 } from '@/domain/profile-settings'
 import { PROFESSIONAL_STATUSES, PROFESSIONAL_STATUS_LABELS } from '@/domain/sign-up'
+import { FIELD_LABEL_CLASS_NAME } from '@/lib/control-class-names'
+import { cn } from '@/lib/utils'
 import { useController } from './controller'
 import type { ProfileFormProps } from './interfaces'
 
@@ -72,7 +74,7 @@ export const ProfileForm = ({ initialProfileSettings, updateProfileSettings }: P
         </div>
       </div>
       <div role="radiogroup" aria-labelledby="profile-form-professional-status-label" className="flex flex-col gap-2">
-        <span id="profile-form-professional-status-label" className="text-sm font-medium">
+        <span id="profile-form-professional-status-label" className={FIELD_LABEL_CLASS_NAME}>
           Je suis
         </span>
         <div className="-my-2.5 flex gap-4">
@@ -92,7 +94,7 @@ export const ProfileForm = ({ initialProfileSettings, updateProfileSettings }: P
         </div>
       </div>
       <fieldset className="flex flex-col gap-3">
-        <legend className="mb-2 text-sm font-medium">Liens</legend>
+        <legend className={cn(FIELD_LABEL_CLASS_NAME, 'mb-2')}>Liens</legend>
         {links.length === 0 && <p className="text-sm text-muted-foreground">Aucun lien pour l&apos;instant.</p>}
         {links.map((profileLink, linkIndex) => (
           <div key={linkIndex} className="flex flex-col gap-2 rounded-2xl bg-muted p-3 sm:flex-row sm:items-end">

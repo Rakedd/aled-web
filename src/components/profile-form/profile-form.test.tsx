@@ -38,6 +38,16 @@ describe('ProfileForm professional status', () => {
     expect(statusOptionsRow).toHaveClass('-my-2.5')
   })
 
+  it('styles the Je suis and Liens captions like the other field labels', () => {
+    render(<ProfileForm initialProfileSettings={profileSettings} updateProfileSettings={jest.fn()} />)
+
+    const fieldLabelClassNames = ['text-sm', 'leading-none', 'font-semibold', 'text-ink-muted']
+    expect(screen.getByText('Prénom')).toHaveClass(...fieldLabelClassNames)
+    expect(screen.getByText('Je suis')).toHaveClass(...fieldLabelClassNames)
+    expect(screen.getByText('Liens')).toHaveClass(...fieldLabelClassNames)
+    expect(screen.getByText('Je suis')).not.toHaveClass('font-medium')
+  })
+
   it('saves the status picked with the rest of the settings', async () => {
     const updateProfileSettings = jest.fn().mockResolvedValue({ ok: true, data: { ...profileSettings, professionalStatus: 'employee' } })
     render(<ProfileForm initialProfileSettings={profileSettings} updateProfileSettings={updateProfileSettings} />)
