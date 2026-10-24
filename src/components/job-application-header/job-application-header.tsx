@@ -21,6 +21,8 @@ import type { JobApplicationHeaderProps } from './interfaces'
 
 const STATUS_SELECT_ID = 'job-application-header-status'
 const STATUS_CONTROLS_ID = 'job-application-header-status-controls'
+const HEADER_ACTIONS_CLASS_NAME =
+  'grid w-full grid-cols-[repeat(auto-fit,minmax(12rem,1fr))] gap-2 sm:ml-auto sm:flex sm:w-auto sm:flex-wrap'
 
 const getStepState = (step: JobApplicationStatus, currentStatus: JobApplicationStatus) => {
   const currentIndex = PIPELINE_STATUSES.indexOf(currentStatus)
@@ -57,7 +59,7 @@ export const JobApplicationHeader = ({
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <StatusBadge status={jobApplication.status} />
         {pipelineStep !== null && <span className="text-ink-muted">{pipelineStep}</span>}
-        <div className="ml-auto flex flex-wrap gap-2">
+        <div className={HEADER_ACTIONS_CLASS_NAME}>
           {canDraftFollowUp(jobApplication.status) && (
             <FollowUpMessageButton
               jobApplicationId={jobApplication.id}

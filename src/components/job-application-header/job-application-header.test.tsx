@@ -62,4 +62,18 @@ describe('JobApplicationHeader', () => {
     renderJobApplicationHeader('signed')
     expect(screen.queryByRole('button', { name: 'Rédiger une relance' })).not.toBeInTheDocument()
   })
+
+  it('lays the header actions out in an even full-width grid on phone and a natural row from sm', () => {
+    renderJobApplicationHeader('cv_submitted')
+    const actionsContainer = screen.getByRole('button', { name: 'Rédiger une relance' }).parentElement
+    expect(actionsContainer).toBe(screen.getByRole('button', { name: 'Changer le statut' }).parentElement)
+    expect(actionsContainer).toHaveClass(
+      'grid',
+      'w-full',
+      'grid-cols-[repeat(auto-fit,minmax(12rem,1fr))]',
+      'sm:ml-auto',
+      'sm:flex',
+      'sm:w-auto',
+    )
+  })
 })
