@@ -73,6 +73,23 @@ describe('InterviewPreparationButton', () => {
     await waitFor(() => expect(getTechnicalBriefView).toHaveBeenCalledWith(JOB_APPLICATION_ID, 'en'))
   })
 
+  it('keeps both brief buttons in one row, full width on phone and natural width from sm', () => {
+    renderButton(completePreparation)
+    const preparationButton = screen.getByRole('button', { name: 'Brief généré · voir mon brief' })
+    const technicalBriefButton = screen.getByRole('button', { name: 'Brief technique · voir' })
+    expect(technicalBriefButton.parentElement).toBe(preparationButton.parentElement)
+    expect(preparationButton.parentElement).toHaveClass('flex-wrap')
+    expect(preparationButton).toHaveClass('flex-1', 'sm:flex-none')
+    expect(technicalBriefButton).toHaveClass('w-full', 'sm:w-auto')
+  })
+
+  it('paints the brief button with the lilac panel action token so it stands out in both themes', () => {
+    renderButton(completePreparation)
+    const preparationButton = screen.getByRole('button', { name: 'Brief généré · voir mon brief' })
+    expect(preparationButton).toHaveClass('bg-lilac-panel-action', 'text-on-lilac-panel-action')
+    expect(preparationButton).not.toHaveClass('bg-deep-surface')
+  })
+
   it('does not show the technical brief inside the preparation modal', async () => {
     renderButton(completePreparation)
     await userEvent.click(screen.getByRole('button', { name: 'Brief généré · voir mon brief' }))

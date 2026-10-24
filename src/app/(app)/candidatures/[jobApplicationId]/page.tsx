@@ -173,8 +173,8 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
 
   return (
     <div className="flex min-w-0 flex-col gap-8">
-      <div className="grid min-w-0 gap-5 lg:grid-cols-5">
-        <div className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-6 lg:col-span-3">
+      <div className="flex min-w-0 flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-6">
           <Link
             href={JOB_APPLICATIONS_ROUTE}
             className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-accent-text hover:underline focus-visible:underline"
@@ -209,26 +209,24 @@ const JobApplicationDetailPage = async ({ params, searchParams }: PageProps<'/ca
             addActivityLogEntry={addActivityLogEntry}
           />
         </div>
-        <div className="min-w-0 lg:col-span-2">
-          <JobApplicationHighlights
-            requestedDailyRate={jobApplication.requestedDailyRate}
-            postedDailyRate={jobApplication.postedDailyRate}
-            nextInterview={findNextInterview(interviewsResult.data, now)}
-            now={now}
-            preparation={
-              <InterviewPreparationButton
-                key={`${jobApplication.id}-${jobApplication.endClientId ?? 'unknown-end-client'}`}
-                jobApplicationId={jobApplication.id}
-                initialPreparation={interviewPreparationResult.data}
-                getInterviewPreparation={getInterviewPreparation}
-                generateInterviewPreparation={generateInterviewPreparation}
-                updateEndClientNotes={updateEndClientNotes}
-                getTechnicalBriefView={getTechnicalBriefView}
-                hasAnthropicApiKey={hasAnthropicApiKey}
-              />
-            }
-          />
-        </div>
+        <JobApplicationHighlights
+          requestedDailyRate={jobApplication.requestedDailyRate}
+          postedDailyRate={jobApplication.postedDailyRate}
+          nextInterview={findNextInterview(interviewsResult.data, now)}
+          now={now}
+          preparation={
+            <InterviewPreparationButton
+              key={`${jobApplication.id}-${jobApplication.endClientId ?? 'unknown-end-client'}`}
+              jobApplicationId={jobApplication.id}
+              initialPreparation={interviewPreparationResult.data}
+              getInterviewPreparation={getInterviewPreparation}
+              generateInterviewPreparation={generateInterviewPreparation}
+              updateEndClientNotes={updateEndClientNotes}
+              getTechnicalBriefView={getTechnicalBriefView}
+              hasAnthropicApiKey={hasAnthropicApiKey}
+            />
+          }
+        />
       </div>
       <JobApplicationTabs
         key={jobApplication.id}

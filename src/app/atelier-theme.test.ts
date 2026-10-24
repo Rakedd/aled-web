@@ -100,6 +100,8 @@ const LIGHT_THEME_COLOURS: Record<string, string> = {
   popover: '#FFFFFF',
   'popover-highlight': '#F7F9F7',
   'ink-button-ring': '#16231D',
+  'lilac-panel-action': '#16231D',
+  'on-lilac-panel-action': '#CFE3D8',
   'menu-counter': '#FFB48A',
   'on-menu-counter': '#16231D',
   'settings-navigation-active': '#16231D',
@@ -152,6 +154,8 @@ const DARK_THEME_COLOURS: Record<string, string> = {
   popover: '#2A2622',
   'popover-highlight': '#4A433C',
   'ink-button-ring': '#E9A27C',
+  'lilac-panel-action': '#C9BFE6',
+  'on-lilac-panel-action': '#15132A',
   'menu-counter': '#C9BFE6',
   'on-menu-counter': '#15132A',
   'settings-navigation-active': '#E9A27C',
@@ -209,7 +213,10 @@ const ROLE_CONTRAST_PAIRS: Array<[string, string]> = [
   ['linkedin', 'card'],
   ['on-menu-counter', 'menu-counter'],
   ['on-settings-navigation-active', 'settings-navigation-active'],
+  ['on-lilac-panel-action', 'lilac-panel-action'],
 ]
+
+const MINIMUM_COMPONENT_BOUNDARY_CONTRAST = 3
 
 const RETIRED_COLOUR_CLASS_PATTERNS = [
   /\b(bg|text|border|ring|outline|fill)-(forest|on-forest)\b(?!-)/,
@@ -259,6 +266,12 @@ describe('atelier theme', () => {
       expect(
         Math.max(getContrastRatio(ringColour, surfaceColour), getContrastRatio(ringOffsetColour, surfaceColour)),
       ).toBeGreaterThanOrEqual(MINIMUM_FOCUS_CONTRAST)
+    })
+
+    it('sets the lilac panel action button apart from its panel', () => {
+      expect(getContrastRatio(themeColours['lilac-panel-action'], themeColours['lilac-panel'])).toBeGreaterThanOrEqual(
+        MINIMUM_COMPONENT_BOUNDARY_CONTRAST,
+      )
     })
 
     it('outlines highlighted popup options visibly', () => {
@@ -330,6 +343,8 @@ describe('atelier theme', () => {
       'clay-tint',
       'popover-highlight',
       'ink-button-ring',
+      'lilac-panel-action',
+      'on-lilac-panel-action',
       'menu-counter',
       'on-menu-counter',
       'settings-navigation-active',

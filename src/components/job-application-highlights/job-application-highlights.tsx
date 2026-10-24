@@ -26,10 +26,10 @@ export const JobApplicationHighlights = ({
   const dailyRateHighlight = selectDailyRateHighlight(requestedDailyRate, postedDailyRate)
 
   return (
-    <div className="grid min-w-0 gap-5 sm:grid-cols-2 lg:grid-cols-1">
+    <div className="grid min-w-0 gap-5 sm:grid-cols-2 lg:grid-cols-3">
       <section
         aria-labelledby="job-application-daily-rate-title"
-        className={cn(HIGHLIGHT_TILE_CLASS_NAME, 'justify-end bg-brand-tile text-on-brand-tile-secondary')}
+        className={cn(HIGHLIGHT_TILE_CLASS_NAME, 'bg-brand-tile text-on-brand-tile-secondary')}
       >
         <h2 id="job-application-daily-rate-title" className="text-sm font-semibold">
           {dailyRateHighlight.label}
@@ -40,7 +40,7 @@ export const JobApplicationHighlights = ({
       </section>
       <section
         aria-labelledby="job-application-next-interview-title"
-        className={cn(HIGHLIGHT_TILE_CLASS_NAME, 'justify-end bg-peach text-on-peach')}
+        className={cn(HIGHLIGHT_TILE_CLASS_NAME, 'bg-peach text-on-peach')}
       >
         <h2 id="job-application-next-interview-title" className="text-sm font-bold">
           {nextInterview === null

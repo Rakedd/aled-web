@@ -15,6 +15,9 @@ import type { InterviewPreparationButtonProps } from './interfaces'
 
 const LANGUAGE_SELECT_ID = 'interview-preparation-language'
 
+const LILAC_PANEL_ACTION_CLASS_NAME =
+  'flex-1 bg-lilac-panel-action text-on-lilac-panel-action hover:bg-lilac-panel-action/90 sm:flex-none'
+
 export const InterviewPreparationButton = (controllerParameters: InterviewPreparationButtonProps) => {
   const router = useRouter()
   const openingButtonRef = useRef<HTMLButtonElement | null>(null)
@@ -52,6 +55,7 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
           type="button"
           variant="ink"
           size="lg"
+          className={LILAC_PANEL_ACTION_CLASS_NAME}
           onClick={() => void handleButtonClick()}
           disabled={isButtonDisabled}
         >
@@ -75,8 +79,6 @@ export const InterviewPreparationButton = (controllerParameters: InterviewPrepar
             </option>
           ))}
         </select>
-      </div>
-      <div>
         <TechnicalBriefButton
           jobApplicationId={jobApplicationId}
           language={preparation.language}

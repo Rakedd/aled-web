@@ -62,4 +62,12 @@ describe('JobApplicationHighlights', () => {
     renderHighlights()
     expect(screen.getByRole('button', { name: 'Générer le brief' })).toBeInTheDocument()
   })
+
+  it('lays the three tiles out in equal columns on desktop and stacks them on phone', () => {
+    const { container } = renderHighlights()
+    const highlightsGrid = container.firstElementChild as HTMLElement
+    expect(highlightsGrid).toHaveClass('grid', 'lg:grid-cols-3')
+    expect(highlightsGrid).not.toHaveClass('lg:grid-cols-1')
+    expect(screen.getByRole('button', { name: 'Générer le brief' }).parentElement).toHaveClass('lg:col-span-1')
+  })
 })
