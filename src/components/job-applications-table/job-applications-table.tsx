@@ -28,9 +28,9 @@ import type { JobApplicationsTableProps } from './interfaces'
 
 const COLUMNS: { sortKey: JobApplicationsSortKey; label: string; isHiddenOnPhone: boolean }[] = [
   { sortKey: 'title', label: 'Mission', isHiddenOnPhone: false },
-  { sortKey: 'intermediaryName', label: 'Intermédiaire', isHiddenOnPhone: false },
+  { sortKey: 'intermediaryName', label: 'Intermédiaire', isHiddenOnPhone: true },
   { sortKey: 'contactName', label: 'Contact', isHiddenOnPhone: true },
-  { sortKey: 'endClientLabel', label: 'Client final', isHiddenOnPhone: false },
+  { sortKey: 'endClientLabel', label: 'Client final', isHiddenOnPhone: true },
   { sortKey: 'source', label: 'Source', isHiddenOnPhone: true },
   { sortKey: 'status', label: 'Statut', isHiddenOnPhone: false },
   { sortKey: 'appliedOn', label: 'Candidature', isHiddenOnPhone: true },
@@ -52,6 +52,15 @@ const FILTER_OPTION_LABEL_CLASS_NAME = 'flex min-h-11 cursor-pointer items-cente
 const CHECKBOX_CLASS_NAME = 'size-4 shrink-0 cursor-pointer accent-primary'
 
 const EMPTY_CELL = '—'
+
+const MISSION_COMPANIES_SEPARATOR = ' · '
+
+const formatMissionCompanies = ({ endClientLabel, intermediaryName }: JobApplicationListItem): string | null => {
+  const missionCompanies = [endClientLabel, intermediaryName].filter(
+    (companyName): companyName is string => companyName !== null && companyName !== '',
+  )
+  return missionCompanies.length === 0 ? null : missionCompanies.join(MISSION_COMPANIES_SEPARATOR)
+}
 
 const LAST_ACTIVITY_AGING_TONES: Record<LastActivityAging, PillTone> = {
   recent: 'forest-soft',
@@ -198,7 +207,7 @@ export const JobApplicationsTable = ({ jobApplications, alerts, todoDetails, now
                     key={sortKey}
                     scope="col"
                     aria-sort={getAriaSort(sortKey)}
-                    className={cn('px-3 py-2 font-medium whitespace-nowrap', isHiddenOnPhone && PHONE_HIDDEN_CELL_CLASS_NAME)}
+                    className={cn('px-3 py-2 font-medium md:whitespace-nowrap', isHiddenOnPhone && PHONE_HIDDEN_CELL_CLASS_NAME)}
                   >
                     <button type="button" onClick={() => toggleSort(sortKey)} className="inline-flex items-center gap-1 hover:underline">
                       {label}
@@ -209,35 +218,38 @@ export const JobApplicationsTable = ({ jobApplications, alerts, todoDetails, now
               </tr>
             </thead>
             <tbody>
-              {visibleJobApplications.map((jobApplication) => (
-                <tr
-                  key={jobApplication.id}
-                  onClick={(clickEvent) => openJobApplicationFromRow(clickEvent, jobApplication.id)}
-                  className="cursor-pointer border-b last:border-b-0 hover:bg-muted/50"
-                >
-                  <td className="px-3 py-2 font-medium">
-                    <Link
-                      href={jobApplicationRoute(jobApplication.id)}
-                      className="inline-block min-w-40 hover:underline focus-visible:underline md:min-w-0"
-                    >
-                      {jobApplication.title}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2">{jobApplication.intermediaryName ?? EMPTY_CELL}</td>
-                  <td className={cn('px-3 py-2', PHONE_HIDDEN_CELL_CLASS_NAME)}>{jobApplication.contactName ?? EMPTY_CELL}</td>
-                  <td className="px-3 py-2">{jobApplication.endClientLabel ?? EMPTY_CELL}</td>
-                  <td className={cn('px-3 py-2', PHONE_HIDDEN_CELL_CLASS_NAME)}>{jobApplication.source ?? EMPTY_CELL}</td>
-                  <td className="px-3 py-2">
-                    <StatusBadge status={jobApplication.status} />
-                  </td>
-                  <td className={cn('px-3 py-2 whitespace-nowrap', PHONE_HIDDEN_CELL_CLASS_NAME)}>
-                    {formatInTimeZone(jobApplication.appliedOn, PARIS_TIME_ZONE, 'dd/MM/yyyy')}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    <LastActivityCell jobApplication={jobApplication} now={now} />
-                  </td>
-                </tr>
-              ))}
+              {visibleJobApplications.map((jobApplication) => {
+                const missionCompanies = formatMissionCompanies(jobApplication)
+                return (
+                  <tr
+                    key={jobApplication.id}
+                    onClick={(clickEvent) => openJobApplicationFromRow(clickEvent, jobApplication.id)}
+                    className="cursor-pointer border-b last:border-b-0 hover:bg-muted/50"
+                  >
+                    <td className="px-3 py-2 font-medium">
+                      <Link href={jobApplicationRoute(jobApplication.id)} className="hover:underline focus-visible:underline">
+                        {jobApplication.title}
+                      </Link>
+                      {missionCompanies !== null && (
+                        <span className="mt-0.5 block text-xs font-normal text-muted-foreground md:hidden">{missionCompanies}</span>
+                      )}
+                    </td>
+                    <td className={cn('px-3 py-2', PHONE_HIDDEN_CELL_CLASS_NAME)}>{jobApplication.intermediaryName ?? EMPTY_CELL}</td>
+                    <td className={cn('px-3 py-2', PHONE_HIDDEN_CELL_CLASS_NAME)}>{jobApplication.contactName ?? EMPTY_CELL}</td>
+                    <td className={cn('px-3 py-2', PHONE_HIDDEN_CELL_CLASS_NAME)}>{jobApplication.endClientLabel ?? EMPTY_CELL}</td>
+                    <td className={cn('px-3 py-2', PHONE_HIDDEN_CELL_CLASS_NAME)}>{jobApplication.source ?? EMPTY_CELL}</td>
+                    <td className="px-3 py-2">
+                      <StatusBadge status={jobApplication.status} className="whitespace-normal md:whitespace-nowrap" />
+                    </td>
+                    <td className={cn('px-3 py-2 whitespace-nowrap', PHONE_HIDDEN_CELL_CLASS_NAME)}>
+                      {formatInTimeZone(jobApplication.appliedOn, PARIS_TIME_ZONE, 'dd/MM/yyyy')}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <LastActivityCell jobApplication={jobApplication} now={now} />
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

@@ -32,4 +32,12 @@ describe('StatusBadge', () => {
 
     expect(screen.getByText('Contrat reçu')).toHaveClass('font-bold')
   })
+
+  it('merges an extra class name over the pill defaults', () => {
+    render(<StatusBadge status="contract_received" className="whitespace-normal" />)
+
+    const badge = screen.getByText('Contrat reçu')
+    expect(badge).toHaveClass('font-bold', 'whitespace-normal')
+    expect(badge).not.toHaveClass('whitespace-nowrap')
+  })
 })

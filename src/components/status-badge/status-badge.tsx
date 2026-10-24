@@ -1,6 +1,7 @@
 import { Pill } from '@/components/pill'
 import type { PillTone } from '@/components/pill/interfaces'
 import { JOB_APPLICATION_STATUS_LABELS, type JobApplicationStatus } from '@/domain/job-application-status'
+import { cn } from '@/lib/utils'
 import type { StatusBadgeProps } from './interfaces'
 
 export const STATUS_BADGE_TONES: Record<JobApplicationStatus, PillTone> = {
@@ -17,8 +18,8 @@ export const STATUS_BADGE_TONES: Record<JobApplicationStatus, PillTone> = {
   no_news_abandoned: 'clay',
 }
 
-export const StatusBadge = ({ status }: StatusBadgeProps) => (
-  <Pill tone={STATUS_BADGE_TONES[status]} className={status === 'contract_received' ? 'font-bold' : undefined}>
+export const StatusBadge = ({ status, className }: StatusBadgeProps) => (
+  <Pill tone={STATUS_BADGE_TONES[status]} className={cn(status === 'contract_received' && 'font-bold', className)}>
     {JOB_APPLICATION_STATUS_LABELS[status]}
   </Pill>
 )

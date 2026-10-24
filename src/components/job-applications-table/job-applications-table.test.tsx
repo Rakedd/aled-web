@@ -111,20 +111,62 @@ describe('JobApplicationsTable', () => {
     expect(screen.getByRole('link', { name: 'Bravo' })).toBeInTheDocument()
   })
 
-  it('hides the contact, source and application date columns under md and keeps the others', () => {
-    renderTable([buildJobApplication({ id: 'a', title: 'Alpha', contactName: 'Jeanne', source: 'Malt' })])
-    for (const hiddenColumnName of ['Contact', 'Source', 'Candidature']) {
+  it('hides the intermediary, contact, end client, source and application date columns under md and keeps the others', () => {
+    renderTable([
+      buildJobApplication({
+        id: 'a',
+        title: 'Alpha',
+        contactName: 'Jeanne',
+        source: 'Malt',
+        intermediaryName: 'Hays',
+        endClientLabel: 'Decathlon',
+      }),
+    ])
+    for (const hiddenColumnName of ['Intermédiaire', 'Contact', 'Client final', 'Source', 'Candidature']) {
       expect(screen.getByRole('columnheader', { name: hiddenColumnName })).toHaveClass('hidden', 'md:table-cell')
     }
-    for (const visibleColumnName of ['Mission', 'Intermédiaire', 'Client final', 'Statut', 'Dernier échange']) {
+    for (const visibleColumnName of ['Mission', 'Statut', 'Dernier échange']) {
       expect(screen.getByRole('columnheader', { name: new RegExp(`^${visibleColumnName}`) })).not.toHaveClass('hidden')
     }
     const row = screen.getByRole('link', { name: 'Alpha' }).closest('tr') as HTMLElement
-    expect(within(row).getByText('Jeanne')).toHaveClass('hidden', 'md:table-cell')
-    expect(within(row).getByText('Malt')).toHaveClass('hidden', 'md:table-cell')
-    expect(within(row).getByText('10/09/2026')).toHaveClass('hidden', 'md:table-cell')
+    for (const hiddenCellText of ['Jeanne', 'Malt', '10/09/2026', 'Hays', 'Decathlon']) {
+      expect(within(row).getByText(hiddenCellText)).toHaveClass('hidden', 'md:table-cell')
+    }
     expect(screen.getByRole('table')).toHaveClass('md:min-w-[56rem]')
-    expect(screen.getByRole('link', { name: 'Alpha' })).toHaveClass('min-w-40', 'md:min-w-0')
+  })
+
+  it('folds the end client and the intermediary into a muted second line of the mission cell under md', () => {
+    renderTable([buildJobApplication({ id: 'a', title: 'Alpha', intermediaryName: 'Hays', endClientLabel: 'Decathlon' })])
+    const missionCell = screen.getByRole('link', { name: 'Alpha' }).closest('td') as HTMLElement
+    const companiesLine = within(missionCell).getByText('Decathlon · Hays')
+    expect(companiesLine).toHaveClass('block', 'text-muted-foreground', 'md:hidden')
+  })
+
+  it('skips the missing company in the mission second line', () => {
+    renderTable([
+      buildJobApplication({ id: 'a', title: 'Alpha', intermediaryName: 'Hays' }),
+      buildJobApplication({ id: 'b', title: 'Bravo', endClientLabel: 'Decathlon' }),
+    ])
+    const alphaCell = screen.getByRole('link', { name: 'Alpha' }).closest('td') as HTMLElement
+    const bravoCell = screen.getByRole('link', { name: 'Bravo' }).closest('td') as HTMLElement
+    expect(alphaCell).toHaveTextContent(/^AlphaHays$/)
+    expect(bravoCell).toHaveTextContent(/^BravoDecathlon$/)
+  })
+
+  it('shows no second line when the mission has neither end client nor intermediary', () => {
+    renderTable([buildJobApplication({ id: 'a', title: 'Alpha' })])
+    const missionCell = screen.getByRole('link', { name: 'Alpha' }).closest('td') as HTMLElement
+    expect(missionCell).toHaveTextContent(/^Alpha$/)
+    expect(missionCell.querySelector('span')).toBeNull()
+  })
+
+  it('lets the headers and the status pill wrap under md so the table fits a phone', () => {
+    renderTable([buildJobApplication({ id: 'a', title: 'Alpha', status: 'intermediary_contact' })])
+    expect(screen.getByRole('columnheader', { name: /^Dernier échange/ })).toHaveClass('md:whitespace-nowrap')
+    expect(screen.getByRole('columnheader', { name: /^Dernier échange/ })).not.toHaveClass('whitespace-nowrap')
+    const row = screen.getByRole('link', { name: 'Alpha' }).closest('tr') as HTMLElement
+    expect(within(row).getByText('Échange intermédiaire')).toHaveClass('whitespace-normal', 'md:whitespace-nowrap')
+    expect(screen.getByRole('link', { name: 'Alpha' })).not.toHaveClass('min-w-40')
   })
 
   it('styles the status filter like an outline button at the search field height', () => {
