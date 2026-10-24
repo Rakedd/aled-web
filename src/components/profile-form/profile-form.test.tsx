@@ -31,6 +31,13 @@ describe('ProfileForm professional status', () => {
     }
   })
 
+  it('lets the touch targets overlap the gaps so the radios keep the spacing of the other fields', () => {
+    render(<ProfileForm initialProfileSettings={profileSettings} updateProfileSettings={jest.fn()} />)
+
+    const statusOptionsRow = screen.getByRole('radio', { name: 'Freelance' }).closest('label')?.parentElement
+    expect(statusOptionsRow).toHaveClass('-my-2.5')
+  })
+
   it('saves the status picked with the rest of the settings', async () => {
     const updateProfileSettings = jest.fn().mockResolvedValue({ ok: true, data: { ...profileSettings, professionalStatus: 'employee' } })
     render(<ProfileForm initialProfileSettings={profileSettings} updateProfileSettings={updateProfileSettings} />)

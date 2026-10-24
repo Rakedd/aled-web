@@ -75,7 +75,7 @@ export const ProfileForm = ({ initialProfileSettings, updateProfileSettings }: P
         <span id="profile-form-professional-status-label" className="text-sm font-medium">
           Je suis
         </span>
-        <div className="flex gap-4">
+        <div className="-my-2.5 flex gap-4">
           {PROFESSIONAL_STATUSES.map((statusOption) => (
             <label key={statusOption} className="flex min-h-11 items-center gap-2 text-sm">
               <input

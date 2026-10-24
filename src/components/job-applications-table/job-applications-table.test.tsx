@@ -110,4 +110,34 @@ describe('JobApplicationsTable', () => {
     await userEvent.click(screen.getByRole('button', { name: '1 relance' }))
     expect(screen.getByRole('link', { name: 'Bravo' })).toBeInTheDocument()
   })
+
+  it('hides the contact, source and application date columns under md and keeps the others', () => {
+    renderTable([buildJobApplication({ id: 'a', title: 'Alpha', contactName: 'Jeanne', source: 'Malt' })])
+    for (const hiddenColumnName of ['Contact', 'Source', 'Candidature']) {
+      expect(screen.getByRole('columnheader', { name: hiddenColumnName })).toHaveClass('hidden', 'md:table-cell')
+    }
+    for (const visibleColumnName of ['Mission', 'Intermédiaire', 'Client final', 'Statut', 'Dernier échange']) {
+      expect(screen.getByRole('columnheader', { name: new RegExp(`^${visibleColumnName}`) })).not.toHaveClass('hidden')
+    }
+    const row = screen.getByRole('link', { name: 'Alpha' }).closest('tr') as HTMLElement
+    expect(within(row).getByText('Jeanne')).toHaveClass('hidden', 'md:table-cell')
+    expect(within(row).getByText('Malt')).toHaveClass('hidden', 'md:table-cell')
+    expect(within(row).getByText('10/09/2026')).toHaveClass('hidden', 'md:table-cell')
+    expect(screen.getByRole('table')).toHaveClass('md:min-w-[56rem]')
+  })
+
+  it('styles the status filter like an outline button at the search field height', () => {
+    renderTable([buildJobApplication({})])
+    const statusSummary = screen.getByText('Statut', { selector: 'summary' })
+    expect(statusSummary).toHaveClass('h-11', 'border-input', 'bg-card', 'list-none')
+    expect(statusSummary.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('tints every filter checkbox with the primary token at a comfortable size', () => {
+    renderTable([buildJobApplication({})])
+    const showTerminalCheckbox = screen.getByLabelText('Afficher les candidatures terminées')
+    expect(showTerminalCheckbox).toHaveClass('size-4', 'accent-primary')
+    expect(showTerminalCheckbox.closest('label')).toHaveClass('min-h-11', 'items-center')
+    expect(screen.getByRole('checkbox', { name: 'Postulé' })).toHaveClass('size-4', 'accent-primary')
+  })
 })
