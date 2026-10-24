@@ -98,4 +98,27 @@ describe('AppShell', () => {
     const signOutButton = screen.getByRole('button', { name: 'Se déconnecter' })
     expect(themeButton.compareDocumentPosition(signOutButton)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
   })
+
+  describe('on a narrow screen', () => {
+    const mockLayout = (layout: Partial<Record<'scrollWidth' | 'clientWidth' | 'offsetLeft' | 'offsetWidth', number>>) =>
+      Object.entries(layout).forEach(([property, value]) => {
+        jest.spyOn(HTMLElement.prototype, property as 'scrollWidth', 'get').mockReturnValue(value)
+      })
+
+    afterEach(() => jest.restoreAllMocks())
+
+    it('keeps the menu on one horizontally scrollable row', () => {
+      renderShell(0)
+      const menuList = screen.getByRole('navigation', { name: 'Navigation principale' }).querySelector('ul')
+      expect(menuList).toHaveClass('overflow-x-auto', 'scrollbar-hidden', 'sm:flex-wrap')
+      expect(menuList).not.toHaveClass('flex-wrap')
+    })
+
+    it('scrolls the active link into view', () => {
+      mockLayout({ scrollWidth: 900, clientWidth: 300, offsetLeft: 600, offsetWidth: 100 })
+      renderShell(0, '/preferences')
+      const menuList = screen.getByRole('navigation', { name: 'Navigation principale' }).querySelector('ul')
+      expect(menuList?.scrollLeft).toBe(500)
+    })
+  })
 })

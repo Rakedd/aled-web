@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useRef } from 'react'
 import { BrandLogoLink } from '@/components/brand-logo-link'
 import { Pill } from '@/components/pill'
 import { ThemeMenu } from '@/components/theme-menu'
@@ -18,6 +19,7 @@ import {
 } from '@/domain/routes'
 import { cn } from '@/lib/utils'
 import type { AppShellNavigationItem, AppShellProps } from './interfaces'
+import { scrollActiveNavigationItemIntoView } from './scroll-active-navigation-item-into-view'
 
 const isPathnameWithinRoute = (pathname: string, route: string): boolean =>
   pathname === route || pathname.startsWith(`${route}/`)
@@ -51,18 +53,26 @@ const NAVIGATION_ITEMS: AppShellNavigationItem[] = [
 
 export const AppShell = ({ userEmail, signOut, opportunitiesToProcessCount, children }: AppShellProps) => {
   const pathname = usePathname()
+  const navigationListRef = useRef<HTMLUListElement>(null)
+
+  useEffect(() => {
+    if (navigationListRef.current) scrollActiveNavigationItemIntoView(navigationListRef.current)
+  }, [pathname])
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <header className="px-4 pt-4">
-        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 rounded-3xl bg-card px-4 py-2 sm:rounded-full sm:px-6">
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 overflow-hidden rounded-3xl bg-card px-4 py-2 sm:overflow-visible sm:rounded-full sm:px-6">
           <BrandLogoLink href={HOME_ROUTE} />
           <nav aria-label="Navigation principale" className="order-last w-full min-w-0 sm:order-none sm:w-auto">
-            <ul className="flex flex-wrap gap-1">
+            <ul
+              ref={navigationListRef}
+              className="scrollbar-hidden relative -mx-4 -my-1 flex gap-1 overflow-x-auto px-4 py-1 sm:mx-0 sm:my-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:py-0"
+            >
               {NAVIGATION_ITEMS.map((navigationItem) => {
                 const isActive = navigationItem.isActiveForPathname(pathname)
                 return (
-                  <li key={navigationItem.href}>
+                  <li key={navigationItem.href} className="shrink-0">
                     <Link
                       href={navigationItem.href}
                       aria-current={isActive ? 'page' : undefined}
