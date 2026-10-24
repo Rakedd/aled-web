@@ -4,4 +4,5 @@ export type PdfDropZoneProps = {
   selectedFileName: string | null
   isDisabled: boolean
   onSelectFile: (pdfFile: File | null) => void
+  maximumMegabytes?: number
 }

@@ -1,12 +1,13 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import type { DragEvent, FormEvent } from 'react'
+import type { FormEvent } from 'react'
 import { MissingAnthropicApiKeyNotice } from '@/components/missing-anthropic-api-key-notice'
+import { PdfDropZone } from '@/components/pdf-drop-zone'
 import { StackChipsEditor } from '@/components/stack-chips-editor'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { buildJobSpecPdfPath, JOB_SPEC_PDF_MIME_TYPE, MAX_JOB_SPEC_PDF_MEGABYTES } from '@/domain/job-spec'
+import { buildJobSpecPdfPath, MAX_JOB_SPEC_PDF_MEGABYTES } from '@/domain/job-spec'
 import { formatParisDate } from '@/domain/paris-time'
 import { TEXTAREA_CLASS_NAME } from '@/lib/control-class-names'
 import { cn } from '@/lib/utils'
@@ -50,11 +51,6 @@ export const JobSpecSection = ({
     hasAnthropicApiKey,
     onDataChanged: router.refresh,
   })
-
-  const handlePdfDrop = (dragEvent: DragEvent<HTMLDivElement>) => {
-    dragEvent.preventDefault()
-    void selectPdfFile(dragEvent.dataTransfer.files[0])
-  }
 
   const handleTextSubmit = (formEvent: FormEvent<HTMLFormElement>) => {
     formEvent.preventDefault()
@@ -132,25 +128,14 @@ export const JobSpecSection = ({
           {hasAnthropicApiKey ? 'Enregistrement et analyse de la fiche en cours…' : 'Enregistrement de la fiche en cours…'}
         </p>
       )}
-      <div
-        className="flex flex-col gap-2 rounded-lg border border-dashed border-input p-3"
-        onDragOver={(dragEvent) => dragEvent.preventDefault()}
-        onDrop={handlePdfDrop}
-      >
-        <Label htmlFor={PDF_INPUT_ID}>{jobSpec === null ? 'Déposer un PDF' : 'Remplacer par un PDF'}</Label>
-        <input
-          id={PDF_INPUT_ID}
-          type="file"
-          accept={JOB_SPEC_PDF_MIME_TYPE}
-          className="max-w-full text-sm"
-          disabled={isSubmitting}
-          onChange={(changeEvent) => {
-            void selectPdfFile(changeEvent.target.files?.[0])
-            changeEvent.target.value = ''
-          }}
-        />
-        <p className="text-xs text-muted-foreground">PDF uniquement, {MAX_JOB_SPEC_PDF_MEGABYTES} Mo maximum.</p>
-      </div>
+      <PdfDropZone
+        inputId={PDF_INPUT_ID}
+        label={jobSpec === null ? 'Déposer un PDF' : 'Remplacer par un PDF'}
+        selectedFileName={null}
+        isDisabled={isSubmitting}
+        maximumMegabytes={MAX_JOB_SPEC_PDF_MEGABYTES}
+        onSelectFile={(pdfFile) => void selectPdfFile(pdfFile)}
+      />
       <form noValidate onSubmit={handleTextSubmit} className="flex flex-col gap-2">
         <Label htmlFor={PASTED_TEXT_ID}>
           {jobSpec === null ? 'Ou coller le texte de la fiche' : 'Ou remplacer par un texte collé'}
