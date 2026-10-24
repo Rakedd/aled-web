@@ -268,4 +268,19 @@ describe('OpportunityCard', () => {
       expect(screen.queryByRole('list', { name: 'Compétences demandées' })).not.toBeInTheDocument()
     })
   })
+
+  it('pads the full card like the other cards', () => {
+    renderCard(buildOpportunity())
+    expect(screen.getByRole('article')).toHaveClass('p-6')
+  })
+
+  it('aligns « Afficher la suite » with the description while keeping a touch target', () => {
+    renderCard(buildOpportunity({ description: 'Une longue description' }))
+    expect(screen.getByRole('button', { name: 'Afficher la suite' })).toHaveClass('px-0', 'h-11', 'sm:h-9')
+  })
+
+  it('lines « Pas intéressé » up with the right edge of the card', () => {
+    renderCard(buildOpportunity())
+    expect(screen.getByRole('button', { name: 'Pas intéressé' })).toHaveClass('ml-auto', '-mr-3.5')
+  })
 })

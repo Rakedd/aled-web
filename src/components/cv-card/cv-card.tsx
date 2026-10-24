@@ -43,7 +43,7 @@ export const CvCard = ({ cv, now, replaceCvFile, renameCv, deleteCv }: CvCardPro
   }
 
   return (
-    <article className="flex min-w-0 flex-col gap-3 rounded-2xl bg-card p-4">
+    <article className="flex min-w-0 flex-col gap-3 rounded-2xl bg-card p-6">
       <div className="flex flex-wrap items-center gap-2">
         {isRenaming ? (
           <form noValidate onSubmit={handleRenameSubmit} className="flex min-w-0 flex-1 flex-wrap items-center gap-2">

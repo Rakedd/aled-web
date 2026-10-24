@@ -90,4 +90,18 @@ describe('CvCard', () => {
     expect(confirmation).toHaveAccessibleDescription('Les candidatures auxquelles tu as envoyé ce CV le garderont.')
     expect(deleteCv).not.toHaveBeenCalled()
   })
+
+  it('pads the card like the other cards', () => {
+    renderCard(createCv())
+    expect(screen.getByRole('article')).toHaveClass('p-6')
+  })
+
+  it('draws « Voir » as the same outline button as « Remplacer »', () => {
+    renderCard(createCv())
+    const viewLinkClassNames = screen.getByRole('link', { name: 'Voir' }).className.split(' ')
+    const replaceButtonClassNames = screen.getByRole('button', { name: 'Remplacer' }).className.split(' ')
+    expect(viewLinkClassNames).toContain('border-input')
+    expect(viewLinkClassNames).not.toContain('border-transparent')
+    expect(replaceButtonClassNames).toEqual(expect.arrayContaining(viewLinkClassNames))
+  })
 })

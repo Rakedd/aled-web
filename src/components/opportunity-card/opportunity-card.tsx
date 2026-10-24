@@ -76,7 +76,7 @@ export const OpportunityCard = ({
   )
 
   return (
-    <article className="flex flex-col gap-3 rounded-2xl bg-card p-4">
+    <article className={cn('flex flex-col gap-3 rounded-2xl bg-card', isCompact ? 'p-4' : 'p-6')}>
       <header className="flex items-start gap-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <h3 className="min-w-0 break-words text-base font-semibold">{opportunity.title}</h3>
@@ -140,6 +140,7 @@ export const OpportunityCard = ({
             type="button"
             variant="link"
             size="sm"
+            className="h-11 px-0 sm:h-9"
             aria-expanded={isDescriptionExpanded}
             aria-controls={descriptionId}
             onClick={() => setIsDescriptionExpanded((isExpanded) => !isExpanded)}
@@ -163,7 +164,14 @@ export const OpportunityCard = ({
         {tab === 'applied' && applicationLink}
         {externalLink}
         {tab === 'to_process' && opportunity.jobApplicationId === null && !isCompact && (
-          <Button type="button" size="sm" variant="ghost" className="ml-auto" disabled={isPending} onClick={() => onDismiss(opportunity)}>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="-mr-3.5 ml-auto"
+            disabled={isPending}
+            onClick={() => onDismiss(opportunity)}
+          >
             Pas intéressé
           </Button>
         )}
