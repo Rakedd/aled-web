@@ -283,4 +283,29 @@ describe('OpportunityCard', () => {
     renderCard(buildOpportunity())
     expect(screen.getByRole('button', { name: 'Pas intéressé' })).toHaveClass('ml-auto', '-mr-3.5')
   })
+
+  it('puts the title on its own line on phone, with the match and the rate below', () => {
+    renderCard(buildOpportunity({ skills: ['React'] }), { mySkills: ['React'] })
+    const header = screen.getByRole('heading', { name: 'Développeur React' }).closest('header') as HTMLElement
+    expect(header).toHaveClass('flex-col', 'sm:flex-row', 'sm:items-start')
+    const rateBlock = within(header).getByText('Non communiqué').parentElement as HTMLElement
+    expect(rateBlock).toHaveClass('sm:shrink-0', 'sm:justify-end')
+    expect(rateBlock).not.toHaveClass('shrink-0')
+  })
+
+  it('drops its own padding in compact mode so its text lines up with the section heading', () => {
+    render(
+      <OpportunityCard
+        opportunity={buildOpportunity()}
+        tab="to_process"
+        isCompact
+        isNew={false}
+        isPending={false}
+        now={NOW}
+        onApply={jest.fn()}
+      />,
+    )
+    expect(screen.getByRole('article')).toHaveClass('p-0')
+    expect(screen.getByRole('article')).not.toHaveClass('p-4')
+  })
 })

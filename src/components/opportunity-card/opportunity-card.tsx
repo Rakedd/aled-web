@@ -76,14 +76,14 @@ export const OpportunityCard = ({
   )
 
   return (
-    <article className={cn('flex flex-col gap-3 rounded-2xl bg-card', isCompact ? 'p-4' : 'p-6')}>
-      <header className="flex items-start gap-2">
+    <article className={cn('flex flex-col gap-3 rounded-2xl bg-card', isCompact ? 'p-0' : 'p-6')}>
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-start">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <h3 className="min-w-0 break-words text-base font-semibold">{opportunity.title}</h3>
           <Pill tone="neutral">{OPPORTUNITY_SOURCE_LABELS[opportunity.source]}</Pill>
           {isNew && <Pill tone="lilac">nouveau</Pill>}
         </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">
           {match !== null && matchLevel !== null && (
             <Pill tone={MATCH_LEVEL_TONES[matchLevel.level]}>
               <span aria-hidden="true">{formatOpportunityMatchPercent(match.percent)}</span>

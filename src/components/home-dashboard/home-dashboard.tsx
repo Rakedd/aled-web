@@ -216,7 +216,7 @@ export const HomeDashboard = ({
             <p className="text-sm text-ink-secondary">Pas de nouvelle mission intéressante depuis 48 h.</p>
           )
         ) : (
-          <ul className="flex flex-wrap gap-4">
+          <ul className="flex flex-wrap gap-x-10 gap-y-8">
             {opportunities.map((opportunity) => (
               <li key={opportunity.id} className="min-w-0 flex-[1_1_22rem]">
                 <OpportunityCard
