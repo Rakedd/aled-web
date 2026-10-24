@@ -184,4 +184,22 @@ describe('InterviewsSection', () => {
     )
     expect(screen.getByRole('button', { name: 'Nouvel entretien' })).toBeInTheDocument()
   })
+
+  it('renders each interview actions as small bordered buttons with a 44 px target on phone', () => {
+    render(
+      <InterviewsSection
+        jobApplicationId={JOB_APPLICATION_ID}
+        initialInterviews={[laterInterview]}
+        createInterview={jest.fn()}
+        updateInterview={jest.fn()}
+        deleteInterview={jest.fn()}
+        listInterviewsForJobApplication={jest.fn()}
+      />,
+    )
+    const editButton = screen.getByRole('button', { name: 'Modifier' })
+    const deleteButton = screen.getByRole('button', { name: 'Supprimer' })
+    expect(editButton).toHaveClass('border-input', 'h-11', 'sm:h-9')
+    expect(deleteButton).toHaveClass('border-input', 'text-destructive', 'h-11', 'sm:h-9')
+    expect(editButton).not.toHaveClass('h-9')
+  })
 })

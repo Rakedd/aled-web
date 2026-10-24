@@ -23,6 +23,7 @@ const FORMAT_SELECT_ID = 'interview-format'
 const PARTICIPANTS_INPUT_ID = 'interview-participants'
 const NOTES_TEXTAREA_ID = 'interview-notes'
 const DELETE_CONFIRMATION_MESSAGE = 'Supprimer cet entretien ?'
+const INTERVIEW_ACTION_SIZE_CLASS_NAME = 'h-11 sm:h-9'
 
 export const InterviewsSection = ({
   jobApplicationId,
@@ -91,17 +92,18 @@ export const InterviewsSection = ({
       ) : (
         <ul className="flex flex-col divide-y divide-border">
           {interviews.map((interview) => (
-            <li key={interview.id} className="flex flex-col gap-1 py-2">
+            <li key={interview.id} className="flex flex-col gap-1 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-medium">
                   {formatParisInterviewDateTime(interview.startsAt)} · {INTERVIEW_KIND_LABELS[interview.kind]} ·{' '}
                   {INTERVIEW_FORMAT_LABELS[interview.format]}
                 </p>
-                <div className="flex gap-1">
+                <div className="flex gap-2">
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
+                    className={INTERVIEW_ACTION_SIZE_CLASS_NAME}
                     onClick={() => startEditing(interview)}
                     disabled={isSubmitting}
                   >
@@ -109,8 +111,9 @@ export const InterviewsSection = ({
                   </Button>
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="destructive"
                     size="sm"
+                    className={INTERVIEW_ACTION_SIZE_CLASS_NAME}
                     onClick={() => handleDeleteClick(interview.id)}
                     disabled={isSubmitting}
                   >
