@@ -279,9 +279,21 @@ describe('OpportunityCard', () => {
     expect(screen.getByRole('button', { name: 'Afficher la suite' })).toHaveClass('px-0', 'h-11', 'sm:h-9')
   })
 
-  it('lines « Pas intéressé » up with the right edge of the card', () => {
+  it('keeps « Pas intéressé » on the actions row, pushed to the right edge, when it fits', () => {
     renderCard(buildOpportunity())
-    expect(screen.getByRole('button', { name: 'Pas intéressé' })).toHaveClass('ml-auto', '-mr-3.5')
+    const dismissButton = screen.getByRole('button', { name: 'Pas intéressé' })
+    const actionsRow = dismissButton.parentElement as HTMLElement
+    const mainActionsGroup = screen.getByRole('button', { name: "J'ai postulé" }).parentElement as HTMLElement
+    expect(actionsRow).toHaveClass('flex', 'flex-wrap', 'justify-between')
+    expect(mainActionsGroup.parentElement).toBe(actionsRow)
+    expect(mainActionsGroup).toContainElement(screen.getByRole('link', { name: 'Voir sur Free-Work' }))
+  })
+
+  it('renders « Pas intéressé » as a text button flush with the edge and a 44 px target on phone', () => {
+    renderCard(buildOpportunity())
+    const dismissButton = screen.getByRole('button', { name: 'Pas intéressé' })
+    expect(dismissButton).toHaveClass('px-0', 'h-11', 'sm:h-9')
+    expect(dismissButton).not.toHaveClass('-mr-3.5', 'ml-auto')
   })
 
   it('puts the title on its own line on phone, with the match and the rate below', () => {

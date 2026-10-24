@@ -149,35 +149,37 @@ export const OpportunityCard = ({
           </Button>
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-2">
-        {tab === 'to_process' && opportunity.jobApplicationId === null && (
-          <Button type="button" size="sm" disabled={isPending} onClick={() => onApply(opportunity)}>
-            {isPending ? 'Création…' : <>J&apos;ai postulé</>}
-          </Button>
-        )}
-        {tab === 'to_process' && opportunity.jobApplicationId !== null && (
-          <>
-            <span className="text-sm text-muted-foreground">Candidature créée ·</span>
-            {applicationLink}
-          </>
-        )}
-        {tab === 'applied' && applicationLink}
-        {externalLink}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {tab === 'to_process' && opportunity.jobApplicationId === null && (
+            <Button type="button" size="sm" disabled={isPending} onClick={() => onApply(opportunity)}>
+              {isPending ? 'Création…' : <>J&apos;ai postulé</>}
+            </Button>
+          )}
+          {tab === 'to_process' && opportunity.jobApplicationId !== null && (
+            <>
+              <span className="text-sm text-muted-foreground">Candidature créée ·</span>
+              {applicationLink}
+            </>
+          )}
+          {tab === 'applied' && applicationLink}
+          {externalLink}
+          {tab === 'dismissed' && !isCompact && (
+            <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={() => onRestore(opportunity)}>
+              Remettre
+            </Button>
+          )}
+        </div>
         {tab === 'to_process' && opportunity.jobApplicationId === null && !isCompact && (
           <Button
             type="button"
             size="sm"
             variant="ghost"
-            className="-mr-3.5 ml-auto"
+            className="h-11 px-0 underline-offset-4 hover:bg-transparent hover:underline sm:h-9"
             disabled={isPending}
             onClick={() => onDismiss(opportunity)}
           >
             Pas intéressé
-          </Button>
-        )}
-        {tab === 'dismissed' && !isCompact && (
-          <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={() => onRestore(opportunity)}>
-            Remettre
           </Button>
         )}
       </div>
